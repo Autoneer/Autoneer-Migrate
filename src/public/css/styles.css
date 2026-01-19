@@ -262,6 +262,18 @@ pre {
 	color: var(--text);
 }
 
+.modal-content.modal-stack {
+	flex-direction: column;
+	align-items: flex-start;
+	min-width: min(520px, 90vw);
+}
+
+.error-textarea {
+	width: 100%;
+	min-height: 90px;
+	font-family: Consolas, monospace;
+}
+
 .spinner {
 	width: 20px;
 	height: 20px;
@@ -340,6 +352,48 @@ pre {
 	height: 100%;
 	width: 0%;
 	transition: width 0.2s ease;
+}
+
+.progress-table {
+	width: 100%;
+	border: 1px solid var(--border-subtle);
+	border-radius: 8px;
+	overflow: hidden;
+}
+
+.status-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 8px;
+	border-radius: 999px;
+	font-size: 12px;
+	border: 1px solid var(--border-subtle);
+	background: #f6f8fa;
+}
+
+.status-badge.running {
+	color: var(--primary);
+}
+
+.status-badge.success {
+	color: var(--accent);
+}
+
+.status-badge.failed {
+	color: var(--danger);
+}
+
+.status-badge.skipped,
+.status-badge.queued,
+.status-badge.not_run {
+	color: var(--muted);
+}
+
+.row-progress {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
 }
 
 .card.nested {

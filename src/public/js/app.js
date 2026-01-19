@@ -5,190 +5,245 @@ if ("serviceWorker" in navigator) {
 const progressEl = document.getElementById("progress");
 if (progressEl) {
 	const runId = progressEl.getAttribute("data-run-id");
-	if (runId) {
-		const logEl = document.getElementById("progress-log");
-		const tableProgressEl = document.getElementById("table-progress");
-		const summaryTablesEl = document.getElementById("summary-tables");
-		const summaryRowsEl = document.getElementById("summary-rows");
-		const summaryDuplicatesEl = document.getElementById("summary-duplicates");
-		const summaryErrorsEl = document.getElementById("summary-errors");
-		const tableState = new Map();
-		let tablesTotal = 0;
+	const runForm = document.getElementById("run-form");
+	const runButton = document.getElementById("run-migration-btn");
+	const tableBody = document.getElementById("table-progress-body");
+	const overallFill = document.getElementById("overall-progress-fill");
+	const overallText = document.getElementById("overall-progress-text");
+	const currentStepEl = document.getElementById("current-step");
+	const statusLineEl = document.getElementById("run-status-line");
+	const disconnectedEl = document.getElementById("progress-disconnected");
+	const failureHintEl = document.getElementById("run-failure-hint");
+	const failureModal = document.getElementById("failure-modal");
+	const failureMessage = document.getElementById("failure-message");
+	const failureDetailsBtn = document.getElementById("failure-details-btn");
+	const fixModal = document.getElementById("fix-modal");
+	const fixTableEl = document.getElementById("fix-table");
+	const fixCauseEl = document.getElementById("fix-cause");
+	const fixErrorEl = document.getElementById("fix-error");
+	const fixStepsEl = document.getElementById("fix-steps");
+	const fixTryAgainBtn = document.getElementById("fix-try-again");
+	const successModal = document.getElementById("success-modal");
+	const successSummary = document.getElementById("success-summary");
+	let lastStatus = null;
+	let latestRunState = null;
 
-		const formatNumber = (value) => {
-			if (value === null || value === undefined) return "0";
-			return Number(value).toLocaleString();
+	const formatNumber = (value) => {
+		if (value === null || value === undefined) return "0";
+		return Number(value).toLocaleString();
+	};
+
+	const openModal = (modal) => {
+		if (!modal) return;
+		modal.classList.add("show");
+		modal.setAttribute("aria-hidden", "false");
+	};
+
+	const closeModal = (modal) => {
+		if (!modal) return;
+		modal.classList.remove("show");
+		modal.setAttribute("aria-hidden", "true");
+	};
+
+	document.querySelectorAll("[data-modal-close]").forEach((btn) => {
+		btn.addEventListener("click", () => {
+			const target = btn.getAttribute("data-modal-close");
+			closeModal(document.getElementById(target));
+		});
+	});
+
+	const buildLikelyCause = (message) => {
+		const lower = String(message || "").toLowerCase();
+		if (lower.includes("access denied")) {
+			return {
+				cause: "Your MySQL user does not have permission to write to this table.",
+				steps: [
+					"Confirm the MySQL user has INSERT/UPDATE privileges.",
+					"Re-run the migration after permissions are fixed."
+				]
+			};
+		}
+		if (lower.includes("unknown column")) {
+			return {
+				cause: "A required column is missing from the target table.",
+				steps: [
+					"Verify the column exists in MySQL.",
+					"Update the mapping or adjust the schema, then try again."
+				]
+			};
+		}
+		if (lower.includes("login failed") || lower.includes("user name and password")) {
+			return {
+				cause: "Login failed. The credentials or connection details are incorrect.",
+				steps: [
+					"Check the Firebird/MySQL credentials in Setup.",
+					"Confirm the server and port are correct, then try again."
+				]
+			};
+		}
+		if (lower.includes("etimedout") || lower.includes("econnreset") || lower.includes("timeout")) {
+			return {
+				cause: "Network or timeout issue while communicating with the database.",
+				steps: [
+					"Confirm the database server is reachable.",
+					"Retry once connectivity is stable."
+				]
+			};
+		}
+		return {
+			cause: "Unexpected error. Review the message below for more context.",
+			steps: [
+				"Review the error message and confirm the mapping and schema.",
+				"Fix the issue and try again."
+			]
 		};
+	};
 
-		const formatPercent = (value) => {
-			if (!Number.isFinite(value)) return "0%";
-			return `${value.toFixed(1)}%`;
+	const renderTableRow = (table) => {
+		if (!tableBody) return;
+		let row = document.getElementById(`table-row-${table.name}`);
+		if (!row) {
+			row = document.createElement("tr");
+			row.id = `table-row-${table.name}`;
+			row.innerHTML = `
+				<td class="table-label"></td>
+				<td class="table-status"></td>
+				<td class="table-progress"></td>
+				<td class="table-errors"></td>
+			`;
+			tableBody.appendChild(row);
+		}
+		const label = table.label || table.name;
+		row.querySelector(".table-label").textContent = label;
+		const statusEl = row.querySelector(".table-status");
+		const status = (table.status || "QUEUED").toLowerCase();
+		const statusTextMap = {
+			queued: "Queued",
+			running: "Migrating",
+			success: "Completed",
+			failed: "Failed",
+			skipped: "Skipped",
+			not_run: "Not run"
 		};
+		statusEl.innerHTML = `<span class="status-badge ${status}">${statusTextMap[status] || "Queued"}${
+			status === "running" ? " <span class=\"spinner\"></span>" : ""
+		}</span>`;
+		const progressEl = row.querySelector(".table-progress");
+		if (table.total) {
+			progressEl.textContent = `${formatNumber(table.migrated)} / ${formatNumber(table.total)}`;
+		} else {
+			progressEl.innerHTML = `<span class="row-progress">${formatNumber(
+				table.migrated
+			)} rows ${status === "running" ? "<span class=\"spinner\"></span>" : ""}</span>`;
+		}
+		row.querySelector(".table-errors").textContent = formatNumber(table.errors || 0);
+	};
 
-		const ensureTableRow = (table) => {
-			let row = document.getElementById(`table-${table}`);
-			if (!row && tableProgressEl) {
-				row = document.createElement("div");
-				row.className = "table-progress-row";
-				row.id = `table-${table}`;
-				row.innerHTML = `
-					<div class="table-progress-header">
-						<strong class="table-name"></strong>
-						<span class="table-stats"></span>
-					</div>
-					<div class="progress-bar">
-						<div class="progress-bar-fill"></div>
-					</div>
-					<div class="table-meta">
-						<span class="table-errors"></span>
-						<span class="table-duplicates"></span>
-						<span class="table-last-error"></span>
-					</div>
-				`;
-				tableProgressEl.appendChild(row);
+	const renderRunState = (runState) => {
+		if (!runState) return;
+		latestRunState = runState;
+		if (disconnectedEl) disconnectedEl.hidden = true;
+		const tables = runState.tables || [];
+		if (tableBody) {
+			tableBody.innerHTML = "";
+			tables.forEach(renderTableRow);
+		}
+		const doneCount = tables.filter((table) => ["SUCCESS", "FAILED", "SKIPPED"].includes(table.status)).length;
+		const totalCount = tables.length;
+		const percent = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+		if (overallFill) overallFill.style.width = `${percent}%`;
+		if (overallText) overallText.textContent = `${doneCount} of ${totalCount} tables completed`;
+		const currentTable = runState.currentTable ? tables.find((t) => t.name === runState.currentTable) : null;
+		if (currentStepEl) {
+			if (runState.status === "RUNNING" && currentTable) {
+				currentStepEl.textContent = `Current step: Migrating ${currentTable.label || currentTable.name}... ${formatNumber(
+					currentTable.migrated
+				)} rows`;
+			} else if (runState.status === "FAILED" && currentTable) {
+				currentStepEl.textContent = `Current step: Stopped due to error on ${currentTable.label || currentTable.name}`;
+			} else if (runState.status === "SUCCESS") {
+				currentStepEl.textContent = "Current step: Completed";
+			} else {
+				currentStepEl.textContent = "Current step: Not started";
 			}
-			return row;
-		};
+		}
+		if (statusLineEl) {
+			statusLineEl.textContent = `Status: ${runState.status}`;
+		}
+		if (runButton) {
+			runButton.disabled = runState.status === "RUNNING";
+		}
+		if (failureHintEl) {
+			failureHintEl.hidden = runState.status !== "FAILED";
+		}
 
-		const renderTableRow = (table, data) => {
-			const row = ensureTableRow(table);
-			if (!row) return;
-			row.querySelector(".table-name").textContent = table;
-			row.querySelector(".table-stats").textContent = `${formatNumber(data.rows_migrated)}/${formatNumber(
-				data.rows_source
-			)} (${formatPercent(data.percent)})`;
-			row.querySelector(".progress-bar-fill").style.width = `${Math.min(data.percent || 0, 100)}%`;
-			row.querySelector(".table-errors").textContent = `Errors: ${formatNumber(data.rows_error)}`;
-			row.querySelector(".table-duplicates").textContent = `Duplicates: ${formatNumber(
-				data.rows_skipped_duplicates
-			)}`;
-			row.querySelector(".table-last-error").textContent = data.last_error
-				? `Last error: ${data.last_error}`
-				: "";
-			row.dataset.status = data.status || "running";
-		};
-
-		const updateSummary = () => {
-			if (!summaryTablesEl || !summaryRowsEl || !summaryErrorsEl || !summaryDuplicatesEl) return;
-			let tablesDone = 0;
-			let rowsMigrated = 0;
-			let rowsError = 0;
-			let rowsSkippedDuplicates = 0;
-			for (const [, data] of tableState) {
-				rowsMigrated += data.rows_migrated || 0;
-				rowsError += data.rows_error || 0;
-				rowsSkippedDuplicates += data.rows_skipped_duplicates || 0;
-				if (data.status === "finished" || data.status === "failed" || data.status === "warning") {
-					tablesDone += 1;
+		if (runState.status !== lastStatus) {
+			if (runState.status === "FAILED") {
+				const failedTable = tables.find((table) => table.status === "FAILED") || currentTable;
+				const tableLabel = failedTable?.label || failedTable?.name || "the current table";
+				if (failureMessage) {
+					failureMessage.textContent = `The migration stopped while migrating ${tableLabel}.`;
 				}
+				openModal(failureModal);
+			} else if (runState.status === "SUCCESS") {
+				const succeeded = tables.filter((table) => table.status === "SUCCESS").length;
+				const totalRows = tables.reduce((sum, table) => sum + (table.migrated || 0), 0);
+				if (successSummary) {
+					successSummary.textContent = `Tables migrated successfully: ${succeeded}. Total rows migrated: ${formatNumber(
+						totalRows
+					)}.`;
+				}
+				openModal(successModal);
 			}
-			summaryTablesEl.textContent = `${tablesDone}/${tablesTotal}`;
-			summaryRowsEl.textContent = formatNumber(rowsMigrated);
-			summaryDuplicatesEl.textContent = formatNumber(rowsSkippedDuplicates);
-			summaryErrorsEl.textContent = formatNumber(rowsError);
-		};
+			lastStatus = runState.status;
+		}
+	};
 
-		const source = new EventSource(`/events?runId=${runId}`);
-		source.onmessage = (event) => {
-			const data = JSON.parse(event.data);
-			if (data.type === "run_started" && typeof data.tables_total === "number") {
-				tablesTotal = data.tables_total;
+	if (failureDetailsBtn) {
+		failureDetailsBtn.addEventListener("click", () => {
+			closeModal(failureModal);
+			if (!latestRunState) return;
+			const tables = latestRunState.tables || [];
+			const failedTable = tables.find((table) => table.status === "FAILED") || null;
+			const message = failedTable?.lastError?.message || "Unknown error";
+			const { cause, steps } = buildLikelyCause(message);
+			if (fixTableEl) fixTableEl.textContent = failedTable?.label || failedTable?.name || "Unknown";
+			if (fixCauseEl) fixCauseEl.textContent = cause;
+			if (fixErrorEl) fixErrorEl.value = message;
+			if (fixStepsEl) {
+				fixStepsEl.innerHTML = "";
+				steps.forEach((step) => {
+					const li = document.createElement("li");
+					li.textContent = step;
+					fixStepsEl.appendChild(li);
+				});
 			}
+			openModal(fixModal);
+		});
+	}
 
-			if (data.type === "table_started") {
-				const entry = {
-					rows_source: data.rows_source || 0,
-					rows_migrated: 0,
-					rows_error: 0,
-					rows_skipped_duplicates: 0,
-					percent: 0,
-					status: "running",
-					last_error: ""
-				};
-				tableState.set(data.table, entry);
-				renderTableRow(data.table, entry);
+	if (fixTryAgainBtn && runForm) {
+		fixTryAgainBtn.addEventListener("click", () => {
+			closeModal(fixModal);
+			if (typeof runForm.requestSubmit === "function") {
+				runForm.requestSubmit();
+			} else {
+				runForm.submit();
 			}
+		});
+	}
 
-			if (data.type === "table_progress") {
-				const entry = tableState.get(data.table) || {
-					rows_source: data.rows_source || 0,
-					rows_migrated: 0,
-					rows_error: 0,
-					rows_skipped_duplicates: 0,
-					percent: 0,
-					status: "running",
-					last_error: ""
-				};
-				entry.rows_source = data.rows_source || entry.rows_source;
-				entry.rows_migrated = data.rows_migrated || 0;
-				entry.rows_error = data.rows_error || 0;
-				entry.rows_skipped_duplicates = data.rows_skipped_duplicates || 0;
-				entry.percent = data.percent || 0;
-				tableState.set(data.table, entry);
-				renderTableRow(data.table, entry);
-			}
-
-			if (data.type === "table_failed") {
-				const entry = tableState.get(data.table) || {
-					rows_source: data.rows_source || 0,
-					rows_migrated: data.rows_migrated || 0,
-					rows_error: data.rows_error || 0,
-					rows_skipped_duplicates: data.rows_skipped_duplicates || 0,
-					percent: data.percent || 0,
-					status: "failed",
-					last_error: data.error || ""
-				};
-				entry.status = "failed";
-				entry.last_error = data.error || entry.last_error;
-				tableState.set(data.table, entry);
-				renderTableRow(data.table, entry);
-			}
-
-			if (data.type === "table_finished") {
-				const entry = tableState.get(data.table) || {
-					rows_source: data.rows_source || 0,
-					rows_migrated: data.rows_migrated || 0,
-					rows_error: data.rows_error || 0,
-					rows_skipped_duplicates: data.rows_skipped_duplicates || 0,
-					percent: data.percent || 0,
-					status: "finished",
-					last_error: ""
-				};
-				entry.rows_source = data.rows_source || entry.rows_source;
-				entry.rows_migrated = data.rows_migrated || entry.rows_migrated;
-				entry.rows_error = data.rows_error || entry.rows_error;
-				entry.rows_skipped_duplicates =
-					data.rows_skipped_duplicates || entry.rows_skipped_duplicates;
-				entry.percent = data.percent || entry.percent;
-				entry.status = entry.rows_error > 0 ? "warning" : "finished";
-				tableState.set(data.table, entry);
-				renderTableRow(data.table, entry);
-			}
-
-			updateSummary();
-
-			const linePrefix = `[${new Date().toLocaleTimeString()}]`;
-			let line = `${linePrefix} ${data.type} ${data.table || ""}`;
-			if (data.type === "table_progress") {
-				line = `${linePrefix} ${data.table}: ${formatNumber(data.rows_migrated)}/${formatNumber(
-					data.rows_source
-				)} (${formatPercent(data.percent)}) errors: ${formatNumber(
-					data.rows_error
-				)} duplicates: ${formatNumber(data.rows_skipped_duplicates)}`;
-			}
-			if (data.type === "table_failed") {
-				line = `${linePrefix} ${data.table} failed: ${data.error} ${data.hint ? `• ${data.hint}` : ""}`;
-			}
-			if (data.type === "run_failed") {
-				line = `${linePrefix} Run failed: ${data.error} ${data.hint ? `• ${data.hint}` : ""}`;
-			}
-			if (logEl) {
-				logEl.textContent = `${line}\n${logEl.textContent}`;
-			}
-
-			if (data.type === "run_finished" || data.type === "run_failed") {
+	if (runId) {
+		const source = new EventSource(`/run/progress?runId=${runId}`);
+		source.addEventListener("runState", (event) => {
+			const runState = JSON.parse(event.data);
+			renderRunState(runState);
+			if (runState.status === "FAILED" || runState.status === "SUCCESS") {
 				source.close();
 			}
+		});
+		source.onerror = () => {
+			if (disconnectedEl) disconnectedEl.hidden = false;
 		};
 	}
 }

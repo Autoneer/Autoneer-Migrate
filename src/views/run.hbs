@@ -1,48 +1,108 @@
 <section class="card">
 	<h2>Run migration</h2>
-	<form method="post" action="/run/start">
-		<label>
-			<input type="checkbox" name="dry_run" /> Dry run (no inserts)
-		</label>
-		<label>Batch size
-			<input name="batch_size" value="500" />
-		</label>
-		<label>
-			<input type="checkbox" name="fk_checks" checked /> Disable FK checks during load
-		</label>
+	{{#if error}}
+	<div class="alert error">{{error}}</div>
+	{{/if}}
+	<form method="post" action="/run/start" id="run-form">
 		<div class="actions">
 			<a class="btn secondary" href="/mapping">Back</a>
-			<button class="btn primary" type="submit">Start Migration</button>
+			<button class="btn primary" type="submit" id="run-migration-btn">Run Migration</button>
+		</div>
+		<div class="hint">This will migrate your selected tables in order. You can monitor progress below.</div>
+		<div class="card nested" id="run-options">
+			<div class="card-header">
+				<strong>Advanced options</strong>
+				<button class="btn secondary" type="button" data-toggle="run-options">Show</button>
+			</div>
+			<div class="card-body collapsed">
+				<label>
+					<input type="checkbox" name="dry_run" /> Dry run (no inserts)
+				</label>
+				<label>Batch size
+					<input name="batch_size" value="500" />
+				</label>
+				<label>
+					<input type="checkbox" name="fk_checks" checked /> Disable FK checks during load
+				</label>
+			</div>
 		</div>
 	</form>
 </section>
 
 <section class="card">
 	<h3>Progress</h3>
-	{{#if runId}}
 	<div id="progress" data-run-id="{{runId}}">
-		<div class="status">Run ID: {{runId}}</div>
-		<div class="status">Status: {{run.status}}</div>
-		{{#if run.error_message}}
-		<div class="status">Error: {{run.error_message}}</div>
-		{{/if}}
-		<div class="progress-summary" id="progress-summary">
-			<div class="summary-item"><strong>Tables:</strong> <span id="summary-tables">0/0</span></div>
-			<div class="summary-item"><strong>Rows migrated:</strong> <span id="summary-rows">0</span></div>
-			<div class="summary-item"><strong>Duplicates skipped:</strong> <span id="summary-duplicates">0</span></div>
-			<div class="summary-item"><strong>Errors:</strong> <span id="summary-errors">0</span></div>
+		<div class="alert error" id="progress-disconnected" hidden>Disconnected from progress updates. Reload.</div>
+		<div class="alert error" id="run-failure-hint" hidden>Fix the issue, then click Run Migration again.</div>
+		<div class="status" id="run-status-line">Status: {{#if run}}{{run.status}}{{else}}Idle{{/if}}</div>
+		<div class="status" id="current-step">Current step: Not started</div>
+		<div class="overall-progress">
+			<div class="progress-bar">
+				<div class="progress-bar-fill" id="overall-progress-fill"></div>
+			</div>
+			<div class="hint" id="overall-progress-text">0 of 0 tables completed</div>
 		</div>
-		<div id="table-progress" class="table-progress"></div>
-		<div id="progress-log" class="log"></div>
+		<table class="progress-table">
+			<thead>
+				<tr>
+					<th>Table</th>
+					<th>Status</th>
+					<th>Progress</th>
+					<th>Errors</th>
+				</tr>
+			</thead>
+			<tbody id="table-progress-body"></tbody>
+		</table>
+		{{#if runId}}
 		<div class="actions">
 			<a class="btn secondary" href="/results/{{runId}}">View Results</a>
-			<form method="post" action="/run/resume">
-				<input type="hidden" name="run_id" value="{{runId}}" />
-				<button class="btn" type="submit">Resume Run</button>
-			</form>
+		</div>
+		{{/if}}
+	</div>
+	{{#unless runId}}
+	<div class="hint">Start a run to see live progress.</div>
+	{{/unless}}
+</section>
+
+<div class="modal" id="failure-modal" aria-hidden="true" role="dialog">
+	<div class="modal-content modal-stack">
+		<div>
+			<h3>Migration stopped</h3>
+			<p id="failure-message">The migration stopped.</p>
+		</div>
+		<div class="actions">
+			<button class="btn primary" type="button" id="failure-details-btn">View details &amp; how to fix</button>
+			<button class="btn secondary" type="button" data-modal-close="failure-modal">Close</button>
 		</div>
 	</div>
-	{{else}}
-	<div class="hint">Start a run to see live progress.</div>
-	{{/if}}
-</section>
+</div>
+
+<div class="modal" id="fix-modal" aria-hidden="true" role="dialog">
+	<div class="modal-content modal-stack">
+		<div>
+			<h3>How to fix</h3>
+			<p><strong>Table:</strong> <span id="fix-table"></span></p>
+			<p><strong>Likely cause:</strong> <span id="fix-cause"></span></p>
+			<p><strong>Error message:</strong></p>
+			<textarea id="fix-error" class="error-textarea" readonly></textarea>
+			<p><strong>Steps to resolve:</strong></p>
+			<ul id="fix-steps"></ul>
+		</div>
+		<div class="actions">
+			<button class="btn primary" type="button" id="fix-try-again">Try again</button>
+			<button class="btn secondary" type="button" data-modal-close="fix-modal">Close</button>
+		</div>
+	</div>
+</div>
+
+<div class="modal" id="success-modal" aria-hidden="true" role="dialog">
+	<div class="modal-content modal-stack">
+		<div>
+			<h3>Migration completed</h3>
+			<p id="success-summary">All tables migrated successfully.</p>
+		</div>
+		<div class="actions">
+			<button class="btn primary" type="button" data-modal-close="success-modal">Done</button>
+		</div>
+	</div>
+</div>

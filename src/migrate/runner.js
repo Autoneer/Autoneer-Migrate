@@ -5,6 +5,7 @@ const { applyTransform } = require("./mappers");
 const runStore = require("./runStore");
 
 const runEmitters = new Map();
+const runStates = new Map();
 
 function getEmitter(runId) {
 	return runEmitters.get(runId);
@@ -14,6 +15,63 @@ function createEmitter(runId) {
 	const emitter = new EventEmitter();
 	runEmitters.set(runId, emitter);
 	return emitter;
+}
+
+function getRunState(runId) {
+	return runStates.get(runId) || null;
+}
+
+function formatTableLabel(tableName) {
+	if (!tableName) return "";
+	return String(tableName)
+		.replace(/_/g, " ")
+		.toLowerCase()
+		.replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function createRunState(runId, plan, mapping) {
+	const included = (plan || []).filter((step) => step.include);
+	const tables = included.map((step) => ({
+		name: step.table,
+		label: formatTableLabel(step.table),
+		status: "QUEUED",
+		migrated: 0,
+		total: null,
+		errors: 0,
+		lastError: null,
+		mode: step.mode,
+		keyStrategy: step.keyStrategy
+	}));
+	const runState = {
+		runId,
+		startedAt: new Date().toISOString(),
+		finishedAt: null,
+		status: "RUNNING",
+		currentTable: null,
+		tables,
+		totals: { migrated: 0, errors: 0, warnings: 0 }
+	};
+	if (mapping?.profileName || mapping?.name) {
+		runState.label = mapping?.profileName || mapping?.name;
+	}
+	runStates.set(runId, runState);
+	return runState;
+}
+
+function computeTotals(runState) {
+	const totals = { migrated: 0, errors: 0, warnings: 0 };
+	for (const table of runState.tables) {
+		totals.migrated += table.migrated || 0;
+		totals.errors += table.errors || 0;
+	}
+	runState.totals = totals;
+}
+
+function emitRunState(runId, emitter) {
+	const runState = getRunState(runId);
+	if (!runState || !emitter) return;
+	computeTotals(runState);
+	emitter.emit("event", { event: "runState", data: runState });
 }
 
 function resolveMappingForTarget(tableName, mapping) {
@@ -144,18 +202,22 @@ async function runMigrationInternal({
 	const pool = await mysql.connectToSchema(mysqlConfig, schemaName);
 	await mysql.ensureMigrationTables(pool);
 
-	const emitter = createEmitter(runId);
+	const emitter = getEmitter(runId) || createEmitter(runId);
+	const runState = getRunState(runId) || createRunState(runId, plan, mapping);
 	const includedSteps = (plan || []).filter((step) => step.include);
-	const totals = {
-		tables_total: includedSteps.length,
-		tables_done: 0,
-		tables_failed: 0,
-		rows_total_migrated: 0,
-		rows_total_error: 0,
-		rows_total_skipped_duplicates: 0
+	const tableStateMap = new Map(runState.tables.map((table) => [table.name, table]));
+	let runFailed = false;
+	let failureInfo = null;
+	emitRunState(runId, emitter);
+
+	const markRemainingNotRun = (failedTableName) => {
+		for (const table of runState.tables) {
+			if (table.name === failedTableName) continue;
+			if (table.status === "QUEUED" || table.status === "RUNNING") {
+				table.status = "NOT_RUN";
+			}
+		}
 	};
-	emitter.emit("event", { type: "run_started", runId, ...totals });
-	let runHadFailures = false;
 
 	try {
 		const firebirdTables = await firebird.listTables(firebirdConfig);
@@ -167,17 +229,34 @@ async function runMigrationInternal({
 			await pool.query("SET FOREIGN_KEY_CHECKS=0");
 		}
 
-		for (const step of plan) {
-			if (!step.include) continue;
+		for (const step of includedSteps) {
 			const tableName = step.table;
 			const mappingEntry = resolveMappingForTarget(tableName, mapping);
+			const tableState = tableStateMap.get(tableName);
+
+			const failRun = async (errorMessage, hint) => {
+				if (!tableState) return;
+				runFailed = true;
+				failureInfo = { tableName, errorMessage, hint };
+				tableState.status = "FAILED";
+				tableState.lastError = { message: errorMessage, hint };
+				runState.status = "FAILED";
+				runState.currentTable = tableName;
+				runState.finishedAt = new Date().toISOString();
+				markRemainingNotRun(tableName);
+				emitRunState(runId, emitter);
+			};
+
 			if (!mappingEntry) {
-				emitter.emit("event", {
-					type: "table_skipped",
-					table: tableName,
-					reason: "No mapping"
-				});
-				continue;
+				const errorMessage = `No mapping found for target table ${tableName}.`;
+				const hint = "Update your mapping to include this table.";
+				const existingRun = await runStore.getTableRun(pool, runId, tableName);
+				if (!existingRun) {
+					await runStore.startTableRun(pool, runId, tableName, step.mode, step.keyStrategy);
+				}
+				await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
+				await failRun(errorMessage, hint);
+				break;
 			}
 
 			const mappedSource = mappingEntry.sourceTable;
@@ -202,17 +281,8 @@ async function runMigrationInternal({
 					await runStore.startTableRun(pool, runId, tableName, step.mode, step.keyStrategy);
 				}
 				await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
-				runHadFailures = true;
-				totals.tables_failed += 1;
-				totals.tables_done += 1;
-				emitter.emit("event", {
-					type: "table_failed",
-					table: tableName,
-					error: errorMessage,
-					hint: "Check that the Firebird schema contains this table and the mapping is correct.",
-					where: "preflight: source table resolution"
-				});
-				continue;
+				await failRun(errorMessage, "Check that the Firebird schema contains this table and the mapping is correct.");
+				break;
 			}
 
 			const firebirdColumnNames = (await firebird.listColumns(firebirdConfig, sourceTable)).map((c) => c.toLowerCase());
@@ -229,22 +299,17 @@ async function runMigrationInternal({
 					await runStore.startTableRun(pool, runId, tableName, step.mode, step.keyStrategy);
 				}
 				await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
-				runHadFailures = true;
-				totals.tables_failed += 1;
-				totals.tables_done += 1;
-				emitter.emit("event", {
-					type: "table_failed",
-					table: tableName,
-					error: errorMessage,
-					hint: "Update your mapping or target schema so columns match.",
-					where: "preflight: column validation"
-				});
-				continue;
+				await failRun(errorMessage, "Update your mapping or target schema so columns match.");
+				break;
 			}
 
 			if (!tableRun) {
 				await runStore.startTableRun(pool, runId, tableName, step.mode, step.keyStrategy);
 			}
+			tableState.status = "RUNNING";
+			tableState.lastError = null;
+			runState.currentTable = tableName;
+			emitRunState(runId, emitter);
 
 			const primaryKeys = await mysql.getPrimaryKeys(pool, tableName);
 			let targetColumnsForInsert = targetColumns;
@@ -270,15 +335,8 @@ async function runMigrationInternal({
 
 				const totalSource = await firebird.countRows(firebirdConfig, sourceTable);
 				await runStore.updateTableProgress(pool, runId, tableName, { rows_source: totalSource });
-
-				emitter.emit("event", {
-					type: "table_started",
-					table: tableName,
-					sourceTable,
-					rows_source: totalSource,
-					mode: step.mode,
-					keyStrategy: step.keyStrategy
-				});
+				tableState.total = totalSource;
+				emitRunState(runId, emitter);
 
 				const { sql } = buildInsertStatement(
 					tableName,
@@ -464,62 +522,54 @@ async function runMigrationInternal({
 						rows_error: rowsError,
 						rows_skipped_duplicates: rowsSkippedDuplicates
 					});
-
-					const elapsedMs = Date.now() - tableStart;
-					const rateRps = elapsedMs > 0 ? rowsMigrated / (elapsedMs / 1000) : 0;
-					const remaining = Math.max(totalSource - rowsMigrated, 0);
-					const etaSeconds = rateRps > 0 ? remaining / rateRps : null;
-
-					emitter.emit("event", {
-						type: "table_progress",
-						table: tableName,
-						rows_source: totalSource,
-						rows_migrated: rowsMigrated,
-						rows_error: rowsError,
-						rows_skipped_duplicates: rowsSkippedDuplicates,
-						percent: totalSource ? (rowsMigrated / totalSource) * 100 : 0,
-						batchSize,
-						last_offset: offset,
-						elapsedMs,
-						rateRps,
-						etaSeconds
-					});
+					tableState.migrated = rowsMigrated;
+					tableState.errors = rowsError;
+					emitRunState(runId, emitter);
 				}
 
-				await runStore.finishTableRun(pool, runId, tableName, rowsError ? "warning" : "success");
-				if (rowsError > 0) {
-					runHadFailures = true;
-					totals.tables_failed += 1;
-				}
-				totals.tables_done += 1;
-				emitter.emit("event", {
-					type: "table_finished",
-					table: tableName,
-					rows_source: totalSource,
-					rows_migrated: rowsMigrated,
-					rows_error: rowsError,
-					rows_skipped_duplicates: rowsSkippedDuplicates,
-					percent: totalSource ? (rowsMigrated / totalSource) * 100 : 0
-				});
+				await runStore.finishTableRun(pool, runId, tableName, "success");
+				tableState.status = "SUCCESS";
+				emitRunState(runId, emitter);
 			} finally {
 				conn.release();
 			}
+
+				if (runFailed) break;
 		}
 
 		if (fkChecks) {
 			await pool.query("SET FOREIGN_KEY_CHECKS=1");
 		}
 
-		// determine final status based on recorded error_count (ZERO errors => SUCCESS)
-		const runInfo = await runStore.getRun(pool, runId);
-		const errorCount = runInfo ? runInfo.error_count || 0 : 0;
-		const finalStatus = errorCount === 0 ? "SUCCESS" : "FAILED";
-		await runStore.finishRun(pool, runId, finalStatus);
-		emitter.emit("event", { type: "run_finished", runId, status: finalStatus, error_count: errorCount, ...totals });
+			if (runFailed) {
+				await runStore.finishRun(pool, runId, "FAILED", failureInfo?.errorMessage || null);
+				emitRunState(runId, emitter);
+			} else {
+				runState.status = "SUCCESS";
+				runState.finishedAt = new Date().toISOString();
+				await runStore.finishRun(pool, runId, "SUCCESS");
+				emitRunState(runId, emitter);
+			}
 	} catch (err) {
 		const errorMessage = formatDbError(err, { firebirdConfig });
-		await runStore.finishRun(pool, runId, "FAILED", errorMessage);
-		emitter.emit("event", { type: "run_failed", runId, error: errorMessage, hint: getDbErrorHint(errorMessage), ...totals });
+			const hint = getDbErrorHint(errorMessage);
+			runState.status = "FAILED";
+			runState.finishedAt = new Date().toISOString();
+			if (runState.currentTable) {
+				const tableState = tableStateMap.get(runState.currentTable);
+				if (tableState) {
+					tableState.status = "FAILED";
+					tableState.lastError = { message: errorMessage, hint };
+				}
+			try {
+				await runStore.finishTableRun(pool, runId, runState.currentTable, "failed", errorMessage);
+			} catch (finishErr) {
+				// ignore
+			}
+			}
+			markRemainingNotRun(runState.currentTable);
+			await runStore.finishRun(pool, runId, "FAILED", errorMessage);
+			emitRunState(runId, emitter);
 	} finally {
 		await pool.end();
 	}
@@ -554,35 +604,10 @@ async function startMigration({
 		mappingProfileId: mapping?.profileId || null
 	});
 	await pool.end();
+	createEmitter(runId);
+	createRunState(runId, plan, mapping);
+	emitRunState(runId, getEmitter(runId));
 
-	setImmediate(() => {
-		runMigrationInternal({
-			firebirdConfig,
-			mysqlConfig,
-			schemaName,
-			plan,
-			mapping,
-			dryRun,
-			batchSize,
-			fkChecks,
-			runId
-		});
-	});
-
-	return { runId };
-}
-
-async function resumeMigration({
-	firebirdConfig,
-	mysqlConfig,
-	schemaName,
-	plan,
-	mapping,
-	dryRun,
-	batchSize,
-	fkChecks,
-	runId
-}) {
 	setImmediate(() => {
 		runMigrationInternal({
 			firebirdConfig,
@@ -602,6 +627,6 @@ async function resumeMigration({
 
 module.exports = {
 	startMigration,
-	resumeMigration,
-	getEmitter
+	getEmitter,
+	getRunState
 };

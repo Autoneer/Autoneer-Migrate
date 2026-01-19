@@ -1,6 +1,6 @@
 const express = require("express");
 const { state } = require("../config/state");
-const { startMigration, resumeMigration } = require("../migrate/runner");
+const { startMigration } = require("../migrate/runner");
 const mysql = require("../db/mysql");
 const runStore = require("../migrate/runStore");
 const firebird = require("../db/firebird");
@@ -45,6 +45,10 @@ router.post("/run/start", async (req, res) => {
 	const { error: configError, resolved } = validateFirebirdConfig();
 	// console.log("Firebird run config:", firebird.maskFirebirdConfig(resolved || state.firebird));
 	if (configError) {
+		if (req.accepts(["html", "json"]) === "json") {
+			res.status(400).json({ error: configError });
+			return;
+		}
 		res.render("run", {
 			plan: state.plan || [],
 			runId: null,
@@ -70,89 +74,10 @@ router.post("/run/start", async (req, res) => {
 		fkChecks
 	});
 
-	res.redirect(`/run?runId=${runId}`);
-});
-
-router.post("/run/rerun", async (req, res) => {
-	const { error: configError, resolved } = validateFirebirdConfig();
-	// console.log("Firebird run config:", firebird.maskFirebirdConfig(resolved || state.firebird));
-	if (configError) {
-		res.render("run", {
-			plan: state.plan || [],
-			runId: null,
-			run: null,
-			error: configError,
-			currentStep: "run"
-		});
+	if (req.accepts(["html", "json"]) === "json") {
+		res.json({ runId });
 		return;
 	}
-
-	const runId = req.body.run_id;
-	const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
-	await mysql.ensureMigrationTables(pool);
-	const tables = await runStore.getRunTables(pool, runId);
-	await pool.end();
-
-	const failed = tables.filter((t) => t.status !== "success");
-	const plan = failed.map((t) => ({
-		table: t.table_name,
-		include: true,
-		mode: t.mode,
-		keyStrategy: t.key_strategy
-	}));
-
-	const { runId: newRunId } = await startMigration({
-		firebirdConfig: resolved,
-		mysqlConfig: state.mysql,
-		schemaName: state.schemaName,
-		plan,
-		mapping: state.mapping || {},
-		dryRun: false,
-		batchSize: 500,
-		fkChecks: true
-	});
-
-	res.redirect(`/run?runId=${newRunId}`);
-});
-
-router.post("/run/resume", async (req, res) => {
-	const { error: configError, resolved } = validateFirebirdConfig();
-	// console.log("Firebird run config:", firebird.maskFirebirdConfig(resolved || state.firebird));
-	if (configError) {
-		res.render("run", {
-			plan: state.plan || [],
-			runId: null,
-			run: null,
-			error: configError,
-			currentStep: "run"
-		});
-		return;
-	}
-
-	const runId = req.body.run_id;
-	const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
-	await mysql.ensureMigrationTables(pool);
-	const run = await runStore.getRun(pool, runId);
-	await pool.end();
-
-	if (!run) {
-		res.redirect("/run");
-		return;
-	}
-
-	const plan = run.plan_json ? JSON.parse(run.plan_json) : state.plan || [];
-
-	await resumeMigration({
-		firebirdConfig: resolved,
-		mysqlConfig: state.mysql,
-		schemaName: state.schemaName,
-		plan,
-		mapping: state.mapping || {},
-		dryRun: !!run.dry_run,
-		batchSize: run.batch_size || 500,
-		fkChecks: !!run.fk_checks,
-		runId
-	});
 
 	res.redirect(`/run?runId=${runId}`);
 });
