@@ -6,6 +6,7 @@ const runStore = require("./runStore");
 
 const runEmitters = new Map();
 const runStates = new Map();
+const runAbortFlags = new Map();
 
 function getEmitter(runId) {
 	return runEmitters.get(runId);
@@ -19,6 +20,17 @@ function createEmitter(runId) {
 
 function getRunState(runId) {
 	return runStates.get(runId) || null;
+}
+
+function requestAbort(runId, reason) {
+	runAbortFlags.set(runId, { reason: reason || "Migration stopped" });
+}
+
+function checkAbort(runId) {
+	const abortInfo = runAbortFlags.get(runId);
+	if (abortInfo) {
+		throw new Error(abortInfo.reason || "Migration stopped");
+	}
 }
 
 function formatTableLabel(tableName) {
@@ -209,6 +221,11 @@ async function runMigrationInternal({
 	let runFailed = false;
 	let failureInfo = null;
 	emitRunState(runId, emitter);
+	const totals = {
+		rows_total_migrated: 0,
+		rows_total_error: 0,
+		rows_total_skipped_duplicates: 0
+	};
 
 	const markRemainingNotRun = (failedTableName) => {
 		for (const table of runState.tables) {
@@ -220,6 +237,7 @@ async function runMigrationInternal({
 	};
 
 	try {
+		checkAbort(runId);
 		const firebirdTables = await firebird.listTables(firebirdConfig);
 		const firebirdTableMap = new Map(
 			firebirdTables.map((name) => [name.toLowerCase(), name])
@@ -230,6 +248,7 @@ async function runMigrationInternal({
 		}
 
 		for (const step of includedSteps) {
+			checkAbort(runId);
 			const tableName = step.table;
 			const mappingEntry = resolveMappingForTarget(tableName, mapping);
 			const tableState = tableStateMap.get(tableName);
@@ -347,6 +366,7 @@ async function runMigrationInternal({
 				);
 
 				while (offset < totalSource) {
+					checkAbort(runId);
 					const batch = await firebird.fetchBatch(
 						firebirdConfig,
 						sourceTable,
@@ -534,43 +554,44 @@ async function runMigrationInternal({
 				conn.release();
 			}
 
-				if (runFailed) break;
+			if (runFailed) break;
 		}
 
 		if (fkChecks) {
 			await pool.query("SET FOREIGN_KEY_CHECKS=1");
 		}
 
-			if (runFailed) {
-				await runStore.finishRun(pool, runId, "FAILED", failureInfo?.errorMessage || null);
-				emitRunState(runId, emitter);
-			} else {
-				runState.status = "SUCCESS";
-				runState.finishedAt = new Date().toISOString();
-				await runStore.finishRun(pool, runId, "SUCCESS");
-				emitRunState(runId, emitter);
-			}
+		if (runFailed) {
+			await runStore.finishRun(pool, runId, "FAILED", failureInfo?.errorMessage || null);
+			emitRunState(runId, emitter);
+		} else {
+			runState.status = "SUCCESS";
+			runState.finishedAt = new Date().toISOString();
+			await runStore.finishRun(pool, runId, "SUCCESS");
+			emitRunState(runId, emitter);
+		}
 	} catch (err) {
 		const errorMessage = formatDbError(err, { firebirdConfig });
-			const hint = getDbErrorHint(errorMessage);
-			runState.status = "FAILED";
-			runState.finishedAt = new Date().toISOString();
-			if (runState.currentTable) {
-				const tableState = tableStateMap.get(runState.currentTable);
-				if (tableState) {
-					tableState.status = "FAILED";
-					tableState.lastError = { message: errorMessage, hint };
-				}
+		const hint = getDbErrorHint(errorMessage);
+		runState.status = "FAILED";
+		runState.finishedAt = new Date().toISOString();
+		if (runState.currentTable) {
+			const tableState = tableStateMap.get(runState.currentTable);
+			if (tableState) {
+				tableState.status = "FAILED";
+				tableState.lastError = { message: errorMessage, hint };
+			}
 			try {
 				await runStore.finishTableRun(pool, runId, runState.currentTable, "failed", errorMessage);
 			} catch (finishErr) {
 				// ignore
 			}
-			}
-			markRemainingNotRun(runState.currentTable);
-			await runStore.finishRun(pool, runId, "FAILED", errorMessage);
-			emitRunState(runId, emitter);
+		}
+		markRemainingNotRun(runState.currentTable);
+		await runStore.finishRun(pool, runId, "FAILED", errorMessage);
+		emitRunState(runId, emitter);
 	} finally {
+		runAbortFlags.delete(runId);
 		await pool.end();
 	}
 
@@ -628,5 +649,6 @@ async function startMigration({
 module.exports = {
 	startMigration,
 	getEmitter,
-	getRunState
+	getRunState,
+	requestAbort
 };

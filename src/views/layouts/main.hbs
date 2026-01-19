@@ -10,10 +10,17 @@
 	<link rel="stylesheet" href="/public/css/theme-github.css" />
 </head>
 
-<body>
+<body data-page="{{currentStep}}">
 	<div class="app">
 		{{> sidebar currentStep=currentStep}}
 		<main class="content">
+			<div class="topbar">
+				<div class="conn-status" id="conn-status" role="button" tabindex="0" aria-label="Connection status">
+					<span class="conn-title">Connection Status</span>
+					<span id="conn-badge-firebird" class="conn-badge">Firebird: Checking...</span>
+					<span id="conn-badge-mysql" class="conn-badge">MySQL: Checking...</span>
+				</div>
+			</div>
 			{{#if message}}
 			<div class="alert success">{{message}}</div>
 			{{/if}}
@@ -23,7 +30,24 @@
 			{{{body}}}
 		</main>
 	</div>
+	<div class="modal" id="conn-modal" aria-hidden="true" role="dialog">
+		<div class="modal-content modal-stack">
+			<div>
+				<h3>Connection details</h3>
+				<p><strong>Firebird:</strong> <span id="conn-modal-firebird-status"></span></p>
+				<p class="hint" id="conn-modal-firebird-details"></p>
+				<p><strong>MySQL:</strong> <span id="conn-modal-mysql-status"></span></p>
+				<p class="hint" id="conn-modal-mysql-details"></p>
+				<p class="hint">Last checked: <span id="conn-last-checked">-</span></p>
+			</div>
+			<div class="actions">
+				<button class="btn primary" type="button" id="conn-recheck-btn">Recheck now</button>
+				<button class="btn secondary" type="button" data-modal-close="conn-modal">Close</button>
+			</div>
+		</div>
+	</div>
 	<script src="/public/js/app.js"></script>
+	<script src="/public/js/connectionStatus.js"></script>
 </body>
 
 </html>

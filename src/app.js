@@ -11,6 +11,7 @@ const runRoutes = require("./routes/run");
 const resultsRoutes = require("./routes/results");
 const eventsRoutes = require("./routes/events");
 const migrationRoutes = require("./routes/migration");
+const healthRoutes = require("./routes/health");
 
 const app = express();
 
@@ -57,6 +58,7 @@ app.use(migrationRoutes);
 app.use(runRoutes);
 app.use(resultsRoutes);
 app.use(eventsRoutes);
+app.use(healthRoutes);
 
 app.use((err, req, res, next) => {
 	const message = err?.message || "Unexpected error";

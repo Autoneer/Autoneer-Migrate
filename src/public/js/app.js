@@ -54,6 +54,16 @@ if (progressEl) {
 
 	const buildLikelyCause = (message) => {
 		const lower = String(message || "").toLowerCase();
+		if (lower.includes("connection lost")) {
+			return {
+				cause: "The connection to the database was interrupted.",
+				steps: [
+					"Confirm the database service is running.",
+					"Confirm the host, port, and credentials are correct.",
+					"Confirm network connectivity, then recheck connections."
+				]
+			};
+		}
 		if (lower.includes("access denied")) {
 			return {
 				cause: "Your MySQL user does not have permission to write to this table.",
@@ -125,9 +135,8 @@ if (progressEl) {
 			skipped: "Skipped",
 			not_run: "Not run"
 		};
-		statusEl.innerHTML = `<span class="status-badge ${status}">${statusTextMap[status] || "Queued"}${
-			status === "running" ? " <span class=\"spinner\"></span>" : ""
-		}</span>`;
+		statusEl.innerHTML = `<span class="status-badge ${status}">${statusTextMap[status] || "Queued"}${status === "running" ? " <span class=\"spinner\"></span>" : ""
+			}</span>`;
 		const progressEl = row.querySelector(".table-progress");
 		if (table.total) {
 			progressEl.textContent = `${formatNumber(table.migrated)} / ${formatNumber(table.total)}`;

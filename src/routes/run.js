@@ -1,6 +1,6 @@
 const express = require("express");
 const { state } = require("../config/state");
-const { startMigration } = require("../migrate/runner");
+const { startMigration, requestAbort } = require("../migrate/runner");
 const mysql = require("../db/mysql");
 const runStore = require("../migrate/runStore");
 const firebird = require("../db/firebird");
@@ -80,6 +80,17 @@ router.post("/run/start", async (req, res) => {
 	}
 
 	res.redirect(`/run?runId=${runId}`);
+});
+
+router.post("/run/abort", (req, res) => {
+	const runId = req.body?.runId || req.body?.run_id;
+	const reason = req.body?.reason || "Migration stopped";
+	if (!runId) {
+		res.status(400).json({ ok: false, error: "runId is required" });
+		return;
+	}
+	requestAbort(runId, reason);
+	res.json({ ok: true });
 });
 
 module.exports = router;

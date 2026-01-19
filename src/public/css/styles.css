@@ -67,6 +67,51 @@ body {
 	padding: 24px;
 }
 
+.topbar {
+	display: flex;
+	justify-content: flex-end;
+	margin-bottom: 12px;
+}
+
+.conn-status {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	padding: 8px 10px;
+	border: 1px solid var(--border-subtle);
+	border-radius: 10px;
+	background: #ffffff;
+	cursor: pointer;
+}
+
+.conn-title {
+	font-weight: 600;
+	color: var(--muted);
+}
+
+.conn-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 8px;
+	border-radius: 999px;
+	font-size: 12px;
+	border: 1px solid var(--border-subtle);
+	background: #f6f8fa;
+}
+
+.conn-badge.connected::before {
+	content: "✔";
+}
+
+.conn-badge.disconnected::before {
+	content: "!";
+}
+
+.conn-badge.not_configured::before {
+	content: "•";
+}
+
 .page-header h1 {
 	margin: 0 0 16px 0;
 }
