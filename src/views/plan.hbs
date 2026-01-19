@@ -1,0 +1,80 @@
+<section class="card collapsible" id="schema-compare">
+	<div class="card-header">
+		<h2>Schemas side-by-side</h2>
+		<button class="btn secondary" type="button" data-toggle="schema-compare">Collapse</button>
+	</div>
+	<div class="card-body">
+		<table>
+			<thead>
+				<tr>
+					<th>Firebird table</th>
+					<th>Rows</th>
+					<th>MySQL table</th>
+				</tr>
+			</thead>
+			<tbody>
+				{{#each schemaPairs}}
+				<tr>
+					<td>{{firebird}}</td>
+					<td>{{firebirdCount}}</td>
+					<td>{{mysql}}</td>
+				</tr>
+				{{/each}}
+			</tbody>
+		</table>
+	</div>
+</section>
+
+<section class="card">
+	<h2>Migration plan</h2>
+	<div class="actions">
+		<button class="btn secondary" type="button" id="check-all-tables">Check all</button>
+		<button class="btn secondary" type="button" id="uncheck-all-tables">Uncheck all</button>
+	</div>
+	<form method="post" action="/plan/save">
+		<div class="actions">
+			<a class="btn secondary" href="/setup">Back</a>
+			<button class="btn primary" type="submit">Save & Next: Mapping</button>
+		</div>
+		<table>
+			<thead>
+				<tr>
+					<th>Include</th>
+					<th>Table</th>
+					<th>Mode</th>
+					<th>Key Strategy</th>
+				</tr>
+			</thead>
+			<tbody>
+				{{#each plan}}
+				<tr>
+					<td>
+						<input type="checkbox" name="include_{{table}}" {{#if include}}checked{{/if}} />
+						<input type="hidden" name="table" value="{{table}}" />
+					</td>
+					<td>{{table}}</td>
+					<td>
+						<select name="mode">
+							<option value="INSERT" {{#if (eq mode 'INSERT' )}}selected{{/if}}>INSERT</option>
+							<option value="UPSERT" {{#if (eq mode 'UPSERT' )}}selected{{/if}}>UPSERT</option>
+							<option value="TRUNCATE+INSERT" {{#if (eq mode 'TRUNCATE+INSERT' )}}selected{{/if}}>
+								TRUNCATE+INSERT</option>
+						</select>
+					</td>
+					<td>
+						<select name="keyStrategy">
+							<option value="preserve" {{#if (eq keyStrategy 'preserve' )}}selected{{/if}}>Preserve IDs
+							</option>
+							<option value="rekey" {{#if (eq keyStrategy 'rekey' )}}selected{{/if}}>Re-key IDs</option>
+						</select>
+					</td>
+				</tr>
+				{{/each}}
+			</tbody>
+		</table>
+		<div class="actions">
+			<a class="btn secondary" href="/setup">Back</a>
+			<button class="btn primary" type="submit">Save & Next: Mapping</button>
+		</div>
+	</form>
+</section>

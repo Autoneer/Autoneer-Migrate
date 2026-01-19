@@ -1,0 +1,9 @@
+{
+	"name": "Autoneer Migration Wizard",
+	"short_name": "AutoneerMigrator",
+	"start_url": "/setup",
+	"display": "standalone",
+	"background_color": "#0b1120",
+	"theme_color": "#0b1120",
+	"icons": []
+}

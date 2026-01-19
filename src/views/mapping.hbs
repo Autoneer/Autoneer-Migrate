@@ -1,0 +1,148 @@
+<section class="card">
+	<h2>Mapping definitions</h2>
+	<form method="post" action="/mapping/save">
+		<input type="hidden" name="profile_id" value="{{activeMappingProfileId}}" />
+		<label>Profile name (optional)
+			<input name="profile_name" placeholder="My mapping profile" value="{{activeMappingProfileName}}" />
+		</label>
+		<label>
+			<input type="checkbox" name="save_as_new" />
+			Save as new profile
+		</label>
+		<label>Mapping JSON</label>
+		<textarea name="mapping_json" class="code" rows="24" style="width: 100%;">{{mappingJson}}</textarea>
+		<div class="actions">
+			<a class="btn secondary" href="/plan">Back</a>
+			<button class="btn primary" type="submit">Save & Next: Run</button>
+		</div>
+	</form>
+</section>
+
+<section class="card">
+	<h3>Mapping summary</h3>
+	{{#each mappingTables}}
+	<h4>{{source}} → {{target}}</h4>
+	<table>
+		<thead>
+			<tr>
+				<th>Source column</th>
+				<th>Target column</th>
+				<th>Transform</th>
+				<th>Default</th>
+				<th>Lookup</th>
+			</tr>
+		</thead>
+		<tbody>
+			{{#each columns}}
+			<tr>
+				<td>{{source}}</td>
+				<td>{{target}}</td>
+				<td>{{transform}}</td>
+				<td>{{defaultValue}}</td>
+				<td>{{lookupTable}}</td>
+			</tr>
+			{{/each}}
+		</tbody>
+	</table>
+	{{/each}}
+</section>
+
+<section class="card">
+	<h3>Profiles</h3>
+	{{#if profiles.length}}
+	<table>
+		<thead>
+			<tr>
+				<th>Name</th>
+				<th>Created</th>
+				<th>Actions</th>
+			</tr>
+		</thead>
+		<tbody>
+			{{#each profiles}}
+			<tr>
+				<td>
+					{{name}}
+					{{#if (eq ../defaultMappingProfileId id)}}
+					<span class="pill">Default</span>
+					{{/if}}
+					{{#if (eq ../activeMappingProfileId id)}}
+					<span class="pill">Loaded</span>
+					{{/if}}
+				</td>
+				<td>{{created_at}}</td>
+				<td>
+					<div class="actions">
+						<a class="btn" href="/mapping/profile/{{id}}">Load</a>
+						<form method="post" action="/mapping/profile/{{id}}/default">
+							<button class="btn secondary" type="submit">Set Default</button>
+						</form>
+						<form method="post" action="/mapping/profile/{{id}}/delete"
+							onsubmit="return confirm('Delete this profile?');">
+							<button class="btn" type="submit">Delete</button>
+						</form>
+					</div>
+				</td>
+			</tr>
+			{{/each}}
+		</tbody>
+	</table>
+	{{else}}
+	<div class="hint">No saved profiles yet.</div>
+	{{/if}}
+	<div class="actions">
+		<form method="get" action="/mapping/export">
+			<button class="btn secondary" type="submit">Export JSON</button>
+		</form>
+	</div>
+</section>
+
+<section class="card">
+	<h3>Import mapping JSON</h3>
+	<form method="post" action="/mapping/import">
+		<textarea name="mapping_json" class="code" rows="10" placeholder="Paste mapping JSON here"></textarea>
+		<div class="actions">
+			<button class="btn" type="submit">Import</button>
+		</div>
+	</form>
+</section>
+
+<section class="card">
+	<h3>Mapping mismatches</h3>
+	{{#if mismatchRows.length}}
+	<form method="post" action="/mapping/resolve">
+		<table>
+			<thead>
+				<tr>
+					<th>Source table</th>
+					<th>Missing source column</th>
+					<th>Target column</th>
+					<th>Resolve to</th>
+				</tr>
+			</thead>
+			<tbody>
+				{{#each mismatchRows}}
+				<tr>
+					<td>{{sourceTable}}</td>
+					<td>{{sourceColumn}}</td>
+					<td>{{targetColumn}}</td>
+					<td>
+						<select name="resolve__{{mappingKey}}__{{sourceColumn}}">
+							<option value="__omit__">Omit this field</option>
+							{{#each availableSourceColumns}}
+							<option value="{{this}}">{{this}}</option>
+							{{/each}}
+						</select>
+					</td>
+				</tr>
+				{{/each}}
+			</tbody>
+		</table>
+		<div class="actions">
+			<button class="btn primary" type="submit">Apply fixes</button>
+		</div>
+	</form>
+	{{else}}
+	<div class="hint">No mismatches detected for the selected tables.</div>
+	{{/if}}
+</section>

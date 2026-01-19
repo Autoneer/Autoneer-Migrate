@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Autoneer Migration Wizard</title>
+	<link rel="manifest" href="/public/manifest.webmanifest" />
+	<link rel="stylesheet" href="/public/css/styles.css" />
+</head>
+
+<body>
+	<div class="app">
+		{{> sidebar currentStep=currentStep}}
+		<main class="content">
+			<header class="page-header">
+				<h1>Autoneer Migration Wizard</h1>
+			</header>
+			{{#if message}}
+			<div class="alert success">{{message}}</div>
+			{{/if}}
+			{{#if error}}
+			<div class="alert error">{{error}}</div>
+			{{/if}}
+			{{{body}}}
+		</main>
+	</div>
+	<script src="/public/js/app.js"></script>
+</body>
+
+</html>

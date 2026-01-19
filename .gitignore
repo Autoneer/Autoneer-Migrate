@@ -1,0 +1,21 @@
+# Node modules
+node_modules/
+
+# Environment files
+.env
+.env.*
+
+# OS and archive
+.DS_Store
+Autoneer-Migrate.7z
+
+# Logs
+npm-debug.log
+yarn-error.log
+
+# Ignore local VS Code settings
+.vscode/
+
+# Ignore build artifacts
+dist/
+coverage/

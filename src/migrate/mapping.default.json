@@ -1,0 +1,425 @@
+{
+	"tables": {
+		"CUSTOMER": {
+			"target": "customers",
+			"mode": "INSERT",
+			"keyStrategy": "preserve",
+			"columns": {
+				"CID": {
+					"target": "cid"
+				},
+				"NAME": {
+					"target": "name",
+					"transform": "trim"
+				},
+				"SURNAME": {
+					"target": "surname",
+					"transform": "trim"
+				},
+				"ADDRESS_1": {
+					"target": "address_1",
+					"transform": "trim"
+				},
+				"ADDRESS_2": {
+					"target": "address_2",
+					"transform": "trim"
+				},
+				"ADDRESS_3": {
+					"target": "address_3",
+					"transform": "trim"
+				},
+				"ADDRESS_4": {
+					"target": "address_4",
+					"transform": "trim"
+				},
+				"ADDRESS_CODE": {
+					"target": "address_code",
+					"transform": "trim"
+				},
+				"TEL_HOME": {
+					"target": "telnr",
+					"transform": "trim"
+				},
+				"TEL_WORK": {
+					"target": "tel_work",
+					"transform": "trim"
+				},
+				"MOBILE": {
+					"target": "mobile",
+					"transform": "trim"
+				},
+				"EMAIL": {
+					"target": "email",
+					"transform": "trim"
+				},
+				"STATUS": {
+					"target": "status",
+					"transform": "trim"
+				},
+				"CONTACT_PERSON": {
+					"target": "contact_person",
+					"transform": "trim"
+				},
+				"DISCOUNT": {
+					"target": "discount",
+					"transform": "trim"
+				},
+				"TITLE": {
+					"target": "title",
+					"transform": "trim"
+				},
+				"JOBS": {
+					"target": "jobs",
+					"transform": "toNumber"
+				},
+				"IDNR": {
+					"target": "idnr",
+					"transform": "trim"
+				},
+				"CUSTOMER_TYPE": {
+					"target": "customer_type",
+					"transform": "trim"
+				},
+				"CONTRACT_NAME": {
+					"target": "contract_name",
+					"transform": "trim"
+				},
+				"CUST_LEVEL": {
+					"target": "cust_level",
+					"transform": "trim"
+				},
+				"TAXID": {
+					"target": "taxid",
+					"transform": "trim"
+				},
+				"SIMPLYACCOUNT": {
+					"target": "simplyaccount",
+					"transform": "toNumber"
+				},
+				"SIID": {
+					"target": "siid",
+					"transform": "toNumber"
+				},
+				"BALANCE": {
+					"target": "balance",
+					"transform": "toNumber"
+				}
+			}
+		},
+		"SUPPLIERS": {
+			"target": "suppliers",
+			"mode": "INSERT",
+			"keyStrategy": "preserve",
+			"columns": {
+				"SUPPID": {
+					"target": "suppid"
+				},
+				"NAME": {
+					"target": "supplier",
+					"transform": "trim"
+				},
+				"ADDRESS_1": {
+					"target": "address_1",
+					"transform": "trim"
+				},
+				"ADDRESS_2": {
+					"target": "address_2",
+					"transform": "trim"
+				},
+				"ADDRESS_3": {
+					"target": "address_3",
+					"transform": "trim"
+				},
+				"ADDRESS_4": {
+					"target": "address_4",
+					"transform": "trim"
+				},
+				"ADDRESS_CODE": {
+					"target": "address_code",
+					"transform": "trim"
+				},
+				"TELNR": {
+					"target": "telnr",
+					"transform": "trim"
+				},
+				"EMAIL": {
+					"target": "email",
+					"transform": "trim"
+				},
+				"CONTACT_PERSON": {
+					"target": "contactperson",
+					"transform": "trim"
+				},
+				"VATNR": {
+					"target": "vatnr",
+					"transform": "trim"
+				}
+			}
+		},
+		"STOCK": {
+			"target": "stock",
+			"mode": "INSERT",
+			"keyStrategy": "preserve",
+			"columns": {
+				"STOCK_ID": {
+					"target": "stock_id"
+				},
+				"DESCRIPTION": {
+					"target": "description",
+					"transform": "trim"
+				},
+				"PART_NR": {
+					"target": "partnr",
+					"transform": "trim"
+				},
+				"COST_PRICE": {
+					"target": "cost_price",
+					"transform": "toNumber"
+				},
+				"SALESPRICE": {
+					"target": "salesprice",
+					"transform": "toNumber"
+				},
+				"QTY": {
+					"target": "quantity",
+					"transform": "toNumber"
+				},
+				"STATUS": {
+					"target": "status",
+					"transform": "trim"
+				}
+			}
+		},
+		"STAFF": {
+			"target": "staff",
+			"mode": "INSERT",
+			"keyStrategy": "preserve",
+			"columns": {
+				"STAFFID": {
+					"target": "staffid"
+				},
+				"NAME": {
+					"target": "name",
+					"transform": "trim"
+				},
+				"SURNAME": {
+					"target": "surname",
+					"transform": "trim"
+				},
+				"STATUS": {
+					"target": "status",
+					"transform": "trim"
+				},
+				"EMAIL": {
+					"target": "email",
+					"transform": "trim"
+				},
+				"MOBILE": {
+					"target": "mobile",
+					"transform": "trim"
+				}
+			}
+		},
+		"JOB_INFORMATION": {
+			"target": "job_information",
+			"mode": "INSERT",
+			"keyStrategy": "preserve",
+			"columns": {
+				"JOB_NUMBER": {
+					"target": "job_number"
+				},
+				"CID": {
+					"target": "cid"
+				},
+				"STAFF_ID": {
+					"target": "staff_id"
+				},
+				"JOB_DATE": {
+					"target": "job_date",
+					"transform": "toDate"
+				},
+				"STATUS": {
+					"target": "status",
+					"transform": "trim"
+				},
+				"TOTAL": {
+					"target": "total",
+					"transform": "toNumber"
+				}
+			}
+		},
+		"INVOICES": {
+			"target": "invoices",
+			"mode": "INSERT",
+			"keyStrategy": "preserve",
+			"columns": {
+				"INVOICE_NR": {
+					"target": "invoice_nr"
+				},
+				"CID": {
+					"target": "cid"
+				},
+				"IDATE": {
+					"target": "idate",
+					"transform": "toDate"
+				},
+				"STATUS": {
+					"target": "status",
+					"transform": "trim"
+				},
+				"TOTAL": {
+					"target": "total",
+					"transform": "toNumber"
+				},
+				"TOTALINCLVAT": {
+					"target": "totalinclvat",
+					"transform": "toNumber"
+				}
+			}
+		},
+		"INVOICE_ITEMS": {
+			"target": "invoice_items",
+			"mode": "INSERT",
+			"keyStrategy": "preserve",
+			"columns": {
+				"ITEM_ID": {
+					"target": "item_id"
+				},
+				"INVOICE_NR": {
+					"target": "invoice_nr"
+				},
+				"STOCK_ID": {
+					"target": "stock_id"
+				},
+				"DESCRIPTION": {
+					"target": "description",
+					"transform": "trim"
+				},
+				"QTY": {
+					"target": "qty",
+					"transform": "toNumber"
+				},
+				"PRICE": {
+					"target": "price",
+					"transform": "toNumber"
+				},
+				"TOTAL": {
+					"target": "total",
+					"transform": "toNumber"
+				}
+			}
+		},
+		"SPARES_USED": {
+			"target": "spares_used",
+			"mode": "INSERT",
+			"keyStrategy": "preserve",
+			"columns": {
+				"SPARE_ID": {
+					"target": "spare_id"
+				},
+				"JOB_NUMBER": {
+					"target": "job_number"
+				},
+				"STOCK_ID": {
+					"target": "stock_id"
+				},
+				"QTY": {
+					"target": "qty",
+					"transform": "toNumber"
+				}
+			}
+		},
+		"WORK_DONE": {
+			"target": "work_done",
+			"mode": "INSERT",
+			"keyStrategy": "preserve",
+			"columns": {
+				"WORK_ID": {
+					"target": "work_id"
+				},
+				"JOB_NUMBER": {
+					"target": "job_number"
+				},
+				"DESCRIPTION": {
+					"target": "description",
+					"transform": "trim"
+				},
+				"TOTAL": {
+					"target": "total",
+					"transform": "toNumber"
+				}
+			}
+		},
+		"PAYMENTS": {
+			"target": "payments",
+			"mode": "INSERT",
+			"keyStrategy": "preserve",
+			"columns": {
+				"PAYID": {
+					"target": "payid"
+				},
+				"INVOICE_NR": {
+					"target": "invoice_nr"
+				},
+				"AMOUNT": {
+					"target": "amount",
+					"transform": "toNumber"
+				},
+				"PAYDATE": {
+					"target": "paydate",
+					"transform": "toDate"
+				},
+				"PAYMETHOD": {
+					"target": "paymethod",
+					"transform": "trim"
+				}
+			}
+		},
+		"COMPANY": {
+			"target": "company",
+			"mode": "INSERT",
+			"keyStrategy": "preserve",
+			"columns": {
+				"COMPANY_ID": {
+					"target": "company_id"
+				},
+				"COMPANY_NAME": {
+					"target": "company_name",
+					"transform": "trim"
+				},
+				"ADDRESS_1": {
+					"target": "address_1",
+					"transform": "trim"
+				},
+				"ADDRESS_2": {
+					"target": "address_2",
+					"transform": "trim"
+				},
+				"ADDRESS_3": {
+					"target": "address_3",
+					"transform": "trim"
+				},
+				"ADDRESS_4": {
+					"target": "address_4",
+					"transform": "trim"
+				},
+				"ADDRESS_CODE": {
+					"target": "address_code",
+					"transform": "trim"
+				},
+				"TELNR": {
+					"target": "telnr",
+					"transform": "trim"
+				},
+				"EMAIL": {
+					"target": "email",
+					"transform": "trim"
+				},
+				"VATNR": {
+					"target": "vatnr",
+					"transform": "trim"
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,24 @@
+{
+	"name": "autoneer-migrate",
+	"version": "1.0.0",
+	"private": true,
+	"type": "commonjs",
+	"scripts": {
+		"dev": "nodemon src/app.js",
+		"start": "node src/app.js",
+		"diagnostics": "node src/scripts/diagnostics.js"
+	},
+	"dependencies": {
+		"body-parser": "^1.20.3",
+		"csv-stringify": "^6.5.2",
+		"dotenv": "^16.4.7",
+		"express": "^4.19.2",
+		"express-handlebars": "^7.1.3",
+		"mysql2": "^3.11.5",
+		"node-firebird": "^1.1.9",
+		"uuid": "^9.0.1"
+	},
+	"devDependencies": {
+		"nodemon": "^3.1.7"
+	}
+}

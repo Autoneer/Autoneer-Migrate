@@ -1,0 +1,101 @@
+<section class="card">
+	<h2>Connections</h2>
+	<form method="post" id="setup-form">
+		<div class="grid">
+			<div>
+				<h3>Firebird</h3>
+				<label>Host
+					<input name="fb_host" value="{{firebird.host}}" />
+				</label>
+				<label>Port
+					<input name="fb_port" value="{{firebird.port}}" />
+				</label>
+				<label>Database path
+					<input name="fb_database" value="{{firebird.database}}" />
+				</label>
+				<label>User
+					<input name="fb_user" value="{{firebird.user}}" />
+				</label>
+				<label>Password
+					<input name="fb_password" type="password" value="" autocomplete="new-password" />
+				</label>
+				<label>
+					<input type="checkbox" name="fb_use_default" {{#if useDefaultSysdbaMasterkey}}checked{{/if}} />
+					Use default SYSDBA/masterkey
+				</label>
+				<label>Role (optional)
+					<input name="fb_role" value="{{firebird.role}}" />
+				</label>
+				<div class="hint">Using Firebird user: {{firebirdUser}} • Password loaded: {{#if
+					firebirdPasswordSet}}Yes{{else}}No{{/if}}</div>
+				<button class="btn" formaction="/setup/test-firebird" formmethod="post">Test Firebird</button>
+			</div>
+			<div>
+				<h3>MySQL</h3>
+				<label>Host
+					<input name="my_host" value="{{mysql.host}}" />
+				</label>
+				<label>Port
+					<input name="my_port" value="{{mysql.port}}" />
+				</label>
+				<label>User
+					<input name="my_user" value="{{mysql.user}}" />
+				</label>
+				<label>Password
+					<input name="my_password" type="password" value="" autocomplete="new-password" />
+				</label>
+				<label>Target Schema
+					<input name="my_schema" value="{{schemaName}}" />
+				</label>
+				<div class="hint">DDL schema name: {{ddlSchemaName}}</div>
+				<button class="btn" formaction="/setup/test-mysql" formmethod="post">Test MySQL</button>
+				<button class="btn secondary" formaction="/setup/check-schema" formmethod="post">Check MySQL schema
+					exists</button>
+				<button class="btn" formaction="/setup/create-schema" formmethod="post">Create schema from provided
+					DDL</button>
+			</div>
+		</div>
+	</form>
+	<div class="actions">
+		<button class="btn primary" id="next-plan" type="submit" formaction="/setup/save" formmethod="post"
+			form="setup-form">
+			Next: Plan
+		</button>
+	</div>
+</section>
+
+<section class="card">
+	<h3>Diagnostics</h3>
+	{{#if diagnostics}}
+	<div class="grid">
+		<div>
+			<strong>Firebird</strong>
+			<div class="hint">Host: {{diagnostics.firebird.host}}</div>
+			<div class="hint">Port: {{diagnostics.firebird.port}}</div>
+			<div class="hint">Database: {{diagnostics.firebird.database}}</div>
+			<div class="hint">User: {{diagnostics.firebird.user}}</div>
+			<div class="hint">Password set: {{#if diagnostics.firebird.passwordSet}}Yes{{else}}No{{/if}}</div>
+			{{#if diagnostics.firebird.passwordSource}}
+			<div class="hint">Password source: {{diagnostics.firebird.passwordSource}}</div>
+			{{/if}}
+			<div class="hint">Default SYSDBA/masterkey: {{#if
+				diagnostics.firebird.useDefaultSysdbaMasterkey}}Enabled{{else}}Disabled{{/if}}</div>
+		</div>
+		<div>
+			<strong>MySQL</strong>
+			<div class="hint">Host: {{diagnostics.mysql.host}}</div>
+			<div class="hint">Port: {{diagnostics.mysql.port}}</div>
+			<div class="hint">User: {{diagnostics.mysql.user}}</div>
+			<div class="hint">Password set: {{#if diagnostics.mysql.passwordSet}}Yes{{else}}No{{/if}}</div>
+			<div class="hint">Schema: {{diagnostics.mysql.schemaName}}</div>
+		</div>
+	</div>
+	{{/if}}
+</section>
+
+<div class="modal" id="loading-modal" aria-hidden="true">
+	<div class="modal-content">
+		<div class="spinner"></div>
+		<div>Loading plan…</div>
+	</div>
+</div>
