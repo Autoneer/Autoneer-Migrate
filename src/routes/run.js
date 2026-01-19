@@ -43,7 +43,7 @@ router.get("/run", async (req, res) => {
 
 router.post("/run/start", async (req, res) => {
 	const { error: configError, resolved } = validateFirebirdConfig();
-	console.log("Firebird run config:", firebird.maskFirebirdConfig(resolved || state.firebird));
+	// console.log("Firebird run config:", firebird.maskFirebirdConfig(resolved || state.firebird));
 	if (configError) {
 		res.render("run", {
 			plan: state.plan || [],
@@ -75,7 +75,7 @@ router.post("/run/start", async (req, res) => {
 
 router.post("/run/rerun", async (req, res) => {
 	const { error: configError, resolved } = validateFirebirdConfig();
-	console.log("Firebird run config:", firebird.maskFirebirdConfig(resolved || state.firebird));
+	// console.log("Firebird run config:", firebird.maskFirebirdConfig(resolved || state.firebird));
 	if (configError) {
 		res.render("run", {
 			plan: state.plan || [],
@@ -117,7 +117,7 @@ router.post("/run/rerun", async (req, res) => {
 
 router.post("/run/resume", async (req, res) => {
 	const { error: configError, resolved } = validateFirebirdConfig();
-	console.log("Firebird run config:", firebird.maskFirebirdConfig(resolved || state.firebird));
+	// console.log("Firebird run config:", firebird.maskFirebirdConfig(resolved || state.firebird));
 	if (configError) {
 		res.render("run", {
 			plan: state.plan || [],

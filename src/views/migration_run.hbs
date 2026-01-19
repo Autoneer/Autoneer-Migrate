@@ -17,16 +17,22 @@
 			</div>
 			<div class="gh-card">
 				<strong>Started</strong>
-				<div>{{run.started_at}}</div>
+				<div>{{formatDate run.started_at}}</div>
 			</div>
 			<div class="gh-card">
 				<strong>Ended</strong>
-				<div>{{run.ended_at}}</div>
+				<div>{{formatDate run.ended_at}}</div>
 			</div>
 			<div class="gh-card">
 				<strong>Errors</strong>
 				<div>{{run.error_count}}</div>
 			</div>
+		</div>
+		<div class="actions">
+			<form method="post" action="/migration/history/{{run.run_id}}/delete"
+				onsubmit="return confirm('Delete this run and all related records?');">
+				<button class="btn secondary" type="submit">Delete run</button>
+			</form>
 		</div>
 
 		<h3>Per-table summary</h3>
@@ -48,7 +54,7 @@
 					<td>{{table_name}}</td>
 					<td class="mono">{{source_pk}}</td>
 					<td>{{message}}</td>
-					<td>{{created_at}}</td>
+					<td>{{formatDate created_at}}</td>
 				</tr>
 				{{/each}}
 			</tbody>

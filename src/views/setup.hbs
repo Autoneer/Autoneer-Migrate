@@ -1,5 +1,4 @@
 <section class="card">
-	<h2>Connections</h2>
 	<form method="post" id="setup-form">
 		<div class="grid">
 			<div>
@@ -48,11 +47,13 @@
 					<input name="my_schema" value="{{schemaName}}" />
 				</label>
 				<div class="hint">DDL schema name: {{ddlSchemaName}}</div>
-				<button class="btn" formaction="/setup/test-mysql" formmethod="post">Test MySQL</button>
-				<button class="btn secondary" formaction="/setup/check-schema" formmethod="post">Check MySQL schema
-					exists</button>
-				<button class="btn" formaction="/setup/create-schema" formmethod="post">Create schema from provided
-					DDL</button>
+				<div class="actions">
+					<button class="btn" formaction="/setup/test-mysql" formmethod="post">Test MySQL</button>
+					<button class="btn secondary" formaction="/setup/check-schema" formmethod="post">Check MySQL schema
+						exists</button>
+					<button class="btn" formaction="/setup/create-schema" formmethod="post">Create schema from
+						DDL</button>
+				</div>
 			</div>
 		</div>
 	</form>

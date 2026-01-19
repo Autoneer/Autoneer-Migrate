@@ -21,23 +21,29 @@
 				{{#each runs}}
 				<tr>
 					<td>{{run_label}} (#{{run_id}})</td>
-					<td>{{started_at}}</td>
-					<td>{{ended_at}}</td>
+					<td>{{formatDate started_at}}</td>
+					<td>{{formatDate ended_at}}</td>
 					<td><span class="gh-badge gh-{{status}}">{{status}}</span></td>
 					<td>{{error_count}}</td>
 					<td>
-						<a class="gh-btn" href="/migration/history/{{run_id}}">View</a>
-						{{#if (eq status 'SUCCESS')}}
-						{{#if plan_id}}
-						<form style="display:inline" method="post" action="/migration/plans/{{plan_id}}/reuse">
-							<button class="gh-btn gh-btn-sm" type="submit">Reuse plan</button>
-						</form>
-						{{/if}}
-						{{else}}
-						<form style="display:inline" method="post" action="/migration/plans/{{plan_id}}/reuse">
-							<button class="gh-btn gh-btn-sm gh-warning" type="submit">Clone plan</button>
-						</form>
-						{{/if}}
+						<div class="gh-actions" style="display:flex;gap:8px;align-items:center;">
+							<a class="gh-btn" href="/migration/history/{{run_id}}">View</a>
+							<form method="post" action="/migration/history/{{run_id}}/delete"
+								onsubmit="return confirm('Delete run #{{run_id}} and all related records? This cannot be undone.')">
+								<button class="gh-btn gh-btn-sm gh-danger" type="submit">Delete</button>
+							</form>
+							{{#if (eq status 'SUCCESS')}}
+							{{#if plan_id}}
+							<form method="post" action="/migration/plans/{{plan_id}}/reuse">
+								<button class="gh-btn gh-btn-sm" type="submit">Reuse plan</button>
+							</form>
+							{{/if}}
+							{{else}}
+							<form method="post" action="/migration/plans/{{plan_id}}/reuse">
+								<button class="gh-btn gh-btn-sm gh-warning" type="submit">Clone plan</button>
+							</form>
+							{{/if}}
+						</div>
 					</td>
 				</tr>
 				{{/each}}

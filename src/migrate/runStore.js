@@ -211,6 +211,32 @@ async function lookupIdMap(pool, { runId, tableName, sourceId }) {
 	return rows[0]?.target_id || null;
 }
 
+async function deleteRun(pool, runId) {
+	// delete all rows related to a run. Use transaction to ensure consistency.
+	await pool.query('START TRANSACTION');
+	try {
+		await pool.query('delete from migration_run_errors where run_id = ?', [runId]);
+		await pool.query('delete from migration_row_errors where run_id = ?', [String(runId)]);
+		await pool.query('delete from migration_table_runs where run_id = ?', [runId]);
+		await pool.query('delete from migration_id_map where run_id = ?', [String(runId)]);
+		await pool.query('delete from migration_runs where run_id = ?', [runId]);
+		// best-effort: attempt to delete legacy entry if its id equals runId (unlikely)
+		try {
+			await pool.query('delete from migration_runs_legacy where id = ?', [String(runId)]);
+		} catch (e) {
+			// ignore
+		}
+		await pool.query('COMMIT');
+	} catch (err) {
+		try {
+			await pool.query('ROLLBACK');
+		} catch (e) {
+			// ignore
+		}
+		throw err;
+	}
+}
+
 module.exports = {
 	createRun,
 	finishRun,
@@ -235,4 +261,6 @@ module.exports = {
 	updatePlan,
 	clonePlan,
 	listPlans
+	,
+	deleteRun
 };

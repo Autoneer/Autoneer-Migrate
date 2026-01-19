@@ -1,30 +1,3 @@
-<section class="card collapsible" id="schema-compare">
-	<div class="card-header">
-		<h2>Schemas side-by-side</h2>
-		<button class="btn secondary" type="button" data-toggle="schema-compare">Collapse</button>
-	</div>
-	<div class="card-body">
-		<table>
-			<thead>
-				<tr>
-					<th>Firebird table</th>
-					<th>Rows</th>
-					<th>MySQL table</th>
-				</tr>
-			</thead>
-			<tbody>
-				{{#each schemaPairs}}
-				<tr>
-					<td>{{firebird}}</td>
-					<td>{{firebirdCount}}</td>
-					<td>{{mysql}}</td>
-				</tr>
-				{{/each}}
-			</tbody>
-		</table>
-	</div>
-</section>
-
 <section class="card">
 	<h2>Migration plan</h2>
 	<div class="actions">
@@ -77,4 +50,31 @@
 			<button class="btn primary" type="submit">Save & Next: Mapping</button>
 		</div>
 	</form>
+</section>
+
+<section class="card collapsible" id="schema-compare">
+	<div class="card-header">
+		<h2>Schemas side-by-side</h2>
+		<button class="btn secondary" type="button" data-toggle="schema-compare">Collapse</button>
+	</div>
+	<div class="card-body">
+		<table>
+			<thead>
+				<tr>
+					<th>Firebird table</th>
+					<th>Rows</th>
+					<th>MySQL table</th>
+				</tr>
+			</thead>
+			<tbody>
+				{{#each schemaPairs}}
+				<tr>
+					<td>{{firebird}}</td>
+					<td>{{firebirdCount}}</td>
+					<td>{{mysql}}</td>
+				</tr>
+				{{/each}}
+			</tbody>
+		</table>
+	</div>
 </section>

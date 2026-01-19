@@ -24,7 +24,19 @@ app.engine(
 		helpers: {
 			eq: (a, b) => a === b,
 			json: (context) => JSON.stringify(context, null, 2),
-			lookup: (obj, field) => (obj ? obj[field] : undefined)
+			lookup: (obj, field) => (obj ? obj[field] : undefined),
+			formatDate: (value, format) => {
+				if (!value) return '-';
+				const d = value instanceof Date ? value : new Date(value);
+				if (isNaN(d.getTime())) return value;
+				const opts = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+				if (format === 'date') delete opts.hour, delete opts.minute;
+				try {
+					return d.toLocaleString('en-US', opts);
+				} catch (e) {
+					return d.toString();
+				}
+			}
 		}
 	})
 );

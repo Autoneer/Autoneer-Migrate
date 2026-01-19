@@ -82,4 +82,18 @@ router.post('/migration/plans/:plan_id/reuse', async (req, res) => {
 	}
 });
 
+router.post('/migration/history/:run_id/delete', async (req, res) => {
+	const runId = Number(req.params.run_id);
+	if (!runId) return res.redirect('/migration/history');
+	try {
+		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
+		await mysql.ensureMigrationTables(pool);
+		await runStore.deleteRun(pool, runId);
+		await pool.end();
+		res.redirect('/migration/history');
+	} catch (err) {
+		res.render('migration_history', { runs: [], error: `Failed to delete run: ${err.message}`, currentStep: 'migration' });
+	}
+});
+
 module.exports = router;
