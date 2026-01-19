@@ -1,0 +1,48 @@
+<section class="card">
+	<h2>Run migration</h2>
+	<form method="post" action="/run/start">
+		<label>
+			<input type="checkbox" name="dry_run" /> Dry run (no inserts)
+		</label>
+		<label>Batch size
+			<input name="batch_size" value="500" />
+		</label>
+		<label>
+			<input type="checkbox" name="fk_checks" checked /> Disable FK checks during load
+		</label>
+		<div class="actions">
+			<a class="btn secondary" href="/mapping">Back</a>
+			<button class="btn primary" type="submit">Start Migration</button>
+		</div>
+	</form>
+</section>
+
+<section class="card">
+	<h3>Progress</h3>
+	{{#if runId}}
+	<div id="progress" data-run-id="{{runId}}">
+		<div class="status">Run ID: {{runId}}</div>
+		<div class="status">Status: {{run.status}}</div>
+		{{#if run.error_message}}
+		<div class="status">Error: {{run.error_message}}</div>
+		{{/if}}
+		<div class="progress-summary" id="progress-summary">
+			<div class="summary-item"><strong>Tables:</strong> <span id="summary-tables">0/0</span></div>
+			<div class="summary-item"><strong>Rows migrated:</strong> <span id="summary-rows">0</span></div>
+			<div class="summary-item"><strong>Duplicates skipped:</strong> <span id="summary-duplicates">0</span></div>
+			<div class="summary-item"><strong>Errors:</strong> <span id="summary-errors">0</span></div>
+		</div>
+		<div id="table-progress" class="table-progress"></div>
+		<div id="progress-log" class="log"></div>
+		<div class="actions">
+			<a class="btn secondary" href="/results/{{runId}}">View Results</a>
+			<form method="post" action="/run/resume">
+				<input type="hidden" name="run_id" value="{{runId}}" />
+				<button class="btn" type="submit">Resume Run</button>
+			</form>
+		</div>
+	</div>
+	{{else}}
+	<div class="hint">Start a run to see live progress.</div>
+	{{/if}}
+</section>

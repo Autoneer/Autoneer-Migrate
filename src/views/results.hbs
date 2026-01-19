@@ -1,0 +1,174 @@
+<section class="card">
+	<h2>Run summary</h2>
+	{{#if run}}
+	<div class="grid">
+		<div><strong>Run ID:</strong> {{run.id}}</div>
+		<div><strong>Status:</strong> {{run.status}}</div>
+		<div><strong>Started:</strong> {{run.started_at}}</div>
+		<div><strong>Finished:</strong> {{run.finished_at}}</div>
+		{{#if run.error_message}}
+		<div><strong>Error:</strong> {{run.error_message}}</div>
+		{{/if}}
+	</div>
+	<div class="actions">
+		<a class="btn secondary" href="/results/{{run.id}}/logs.json">Download JSON logs</a>
+		<a class="btn secondary" href="/results/{{run.id}}/logs.csv">Download CSV logs</a>
+		<form method="post" action="/run/rerun">
+			<input type="hidden" name="run_id" value="{{run.id}}" />
+			<button class="btn" type="submit">Re-run failed tables</button>
+		</form>
+	</div>
+	{{else}}
+	<div class="hint">No run found.</div>
+	{{/if}}
+</section>
+
+<section class="card">
+	<h3>Tables</h3>
+	<table>
+		<thead>
+			<tr>
+				<th>Table</th>
+				<th>Status</th>
+				<th>Source</th>
+				<th>Migrated</th>
+				<th>Duplicates skipped</th>
+				<th>Errors</th>
+				<th>Error message</th>
+			</tr>
+		</thead>
+		<tbody>
+			{{#each tables}}
+			<tr>
+				<td>{{table_name}}</td>
+				<td>{{status}}</td>
+				<td>{{rows_source}}</td>
+				<td>{{rows_migrated}}</td>
+				<td>{{rows_skipped_duplicates}}</td>
+				<td>{{rows_error}}</td>
+				<td>{{error_message}}</td>
+			</tr>
+			{{/each}}
+		</tbody>
+	</table>
+</section>
+
+<section class="card">
+	<h3>Row errors</h3>
+	{{#if errors.length}}
+	{{#each tables}}
+	<div class="card nested" id="errors-{{table_name}}">
+		<div class="card-header">
+			<strong>{{table_name}}</strong>
+			<button class="btn secondary" data-toggle="errors-{{table_name}}">Toggle</button>
+		</div>
+		<div class="card-body">
+			{{#if (lookup ../errorsByTable table_name)}}
+			<table>
+				<thead>
+					<tr>
+						<th>Offset</th>
+						<th>Source PK</th>
+						<th>Error</th>
+						<th>Hint</th>
+						<th>Row sample</th>
+					</tr>
+				</thead>
+				<tbody>
+					{{#each (lookup ../errorsByTable table_name)}}
+					<tr>
+						<td>{{row_offset}}</td>
+						<td>{{source_pk}}</td>
+						<td>{{error_message}}</td>
+						<td>{{hint}}</td>
+						<td>
+							<pre>{{row_json}}</pre>
+						</td>
+					</tr>
+					{{/each}}
+				</tbody>
+			</table>
+			{{else}}
+			<div class="hint">No row errors for this table.</div>
+			{{/if}}
+		</div>
+	</div>
+	{{/each}}
+	{{else}}
+	<div class="hint">No row errors recorded.</div>
+	{{/if}}
+</section>
+
+<section class="card">
+	<h3>Validation checks</h3>
+	<table>
+		<thead>
+			<tr>
+				<th>Check</th>
+				<th>Orphans</th>
+			</tr>
+		</thead>
+		<tbody>
+			{{#each validations}}
+			<tr>
+				<td>{{name}}</td>
+				<td>{{orphans}}</td>
+			</tr>
+			{{/each}}
+		</tbody>
+	</table>
+</section>
+
+<section class="card">
+	<h3>Sample comparisons</h3>
+	{{#each samples}}
+	<h4>{{name}}</h4>
+	{{#if firebirdTop}}
+	<div class="grid">
+		<div>
+			<strong>Firebird</strong>
+			<table>
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Balance</th>
+					</tr>
+				</thead>
+				<tbody>
+					{{#each firebirdTop}}
+					<tr>
+						<td>{{name}}</td>
+						<td>{{balance}}</td>
+					</tr>
+					{{/each}}
+				</tbody>
+			</table>
+		</div>
+		<div>
+			<strong>MySQL</strong>
+			<table>
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Balance</th>
+					</tr>
+				</thead>
+				<tbody>
+					{{#each mysqlTop}}
+					<tr>
+						<td>{{name}}</td>
+						<td>{{balance}}</td>
+					</tr>
+					{{/each}}
+				</tbody>
+			</table>
+		</div>
+	</div>
+	{{else}}
+	<div class="grid">
+		<div><strong>Firebird:</strong> {{firebird}}</div>
+		<div><strong>MySQL:</strong> {{mysql}}</div>
+	</div>
+	{{/if}}
+	{{/each}}
+</section>
