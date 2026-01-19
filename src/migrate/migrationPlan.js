@@ -44,15 +44,11 @@ function buildPlan({ firebirdTables, mysqlTables, mapping }) {
 	mysqlTables.forEach((t) => tableSet.add(t));
 
 	const plan = Array.from(tableSet).map((table) => {
-		const mapEntry = Object.values(mapping.tables || {}).find(
-			(m) => m.target.toLowerCase() === table.toLowerCase()
-		);
-
 		return {
 			table,
-			include: true,
-			mode: mapEntry?.mode || "INSERT",
-			keyStrategy: mapEntry?.keyStrategy || "preserve"
+			include: false,
+			mode: "UPSERT",
+			keyStrategy: "rekey"
 		};
 	});
 

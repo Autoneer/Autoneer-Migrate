@@ -45,12 +45,8 @@ if (progressEl) {
 		modal.setAttribute("aria-hidden", "true");
 	};
 
-	document.querySelectorAll("[data-modal-close]").forEach((btn) => {
-		btn.addEventListener("click", () => {
-			const target = btn.getAttribute("data-modal-close");
-			closeModal(document.getElementById(target));
-		});
-	});
+	// Modal close handlers for run-related modals are registered here when the run UI is present.
+	// (A global handler is also added outside this block for pages without the run UI.)
 
 	const buildLikelyCause = (message) => {
 		const lower = String(message || "").toLowerCase();
@@ -211,12 +207,14 @@ if (progressEl) {
 	if (failureDetailsBtn) {
 		failureDetailsBtn.addEventListener("click", () => {
 			closeModal(failureModal);
-			if (!latestRunState) return;
-			const tables = latestRunState.tables || [];
+			const tables = latestRunState?.tables || [];
 			const failedTable = tables.find((table) => table.status === "FAILED") || null;
-			const message = failedTable?.lastError?.message || "Unknown error";
+			const fallbackMessage = failureMessage?.textContent || "Unknown error";
+			const message = failedTable?.lastError?.message || fallbackMessage;
 			const { cause, steps } = buildLikelyCause(message);
-			if (fixTableEl) fixTableEl.textContent = failedTable?.label || failedTable?.name || "Unknown";
+			if (fixTableEl) {
+				fixTableEl.textContent = failedTable?.label || failedTable?.name || (message.includes("Connection lost") ? "Connection" : "Unknown");
+			}
 			if (fixCauseEl) fixCauseEl.textContent = cause;
 			if (fixErrorEl) fixErrorEl.value = message;
 			if (fixStepsEl) {
@@ -256,6 +254,20 @@ if (progressEl) {
 		};
 	}
 }
+
+// Global modal-close handler for any modal on the page. This runs regardless of the run UI.
+document.querySelectorAll("[data-modal-close]").forEach((btn) => {
+	// Avoid attaching multiple handlers if a handler was already bound earlier
+	if (btn.dataset.modalCloseBound) return;
+	btn.addEventListener("click", () => {
+		const target = btn.getAttribute("data-modal-close");
+		const modal = document.getElementById(target);
+		if (!modal) return;
+		modal.classList.remove("show");
+		modal.setAttribute("aria-hidden", "true");
+	});
+	btn.dataset.modalCloseBound = "1";
+});
 
 document.querySelectorAll("[data-toggle]").forEach((button) => {
 	button.addEventListener("click", () => {

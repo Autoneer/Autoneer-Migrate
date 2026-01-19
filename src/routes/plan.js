@@ -12,20 +12,12 @@ router.get("/plan", async (req, res) => {
 		}
 
 		const fbTables = await firebird.listTables(state.firebird);
-		const fbCounts = {};
-		for (const table of fbTables) {
-			try {
-				fbCounts[table] = await firebird.countRows(state.firebird, table);
-			} catch (err) {
-				fbCounts[table] = null;
-			}
-		}
 
 		const expectedMySqlTables = migrationPlan.getExpectedTablesFromDDL();
 		const maxLen = Math.max(fbTables.length, expectedMySqlTables.length);
 		const schemaPairs = Array.from({ length: maxLen }).map((_, index) => ({
 			firebird: fbTables[index] || "",
-			firebirdCount: fbTables[index] ? fbCounts[fbTables[index]] : "",
+			firebirdCount: fbTables[index] ? "—" : "",
 			mysql: expectedMySqlTables[index] || ""
 		}));
 		const plan = migrationPlan.buildPlan({
@@ -38,7 +30,6 @@ router.get("/plan", async (req, res) => {
 
 		res.render("plan", {
 			firebirdTables: fbTables,
-			fbCounts,
 			expectedMySqlTables,
 			schemaPairs,
 			plan,
@@ -59,8 +50,8 @@ router.post("/plan/save", (req, res) => {
 		plan.push({
 			table,
 			include: req.body[`include_${table}`] === "on",
-			mode: modes?.[index] || "INSERT",
-			keyStrategy: keyStrategies?.[index] || "preserve"
+			mode: modes?.[index] || "UPSERT",
+			keyStrategy: keyStrategies?.[index] || "rekey"
 		});
 	});
 
