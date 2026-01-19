@@ -1,54 +1,121 @@
 <section class="card">
-	<h2>Mapping definitions</h2>
+	<h2>Mapping</h2>
+	<p class="hint">Fix any mismatched fields below. Most users only need this.</p>
+	<label>
+		<input type="checkbox" id="mapping-advanced-toggle" />
+		Show advanced options
+	</label>
+</section>
+
+{{#if mappingNotice}}
+<section class="card">
+	<div class="status">{{mappingNotice.message}}</div>
+	{{#if mappingNotice.details}}
+	<div class="hint">{{mappingNotice.details}}</div>
+	{{/if}}
+</section>
+{{/if}}
+
+<section class="card">
+	<h3>Fields needing attention</h3>
+	<p class="hint">Only fields that need action are shown.</p>
+	{{#if mismatchRows.length}}
+	<form method="post" action="/mapping/resolve">
+		<table>
+			<thead>
+				<tr>
+					<th>Source table</th>
+					<th>Missing field</th>
+					<th>Target field</th>
+					<th>Resolve to</th>
+				</tr>
+			</thead>
+			<tbody>
+				{{#each mismatchRows}}
+				<tr>
+					<td>{{sourceTable}}</td>
+					<td>{{sourceColumn}}</td>
+					<td>{{targetColumn}}</td>
+					<td>
+						<select name="resolve__{{mappingKey}}__{{sourceColumn}}">
+							<option value="">— Choose a replacement field —</option>
+							<option value="__omit__">Omit (do not import this field)</option>
+							{{#each availableSourceColumns}}
+							<option value="{{this}}">{{this}}</option>
+							{{/each}}
+						</select>
+					</td>
+				</tr>
+				{{/each}}
+			</tbody>
+		</table>
+		<div class="actions">
+			<button class="btn primary" type="submit">Apply fixes</button>
+		</div>
+		<div class="hint">This updates your current mapping. Save to a profile to keep it.</div>
+	</form>
+	{{else}}
+	<div class="hint">All good — no mismatches found.</div>
+	<div class="actions">
+		<a class="btn primary" href="/run">Continue to Run</a>
+	</div>
+	{{/if}}
+</section>
+
+<section class="card">
+	<h3>Current profile</h3>
+	<div class="hint">A profile is a saved set of mapping rules. Use it if you migrate more than once.</div>
+	{{#if activeMappingProfileId}}
+	<div>
+		Current profile: <strong>{{activeMappingProfileName}}</strong> <span class="pill">Loaded</span>
+		{{#if (eq defaultMappingProfileId activeMappingProfileId)}}
+		<span class="pill">Default</span>
+		{{/if}}
+	</div>
+	<div class="hint">Default profile loads automatically next time.</div>
+	{{else}}
+	<div class="hint">No profile selected yet (changes are temporary until saved).</div>
+	{{/if}}
 	<form method="post" action="/mapping/save">
 		<input type="hidden" name="profile_id" value="{{activeMappingProfileId}}" />
-		<label>Profile name (optional)
-			<input name="profile_name" placeholder="My mapping profile" value="{{activeMappingProfileName}}" />
+		<label>Save mapping as a profile (recommended)
+			<input name="profile_name" placeholder="Default Autoneer Firebird" value="{{activeMappingProfileName}}" />
 		</label>
+		<div class="hint">Give this mapping a name so you can reuse it later (e.g. “Default Autoneer Firebird”).</div>
 		<label>
 			<input type="checkbox" name="save_as_new" />
-			Save as new profile
+			Create a new profile (instead of updating the loaded profile)
 		</label>
-		<label>Mapping JSON</label>
-		<textarea name="mapping_json" class="code" rows="24" style="width: 100%;">{{mappingJson}}</textarea>
+		<div class="advanced-section" data-advanced-section style="display: none;">
+			<h4>Advanced: Mapping JSON</h4>
+			<label>Mapping JSON</label>
+			<textarea name="mapping_json" class="code" rows="24" style="width: 100%;">{{mappingJson}}</textarea>
+		</div>
 		<div class="actions">
 			<a class="btn secondary" href="/plan">Back</a>
-			<button class="btn primary" type="submit">Save & Next: Run</button>
+			<button class="btn primary" type="submit">Save profile & continue to Run</button>
 		</div>
 	</form>
 </section>
 
-<section class="card">
-	<h3>Mapping summary</h3>
-	{{#each mappingTables}}
-	<h4>{{source}} → {{target}}</h4>
-	<table>
-		<thead>
-			<tr>
-				<th>Source column</th>
-				<th>Target column</th>
-				<th>Transform</th>
-				<th>Default</th>
-				<th>Lookup</th>
-			</tr>
-		</thead>
-		<tbody>
-			{{#each columns}}
-			<tr>
-				<td>{{source}}</td>
-				<td>{{target}}</td>
-				<td>{{transform}}</td>
-				<td>{{defaultValue}}</td>
-				<td>{{lookupTable}}</td>
-			</tr>
-			{{/each}}
-		</tbody>
-	</table>
-	{{/each}}
+<section class="card advanced-section" data-advanced-section style="display: none;">
+	<h3>Advanced: Import / Export</h3>
+	<form method="post" action="/mapping/import">
+		<textarea name="mapping_json" class="code" rows="10" placeholder="Paste mapping JSON here"></textarea>
+		<div class="actions">
+			<button class="btn" type="submit">Import</button>
+		</div>
+	</form>
+	<div class="actions">
+		<form method="get" action="/mapping/export">
+			<button class="btn secondary" type="submit">Export JSON</button>
+		</form>
+	</div>
 </section>
 
-<section class="card">
-	<h3>Profiles</h3>
+<section class="card advanced-section" data-advanced-section style="display: none;">
+	<h3>Advanced: Profiles</h3>
+	<div class="hint">Loaded means this profile is currently active. Default profile loads automatically next time.</div>
 	{{#if profiles.length}}
 	<table>
 		<thead>
@@ -70,7 +137,7 @@
 					<span class="pill">Loaded</span>
 					{{/if}}
 				</td>
-				<td>{{created_at}}</td>
+				<td>{{formatDate created_at 'date'}}</td>
 				<td>
 					<div class="actions">
 						<a class="btn" href="/mapping/profile/{{id}}">Load</a>
@@ -90,59 +157,30 @@
 	{{else}}
 	<div class="hint">No saved profiles yet.</div>
 	{{/if}}
-	<div class="actions">
-		<form method="get" action="/mapping/export">
-			<button class="btn secondary" type="submit">Export JSON</button>
-		</form>
-	</div>
 </section>
 
-<section class="card">
-	<h3>Import mapping JSON</h3>
-	<form method="post" action="/mapping/import">
-		<textarea name="mapping_json" class="code" rows="10" placeholder="Paste mapping JSON here"></textarea>
-		<div class="actions">
-			<button class="btn" type="submit">Import</button>
-		</div>
-	</form>
-</section>
-
-<section class="card">
-	<h3>Mapping mismatches</h3>
-	{{#if mismatchRows.length}}
-	<form method="post" action="/mapping/resolve">
-		<table>
-			<thead>
-				<tr>
-					<th>Source table</th>
-					<th>Missing source column</th>
-					<th>Target column</th>
-					<th>Resolve to</th>
-				</tr>
-			</thead>
-			<tbody>
-				{{#each mismatchRows}}
-				<tr>
-					<td>{{sourceTable}}</td>
-					<td>{{sourceColumn}}</td>
-					<td>{{targetColumn}}</td>
-					<td>
-						<select name="resolve__{{mappingKey}}__{{sourceColumn}}">
-							<option value="__omit__">Omit this field</option>
-							{{#each availableSourceColumns}}
-							<option value="{{this}}">{{this}}</option>
-							{{/each}}
-						</select>
-					</td>
-				</tr>
-				{{/each}}
-			</tbody>
-		</table>
-		<div class="actions">
-			<button class="btn primary" type="submit">Apply fixes</button>
-		</div>
-	</form>
-	{{else}}
-	<div class="hint">No mismatches detected for the selected tables.</div>
-	{{/if}}
-</section>
+<script>
+	(function () {
+		const toggle = document.getElementById("mapping-advanced-toggle");
+		const sections = document.querySelectorAll("[data-advanced-section]");
+		const storageKey = "mappingAdvanced";
+		const setVisible = (enabled) => {
+			sections.forEach((section) => {
+				section.style.display = enabled ? "block" : "none";
+			});
+		};
+		const stored = window.localStorage ? window.localStorage.getItem(storageKey) : null;
+		const enabled = stored === "1";
+		if (toggle) {
+			toggle.checked = enabled;
+			setVisible(enabled);
+			toggle.addEventListener("change", () => {
+				const isOn = toggle.checked;
+				if (window.localStorage) {
+					window.localStorage.setItem(storageKey, isOn ? "1" : "0");
+				}
+				setVisible(isOn);
+			});
+		}
+	})();
+</script>

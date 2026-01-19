@@ -10,6 +10,10 @@ const { updateSettings } = require("../config/settings");
 const router = express.Router();
 
 router.get("/mapping", async (req, res) => {
+	const mappingNotice = state.ui?.mappingNotice || null;
+	if (state.ui) {
+		state.ui.mappingNotice = null;
+	}
 	let defaultProfile = null;
 	if (!state.mapping) {
 		try {
@@ -102,6 +106,7 @@ router.get("/mapping", async (req, res) => {
 
 	res.render("mapping", {
 		mappingJson: JSON.stringify(state.mapping, null, 2),
+		mappingNotice,
 		profiles,
 		defaultMappingProfileId: state.settings.defaultMappingProfileId,
 		activeMappingProfileId: state.mapping?.profileId || null,
@@ -194,11 +199,13 @@ router.post("/mapping/profile/:id/delete", async (req, res) => {
 	}
 });
 
-router.post("/mapping/resolve", (req, res) => {
+router.post("/mapping/resolve", async (req, res) => {
 	try {
 		const mapping = state.mapping || { tables: {} };
 		const entries = Object.entries(req.body).filter(([key]) => key.startsWith("resolve__"));
+		let appliedCount = 0;
 		entries.forEach(([key, value]) => {
+			if (!value) return;
 			const [, sourceTable, sourceColumn] = key.split("__");
 			const tableDef = mapping.tables?.[sourceTable];
 			if (!tableDef || !tableDef.columns) return;
@@ -208,11 +215,51 @@ router.post("/mapping/resolve", (req, res) => {
 			delete tableDef.columns[sourceColumn];
 			delete tableDef.columns[sourceColumn.toLowerCase()];
 
-			if (value && value !== "__omit__") {
-				tableDef.columns[value] = rule;
+			if (value === "__omit__") {
+				appliedCount += 1;
+				return;
 			}
+
+			tableDef.columns[value] = rule;
+			appliedCount += 1;
 		});
 		state.mapping = mapping;
+
+		if (!state.ui) {
+			state.ui = {};
+		}
+
+		const profileId = mapping.profileId;
+		const profileName = mapping.profileName || "";
+		let noticeMessage = `Applied ${appliedCount} fixes successfully.`;
+		let noticeDetails = "";
+		if (profileId) {
+			const profileLabel = profileName || `#${profileId}`;
+			noticeDetails = `Profile: ${profileLabel}.`;
+			try {
+				const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
+				try {
+					await mysql.ensureMigrationTables(pool);
+					await runStore.updateMappingProfile(pool, profileId, {
+						name: profileName || profileLabel,
+						mappingJson: JSON.stringify(mapping)
+					});
+				} finally {
+					await pool.end();
+				}
+				noticeDetails = `Profile: ${profileLabel}. Saved to profile.`;
+			} catch (err) {
+				noticeDetails = `Profile: ${profileLabel}. Fixes applied, but could not save to profile (reason: ${err.message}).`;
+			}
+		} else {
+			noticeDetails = "Profile: Not saved yet. Save a profile name to keep these changes.";
+		}
+
+		state.ui.mappingNotice = {
+			type: "success",
+			message: noticeMessage,
+			details: noticeDetails
+		};
 		res.redirect("/mapping");
 	} catch (err) {
 		res.render("mapping", {
