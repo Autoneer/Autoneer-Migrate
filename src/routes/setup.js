@@ -128,7 +128,12 @@ router.post("/setup/test-firebird", async (req, res) => {
 			firebirdUser: state.firebird.user,
 			useDefaultSysdbaMasterkey: state.firebird.useDefaultSysdbaMasterkey,
 			diagnostics: buildDiagnostics(),
-			message: "Firebird connection OK",
+			testResult: {
+				status: "success",
+				title: "Connection successful",
+				message: "Firebird connected successfully.",
+				details: resolved.database ? `Database: ${resolved.database}` : ""
+			},
 			currentStep: "setup"
 		});
 	} catch (err) {
@@ -141,7 +146,12 @@ router.post("/setup/test-firebird", async (req, res) => {
 			firebirdUser: state.firebird.user,
 			useDefaultSysdbaMasterkey: state.firebird.useDefaultSysdbaMasterkey,
 			diagnostics: buildDiagnostics(),
-			error: `Firebird connection failed: ${err.message}`,
+			testResult: {
+				status: "error",
+				title: "Connection failed",
+				message: "Could not connect to Firebird.",
+				details: String(err?.message || err)
+			},
 			currentStep: "setup"
 		});
 	}
@@ -160,7 +170,12 @@ router.post("/setup/test-mysql", async (req, res) => {
 			firebirdUser: state.firebird.user,
 			useDefaultSysdbaMasterkey: state.firebird.useDefaultSysdbaMasterkey,
 			diagnostics: buildDiagnostics(),
-			message: "MySQL connection OK",
+			testResult: {
+				status: "success",
+				title: "Connection successful",
+				message: "MySQL connected successfully.",
+				details: `Schema: ${state.schemaName}${state.mysql?.host ? ` • Host: ${state.mysql.host}` : ""}`
+			},
 			currentStep: "setup"
 		});
 	} catch (err) {
@@ -173,7 +188,12 @@ router.post("/setup/test-mysql", async (req, res) => {
 			firebirdUser: state.firebird.user,
 			useDefaultSysdbaMasterkey: state.firebird.useDefaultSysdbaMasterkey,
 			diagnostics: buildDiagnostics(),
-			error: `MySQL connection failed: ${err.message}`,
+			testResult: {
+				status: "error",
+				title: "Connection failed",
+				message: "Could not connect to MySQL.",
+				details: String(err?.message || err)
+			},
 			currentStep: "setup"
 		});
 	}
@@ -192,7 +212,19 @@ router.post("/setup/check-schema", async (req, res) => {
 			firebirdUser: state.firebird.user,
 			useDefaultSysdbaMasterkey: state.firebird.useDefaultSysdbaMasterkey,
 			diagnostics: buildDiagnostics(),
-			message: exists ? "Schema exists" : "Schema not found",
+			testResult: exists
+				? {
+					status: "success",
+					title: "Connection successful",
+					message: "MySQL schema is available.",
+					details: `Schema: ${state.schemaName}`
+				}
+				: {
+					status: "error",
+					title: "Connection failed",
+					message: "MySQL schema was not found.",
+					details: `Schema: ${state.schemaName}`
+				},
 			schemaExists: exists,
 			currentStep: "setup"
 		});
@@ -206,7 +238,12 @@ router.post("/setup/check-schema", async (req, res) => {
 			firebirdUser: state.firebird.user,
 			useDefaultSysdbaMasterkey: state.firebird.useDefaultSysdbaMasterkey,
 			diagnostics: buildDiagnostics(),
-			error: `Schema check failed: ${err.message}`,
+			testResult: {
+				status: "error",
+				title: "Connection failed",
+				message: "Could not check the MySQL schema.",
+				details: String(err?.message || err)
+			},
 			currentStep: "setup"
 		});
 	}
@@ -241,7 +278,12 @@ router.post("/setup/create-schema", async (req, res) => {
 			firebirdUser: state.firebird.user,
 			useDefaultSysdbaMasterkey: state.firebird.useDefaultSysdbaMasterkey,
 			diagnostics: buildDiagnostics(),
-			message: "Schema created",
+			testResult: {
+				status: "success",
+				title: "Connection successful",
+				message: "MySQL schema created successfully.",
+				details: `Schema: ${ddlSchema || state.schemaName}`
+			},
 			currentStep: "setup"
 		});
 	} catch (err) {
@@ -254,7 +296,12 @@ router.post("/setup/create-schema", async (req, res) => {
 			firebirdUser: state.firebird.user,
 			useDefaultSysdbaMasterkey: state.firebird.useDefaultSysdbaMasterkey,
 			diagnostics: buildDiagnostics(),
-			error: `Schema creation failed: ${err.message}`,
+			testResult: {
+				status: "error",
+				title: "Connection failed",
+				message: "Could not create the MySQL schema.",
+				details: String(err?.message || err)
+			},
 			currentStep: "setup"
 		});
 	}

@@ -319,6 +319,11 @@ pre {
 	font-family: Consolas, monospace;
 }
 
+.details-panel {
+	margin-top: 10px;
+	width: 100%;
+}
+
 .spinner {
 	width: 20px;
 	height: 20px;

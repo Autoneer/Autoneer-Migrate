@@ -100,3 +100,25 @@
 		<div>Loading plan…</div>
 	</div>
 </div>
+
+{{#if testResult}}
+<script id="test-result-data" type="application/json">{{{json testResult}}}</script>
+{{/if}}
+
+<div class="modal" id="testResultModal" aria-hidden="true" role="dialog">
+	<div class="modal-content modal-stack">
+		<div>
+			<h3 id="test-result-title">Connection result</h3>
+			<p id="test-result-message"></p>
+			<button class="btn secondary" type="button" id="test-result-toggle">Show details</button>
+			<div id="test-result-details" class="details-panel" hidden>
+				<textarea class="error-textarea" id="test-result-details-text" readonly></textarea>
+			</div>
+		</div>
+		<div class="actions">
+			<button class="btn primary" type="button" data-modal-close="testResultModal">Close</button>
+		</div>
+	</div>
+</div>
+
+<script src="/public/js/setupTestModal.js"></script>
