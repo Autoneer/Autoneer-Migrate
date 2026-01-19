@@ -14,7 +14,15 @@ router.get("/results/:runId", async (req, res) => {
 		await mysql.ensureMigrationTables(pool);
 		const run = await runStore.getRun(pool, runId);
 		const tables = await runStore.getRunTables(pool, runId);
-		const errors = await runStore.getRowErrors(pool, runId);
+		const rawErrors = await runStore.getRowErrors(pool, runId);
+		const errors = rawErrors.map((err) => ({
+			...err,
+			// normalize legacy/new fields
+			error_message: err.error_message || err.message || null,
+			row_offset: err.row_offset ?? null,
+			hint: err.hint || null,
+			row_json: err.row_json || null
+		}));
 		const errorsByTable = errors.reduce((acc, err) => {
 			const key = err.table_name || "unknown";
 			if (!acc[key]) acc[key] = [];
@@ -104,11 +112,16 @@ router.get("/results/:runId", async (req, res) => {
 	}
 });
 
+
 router.get("/results/:runId/logs.json", async (req, res) => {
 	const runId = req.params.runId;
 	const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 	const tables = await runStore.getRunTables(pool, runId);
-	const errors = await runStore.getRowErrors(pool, runId);
+	const rawErrors = await runStore.getRowErrors(pool, runId);
+	const errors = rawErrors.map((err) => ({
+		...err,
+		error_message: err.error_message || err.message || null
+	}));
 	await pool.end();
 	res.setHeader("Content-Type", "application/json");
 	res.send(JSON.stringify({ tables, errors }, null, 2));
@@ -117,7 +130,11 @@ router.get("/results/:runId/logs.json", async (req, res) => {
 router.get("/results/:runId/logs.csv", async (req, res) => {
 	const runId = req.params.runId;
 	const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
-	const errors = await runStore.getRowErrors(pool, runId);
+	const rawErrors = await runStore.getRowErrors(pool, runId);
+	const errors = rawErrors.map((err) => ({
+		...err,
+		error_message: err.error_message || err.message || null
+	}));
 	await pool.end();
 	const csv = stringify(errors, { header: true });
 	res.setHeader("Content-Type", "text/csv");

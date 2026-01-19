@@ -69,20 +69,37 @@ async function getPrimaryKeys(pool, tableName) {
 
 async function ensureMigrationTables(pool) {
 	const ddl = `
-    create table if not exists migration_runs (
-      id varchar(36) primary key,
-      status varchar(20) not null,
-      error_message varchar(1000) null,
-      created_at timestamp default current_timestamp,
-      started_at timestamp null,
-      finished_at timestamp null,
-      dry_run tinyint(1) default 0,
-      batch_size int default 500,
-      fk_checks tinyint(1) default 1,
-      schema_name varchar(100) not null,
-      plan_json longtext,
-      mapping_profile_id int null
-    );
+		-- New migration_runs table per spec
+		create table if not exists migration_runs (
+			run_id int auto_increment primary key,
+			plan_id int null,
+			run_label varchar(150) null,
+			source_conn_name varchar(150) null,
+			target_schema_name varchar(150) null,
+			started_at datetime null,
+			ended_at datetime null,
+			status enum('RUNNING','SUCCESS','FAILED','CANCELLED') not null default 'RUNNING',
+			table_summary_json json null,
+			error_count int default 0,
+			warn_count int default 0,
+			index idx_runs_status_started (status, started_at)
+		);
+
+		-- Backwards-compatibility: keep legacy migration_runs (id uuid) if other code expects it
+		create table if not exists migration_runs_legacy (
+			id varchar(36) primary key,
+			status varchar(20) not null,
+			error_message varchar(1000) null,
+			created_at timestamp default current_timestamp,
+			started_at timestamp null,
+			finished_at timestamp null,
+			dry_run tinyint(1) default 0,
+			batch_size int default 500,
+			fk_checks tinyint(1) default 1,
+			schema_name varchar(100) not null,
+			plan_json longtext,
+			mapping_profile_id int null
+		);
 
     create table if not exists migration_table_runs (
       id bigint auto_increment primary key,
@@ -103,7 +120,7 @@ async function ensureMigrationTables(pool) {
       index idx_migration_table_runs_run (run_id)
     );
 
-    create table if not exists migration_row_errors (
+		create table if not exists migration_row_errors (
       id bigint auto_increment primary key,
       run_id varchar(36) not null,
       table_name varchar(100) not null,
@@ -117,6 +134,19 @@ async function ensureMigrationTables(pool) {
       created_at timestamp default current_timestamp,
       index idx_migration_row_errors_run (run_id)
     );
+
+		-- New migration_run_errors per spec (row-level errors linked to integer run_id)
+		create table if not exists migration_run_errors (
+			id int auto_increment primary key,
+			run_id int not null,
+			table_name varchar(100) not null,
+			source_pk varchar(100) null,
+			field_name varchar(100) null,
+			error_code varchar(50) null,
+			message text,
+			created_at datetime default current_timestamp,
+			index idx_run_errors_run (run_id, table_name)
+		);
 
     create table if not exists migration_mapping_profiles (
       id int auto_increment primary key,

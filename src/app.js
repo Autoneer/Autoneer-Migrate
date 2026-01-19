@@ -10,6 +10,7 @@ const mappingRoutes = require("./routes/mapping");
 const runRoutes = require("./routes/run");
 const resultsRoutes = require("./routes/results");
 const eventsRoutes = require("./routes/events");
+const migrationRoutes = require("./routes/migration");
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.get("/", (req, res) => res.redirect("/setup"));
 app.use(setupRoutes);
 app.use(planRoutes);
 app.use(mappingRoutes);
+app.use(migrationRoutes);
 app.use(runRoutes);
 app.use(resultsRoutes);
 app.use(eventsRoutes);

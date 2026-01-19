@@ -510,12 +510,15 @@ async function runMigrationInternal({
 			await pool.query("SET FOREIGN_KEY_CHECKS=1");
 		}
 
-		const finalStatus = runHadFailures ? "warning" : "success";
+		// determine final status based on recorded error_count (ZERO errors => SUCCESS)
+		const runInfo = await runStore.getRun(pool, runId);
+		const errorCount = runInfo ? runInfo.error_count || 0 : 0;
+		const finalStatus = errorCount === 0 ? "SUCCESS" : "FAILED";
 		await runStore.finishRun(pool, runId, finalStatus);
-		emitter.emit("event", { type: "run_finished", runId, status: finalStatus, ...totals });
+		emitter.emit("event", { type: "run_finished", runId, status: finalStatus, error_count: errorCount, ...totals });
 	} catch (err) {
 		const errorMessage = formatDbError(err, { firebirdConfig });
-		await runStore.finishRun(pool, runId, "failed", errorMessage);
+		await runStore.finishRun(pool, runId, "FAILED", errorMessage);
 		emitter.emit("event", { type: "run_failed", runId, error: errorMessage, hint: getDbErrorHint(errorMessage), ...totals });
 	} finally {
 		await pool.end();
@@ -536,7 +539,13 @@ async function startMigration({
 }) {
 	const pool = await mysql.connectToSchema(mysqlConfig, schemaName);
 	await mysql.ensureMigrationTables(pool);
+	const run_label = mapping?.profileName || mapping?.name || `Run ${new Date().toISOString().slice(0, 10)}`;
+	const source_conn_name = firebirdConfig?.name || `${firebirdConfig?.host || 'unknown'}:${firebirdConfig?.database || ''}`;
 	const runId = await runStore.createRun(pool, {
+		plan_id: mapping?.planId || null,
+		run_label,
+		source_conn_name,
+		target_schema_name: schemaName,
 		schemaName,
 		dryRun,
 		batchSize,

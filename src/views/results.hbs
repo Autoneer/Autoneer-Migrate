@@ -2,19 +2,19 @@
 	<h2>Run summary</h2>
 	{{#if run}}
 	<div class="grid">
-		<div><strong>Run ID:</strong> {{run.id}}</div>
+		<div><strong>Run ID:</strong> {{run.run_id}}</div>
 		<div><strong>Status:</strong> {{run.status}}</div>
 		<div><strong>Started:</strong> {{run.started_at}}</div>
-		<div><strong>Finished:</strong> {{run.finished_at}}</div>
-		{{#if run.error_message}}
-		<div><strong>Error:</strong> {{run.error_message}}</div>
+		<div><strong>Finished:</strong> {{run.ended_at}}</div>
+		{{#if run.error_count}}
+		<div><strong>Error count:</strong> {{run.error_count}}</div>
 		{{/if}}
 	</div>
 	<div class="actions">
-		<a class="btn secondary" href="/results/{{run.id}}/logs.json">Download JSON logs</a>
-		<a class="btn secondary" href="/results/{{run.id}}/logs.csv">Download CSV logs</a>
+		<a class="btn secondary" href="/results/{{run.run_id}}/logs.json">Download JSON logs</a>
+		<a class="btn secondary" href="/results/{{run.run_id}}/logs.csv">Download CSV logs</a>
 		<form method="post" action="/run/rerun">
-			<input type="hidden" name="run_id" value="{{run.id}}" />
+			<input type="hidden" name="run_id" value="{{run.run_id}}" />
 			<button class="btn" type="submit">Re-run failed tables</button>
 		</form>
 	</div>

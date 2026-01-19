@@ -1,0 +1,73 @@
+<link rel="stylesheet" href="/public/css/theme-github.css">
+<div class="gh-page">
+	<div class="gh-container">
+		<div class="gh-toolbar">
+			<h2>Migration History</h2>
+			<button class="gh-theme-toggle" type="button" data-theme-toggle>Toggle theme</button>
+		</div>
+		{{#if error}}<div class="gh-banner gh-danger">{{error}}</div>{{/if}}
+		<table class="gh-table">
+			<thead>
+				<tr>
+					<th>Run</th>
+					<th>Started</th>
+					<th>Ended</th>
+					<th>Status</th>
+					<th>Errors</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{{#each runs}}
+				<tr>
+					<td>{{run_label}} (#{{run_id}})</td>
+					<td>{{started_at}}</td>
+					<td>{{ended_at}}</td>
+					<td><span class="gh-badge gh-{{status}}">{{status}}</span></td>
+					<td>{{error_count}}</td>
+					<td>
+						<a class="gh-btn" href="/migration/history/{{run_id}}">View</a>
+						{{#if (eq status 'SUCCESS')}}
+						{{#if plan_id}}
+						<form style="display:inline" method="post" action="/migration/plans/{{plan_id}}/reuse">
+							<button class="gh-btn gh-btn-sm" type="submit">Reuse plan</button>
+						</form>
+						{{/if}}
+						{{else}}
+						<form style="display:inline" method="post" action="/migration/plans/{{plan_id}}/reuse">
+							<button class="gh-btn gh-btn-sm gh-warning" type="submit">Clone plan</button>
+						</form>
+						{{/if}}
+					</td>
+				</tr>
+				{{/each}}
+			</tbody>
+		</table>
+	</div>
+</div>
+
+<script>
+	(function () {
+		const key = 'autoneer-migration-theme';
+		const current = 'light';
+		document.body.setAttribute('data-theme', current);
+		localStorage.setItem(key, current);
+		const content = document.querySelector('.content');
+		if (content) content.classList.add('gh-content-light');
+		const btn = document.querySelector('[data-theme-toggle]');
+		if (btn) {
+			btn.addEventListener('click', function () {
+				const next = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+				document.body.setAttribute('data-theme', next);
+				localStorage.setItem(key, next);
+				if (content) {
+					if (next === 'dark') {
+						content.classList.remove('gh-content-light');
+					} else {
+						content.classList.add('gh-content-light');
+					}
+				}
+			});
+		}
+	})();
+</script>
