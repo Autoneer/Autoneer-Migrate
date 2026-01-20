@@ -1,0 +1,7 @@
+{"timestamp":"2026-01-20T06:13:14.060Z","runId":83,"level":"info","phase":"run_start","dryRun":false,"batchSize":500,"fkChecks":true,"tables":[{"table":"stock","mode":"UPSERT","keyStrategy":"preserve","dedupeKeys":["stock_id"],"onDuplicate":"SKIP","clean":false}]}
+{"timestamp":"2026-01-20T06:13:14.190Z","runId":83,"level":"info","phase":"progress","status":"client_connected"}
+{"timestamp":"2026-01-20T06:13:14.232Z","runId":83,"level":"info","phase":"preflight","attempt":1,"status":"ok"}
+{"timestamp":"2026-01-20T06:13:14.233Z","runId":83,"level":"debug","phase":"preflight","durationMs":172}
+{"timestamp":"2026-01-20T06:13:14.540Z","runId":83,"level":"info","phase":"table_start","tableName":"stock","tableRunId":109,"mode":"UPSERT","keyStrategy":"preserve","dedupeKeys":["stock_id"]}
+{"timestamp":"2026-01-20T06:13:14.638Z","runId":83,"level":"info","phase":"fetch","tableName":"stock","tableRunId":109,"sourceRows":2127}
+{"timestamp":"2026-01-20T06:13:14.744Z","runId":83,"level":"warn","phase":"progress","status":"client_disconnected"}

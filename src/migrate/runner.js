@@ -452,7 +452,7 @@ async function runMigrationInternal({
 				// Get the mapping entry to check keyStrategy
 				const mappingEntry = mapping?.tables?.SPARES_USED;
 				const keyStrategy = step.keyStrategy || mappingEntry?.keyStrategy || "preserve";
-				
+
 				if (keyStrategy === "preserve" && step.dedupeKeys && !step.dedupeKeys.includes("spares_id")) {
 					// For preserve mode, dedupe on the primary key
 					step.dedupeKeys = ["spares_id"];
@@ -882,19 +882,36 @@ async function runMigrationInternal({
 										await conn.beginTransaction();
 										const [result] = await conn.query(sql, [toInsert.map((r) => r.row.values)]);
 										await conn.commit();
-										const inserted = step.mode === "UPSERT"
-											? toInsert.length
-											: Number(result?.affectedRows || 0);
+										const totalRows = toInsert.length;
+										const affected = Number(result?.affectedRows || 0);
+										
+										// MySQL UPSERT: affectedRows = (inserts * 1) + (updates * 2)
+										// So if affectedRows > totalRows, some were updates
+										let inserted, updated;
+										if (step.mode === "UPSERT") {
+											// Calculate inserts and updates from affectedRows
+											// affected = inserted + (updated * 2)
+											// totalRows = inserted + updated
+											// Solving: updated = affected - totalRows, inserted = totalRows - updated
+											updated = Math.max(affected - totalRows, 0);
+											inserted = totalRows - updated;
+										} else {
+											inserted = affected;
+											updated = 0;
+										}
+										
 										const skipped =
 											ignoreDuplicatesForInsert && step.mode !== "UPSERT"
-												? Math.max(toInsert.length - inserted, 0)
+												? Math.max(totalRows - inserted, 0)
 												: 0;
-										rowsMigrated += inserted;
+										rowsMigrated += inserted + updated;
 										rowsInserted += inserted;
+										rowsUpdated += updated;
 										batchInserted += inserted;
+										batchUpdated += updated;
 										rowsSkippedDuplicates += skipped;
 										batchSkipped += skipped;
-										totals.rows_total_migrated += inserted;
+										totals.rows_total_migrated += inserted + updated;
 										totals.rows_total_skipped_duplicates += skipped;
 									} catch (err) {
 										try {
@@ -1119,7 +1136,7 @@ async function runMigrationInternal({
 						const accountedRows = rowsInserted + rowsUpdated + rowsSkippedDuplicates;
 						const readRows = rowsMigrated; // This is the sum of inserted + updated
 						const totalRead = offset; // Total rows read from source
-						
+
 						if (totalRead > accountedRows + rowsError + 50) {
 							// Significant row loss (allowing 50 row tolerance for edge cases)
 							const lostRows = totalRead - accountedRows - rowsError;
@@ -1137,7 +1154,7 @@ async function runMigrationInternal({
 								COUNT(CASE WHEN cost_price > 0 OR sales_price > 0 THEN 1 END) as nonzero_price_count
 							FROM \`${tableName}\`
 						`);
-						
+
 						// Query Firebird to check if source has non-zero prices
 						const sourceNonZeroCount = await firebird.query(firebirdConfig, `
 							SELECT COUNT(*) as cnt 
@@ -1145,23 +1162,23 @@ async function runMigrationInternal({
 							WHERE COST_PRICE > 0 OR SALES_PRICE > 0
 						`);
 						const fbNonZeroCount = sourceNonZeroCount[0]?.cnt || sourceNonZeroCount[0]?.CNT || 0;
-						
+
 						const mysqlTotal = priceCheck[0]?.total_rows || 0;
 						const mysqlZeroPrice = priceCheck[0]?.zero_price_count || 0;
 						const mysqlNonZeroPrice = priceCheck[0]?.nonzero_price_count || 0;
-						
-						logRun({ 
-							level: "info", 
-							phase: "post_validation", 
-							tableName, 
-							tableRunId, 
+
+						logRun({
+							level: "info",
+							phase: "post_validation",
+							tableName,
+							tableRunId,
 							validation: "price_check",
 							firebird_nonzero: fbNonZeroCount,
 							mysql_total: mysqlTotal,
 							mysql_zero: mysqlZeroPrice,
 							mysql_nonzero: mysqlNonZeroPrice
 						});
-						
+
 						// If Firebird has many non-zero prices but MySQL has mostly zeros, fail
 						if (fbNonZeroCount > 50 && mysqlNonZeroPrice < fbNonZeroCount * 0.5) {
 							const errorMessage = `Validation failed for spares_used: Price fields not migrated correctly. Firebird has ${fbNonZeroCount} rows with non-zero prices, but MySQL only has ${mysqlNonZeroPrice}. Likely mapping is missing COST_PRICE/SALES_PRICE columns or transform is coercing nulls to 0.`;
@@ -1169,7 +1186,7 @@ async function runMigrationInternal({
 							await failRun(errorMessage, "Check mapping includes COST_PRICE and SALES_PRICE columns with toNumber transform (which preserves nulls).", "post_validation");
 							break;
 						}
-						
+
 						logRun({ level: "info", phase: "post_validation", tableName, tableRunId, status: "passed" });
 					} catch (validationErr) {
 						logRun({ level: "warn", phase: "post_validation", tableName, tableRunId, status: "error", error: validationErr?.message });

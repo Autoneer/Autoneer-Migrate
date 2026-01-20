@@ -1,0 +1,6 @@
+{"timestamp":"2026-01-20T06:15:00.070Z","runId":87,"level":"info","phase":"run_start","dryRun":false,"batchSize":500,"fkChecks":true,"tables":[]}
+{"timestamp":"2026-01-20T06:15:00.272Z","runId":87,"level":"info","phase":"preflight","attempt":1,"status":"ok"}
+{"timestamp":"2026-01-20T06:15:00.273Z","runId":87,"level":"debug","phase":"preflight","durationMs":202}
+{"timestamp":"2026-01-20T06:15:00.361Z","runId":87,"level":"info","phase":"progress","status":"client_connected"}
+{"timestamp":"2026-01-20T06:15:00.457Z","runId":87,"level":"info","phase":"run_finalize","status":"success"}
+{"timestamp":"2026-01-20T06:15:00.469Z","runId":87,"level":"warn","phase":"progress","status":"client_disconnected"}
