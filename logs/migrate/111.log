@@ -1,0 +1,9 @@
+{"timestamp":"2026-01-20T10:01:14.046Z","runId":111,"level":"info","phase":"run_start","dryRun":false,"batchSize":500,"fkChecks":true,"tables":[]}
+{"timestamp":"2026-01-20T10:01:14.151Z","runId":111,"level":"info","phase":"preflight","attempt":1,"status":"ok"}
+{"timestamp":"2026-01-20T10:01:14.152Z","runId":111,"level":"debug","phase":"preflight","durationMs":106}
+{"timestamp":"2026-01-20T10:01:14.152Z","runId":111,"level":"info","phase":"preflight","action":"nullability_validation","status":"start"}
+{"timestamp":"2026-01-20T10:01:14.153Z","runId":111,"level":"info","phase":"preflight","action":"nullability_validation","status":"passed"}
+{"timestamp":"2026-01-20T10:01:14.172Z","runId":111,"level":"info","phase":"progress","status":"client_connected"}
+{"timestamp":"2026-01-20T10:01:14.231Z","runId":111,"level":"info","phase":"preflight","action":"foreign_key_checks_disabled","original_state":true}
+{"timestamp":"2026-01-20T10:01:14.240Z","runId":111,"level":"info","phase":"run_finalize","status":"success"}
+{"timestamp":"2026-01-20T10:01:14.247Z","runId":111,"level":"warn","phase":"progress","status":"client_disconnected"}

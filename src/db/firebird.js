@@ -160,6 +160,7 @@ module.exports = {
 	resolveFirebirdConfig,
 	validateFirebirdConfig,
 	maskFirebirdConfig,
+	attach,
 	testConnection,
 	query,
 	listTables,

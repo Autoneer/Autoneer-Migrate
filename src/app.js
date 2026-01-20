@@ -11,7 +11,14 @@ const runRoutes = require("./routes/run");
 const resultsRoutes = require("./routes/results");
 const eventsRoutes = require("./routes/events");
 const migrationRoutes = require("./routes/migration");
+const wizardRoutes = require("./routes/wizard"); // Phase 3: New wizard UI
 const { router: healthRoutes } = require("./routes/health"); // Destructure router since health.js exports object
+const schemaRoutes = require("./routes/schema"); // New refactored schema API
+
+// Phase 2 API routes - Refactored models
+const mappingApiRoutes = require("./routes/api/mappings");
+const planApiRoutes = require("./routes/api/plans");
+const runApiRoutes = require("./routes/api/runs");
 
 const app = express();
 
@@ -58,8 +65,15 @@ app.use(mappingRoutes);
 app.use(migrationRoutes);
 app.use(runRoutes);
 app.use(resultsRoutes);
+app.use(wizardRoutes); // Phase 3: Wizard UI route
 app.use(eventsRoutes);
 app.use(healthRoutes);
+app.use(schemaRoutes); // New schema API routes
+
+// Phase 2: Refactored API routes
+app.use(mappingApiRoutes); // Mapping CRUD endpoints
+app.use(planApiRoutes);    // Plan management endpoints
+app.use(runApiRoutes);     // Run tracking endpoints
 
 app.use((err, req, res, next) => {
 	const message = err?.message || "Unexpected error";

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wizard Test - Autoneer Migration</title>
+    
+    <!-- Wizard CSS -->
+    <link rel="stylesheet" href="/public/css/wizard.css" />
+    <link rel="stylesheet" href="/public/css/responsive.css" />
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+    <!-- Skip to content link for accessibility -->
+    <a href="#wizard-container" class="skip-to-content">Skip to content</a>
+
+    <!-- Main wizard container -->
+    <div id="wizard-container">
+        <!-- Progress bar (auto-rendered by wizard.js) -->
+        <div id="wizard-progress"></div>
+        
+        <!-- Step indicator (auto-rendered) -->
+        <div class="step-indicator">Initializing wizard...</div>
+        
+        <!-- Step content (auto-rendered by step components) -->
+        <div id="wizard-steps"></div>
+        
+        <!-- Navigation buttons (auto-rendered) -->
+        <div id="wizard-navigation"></div>
+        
+        <!-- Loading overlay -->
+        <div class="loading-overlay" style="display: none;">
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+                <p>Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript - Load in order -->
+    <!-- 1. Core utilities -->
+    <script src="/public/js/utils/storage.js"></script>
+    <script src="/public/js/utils/state.js"></script>
+    <script src="/public/js/utils/validator.js"></script>
+
+    <!-- 2. API clients -->
+    <script src="/public/js/api/client.js"></script>
+    <script src="/public/js/api/schema-api.js"></script>
+    <script src="/public/js/api/mapping-api.js"></script>
+    <script src="/public/js/api/plan-api.js"></script>
+    <script src="/public/js/api/run-api.js"></script>
+
+    <!-- 3. Step components -->
+    <script src="/public/js/steps/schema-ui.js"></script>
+    <script src="/public/js/steps/mapping-ui.js"></script>
+    <script src="/public/js/steps/plan-ui.js"></script>
+    <script src="/public/js/steps/run-ui.js"></script>
+    <script src="/public/js/steps/results-ui.js"></script>
+
+    <!-- 4. Wizard controller (auto-initializes) -->
+    <script src="/public/js/wizard.js"></script>
+
+    <script>
+        // Debug logging
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('=== Wizard Debug Info ===');
+            console.log('WizardStorage:', typeof WizardStorage);
+            console.log('WizardState:', typeof WizardState);
+            console.log('FormValidator:', typeof FormValidator);
+            console.log('APIClient:', typeof APIClient);
+            console.log('SchemaAPI:', typeof SchemaAPI);
+            console.log('MappingAPI:', typeof MappingAPI);
+            console.log('PlanAPI:', typeof PlanAPI);
+            console.log('RunAPI:', typeof RunAPI);
+            console.log('SchemaUI:', typeof SchemaUI);
+            console.log('MappingUI:', typeof MappingUI);
+            console.log('PlanUI:', typeof PlanUI);
+            console.log('RunUI:', typeof RunUI);
+            console.log('ResultsUI:', typeof ResultsUI);
+            console.log('MigrationWizard:', typeof MigrationWizard);
+            console.log('Wizard instance:', typeof window.wizard);
+            console.log('========================');
+        });
+    </script>
+</body>
+</html>

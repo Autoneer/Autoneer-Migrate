@@ -1,0 +1,14 @@
+{"timestamp":"2026-01-20T10:13:00.588Z","runId":112,"level":"info","phase":"run_start","dryRun":false,"batchSize":500,"fkChecks":true,"tables":[{"table":"customers","mode":"UPSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","clean":false}]}
+{"timestamp":"2026-01-20T10:13:00.656Z","runId":112,"level":"info","phase":"preflight","attempt":1,"status":"ok"}
+{"timestamp":"2026-01-20T10:13:00.656Z","runId":112,"level":"debug","phase":"preflight","durationMs":68}
+{"timestamp":"2026-01-20T10:13:00.656Z","runId":112,"level":"info","phase":"preflight","action":"nullability_validation","status":"start"}
+{"timestamp":"2026-01-20T10:13:00.659Z","runId":112,"level":"info","phase":"progress","status":"client_connected"}
+{"timestamp":"2026-01-20T10:13:00.662Z","runId":112,"level":"info","phase":"preflight","action":"nullability_validation","status":"passed"}
+{"timestamp":"2026-01-20T10:13:00.731Z","runId":112,"level":"info","phase":"preflight","action":"foreign_key_checks_disabled","original_state":true}
+{"timestamp":"2026-01-20T10:13:00.803Z","runId":112,"level":"info","phase":"table_start","tableName":"customers","tableRunId":131,"mode":"UPSERT","keyStrategy":"preserve","dedupeKeys":[]}
+{"timestamp":"2026-01-20T10:13:00.881Z","runId":112,"level":"info","phase":"fetch","tableName":"customers","tableRunId":131,"sourceRows":4}
+{"timestamp":"2026-01-20T10:13:00.954Z","runId":112,"level":"debug","phase":"write","tableName":"customers","tableRunId":131,"status":"start","batchSize":4}
+{"timestamp":"2026-01-20T10:13:00.962Z","runId":112,"level":"debug","phase":"write","tableName":"customers","tableRunId":131,"status":"end","inserted":3,"updated":1,"skipped":0,"durationMs":8}
+{"timestamp":"2026-01-20T10:13:00.981Z","runId":112,"level":"info","phase":"table_finalize","tableName":"customers","tableRunId":131,"status":"success","inserted":3,"updated":1,"skipped":0,"errors":0,"durationMs":168}
+{"timestamp":"2026-01-20T10:13:00.986Z","runId":112,"level":"info","phase":"run_finalize","status":"success"}
+{"timestamp":"2026-01-20T10:13:00.991Z","runId":112,"level":"warn","phase":"progress","status":"client_disconnected"}
