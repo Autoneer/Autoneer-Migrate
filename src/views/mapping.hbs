@@ -99,6 +99,138 @@
 </section>
 
 <section class="card advanced-section" data-advanced-section style="display: none;">
+	<h3>Advanced: Custom Table Mapping</h3>
+	<div class="hint">Map source tables to different target table names and select which fields to migrate.</div>
+	<form method="post" action="/mapping/customize">
+		<table>
+			<thead>
+				<tr>
+					<th>Source Table</th>
+					<th>Target Table</th>
+					<th>Fields to Migrate</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{{#each mappingTables}}
+				<tr>
+					<td><strong>{{source}}</strong></td>
+					<td>
+						<select name="target__{{source}}" class="target-table-selector" data-source="{{source}}"
+							style="width: 100%;" onchange="onTargetTableChange('{{source}}', this.value)">
+							<option value="">— Select target table —</option>
+							{{#each ../availableTargetTables}}
+							<option value="{{this}}" {{#if (eq this ../target)}}selected{{/if}}>{{this}}</option>
+							{{/each}}
+							<option value="__custom__">✏️ Custom table name...</option>
+						</select>
+						<input type="text" name="target_custom__{{source}}" id="target-custom-{{source}}"
+							placeholder="Enter custom table name"
+							style="display: none; width: 100%; margin-top: 5px;" />
+					</td>
+					<td>
+						<button type="button" class="btn secondary" onclick="showFieldSelector('{{source}}')">
+							Configure Fields ({{columns.length}})
+						</button>
+					</td>
+					<td>
+						<button type="button" class="btn secondary"
+							onclick="duplicateTableMapping('{{source}}', '{{target}}')">
+							Duplicate
+						</button>
+					</td>
+				</tr>
+				<!-- Hidden field selector modal -->
+				<tr id="field-selector-{{source}}" style="display: none;">
+					<td colspan="4">
+						<div style="padding: 10px; background: #f5f5f5; border-radius: 4px;">
+							<h4>Map fields: {{source}} → <span id="target-name-{{source}}">{{target}}</span></h4>
+							<div id="field-mapping-container-{{source}}">
+								<div style="max-height: 300px; overflow-y: auto;">
+									<table style="width: 100%;">
+										<thead>
+											<tr>
+												<th style="width: 30px;">
+													<input type="checkbox"
+														onchange="toggleAllFields('{{source}}', this.checked)" />
+												</th>
+												<th>Source Field</th>
+												<th>→</th>
+												<th>Target Field</th>
+												<th>Transform</th>
+												<th>Default Value</th>
+											</tr>
+										</thead>
+										<tbody id="field-mapping-body-{{source}}">
+											{{#each columns}}
+											<tr>
+												<td>
+													<input type="checkbox"
+														name="field_include__{{../source}}__{{source}}" value="1"
+														checked class="field-checkbox-{{../source}}" />
+												</td>
+												<td><strong>{{source}}</strong></td>
+												<td>→</td>
+												<td>
+													<select name="field_target__{{../source}}__{{source}}"
+														style="width: 100%;" class="target-field-selector">
+														<option value="">— Select target field —</option>
+														<option value="{{target}}" selected>{{target}}</option>
+													</select>
+												</td>
+												<td>
+													<select name="field_transform__{{../source}}__{{source}}">
+														<option value="">None</option>
+														<option value="trim" {{#if (eq transform "trim"
+															)}}selected{{/if}}>
+															trim</option>
+														<option value="toNumber" {{#if (eq transform "toNumber"
+															)}}selected{{/if}}>toNumber</option>
+														<option value="toDate" {{#if (eq transform "toDate"
+															)}}selected{{/if}}>toDate</option>
+														<option value="toUpperCase" {{#if (eq transform "toUpperCase"
+															)}}selected{{/if}}>toUpperCase</option>
+														<option value="toLowerCase" {{#if (eq transform "toLowerCase"
+															)}}selected{{/if}}>toLowerCase</option>
+													</select>
+												</td>
+												<td>
+													<input type="text" name="field_default__{{../source}}__{{source}}"
+														value="{{defaultValue}}" placeholder="(optional)"
+														style="width: 100%;" />
+												</td>
+											</tr>
+											{{/each}}
+										</tbody>
+									</table>
+								</div>
+							</div>
+							<div style="margin-top: 10px;">
+								<button type="button" class="btn secondary" onclick="hideFieldSelector('{{source}}')">
+									Done
+								</button>
+								<button type="button" class="btn secondary"
+									onclick="loadTargetTableFields('{{source}}')">
+									🔄 Refresh Target Fields
+								</button>
+							</div>
+						</div>
+					</td>
+				</tr>
+				{{/each}}
+			</tbody>
+		</table>
+		<div class="hint">
+			<strong>Example:</strong> To migrate SPARES_USED to customer_invoice_lines, change the target table name
+			and configure which fields to include.
+		</div>
+		<div class="actions">
+			<button class="btn primary" type="submit">Apply Custom Mapping</button>
+		</div>
+	</form>
+</section>
+
+<section class="card advanced-section" data-advanced-section style="display: none;">
 	<h3>Advanced: Import / Export</h3>
 	<form method="post" action="/mapping/import">
 		<textarea name="mapping_json" class="code" rows="10" placeholder="Paste mapping JSON here"></textarea>
@@ -183,5 +315,128 @@
 				setVisible(isOn);
 			});
 		}
-	})();
+
+		// Store target table schemas from server
+		const targetTableSchemas = {{{ targetTableSchemasJson }}};
+	// Field selector functions
+	window.showFieldSelector = function (sourceTable) {
+		const row = document.getElementById('field-selector-' + sourceTable);
+		if (row) row.style.display = 'table-row';
+	};
+
+	window.hideFieldSelector = function (sourceTable) {
+		const row = document.getElementById('field-selector-' + sourceTable);
+		if (row) row.style.display = 'none';
+	};
+
+	window.toggleAllFields = function (sourceTable, checked) {
+		const checkboxes = document.querySelectorAll('.field-checkbox-' + sourceTable);
+		checkboxes.forEach(cb => cb.checked = checked);
+	};
+
+	window.onTargetTableChange = function (sourceTable, targetTableName) {
+		const customInput = document.getElementById('target-custom-' + sourceTable);
+		const targetNameSpan = document.getElementById('target-name-' + sourceTable);
+
+		if (targetTableName === '__custom__') {
+			// Show custom input
+			customInput.style.display = 'block';
+			customInput.focus();
+			if (targetNameSpan) targetNameSpan.textContent = 'Custom';
+		} else {
+			// Hide custom input
+			customInput.style.display = 'none';
+			if (targetNameSpan) targetNameSpan.textContent = targetTableName || 'None';
+
+			// Load target table fields if available
+			if (targetTableName && targetTableSchemas[targetTableName]) {
+				updateTargetFieldDropdowns(sourceTable, targetTableSchemas[targetTableName]);
+			}
+		}
+	};
+
+	window.loadTargetTableFields = async function (sourceTable) {
+		const selector = document.querySelector(`select[name="target__${sourceTable}"]`);
+		if (!selector) return;
+
+		const targetTableName = selector.value;
+		if (!targetTableName || targetTableName === '__custom__') {
+			alert('Please select a target table first');
+			return;
+		}
+
+		try {
+			const response = await fetch(`/mapping/api/target-table-fields/${encodeURIComponent(targetTableName)}`);
+			const data = await response.json();
+
+			if (data.ok && data.columns) {
+				targetTableSchemas[targetTableName] = data.columns;
+				updateTargetFieldDropdowns(sourceTable, data.columns);
+				alert(`Loaded ${data.columns.length} fields from ${targetTableName}`);
+			} else {
+				alert('Failed to load target table fields: ' + (data.error || 'Unknown error'));
+			}
+		} catch (err) {
+			alert('Error loading target table fields: ' + err.message);
+		}
+	};
+
+	function updateTargetFieldDropdowns(sourceTable, targetColumns) {
+		const tbody = document.getElementById('field-mapping-body-' + sourceTable);
+		if (!tbody) return;
+
+		const rows = tbody.querySelectorAll('tr');
+		rows.forEach(row => {
+			const targetSelect = row.querySelector('.target-field-selector');
+			if (!targetSelect) return;
+
+			// Get current selection
+			const currentValue = targetSelect.value;
+
+			// Clear and rebuild options
+			targetSelect.innerHTML = '<option value="">— Select target field —</option>';
+
+			// Add all target table columns
+			targetColumns.forEach(col => {
+				const option = document.createElement('option');
+				option.value = col.name;
+				option.textContent = col.name + (col.isPrimary ? ' 🔑' : '') + ' (' + col.dataType + ')';
+				if (col.name === currentValue) {
+					option.selected = true;
+				}
+				targetSelect.appendChild(option);
+			});
+
+			// Add custom option
+			const customOption = document.createElement('option');
+			customOption.value = '__custom__';
+			customOption.textContent = '✏️ Custom field name...';
+			targetSelect.appendChild(customOption);
+		});
+	}
+
+	window.duplicateTableMapping = function (sourceTable, targetTable) {
+		const newTargetName = prompt('Enter new target table name for ' + sourceTable + ':', targetTable + '_copy');
+		if (newTargetName && newTargetName.trim()) {
+			const input = document.querySelector('input[name="target__' + sourceTable + '"]');
+			if (input) {
+				// Create a visual indication or handle duplication
+				alert('To duplicate, create a new mapping entry in the JSON editor or use the export/import feature.');
+			}
+		}
+	};
+
+	// Initialize target field dropdowns on page load
+	document.addEventListener('DOMContentLoaded', function () {
+		// Pre-populate target field dropdowns for already selected tables
+		const selectors = document.querySelectorAll('.target-table-selector');
+		selectors.forEach(selector => {
+			const sourceTable = selector.getAttribute('data-source');
+			const targetTable = selector.value;
+			if (targetTable && targetTable !== '__custom__' && targetTableSchemas[targetTable]) {
+				updateTargetFieldDropdowns(sourceTable, targetTableSchemas[targetTable]);
+			}
+		});
+	});
+	}) ();
 </script>

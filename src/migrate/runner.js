@@ -1112,10 +1112,12 @@ async function runMigrationInternal({
 					const newId = await runStore.startTableRun(pool, runId, tableName, step.mode, step.keyStrategy);
 					tableRunId = newId;
 				}
-				tableState.status = "RUNNING";
-				tableState.lastError = null;
-				tableState.tableRunId = tableRunId;
-				runState.currentTable = tableName;
+
+				// Ensure tableRunId is always set
+				if (!tableRunId) {
+					throw new Error(`tableRunId not initialized for table ${tableName}`);
+				}
+
 				emitRunState(runId, emitter);
 
 				const primaryKeys = await mysql.getPrimaryKeys(pool, tableName);

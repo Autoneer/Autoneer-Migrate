@@ -3,6 +3,124 @@
 	{{#if error}}
 	<div class="alert error">{{error}}</div>
 	{{/if}}
+
+	{{#if ui.runNotice}}
+	<div class="alert {{ui.runNotice.type}}">
+		<strong>{{ui.runNotice.message}}</strong>
+		{{#if ui.runNotice.details}}
+		<div>{{ui.runNotice.details}}</div>
+		{{/if}}
+	</div>
+	{{/if}}
+
+	{{#if tableMappings}}
+	<div class="card nested" id="table-mappings-summary">
+		<div class="card-header">
+			<strong>Migration Plan Summary</strong>
+		</div>
+		<div class="card-body">
+			<table class="data-table">
+				<thead>
+					<tr>
+						<th>Source Table</th>
+						<th></th>
+						<th>Target Table</th>
+						<th>Mode</th>
+						<th>Key Strategy</th>
+						<th>Dedupe Keys</th>
+					</tr>
+				</thead>
+				<tbody>
+					{{#each tableMappings}}
+					<tr>
+						<td><strong>{{sourceTable}}</strong></td>
+						<td>→</td>
+						<td><strong>{{targetTable}}</strong></td>
+						<td><span class="badge">{{mode}}</span></td>
+						<td><span class="badge">{{keyStrategy}}</span></td>
+						<td>{{#if dedupeKeys}}{{#each dedupeKeys}}{{this}}{{#unless @last}},
+							{{/unless}}{{/each}}{{else}}<em>none</em>{{/if}}</td>
+					</tr>
+					{{/each}}
+				</tbody>
+			</table>
+		</div>
+	</div>
+	{{/if}}
+
+	{{#if showPlanEditor}}
+	<div class="card nested" id="plan-editor">
+		<div class="card-header">
+			<strong>⚠️ Fix Plan Configuration</strong>
+		</div>
+		<div class="card-body">
+			<div class="alert error">
+				<strong>Validation errors detected:</strong>
+				<ul>
+					{{#each validationErrors}}
+					<li>{{this}}</li>
+					{{/each}}
+				</ul>
+			</div>
+			<p>Update the migration options below to fix these errors:</p>
+			<form method="post" action="/run/update-plan" id="plan-editor-form">
+				<table class="data-table">
+					<thead>
+						<tr>
+							<th>Table</th>
+							<th>Mode</th>
+							<th>Key Strategy</th>
+							<th>Dedupe Keys</th>
+							<th>On Duplicate</th>
+						</tr>
+					</thead>
+					<tbody>
+						{{#each plan}}
+						{{#if include}}
+						<tr>
+							<td><strong>{{table}}</strong></td>
+							<td>
+								<select name="mode_{{table}}" class="form-control">
+									<option value="INSERT" {{#if (eq mode "INSERT" )}}selected{{/if}}>INSERT</option>
+									<option value="UPSERT" {{#if (eq mode "UPSERT" )}}selected{{/if}}>UPSERT</option>
+								</select>
+							</td>
+							<td>
+								<select name="keyStrategy_{{table}}" class="form-control">
+									<option value="preserve" {{#if (eq keyStrategy "preserve" )}}selected{{/if}}>
+										preserve</option>
+									<option value="rekey" {{#if (eq keyStrategy "rekey" )}}selected{{/if}}>rekey
+									</option>
+								</select>
+							</td>
+							<td>
+								<input type="text" name="dedupeKeys_{{table}}"
+									value="{{#if dedupeKeys}}{{#each dedupeKeys}}{{this}}{{#unless @last}},{{/unless}}{{/each}}{{/if}}"
+									class="form-control" placeholder="e.g. name,code" />
+							</td>
+							<td>
+								<select name="onDuplicate_{{table}}" class="form-control">
+									<option value="error" {{#if (eq onDuplicate "error" )}}selected{{/if}}>error
+									</option>
+									<option value="skip" {{#if (eq onDuplicate "skip" )}}selected{{/if}}>skip</option>
+									<option value="replace" {{#if (eq onDuplicate "replace" )}}selected{{/if}}>replace
+									</option>
+								</select>
+							</td>
+						</tr>
+						{{/if}}
+						{{/each}}
+					</tbody>
+				</table>
+				<div class="actions">
+					<button type="submit" class="btn primary">Update Plan</button>
+					<a href="/plan" class="btn secondary">Edit Full Plan</a>
+				</div>
+			</form>
+		</div>
+	</div>
+	{{/if}}
+
 	<form method="post" action="/run/start" id="run-form">
 		<div class="actions">
 			<a class="btn secondary" href="/mapping">Back</a>

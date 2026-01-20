@@ -24,11 +24,22 @@ function validateFirebirdConfig() {
 
 function resolveMappingForTarget(tableName, mapping) {
 	const entries = mapping?.tables || {};
+
+	// First, check if tableName is a custom target (e.g., customer_invoice_lines)
 	const sourceKey = Object.keys(entries).find(
 		(key) => entries[key].target.toLowerCase() === tableName.toLowerCase()
 	);
-	if (!sourceKey) return null;
-	return { sourceTable: sourceKey, ...entries[sourceKey] };
+	if (sourceKey) {
+		return { sourceTable: sourceKey, ...entries[sourceKey] };
+	}
+
+	// Second, check if tableName is a source table name (e.g., spares_used)
+	// This handles cases where the plan still has the source table name
+	if (entries[tableName]) {
+		return { sourceTable: tableName, ...entries[tableName] };
+	}
+
+	return null;
 }
 
 async function validatePlanForRun(pool, plan, mapping) {
@@ -94,7 +105,7 @@ async function validatePlanForRun(pool, plan, mapping) {
 
 router.get("/run", async (req, res) => {
 	const runId = req.query.runId || null;
-	const runNotice = state.ui?.runNotice || null;
+	const ui = { runNotice: state.ui?.runNotice || null };
 	// Clear notice after displaying
 	if (state.ui) {
 		state.ui.runNotice = null;
@@ -112,11 +123,40 @@ router.get("/run", async (req, res) => {
 		}
 	}
 
+	// Build table mapping summary
+	const tableMappings = [];
+	const includedPlan = (state.plan || []).filter(p => p.include);
+	for (const planItem of includedPlan) {
+		const planTableName = planItem.table;
+		const mappingEntry = resolveMappingForTarget(planTableName, state.mapping);
+
+		// Determine actual source and target tables
+		let sourceTable, targetTable;
+		if (mappingEntry) {
+			sourceTable = mappingEntry.sourceTable;
+			targetTable = mappingEntry.target;
+		} else {
+			// No custom mapping, source and target are the same
+			sourceTable = planTableName;
+			targetTable = planTableName;
+		}
+
+		tableMappings.push({
+			sourceTable,
+			targetTable,
+			mode: planItem.mode,
+			keyStrategy: planItem.keyStrategy,
+			dedupeKeys: planItem.dedupeKeys || [],
+			onDuplicate: planItem.onDuplicate
+		});
+	}
+
 	res.render("run", {
 		plan: (state.plan || []).slice().sort((a, b) => a.table.localeCompare(b.table)),
+		tableMappings,
 		runId,
 		run,
-		runNotice,
+		ui,
 		currentStep: "run"
 	});
 });
@@ -178,11 +218,41 @@ router.post("/run/start", async (req, res) => {
 				res.status(400).json({ error: message, errors });
 				return;
 			}
+			// Build table mapping summary even on error
+			const tableMappings = [];
+			const includedPlan = (state.plan || []).filter(p => p.include);
+			for (const planItem of includedPlan) {
+				const planTableName = planItem.table;
+				const mappingEntry = resolveMappingForTarget(planTableName, state.mapping);
+
+				// Determine actual source and target tables
+				let sourceTable, targetTable;
+				if (mappingEntry) {
+					sourceTable = mappingEntry.sourceTable;
+					targetTable = mappingEntry.target;
+				} else {
+					// No custom mapping, source and target are the same
+					sourceTable = planTableName;
+					targetTable = planTableName;
+				}
+
+				tableMappings.push({
+					sourceTable,
+					targetTable,
+					mode: planItem.mode,
+					keyStrategy: planItem.keyStrategy,
+					dedupeKeys: planItem.dedupeKeys || [],
+					onDuplicate: planItem.onDuplicate
+				});
+			}
 			res.render("run", {
 				plan: (state.plan || []).slice().sort((a, b) => a.table.localeCompare(b.table)),
+				tableMappings,
 				runId: null,
 				run: null,
 				error: message,
+				validationErrors: errors,
+				showPlanEditor: true,
 				currentStep: "run"
 			});
 			return;
@@ -292,6 +362,52 @@ router.get("/run/logs/:runId", async (req, res) => {
 		res.download(logPath, `${runId}.log`);
 	} catch (err) {
 		res.status(404).json({ error: "Log not found" });
+	}
+});
+
+router.post("/run/update-plan", async (req, res) => {
+	try {
+		// Update plan from the run page
+		const updates = {};
+		Object.keys(req.body).forEach(key => {
+			if (key.startsWith('mode_')) {
+				const tableName = key.replace('mode_', '');
+				if (!updates[tableName]) updates[tableName] = {};
+				updates[tableName].mode = req.body[key];
+			} else if (key.startsWith('keyStrategy_')) {
+				const tableName = key.replace('keyStrategy_', '');
+				if (!updates[tableName]) updates[tableName] = {};
+				updates[tableName].keyStrategy = req.body[key];
+			} else if (key.startsWith('dedupeKeys_')) {
+				const tableName = key.replace('dedupeKeys_', '');
+				if (!updates[tableName]) updates[tableName] = {};
+				const keys = req.body[key].split(',').map(k => k.trim()).filter(k => k);
+				updates[tableName].dedupeKeys = keys;
+			} else if (key.startsWith('onDuplicate_')) {
+				const tableName = key.replace('onDuplicate_', '');
+				if (!updates[tableName]) updates[tableName] = {};
+				updates[tableName].onDuplicate = req.body[key];
+			}
+		});
+
+		// Apply updates to state.plan
+		state.plan = (state.plan || []).map(item => {
+			if (updates[item.table]) {
+				return { ...item, ...updates[item.table] };
+			}
+			return item;
+		});
+
+		if (!state.ui) state.ui = {};
+		state.ui.runNotice = {
+			type: 'success',
+			message: 'Plan updated successfully',
+			details: 'Migration options have been updated. You can now run the migration.'
+		};
+
+		res.redirect('/run');
+	} catch (err) {
+		res.status(500).json({ error: err.message });
 	}
 });
 

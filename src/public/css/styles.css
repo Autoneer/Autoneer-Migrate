@@ -184,6 +184,11 @@ textarea {
 	border-radius: 6px;
 }
 
+.form-control {
+	width: 100%;
+	font-size: 13px;
+}
+
 textarea.code {
 	font-family: Consolas, monospace;
 }
@@ -443,6 +448,18 @@ pre {
 	font-size: 12px;
 	border: 1px solid var(--border-subtle);
 	background: #f6f8fa;
+}
+
+.badge {
+	display: inline-block;
+	padding: 3px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	font-weight: 500;
+	text-transform: uppercase;
+	background: var(--panel);
+	border: 1px solid var(--border);
+	color: var(--muted);
 }
 
 .status-badge.running {

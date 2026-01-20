@@ -119,13 +119,36 @@ router.get("/mapping", async (req, res) => {
 	}
 
 	let profiles = [];
+	let availableTargetTables = [];
+	let targetTableSchemas = {};
 	try {
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		await mysql.ensureMigrationTables(pool);
 		profiles = await runStore.listMappingProfiles(pool);
+
+		// Fetch available target tables
+		availableTargetTables = await mysql.listTables(pool);
+
+		// Fetch schema for each target table
+		for (const tableName of availableTargetTables) {
+			try {
+				const columns = await mysql.listColumns(pool, tableName);
+				targetTableSchemas[tableName] = columns.map(col => ({
+					name: col.name,
+					dataType: col.dataType,
+					isPrimary: col.columnKey === 'PRI'
+				}));
+			} catch (err) {
+				// Skip tables that can't be read
+				targetTableSchemas[tableName] = [];
+			}
+		}
+
 		await pool.end();
 	} catch (err) {
 		profiles = [];
+		availableTargetTables = [];
+		targetTableSchemas = {};
 	}
 
 	profiles = profiles.slice().sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
@@ -145,6 +168,8 @@ router.get("/mapping", async (req, res) => {
 		defaultMappingProfileId: state.settings.defaultMappingProfileId,
 		activeMappingProfileId: state.mapping?.profileId || null,
 		activeMappingProfileName: state.mapping?.profileName || "",
+		availableTargetTables: availableTargetTables.sort((a, b) => a.localeCompare(b)),
+		targetTableSchemasJson: JSON.stringify(targetTableSchemas),
 		mappingTables: mappingTablesIncluded.map(([source, def]) => ({
 			source,
 			target: def.target,
@@ -342,6 +367,99 @@ router.post("/mapping/resolve", async (req, res) => {
 	}
 });
 
+router.post("/mapping/customize", async (req, res) => {
+	try {
+		const mapping = state.mapping || { tables: {} };
+		const newTables = {};
+
+		// Process each source table's custom configuration
+		Object.keys(mapping.tables).forEach((sourceTable) => {
+			let targetTableName = req.body[`target__${sourceTable}`];
+
+			// Handle custom table name input
+			if (targetTableName === '__custom__') {
+				targetTableName = req.body[`target_custom__${sourceTable}`] || '';
+			}
+
+			if (!targetTableName || targetTableName.trim() === '') return;
+
+			const tableDef = mapping.tables[sourceTable];
+			const newColumns = {};
+
+			// Process each field configuration
+			Object.keys(tableDef.columns || {}).forEach((sourceField) => {
+				const includeKey = `field_include__${sourceTable}__${sourceField}`;
+				const targetKey = `field_target__${sourceTable}__${sourceField}`;
+				const transformKey = `field_transform__${sourceTable}__${sourceField}`;
+				const defaultKey = `field_default__${sourceTable}__${sourceField}`;
+
+				// Only include fields that are checked
+				if (req.body[includeKey] === "1") {
+					let targetField = req.body[targetKey];
+
+					// Handle custom target field
+					if (targetField === '__custom__') {
+						targetField = req.body[`field_target_custom__${sourceTable}__${sourceField}`] || sourceField;
+					}
+
+					// Fallback to original if not specified
+					if (!targetField || targetField.trim() === '') {
+						targetField = tableDef.columns[sourceField].target || sourceField;
+					}
+
+					const transform = req.body[transformKey] || tableDef.columns[sourceField].transform;
+					const defaultValue = req.body[defaultKey];
+
+					const fieldDef = { target: targetField };
+					if (transform) fieldDef.transform = transform;
+					if (defaultValue !== undefined && defaultValue !== "") {
+						// Try to parse as number if it looks like a number
+						if (!isNaN(defaultValue) && defaultValue.trim() !== "") {
+							fieldDef.default = Number(defaultValue);
+						} else {
+							fieldDef.default = defaultValue;
+						}
+					}
+
+					newColumns[sourceField] = fieldDef;
+				}
+			});
+
+			// Create the new table definition with custom target name
+			newTables[sourceTable] = {
+				target: targetTableName.trim(),
+				mode: tableDef.mode || "INSERT",
+				keyStrategy: tableDef.keyStrategy || "rekey",
+				columns: newColumns
+			};
+		});
+
+		mapping.tables = newTables;
+		state.mapping = mapping;
+
+		if (!state.ui) {
+			state.ui = {};
+		}
+
+		state.ui.mappingNotice = {
+			type: "success",
+			message: "Custom table mapping applied successfully.",
+			details: "Remember to save this as a profile to reuse it later."
+		};
+
+		res.redirect("/mapping");
+	} catch (err) {
+		res.render("mapping", {
+			mappingJson: JSON.stringify(state.mapping || {}, null, 2),
+			error: `Failed to apply custom mapping: ${err.message}`,
+			profiles: [],
+			mappingTables: [],
+			mismatchRows: [],
+			currentStep: "mapping"
+		});
+	}
+});
+
 router.post("/mapping/save", async (req, res) => {
 	try {
 		const mapping = JSON.parse(req.body.mapping_json);
@@ -404,6 +522,27 @@ router.post("/mapping/import", (req, res) => {
 			mappingTables: [],
 			currentStep: "mapping"
 		});
+	}
+});
+
+router.get("/mapping/api/target-table-fields/:tableName", async (req, res) => {
+	try {
+		const tableName = req.params.tableName;
+		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
+		const columns = await mysql.listColumns(pool, tableName);
+		await pool.end();
+
+		res.json({
+			ok: true,
+			tableName,
+			columns: columns.map(col => ({
+				name: col.name,
+				dataType: col.dataType,
+				isPrimary: col.columnKey === 'PRI'
+			}))
+		});
+	} catch (err) {
+		res.status(500).json({ ok: false, error: err.message });
 	}
 });
 

@@ -1,0 +1,86 @@
+{
+	"tables": {
+		"SPARES_USED": {
+			"target": "customer_invoice_lines",
+			"mode": "INSERT",
+			"keyStrategy": "rekey",
+			"columns": {
+				"SPARES_ID": {
+					"target": "line_id"
+				},
+				"JOB_NR": {
+					"target": "invoice_number"
+				},
+				"SPARE": {
+					"target": "line_description",
+					"transform": "trim"
+				},
+				"QUANTITY": {
+					"target": "quantity",
+					"transform": "toNumber",
+					"default": 1
+				},
+				"STOCK_ID": {
+					"target": "product_id"
+				},
+				"DATE_USED": {
+					"target": "line_date",
+					"transform": "toDate"
+				},
+				"PARTNR": {
+					"target": "part_number",
+					"transform": "trim"
+				},
+				"COST_PRICE": {
+					"target": "unit_cost",
+					"transform": "toNumber",
+					"default": 0
+				},
+				"SALES_PRICE": {
+					"target": "unit_price",
+					"transform": "toNumber",
+					"default": 0
+				},
+				"VAT": {
+					"target": "tax_amount",
+					"transform": "toNumber",
+					"default": 0
+				},
+				"INVNR": {
+					"target": "invoice_nr",
+					"transform": "toNumber"
+				}
+			}
+		},
+		"CUSTOMER": {
+			"target": "customers",
+			"mode": "INSERT",
+			"keyStrategy": "preserve",
+			"columns": {
+				"CID": {
+					"target": "cid"
+				},
+				"NAME": {
+					"target": "name",
+					"transform": "trim"
+				},
+				"SURNAME": {
+					"target": "surname",
+					"transform": "trim"
+				},
+				"EMAIL": {
+					"target": "email",
+					"transform": "trim"
+				},
+				"TEL_HOME": {
+					"target": "telnr",
+					"transform": "trim"
+				},
+				"MOBILE": {
+					"target": "mobile",
+					"transform": "trim"
+				}
+			}
+		}
+	}
+}
