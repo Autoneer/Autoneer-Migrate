@@ -56,25 +56,25 @@ function toDecimal(precision, scale) {
 		if (value === null || value === undefined || value === "") return null;
 		const n = Number(value);
 		if (Number.isNaN(n)) return null;
-		
+
 		// Validate precision and scale
 		const absValue = Math.abs(n);
 		const parts = String(absValue).split('.');
 		const wholeDigits = parts[0].length;
 		const fractionalDigits = (parts[1] || '').length;
-		
+
 		if (wholeDigits > (precision - scale)) {
 			console.warn(
 				`Precision loss: ${value} exceeds DECIMAL(${precision},${scale}). ` +
 				`Whole part has ${wholeDigits} digits but max is ${precision - scale}.`
 			);
 		}
-		
+
 		if (fractionalDigits > scale) {
 			// Truncate to scale
 			return parseFloat(n.toFixed(scale));
 		}
-		
+
 		return n;
 	};
 }
@@ -92,11 +92,11 @@ function toDecimal(precision, scale) {
 function toFirebirdTimestamp(value) {
 	if (!value) return null;
 	const str = String(value).trim();
-	
+
 	try {
 		const date = new Date(str);
 		if (Number.isNaN(date.getTime())) return null;
-		
+
 		// Return DATETIME format for MySQL (YYYY-MM-DD HH:MM:SS)
 		return date.toISOString().slice(0, 19).replace('T', ' ');
 	} catch {
@@ -114,16 +114,16 @@ function toFirebirdTimestamp(value) {
  */
 function handleBlobData(value, format = 'base64') {
 	if (!value) return null;
-	
+
 	if (Buffer.isBuffer(value)) {
 		return value.toString(format);
 	}
-	
+
 	if (typeof value === 'string') {
 		// Already string, assume it's hex or base64
 		return value;
 	}
-	
+
 	return null;
 }
 
@@ -136,23 +136,23 @@ function handleBlobData(value, format = 'base64') {
  */
 function cloneBoolean(value) {
 	if (value === null || value === undefined) return null;
-	
+
 	if (typeof value === 'boolean') return value ? 1 : 0;
-	
+
 	if (typeof value === 'number') {
 		if (![0, 1].includes(value)) {
 			console.warn(`Boolean conversion warning: number ${value} mapped to ${value ? 1 : 0}`);
 		}
 		return value ? 1 : 0;
 	}
-	
+
 	if (typeof value === 'string') {
 		const v = value.trim().toUpperCase();
 		if (['Y', 'YES', 'TRUE', 'T', '1'].includes(v)) return 1;
 		if (['N', 'NO', 'FALSE', 'F', '0'].includes(v)) return 0;
 		console.warn(`Boolean conversion warning: string "${value}" mapped to null`);
 	}
-	
+
 	return null;
 }
 

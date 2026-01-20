@@ -224,7 +224,7 @@ function buildTempIndexName(runId, tableName) {
  */
 async function validateColumnNullability(pool, tableName, columnMap) {
 	const violations = [];
-	
+
 	try {
 		// Query MySQL information_schema for NOT NULL constraints
 		const [columns] = await pool.query(`
@@ -239,32 +239,32 @@ async function validateColumnNullability(pool, tableName, columnMap) {
 			AND TABLE_NAME = ?
 			AND IS_NULLABLE = 'NO'
 		`, [tableName]);
-		
+
 		// Build target column map for quick lookup
 		const targetColumnMap = new Map();
 		for (const [sourceCol, rule] of Object.entries(columnMap || {})) {
 			targetColumnMap.set(rule.target.toLowerCase(), { sourceCol, rule });
 		}
-		
+
 		// Check each NOT NULL column
 		for (const col of columns) {
 			const colName = col.COLUMN_NAME;
 			const colNameLower = colName.toLowerCase();
-			
+
 			// Skip auto-increment columns
 			if (col.EXTRA && col.EXTRA.includes('auto_increment')) {
 				continue;
 			}
-			
+
 			const mapping = targetColumnMap.get(colNameLower);
-			
+
 			if (!mapping) {
 				// Column is NOT NULL but not in mapping
 				if (col.COLUMN_DEFAULT !== null) {
 					// Has default value, safe
 					continue;
 				}
-				
+
 				violations.push({
 					column: colName,
 					message: `Column '${colName}' is NOT NULL in MySQL but not mapped.`,
@@ -273,14 +273,14 @@ async function validateColumnNullability(pool, tableName, columnMap) {
 				});
 				continue;
 			}
-			
+
 			const { rule } = mapping;
-			
+
 			// Check if transform might return NULL
 			if (rule.transform) {
 				const transformName = typeof rule.transform === 'string' ? rule.transform : rule.transform.name;
 				const riskyTransforms = ['toNumber', 'toDate', 'toDateTime', 'toBoolean'];
-				
+
 				if (riskyTransforms.includes(transformName)) {
 					// These transforms can return NULL on invalid input
 					if (!Object.prototype.hasOwnProperty.call(rule, 'default')) {
@@ -293,7 +293,7 @@ async function validateColumnNullability(pool, tableName, columnMap) {
 					}
 				}
 			}
-			
+
 			// Check if only default is provided (no source column, no transform)
 			if (!rule.transform && Object.prototype.hasOwnProperty.call(rule, 'default')) {
 				if (rule.default === null || rule.default === undefined) {
@@ -306,7 +306,7 @@ async function validateColumnNullability(pool, tableName, columnMap) {
 				}
 			}
 		}
-		
+
 		return {
 			safe: violations.length === 0,
 			violations
@@ -329,7 +329,7 @@ async function validateColumnNullability(pool, tableName, columnMap) {
 function checkTypeCompatibility(firebirdType, mysqlType) {
 	const fbType = String(firebirdType).toUpperCase();
 	const myType = String(mysqlType).toUpperCase();
-	
+
 	// Mapping of safe Firebird → MySQL type conversions
 	const conversions = {
 		'SMALLINT': ['TINYINT', 'SMALLINT', 'INT', 'BIGINT'],
@@ -347,7 +347,7 @@ function checkTypeCompatibility(firebirdType, mysqlType) {
 		'TIME': ['TIME'],
 		'BOOLEAN': ['TINYINT', 'BOOLEAN', 'BOOL']
 	};
-	
+
 	// Find matching conversion rule
 	for (const [fbBaseType, allowedMyTypes] of Object.entries(conversions)) {
 		if (fbType.includes(fbBaseType)) {
@@ -355,13 +355,13 @@ function checkTypeCompatibility(firebirdType, mysqlType) {
 			return {
 				safe,
 				risk: safe ? 'none' : 'high',
-				message: safe 
+				message: safe
 					? `${fbType} → ${myType} is safe`
 					: `${fbType} → ${myType} may cause data loss or truncation`
 			};
 		}
 	}
-	
+
 	// Unknown type, warn but don't block
 	return {
 		safe: false,
@@ -458,11 +458,11 @@ function identifyNumericColumns(tableName) {
  */
 async function validateMigrationIntegrity(pool, firebirdConfig, tableName, sourceTable, stats, logRun) {
 	const { readRows, insertedRows, updatedRows, skippedRows, errorRows } = stats;
-	
+
 	// Validate row accounting with ZERO tolerance
 	const accountedRows = insertedRows + updatedRows + skippedRows + errorRows;
 	const unaccountedRows = readRows - accountedRows;
-	
+
 	if (unaccountedRows > 0) {
 		throw new Error(
 			`Data loss detected in ${tableName}: ` +
@@ -472,7 +472,7 @@ async function validateMigrationIntegrity(pool, firebirdConfig, tableName, sourc
 			`This may indicate a duplicate key problem or mapping issue.`
 		);
 	}
-	
+
 	// Checksum validation for numeric columns
 	const numericColumns = identifyNumericColumns(tableName);
 	if (numericColumns.length > 0) {
@@ -482,27 +482,27 @@ async function validateMigrationIntegrity(pool, firebirdConfig, tableName, sourc
 				SELECT ${numericColumns.map(c => `SUM("${c.toUpperCase()}") as ${c}`).join(', ')}
 				FROM ${sourceTable}
 			`);
-			
+
 			// Get MySQL checksums
 			const [mysqlChecksum] = await pool.query(`
 				SELECT ${numericColumns.map(c => `SUM(\`${c}\`) as ${c}`).join(', ')}
 				FROM \`${tableName}\`
 			`);
-			
+
 			// Compare sums with 1% variance tolerance for rounding
 			const checksumResults = [];
 			for (const col of numericColumns) {
 				const fbSum = Number(fbChecksum[0]?.[col] || fbChecksum[0]?.[col.toUpperCase()] || 0);
 				const mysqlSum = Number(mysqlChecksum[0]?.[col] || 0);
 				const variance = Math.abs(fbSum - mysqlSum) / (Math.abs(fbSum) + 0.01);
-				
+
 				checksumResults.push({
 					column: col,
 					firebird_sum: fbSum,
 					mysql_sum: mysqlSum,
 					variance: (variance * 100).toFixed(4) + '%'
 				});
-				
+
 				if (variance > 0.01) { // 1% variance tolerance
 					throw new Error(
 						`Checksum mismatch in ${tableName}.${col}: ` +
@@ -512,7 +512,7 @@ async function validateMigrationIntegrity(pool, firebirdConfig, tableName, sourc
 					);
 				}
 			}
-			
+
 			logRun({
 				level: 'info',
 				phase: 'post_migration_validation',
@@ -536,7 +536,7 @@ async function validateMigrationIntegrity(pool, firebirdConfig, tableName, sourc
 			});
 		}
 	}
-	
+
 	logRun({
 		level: 'info',
 		phase: 'post_migration_validation',
@@ -553,7 +553,7 @@ async function validateMigrationIntegrity(pool, firebirdConfig, tableName, sourc
 
 async function validateDataTypeMapping(pool, firebirdConfig, sourceTable, targetTable, columnMap) {
 	const warnings = [];
-	
+
 	try {
 		// Get MySQL column types
 		const [mysqlColumns] = await pool.query(`
@@ -562,11 +562,11 @@ async function validateDataTypeMapping(pool, firebirdConfig, sourceTable, target
 			WHERE TABLE_SCHEMA = DATABASE()
 			AND TABLE_NAME = ?
 		`, [targetTable]);
-		
+
 		const mysqlColumnMap = new Map(
 			mysqlColumns.map(c => [c.COLUMN_NAME.toLowerCase(), c])
 		);
-		
+
 		// Get Firebird column types
 		const fbColumns = await firebird.query(firebirdConfig, `
 			SELECT 
@@ -579,12 +579,12 @@ async function validateDataTypeMapping(pool, firebirdConfig, sourceTable, target
 			JOIN RDB$FIELDS f ON rf.RDB$FIELD_SOURCE = f.RDB$FIELD_NAME
 			WHERE rf.RDB$RELATION_NAME = '${sourceTable.toUpperCase()}'
 		`);
-		
+
 		const fbColumnMap = new Map();
 		for (const col of fbColumns) {
 			const name = (col.FIELD_NAME || col.field_name || '').trim().toLowerCase();
 			const typeCode = col.FIELD_TYPE || col.field_type;
-			
+
 			// Map Firebird type codes to names
 			const typeMap = {
 				7: 'SMALLINT',
@@ -600,7 +600,7 @@ async function validateDataTypeMapping(pool, firebirdConfig, sourceTable, target
 				261: 'BLOB',
 				23: 'BOOLEAN'
 			};
-			
+
 			fbColumnMap.set(name, {
 				type: typeMap[typeCode] || 'UNKNOWN',
 				length: col.FIELD_LENGTH || col.field_length,
@@ -608,17 +608,17 @@ async function validateDataTypeMapping(pool, firebirdConfig, sourceTable, target
 				scale: Math.abs(col.FIELD_SCALE || col.field_scale || 0)
 			});
 		}
-		
+
 		// Check each mapped column
 		for (const [sourceCol, rule] of Object.entries(columnMap || {})) {
 			const fbCol = fbColumnMap.get(sourceCol.toLowerCase());
 			const mysqlCol = mysqlColumnMap.get(rule.target.toLowerCase());
-			
+
 			if (!fbCol || !mysqlCol) continue;
-			
+
 			// Check type compatibility
 			const compatibility = checkTypeCompatibility(fbCol.type, mysqlCol.DATA_TYPE);
-			
+
 			if (!compatibility.safe) {
 				warnings.push({
 					table: targetTable,
@@ -630,7 +630,7 @@ async function validateDataTypeMapping(pool, firebirdConfig, sourceTable, target
 					message: compatibility.message
 				});
 			}
-			
+
 			// Check for precision loss in NUMERIC/DECIMAL
 			if (fbCol.type === 'NUMERIC' || fbCol.type === 'DECIMAL') {
 				if (mysqlCol.DATA_TYPE.toUpperCase().includes('DECIMAL')) {
@@ -639,7 +639,7 @@ async function validateDataTypeMapping(pool, firebirdConfig, sourceTable, target
 					if (match) {
 						const myPrecision = parseInt(match[1], 10);
 						const myScale = parseInt(match[2], 10);
-						
+
 						if (fbCol.precision > myPrecision || fbCol.scale > myScale) {
 							warnings.push({
 								table: targetTable,
@@ -655,7 +655,7 @@ async function validateDataTypeMapping(pool, firebirdConfig, sourceTable, target
 				}
 			}
 		}
-		
+
 		return warnings;
 	} catch (err) {
 		console.warn(`Failed to validate data types for ${targetTable}: ${err.message}`);
@@ -843,18 +843,18 @@ async function runMigrationInternal({
 			}))
 		});
 		await runTimed("preflight", preflightConnectivity);
-		
+
 		// Validate NOT NULL constraints for all tables before starting migration
 		logRun({ level: "info", phase: "preflight", action: "nullability_validation", status: "start" });
 		const nullabilityViolations = [];
-		
+
 		for (const step of includedSteps) {
 			const tableName = step.table;
 			const mappingEntry = resolveMappingForTarget(tableName, mapping);
-			
+
 			if (mappingEntry && mappingEntry.columns) {
 				const validation = await validateColumnNullability(pool, tableName, mappingEntry.columns);
-				
+
 				if (!validation.safe) {
 					for (const violation of validation.violations) {
 						nullabilityViolations.push({
@@ -865,28 +865,28 @@ async function runMigrationInternal({
 				}
 			}
 		}
-		
+
 		if (nullabilityViolations.length > 0) {
-			const errorMessages = nullabilityViolations.map(v => 
+			const errorMessages = nullabilityViolations.map(v =>
 				`  • [${v.table}] ${v.message} ${v.suggestion}`
 			).join('\n');
-			
-			logRun({ 
-				level: "error", 
-				phase: "preflight", 
-				action: "nullability_validation", 
+
+			logRun({
+				level: "error",
+				phase: "preflight",
+				action: "nullability_validation",
 				status: "failed",
 				violations: nullabilityViolations
 			});
-			
+
 			throw new Error(
 				`Column NOT NULL constraint violations detected:\n${errorMessages}\n\n` +
 				`Fix these mapping issues before starting migration.`
 			);
 		}
-		
+
 		logRun({ level: "info", phase: "preflight", action: "nullability_validation", status: "passed" });
-		
+
 		startKeepalive();
 		checkAbort(runId);
 		const firebirdTables = await firebird.listTables(firebirdConfig);
@@ -966,390 +966,572 @@ async function runMigrationInternal({
 				const [result] = await pool.query("SELECT @@foreign_key_checks as fk_checks");
 				originalFkState = result[0].fk_checks === 1;
 				await pool.query("SET FOREIGN_KEY_CHECKS=0");
-				logRun({ 
-					level: 'info', 
-					phase: 'preflight', 
+				logRun({
+					level: 'info',
+					phase: 'preflight',
 					action: 'foreign_key_checks_disabled',
-					original_state: originalFkState 
+					original_state: originalFkState
 				});
 			}
 
 			for (const step of includedSteps) {
-			checkAbort(runId);
-			const tableName = step.table;
-			const mappingEntry = resolveMappingForTarget(tableName, mapping);
-			const tableState = tableStateMap.get(tableName);
+				checkAbort(runId);
+				const tableName = step.table;
+				const mappingEntry = resolveMappingForTarget(tableName, mapping);
+				const tableState = tableStateMap.get(tableName);
 
-			const failRun = async (errorMessage, hint, phase = "unknown") => {
-				if (!tableState) return;
-				runFailed = true;
-				failureInfo = { tableName, errorMessage, hint };
-				tableState.status = "FAILED";
-				tableState.lastError = { message: errorMessage, hint, phase };
-				runState.status = "FAILED";
-				runState.currentTable = tableName;
-				runState.finishedAt = new Date().toISOString();
-				logRun({ level: "error", phase: "table_finalize", tableName, tableRunId, status: "failed", error: errorMessage, hint });
-				markRemainingNotRun(tableName);
-				emitRunState(runId, emitter);
-			};
-
-			if (!mappingEntry) {
-				const errorMessage = `No mapping found for target table ${tableName}.`;
-				const hint = "Update your mapping to include this table.";
-				const existingRun = await runStore.getTableRun(pool, runId, tableName);
-				if (!existingRun) {
-					await runStore.startTableRun(pool, runId, tableName, step.mode, step.keyStrategy);
-				}
-				await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
-				await failRun(errorMessage, hint, "precheck");
-				break;
-			}
-
-			const mappedSource = mappingEntry.sourceTable;
-			const sourceTable = resolveFirebirdSourceTable(mappedSource, firebirdTableMap);
-			const columnsMap = mappingEntry.columns;
-			const firebirdColumns = Object.keys(columnsMap || {});
-			const targetColumns = Object.values(columnsMap || {}).map((c) => c.target);
-			const dedupeKeys = Array.isArray(step.dedupeKeys)
-				? step.dedupeKeys
-				: step.dedupeKeys
-					? [step.dedupeKeys]
-					: [];
-			const onDuplicate = step.onDuplicate || "SKIP";
-
-			const tableRun = await runStore.getTableRun(pool, runId, tableName);
-			let tableRunId = tableRun?.id || null;
-			if (tableRun?.status === "success") {
-				emitter.emit("event", {
-					type: "table_skipped",
-					table: tableName,
-					reason: "Already completed"
-				});
-				continue;
-			}
-
-			if (!sourceTable) {
-				const errorMessage = `Source table not found in Firebird: ${mappedSource}. Check the Firebird schema and mapping.`;
-				if (!tableRun) {
-					const newId = await runStore.startTableRun(pool, runId, tableName, step.mode, step.keyStrategy);
-					tableRunId = newId;
-				}
-				await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
-				await failRun(errorMessage, "Check that the Firebird schema contains this table and the mapping is correct.", "precheck");
-				break;
-			}
-
-			const firebirdColumnNames = (await firebird.listColumns(firebirdConfig, sourceTable)).map((c) => c.toLowerCase());
-			const mysqlColumnNames = (await mysql.listColumns(pool, tableName)).map((c) => c.name.toLowerCase());
-			const missingSource = firebirdColumns.filter((c) => !firebirdColumnNames.includes(c.toLowerCase()));
-			const missingTarget = targetColumns.filter((c) => !mysqlColumnNames.includes(c.toLowerCase()));
-
-			if (missingSource.length || missingTarget.length) {
-				const errorMessage = [
-					missingSource.length ? `Firebird missing columns: ${missingSource.join(", ")}` : null,
-					missingTarget.length ? `MySQL missing columns: ${missingTarget.join(", ")}` : null
-				].filter(Boolean).join(" | ");
-				if (!tableRun) {
-					const newId = await runStore.startTableRun(pool, runId, tableName, step.mode, step.keyStrategy);
-					tableRunId = newId;
-				}
-				await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
-				await failRun(errorMessage, "Update your mapping or target schema so columns match.", "precheck");
-				break;
-			}
-
-			if (step.keyStrategy === "rekey" && step.mode === "UPSERT" && !dedupeKeys.length) {
-				const errorMessage = `UPSERT with re-key IDs requires dedupe keys for table ${tableName}.`;
-				if (!tableRun) {
-					const newId = await runStore.startTableRun(pool, runId, tableName, step.mode, step.keyStrategy);
-					tableRunId = newId;
-				}
-				await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
-				await failRun(errorMessage, "Select dedupe keys in the plan or switch to Preserve IDs.", "precheck");
-				break;
-			}
-
-			if (!tableRun) {
-				const newId = await runStore.startTableRun(pool, runId, tableName, step.mode, step.keyStrategy);
-				tableRunId = newId;
-			}
-			tableState.status = "RUNNING";
-			tableState.lastError = null;
-			tableState.tableRunId = tableRunId;
-			runState.currentTable = tableName;
-			emitRunState(runId, emitter);
-
-			const primaryKeys = await mysql.getPrimaryKeys(pool, tableName);
-			let targetColumnsForInsert = targetColumns;
-			const sourceIdColumn = primaryKeys.length
-				? Object.entries(columnsMap).find(([, rule]) => rule.target === primaryKeys[0])?.[0]
-				: null;
-
-			let tempIndexName = null;
-			if (dedupeKeys.length && !dryRun) {
-				try {
-					const uniqueIndexes = await mysql.listUniqueIndexes(pool, tableName);
-					const hasDedupeIndex = mysql.hasUniqueIndexForColumns(uniqueIndexes, dedupeKeys);
-					if (!hasDedupeIndex) {
-						tempIndexName = buildTempIndexName(runId, tableName);
-						await mysql.createUniqueIndex(pool, tableName, tempIndexName, dedupeKeys);
-					}
-				} catch (err) {
-					// best-effort: continue without temp index
-					tempIndexName = null;
-				}
-			}
-
-			const conn = await pool.getConnection();
-			try {
-				const cleanBefore = step.cleanBefore === true;
-				if (step.keyStrategy === "rekey" && primaryKeys.length) {
-					targetColumnsForInsert = targetColumnsForInsert.filter((c) => !primaryKeys.includes(c));
-				}
-
-				if (cleanBefore && !dryRun && step.mode !== "TRUNCATE+INSERT") {
-					logRun({ level: "info", phase: "clean", tableName, tableRunId, status: "start" });
-					const cleanStart = Date.now();
-					try {
-						const [result] = await conn.query(`delete from \`${tableName}\``);
-						const durationMs = Date.now() - cleanStart;
-						logRun({
-							level: "info",
-							phase: "clean",
-							tableName,
-							tableRunId,
-							status: "success",
-							affectedRows: Number(result?.affectedRows || 0),
-							durationMs
-						});
-						tableState.cleaned = true;
-					} catch (err) {
-						const errorMessage = formatDbError(err, { firebirdConfig });
-						logRun({
-							level: "error",
-							phase: "clean",
-							tableName,
-							tableRunId,
-							status: "failed",
-							error: errorMessage
-						});
-						await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
-						await failRun(errorMessage, "Clean step failed. Remove dependent rows or fix foreign key constraints.", "clean");
-						break;
-					}
-				} else if (cleanBefore && step.mode === "TRUNCATE+INSERT") {
-					logRun({ level: "warn", phase: "clean", tableName, tableRunId, status: "skipped", reason: "TRUNCATE+INSERT already clears table" });
-				}
-
-				if (step.mode === "TRUNCATE+INSERT" && !dryRun) {
-					await conn.query(`truncate table \`${tableName}\``);
-				}
-
-				let offset = tableRun?.last_offset || 0;
-				let rowsMigrated = tableRun?.rows_migrated || 0;
-				let rowsInserted = 0;
-				let rowsUpdated = 0;
-				let rowsError = tableRun?.rows_error || 0;
-				let rowsSkippedDuplicates = tableRun?.rows_skipped_duplicates || 0;
-				const tableStart = Date.now();
-				logRun({ level: "info", phase: "table_start", tableName, tableRunId, mode: step.mode, keyStrategy: step.keyStrategy, dedupeKeys });
-
-				const totalSource = await firebird.countRows(firebirdConfig, sourceTable);
-				await runStore.updateTableProgress(pool, runId, tableName, { rows_source: totalSource });
-				tableState.total = totalSource;
-				logRun({ level: "info", phase: "fetch", tableName, tableRunId, sourceRows: totalSource });
-				emitRunState(runId, emitter);
-
-				const ignoreDuplicatesForInsert = onDuplicate !== "ERROR";
-				const { sql } = buildInsertStatement(
-					tableName,
-					targetColumnsForInsert,
-					step.mode,
-					primaryKeys,
-					ignoreDuplicatesForInsert
-				);
-				const updateColumns = targetColumnsForInsert.filter((c) => !primaryKeys.includes(c));
-				const useDedupe = dedupeKeys.length > 0;
-
-				const logRowError = async (sourceRow, rowIndex, errorMessage) => {
-					const hint = getDbErrorHint(errorMessage);
-					rowsError += 1;
-					totals.rows_total_error += 1;
-					let sourcePkValue = null;
-					if (sourceRow) {
-						if (sourceIdColumn) {
-							sourcePkValue = sourceRow[sourceIdColumn.toLowerCase()];
-						} else {
-							const firstKey = Object.keys(sourceRow)[0];
-							sourcePkValue = firstKey ? sourceRow[firstKey] : null;
-						}
-					}
-					await runStore.logRowError(pool, {
-						runId,
-						tableName,
-						sourceTable,
-						targetTable: tableName,
-						rowOffset: offset + rowIndex,
-						sourcePk: sourcePkValue,
-						errorMessage,
-						hint,
-						rowJson: sourceRow ? JSON.stringify(sourceRow) : null
-					});
+				const failRun = async (errorMessage, hint, phase = "unknown") => {
+					if (!tableState) return;
+					runFailed = true;
+					failureInfo = { tableName, errorMessage, hint };
+					tableState.status = "FAILED";
+					tableState.lastError = { message: errorMessage, hint, phase };
+					runState.status = "FAILED";
+					runState.currentTable = tableName;
+					runState.finishedAt = new Date().toISOString();
+					logRun({ level: "error", phase: "table_finalize", tableName, tableRunId, status: "failed", error: errorMessage, hint });
+					markRemainingNotRun(tableName);
+					emitRunState(runId, emitter);
 				};
 
-				while (offset < totalSource) {
-					checkAbort(runId);
-					const batch = await firebird.fetchBatch(
-						firebirdConfig,
-						sourceTable,
-						firebirdColumns,
-						offset,
-						batchSize,
-						firebirdColumns[0]
-					);
+				if (!mappingEntry) {
+					const errorMessage = `No mapping found for target table ${tableName}.`;
+					const hint = "Update your mapping to include this table.";
+					const existingRun = await runStore.getTableRun(pool, runId, tableName);
+					if (!existingRun) {
+						await runStore.startTableRun(pool, runId, tableName, step.mode, step.keyStrategy);
+					}
+					await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
+					await failRun(errorMessage, hint, "precheck");
+					break;
+				}
 
-					if (!batch.length) break;
+				const mappedSource = mappingEntry.sourceTable;
+				const sourceTable = resolveFirebirdSourceTable(mappedSource, firebirdTableMap);
+				const columnsMap = mappingEntry.columns;
+				const firebirdColumns = Object.keys(columnsMap || {});
+				const targetColumns = Object.values(columnsMap || {}).map((c) => c.target);
+				const dedupeKeys = Array.isArray(step.dedupeKeys)
+					? step.dedupeKeys
+					: step.dedupeKeys
+						? [step.dedupeKeys]
+						: [];
+				const onDuplicate = step.onDuplicate || "SKIP";
 
-					const rowsToInsert = [];
-					for (const row of batch) {
-						const mappedRow = await mapRow(row, columnsMap, async (lookupTable, id) => {
-							if (id === null || id === undefined) return id;
-							return runStore.lookupIdMap(pool, {
-								runId,
-								tableName: lookupTable,
-								sourceId: id
+				const tableRun = await runStore.getTableRun(pool, runId, tableName);
+				let tableRunId = tableRun?.id || null;
+				if (tableRun?.status === "success") {
+					emitter.emit("event", {
+						type: "table_skipped",
+						table: tableName,
+						reason: "Already completed"
+					});
+					continue;
+				}
+
+				if (!sourceTable) {
+					const errorMessage = `Source table not found in Firebird: ${mappedSource}. Check the Firebird schema and mapping.`;
+					if (!tableRun) {
+						const newId = await runStore.startTableRun(pool, runId, tableName, step.mode, step.keyStrategy);
+						tableRunId = newId;
+					}
+					await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
+					await failRun(errorMessage, "Check that the Firebird schema contains this table and the mapping is correct.", "precheck");
+					break;
+				}
+
+				const firebirdColumnNames = (await firebird.listColumns(firebirdConfig, sourceTable)).map((c) => c.toLowerCase());
+				const mysqlColumnNames = (await mysql.listColumns(pool, tableName)).map((c) => c.name.toLowerCase());
+				const missingSource = firebirdColumns.filter((c) => !firebirdColumnNames.includes(c.toLowerCase()));
+				const missingTarget = targetColumns.filter((c) => !mysqlColumnNames.includes(c.toLowerCase()));
+
+				if (missingSource.length || missingTarget.length) {
+					const errorMessage = [
+						missingSource.length ? `Firebird missing columns: ${missingSource.join(", ")}` : null,
+						missingTarget.length ? `MySQL missing columns: ${missingTarget.join(", ")}` : null
+					].filter(Boolean).join(" | ");
+					if (!tableRun) {
+						const newId = await runStore.startTableRun(pool, runId, tableName, step.mode, step.keyStrategy);
+						tableRunId = newId;
+					}
+					await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
+					await failRun(errorMessage, "Update your mapping or target schema so columns match.", "precheck");
+					break;
+				}
+
+				// Validate dedupe keys for NULL values in source data
+				if (dedupeKeys.length && !dryRun) {
+					const dedupeSourceCols = dedupeKeys
+						.map(targetCol => {
+							const entry = Object.entries(columnsMap || {}).find(([, rule]) => rule.target === targetCol);
+							return entry ? entry[0] : null;
+						})
+						.filter(Boolean);
+
+					if (dedupeSourceCols.length === dedupeKeys.length) {
+						try {
+							const nullCheckQuery = `SELECT COUNT(*) as null_count FROM ${sourceTable} WHERE ${dedupeSourceCols.map(c => `${c} IS NULL`).join(' OR ')}`;
+							const nullCheckResult = await firebird.query(firebirdConfig, nullCheckQuery);
+							const nullCount = nullCheckResult[0]?.NULL_COUNT || 0;
+
+							if (nullCount > 0) {
+								logRun({
+									level: 'warn',
+									phase: 'preflight',
+									table: tableName,
+									action: 'dedupe_keys_validation',
+									message: `Found ${nullCount} rows with NULL values in dedupe key columns [${dedupeKeys.join(', ')}]`,
+									hint: 'These rows will be inserted without deduplication. Consider choosing dedupe keys without NULLs or adding transforms to provide default values.'
+								});
+							}
+						} catch (err) {
+							// Non-critical validation - log and continue
+							logRun({
+								level: 'debug',
+								phase: 'preflight',
+								table: tableName,
+								action: 'dedupe_keys_validation',
+								error: err.message
 							});
-						});
-						const values = targetColumnsForInsert.map((c) => mappedRow[c]);
-						const sourceId = sourceIdColumn ? row[sourceIdColumn.toLowerCase()] : undefined;
-						const dedupeValues = dedupeKeys.map((key) => mappedRow[key]);
-						rowsToInsert.push({ values, sourceId, dedupeValues, mappedRow });
+						}
+					}
+				}
+
+				if (step.keyStrategy === "rekey" && step.mode === "UPSERT" && !dedupeKeys.length) {
+					const errorMessage = `UPSERT with re-key IDs requires dedupe keys for table ${tableName}.`;
+					if (!tableRun) {
+						const newId = await runStore.startTableRun(pool, runId, tableName, step.mode, step.keyStrategy);
+						tableRunId = newId;
+					}
+					await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
+					await failRun(errorMessage, "Select dedupe keys in the plan or switch to Preserve IDs.", "precheck");
+					break;
+				}
+
+				if (!tableRun) {
+					const newId = await runStore.startTableRun(pool, runId, tableName, step.mode, step.keyStrategy);
+					tableRunId = newId;
+				}
+				tableState.status = "RUNNING";
+				tableState.lastError = null;
+				tableState.tableRunId = tableRunId;
+				runState.currentTable = tableName;
+				emitRunState(runId, emitter);
+
+				const primaryKeys = await mysql.getPrimaryKeys(pool, tableName);
+				let targetColumnsForInsert = targetColumns;
+				const sourceIdColumn = primaryKeys.length
+					? Object.entries(columnsMap).find(([, rule]) => rule.target === primaryKeys[0])?.[0]
+					: null;
+
+				let tempIndexName = null;
+				if (dedupeKeys.length && !dryRun) {
+					try {
+						const uniqueIndexes = await mysql.listUniqueIndexes(pool, tableName);
+						const hasDedupeIndex = mysql.hasUniqueIndexForColumns(uniqueIndexes, dedupeKeys);
+						if (!hasDedupeIndex) {
+							tempIndexName = buildTempIndexName(runId, tableName);
+							await mysql.createUniqueIndex(pool, tableName, tempIndexName, dedupeKeys);
+						}
+					} catch (err) {
+						// best-effort: continue without temp index
+						tempIndexName = null;
+					}
+				}
+
+				const conn = await pool.getConnection();
+				try {
+					const cleanBefore = step.cleanBefore === true;
+					if (step.keyStrategy === "rekey" && primaryKeys.length) {
+						targetColumnsForInsert = targetColumnsForInsert.filter((c) => !primaryKeys.includes(c));
 					}
 
-					const batchStart = Date.now();
-					let batchInserted = 0;
-					let batchUpdated = 0;
-					let batchSkipped = 0;
-					logRun({ level: "debug", phase: "write", tableName, tableRunId, status: "start", batchSize: rowsToInsert.length });
+					if (cleanBefore && !dryRun && step.mode !== "TRUNCATE+INSERT") {
+						logRun({ level: "info", phase: "clean", tableName, tableRunId, status: "start" });
+						const cleanStart = Date.now();
+						try {
+							const [result] = await conn.query(`delete from \`${tableName}\``);
+							const durationMs = Date.now() - cleanStart;
+							logRun({
+								level: "info",
+								phase: "clean",
+								tableName,
+								tableRunId,
+								status: "success",
+								affectedRows: Number(result?.affectedRows || 0),
+								durationMs
+							});
+							tableState.cleaned = true;
+						} catch (err) {
+							const errorMessage = formatDbError(err, { firebirdConfig });
+							logRun({
+								level: "error",
+								phase: "clean",
+								tableName,
+								tableRunId,
+								status: "failed",
+								error: errorMessage
+							});
+							await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
+							await failRun(errorMessage, "Clean step failed. Remove dependent rows or fix foreign key constraints.", "clean");
+							break;
+						}
+					} else if (cleanBefore && step.mode === "TRUNCATE+INSERT") {
+						logRun({ level: "warn", phase: "clean", tableName, tableRunId, status: "skipped", reason: "TRUNCATE+INSERT already clears table" });
+					}
 
-					if (!dryRun) {
-						if (useDedupe) {
-							const existingMap = new Map();
-							const tuples = [];
-							const tupleKeys = new Set();
-							for (const row of rowsToInsert) {
-								const ready = row.dedupeValues?.every((v) => v !== undefined && v !== null);
-								if (!ready) continue;
-								const key = normalizeDedupeKey(row.dedupeValues);
-								if (!tupleKeys.has(key)) {
-									tupleKeys.add(key);
-									tuples.push(row.dedupeValues);
-								}
-							}
-							const dedupeQuery = buildDedupeQuery(tableName, dedupeKeys, tuples);
-							if (dedupeQuery) {
-								let selectSql = dedupeQuery.sql;
-								if (primaryKeys.length) {
-									const selectCols = dedupeKeys.map((c) => `\`${c}\``).join(", ");
-									selectSql = selectSql.replace(
-										`select ${selectCols} from`,
-										`select ${selectCols}, \`${primaryKeys[0]}\` as __pk from`
-									);
-								}
-								const [existingRows] = await conn.query(selectSql, dedupeQuery.params);
-								for (const existing of existingRows) {
-									const keyValues = dedupeKeys.map((k) => existing[k]);
-									const key = normalizeDedupeKey(keyValues);
-									existingMap.set(key, primaryKeys.length ? existing.__pk : true);
-								}
-							}
+					if (step.mode === "TRUNCATE+INSERT" && !dryRun) {
+						await conn.query(`truncate table \`${tableName}\``);
+					}
 
-							const batchSeen = new Set();
-							const toInsert = [];
-							const toUpdate = [];
-							for (let rowIndex = 0; rowIndex < rowsToInsert.length; rowIndex += 1) {
-								const row = rowsToInsert[rowIndex];
-								const sourceRow = batch[rowIndex] || null;
-								const ready = row.dedupeValues?.every((v) => v !== undefined && v !== null);
-								let matched = false;
-								let key = null;
-								if (ready) {
+					let offset = tableRun?.last_offset || 0;
+					let rowsMigrated = tableRun?.rows_migrated || 0;
+					let rowsInserted = 0;
+					let rowsUpdated = 0;
+					let rowsError = tableRun?.rows_error || 0;
+					let rowsSkippedDuplicates = tableRun?.rows_skipped_duplicates || 0;
+					const tableStart = Date.now();
+					logRun({ level: "info", phase: "table_start", tableName, tableRunId, mode: step.mode, keyStrategy: step.keyStrategy, dedupeKeys });
+
+					const totalSource = await firebird.countRows(firebirdConfig, sourceTable);
+					await runStore.updateTableProgress(pool, runId, tableName, { rows_source: totalSource });
+					tableState.total = totalSource;
+					logRun({ level: "info", phase: "fetch", tableName, tableRunId, sourceRows: totalSource });
+					emitRunState(runId, emitter);
+
+					const ignoreDuplicatesForInsert = onDuplicate !== "ERROR";
+					const { sql } = buildInsertStatement(
+						tableName,
+						targetColumnsForInsert,
+						step.mode,
+						primaryKeys,
+						ignoreDuplicatesForInsert
+					);
+					const updateColumns = targetColumnsForInsert.filter((c) => !primaryKeys.includes(c));
+					const useDedupe = dedupeKeys.length > 0;
+
+					const logRowError = async (sourceRow, rowIndex, errorMessage) => {
+						const hint = getDbErrorHint(errorMessage);
+						rowsError += 1;
+						totals.rows_total_error += 1;
+						let sourcePkValue = null;
+						if (sourceRow) {
+							if (sourceIdColumn) {
+								sourcePkValue = sourceRow[sourceIdColumn.toLowerCase()];
+							} else {
+								const firstKey = Object.keys(sourceRow)[0];
+								sourcePkValue = firstKey ? sourceRow[firstKey] : null;
+							}
+						}
+						await runStore.logRowError(pool, {
+							runId,
+							tableName,
+							sourceTable,
+							targetTable: tableName,
+							rowOffset: offset + rowIndex,
+							sourcePk: sourcePkValue,
+							errorMessage,
+							hint,
+							rowJson: sourceRow ? JSON.stringify(sourceRow) : null
+						});
+					};
+
+					while (offset < totalSource) {
+						checkAbort(runId);
+						const batch = await firebird.fetchBatch(
+							firebirdConfig,
+							sourceTable,
+							firebirdColumns,
+							offset,
+							batchSize,
+							firebirdColumns[0]
+						);
+
+						if (!batch.length) break;
+
+						const rowsToInsert = [];
+						for (const row of batch) {
+							const mappedRow = await mapRow(row, columnsMap, async (lookupTable, id) => {
+								if (id === null || id === undefined) return id;
+								return runStore.lookupIdMap(pool, {
+									runId,
+									tableName: lookupTable,
+									sourceId: id
+								});
+							});
+							const values = targetColumnsForInsert.map((c) => mappedRow[c]);
+							const sourceId = sourceIdColumn ? row[sourceIdColumn.toLowerCase()] : undefined;
+							const dedupeValues = dedupeKeys.map((key) => mappedRow[key]);
+							rowsToInsert.push({ values, sourceId, dedupeValues, mappedRow });
+						}
+
+						const batchStart = Date.now();
+						let batchInserted = 0;
+						let batchUpdated = 0;
+						let batchSkipped = 0;
+						logRun({ level: "debug", phase: "write", tableName, tableRunId, status: "start", batchSize: rowsToInsert.length });
+
+						if (!dryRun) {
+							if (useDedupe) {
+								const existingMap = new Map();
+								const tuples = [];
+								const tupleKeys = new Set();
+								for (const row of rowsToInsert) {
+									const ready = row.dedupeValues?.every((v) => v !== undefined && v !== null);
+									if (!ready) continue;
+									const key = normalizeDedupeKey(row.dedupeValues);
+									if (!tupleKeys.has(key)) {
+										tupleKeys.add(key);
+										tuples.push(row.dedupeValues);
+									}
+								}
+								const dedupeQuery = buildDedupeQuery(tableName, dedupeKeys, tuples);
+								if (dedupeQuery) {
+									let selectSql = dedupeQuery.sql;
+									if (primaryKeys.length) {
+										const selectCols = dedupeKeys.map((c) => `\`${c}\``).join(", ");
+										selectSql = selectSql.replace(
+											`select ${selectCols} from`,
+											`select ${selectCols}, \`${primaryKeys[0]}\` as __pk from`
+										);
+									}
+									const [existingRows] = await conn.query(selectSql, dedupeQuery.params);
+									for (const existing of existingRows) {
+										const keyValues = dedupeKeys.map((k) => existing[k]);
+										const key = normalizeDedupeKey(keyValues);
+										existingMap.set(key, primaryKeys.length ? existing.__pk : true);
+									}
+								}
+
+								const batchSeen = new Set();
+								const toInsert = [];
+								const toUpdate = [];
+								for (let rowIndex = 0; rowIndex < rowsToInsert.length; rowIndex += 1) {
+									const row = rowsToInsert[rowIndex];
+									const sourceRow = batch[rowIndex] || null;
+									const ready = row.dedupeValues?.every((v) => v !== undefined && v !== null);
+
+									// If dedupe keys contain NULL values, always insert the row (cannot reliably deduplicate)
+									if (!ready) {
+										logRun({
+											level: 'debug',
+											phase: 'deduplication',
+											table: tableName,
+											action: 'null_dedupe_keys',
+											dedupe_keys: dedupeKeys,
+											dedupe_values: row.dedupeValues,
+											message: 'Row has NULL dedupe key values; inserting without deduplication'
+										});
+										toInsert.push({ row, sourceRow, rowIndex });
+										continue; // Skip deduplication logic for this row
+									}
+
+									let matched = false;
+									let key = null;
 									key = normalizeDedupeKey(row.dedupeValues);
 									matched = existingMap.has(key) || batchSeen.has(key);
 									batchSeen.add(key);
-								}
 
-								if (ready && matched) {
-									if (step.mode === "UPSERT") {
-										toUpdate.push({ row, sourceRow, rowIndex, key });
-										const existingPk = existingMap.get(key);
-										if (step.keyStrategy === "rekey" && existingPk && row.sourceId !== undefined) {
-											await runStore.storeIdMap(pool, {
-												runId,
-												tableName,
-												sourceId: row.sourceId,
-												targetId: existingPk
-											});
+									if (matched) {
+										if (step.mode === "UPSERT") {
+											toUpdate.push({ row, sourceRow, rowIndex, key });
+											const existingPk = existingMap.get(key);
+											if (step.keyStrategy === "rekey" && existingPk && row.sourceId !== undefined) {
+												await runStore.storeIdMap(pool, {
+													runId,
+													tableName,
+													sourceId: row.sourceId,
+													targetId: existingPk
+												});
+											}
+										} else {
+											if (onDuplicate === "ERROR") {
+												await logRowError(sourceRow, rowIndex, `Duplicate record detected for ${tableName} (dedupe keys: ${dedupeKeys.join(", ")}).`);
+											} else {
+												// Log individual skipped row with dedupe key values
+												const dedupKeyValues = dedupeKeys.map(k => row[k]);
+												logRun({
+													level: 'debug',
+													phase: 'deduplication',
+													table: tableName,
+													action: 'row_skipped',
+													dedupe_keys: dedupeKeys,
+													dedupe_values: dedupKeyValues,
+													reason: 'duplicate_key'
+												});
+												rowsSkippedDuplicates += 1;
+												batchSkipped += 1;
+												totals.rows_total_skipped_duplicates += 1;
+											}
 										}
 									} else {
-										if (onDuplicate === "ERROR") {
-											await logRowError(sourceRow, rowIndex, `Duplicate record detected for ${tableName} (dedupe keys: ${dedupeKeys.join(", ")}).`);
-										} else {
-											// Log individual skipped row with dedupe key values
-											const dedupKeyValues = dedupeKeys.map(k => row[k]);
-											logRun({
-												level: 'debug',
-												phase: 'deduplication',
-												table: tableName,
-												action: 'row_skipped',
-												dedupe_keys: dedupeKeys,
-												dedupe_values: dedupKeyValues,
-												reason: 'duplicate_key'
-											});
-											rowsSkippedDuplicates += 1;
-											batchSkipped += 1;
-											totals.rows_total_skipped_duplicates += 1;
-										}
-									}
-								} else {
-									toInsert.push({ row, sourceRow, rowIndex });
-								}
-							}
-
-							if (step.mode === "UPSERT" && toUpdate.length) {
-								const updateSql = updateColumns.length
-									? buildUpdateStatement(tableName, updateColumns, dedupeKeys)
-									: null;
-								for (const item of toUpdate) {
-									const { row, sourceRow, rowIndex } = item;
-									try {
-										if (updateSql) {
-											const updateValues = updateColumns.map((c) => row.mappedRow[c]);
-											await conn.beginTransaction();
-											await conn.query(updateSql, [...updateValues, ...row.dedupeValues]);
-											await conn.commit();
-										}
-										rowsMigrated += 1;
-										rowsUpdated += 1;
-										batchUpdated += 1;
-										totals.rows_total_migrated += 1;
-									} catch (err) {
-										try {
-											await conn.rollback();
-										} catch (rollbackErr) {
-											// ignore
-										}
-										const errorMessage = formatDbError(err, { firebirdConfig });
-										await logRowError(sourceRow, rowIndex, errorMessage);
+										toInsert.push({ row, sourceRow, rowIndex });
 									}
 								}
-							}
 
-							if (toInsert.length) {
-								if (step.keyStrategy === "rekey" && primaryKeys.length) {
-									for (const item of toInsert) {
+								if (step.mode === "UPSERT" && toUpdate.length) {
+									const updateSql = updateColumns.length
+										? buildUpdateStatement(tableName, updateColumns, dedupeKeys)
+										: null;
+									for (const item of toUpdate) {
 										const { row, sourceRow, rowIndex } = item;
+										try {
+											if (updateSql) {
+												const updateValues = updateColumns.map((c) => row.mappedRow[c]);
+												await conn.beginTransaction();
+												await conn.query(updateSql, [...updateValues, ...row.dedupeValues]);
+												await conn.commit();
+											}
+											rowsMigrated += 1;
+											rowsUpdated += 1;
+											batchUpdated += 1;
+											totals.rows_total_migrated += 1;
+										} catch (err) {
+											try {
+												await conn.rollback();
+											} catch (rollbackErr) {
+												// ignore
+											}
+											const errorMessage = formatDbError(err, { firebirdConfig });
+											await logRowError(sourceRow, rowIndex, errorMessage);
+										}
+									}
+								}
+
+								if (toInsert.length) {
+									if (step.keyStrategy === "rekey" && primaryKeys.length) {
+										for (const item of toInsert) {
+											const { row, sourceRow, rowIndex } = item;
+											try {
+												await conn.beginTransaction();
+												const [result] = await conn.query(sql, [[row.values]]);
+												await conn.commit();
+												if (ignoreDuplicatesForInsert && result.affectedRows === 0) {
+													rowsSkippedDuplicates += 1;
+													batchSkipped += 1;
+													totals.rows_total_skipped_duplicates += 1;
+													continue;
+												}
+												rowsMigrated += 1;
+												rowsInserted += 1;
+												batchInserted += 1;
+												totals.rows_total_migrated += 1;
+												if (result.insertId && row.sourceId !== undefined) {
+													await runStore.storeIdMap(pool, {
+														runId,
+														tableName,
+														sourceId: row.sourceId,
+														targetId: result.insertId
+													});
+												}
+											} catch (err) {
+												try {
+													await conn.rollback();
+												} catch (rollbackErr) {
+													// ignore
+												}
+												if (isDuplicateErr(err)) {
+													if (onDuplicate === "ERROR") {
+														const errorMessage = formatDbError(err, { firebirdConfig });
+														await logRowError(sourceRow, rowIndex, errorMessage);
+													} else {
+														rowsSkippedDuplicates += 1;
+														batchSkipped += 1;
+														totals.rows_total_skipped_duplicates += 1;
+													}
+													continue;
+												}
+												const errorMessage = formatDbError(err, { firebirdConfig });
+												await logRowError(sourceRow, rowIndex, errorMessage);
+											}
+										}
+									} else {
+										try {
+											await conn.beginTransaction();
+											const [result] = await conn.query(sql, [toInsert.map((r) => r.row.values)]);
+											await conn.commit();
+											const totalRows = toInsert.length;
+											const affected = Number(result?.affectedRows || 0);
+
+											// MySQL UPSERT: affectedRows = (inserts * 1) + (updates * 2)
+											// So if affectedRows > totalRows, some were updates
+											let inserted, updated;
+											if (step.mode === "UPSERT") {
+												// Calculate inserts and updates from affectedRows
+												// affected = inserted + (updated * 2)
+												// totalRows = inserted + updated
+												// Solving: updated = affected - totalRows, inserted = totalRows - updated
+												updated = Math.max(affected - totalRows, 0);
+												inserted = totalRows - updated;
+											} else {
+												inserted = affected;
+												updated = 0;
+											}
+
+											const skipped =
+												ignoreDuplicatesForInsert && step.mode !== "UPSERT"
+													? Math.max(totalRows - inserted, 0)
+													: 0;
+											rowsMigrated += inserted + updated;
+											rowsInserted += inserted;
+											rowsUpdated += updated;
+											batchInserted += inserted;
+											batchUpdated += updated;
+											rowsSkippedDuplicates += skipped;
+											batchSkipped += skipped;
+											totals.rows_total_migrated += inserted + updated;
+											totals.rows_total_skipped_duplicates += skipped;
+										} catch (err) {
+											try {
+												await conn.rollback();
+											} catch (rollbackErr) {
+												// ignore
+											}
+											for (const item of toInsert) {
+												const { row, sourceRow, rowIndex } = item;
+												try {
+													await conn.beginTransaction();
+													const [result] = await conn.query(sql, [[row.values]]);
+													await conn.commit();
+													if (ignoreDuplicatesForInsert && result.affectedRows === 0) {
+														rowsSkippedDuplicates += 1;
+														batchSkipped += 1;
+														totals.rows_total_skipped_duplicates += 1;
+														continue;
+													}
+													rowsMigrated += 1;
+													rowsInserted += 1;
+													batchInserted += 1;
+													totals.rows_total_migrated += 1;
+												} catch (rowErr) {
+													try {
+														await conn.rollback();
+													} catch (rollbackErr) {
+														// ignore
+													}
+													if (isDuplicateErr(rowErr)) {
+														if (onDuplicate === "ERROR") {
+															const errorMessage = formatDbError(rowErr, { firebirdConfig });
+															await logRowError(sourceRow, rowIndex, errorMessage);
+														} else {
+															rowsSkippedDuplicates += 1;
+															batchSkipped += 1;
+															totals.rows_total_skipped_duplicates += 1;
+														}
+														continue;
+													}
+													const errorMessage = formatDbError(rowErr, { firebirdConfig });
+													await logRowError(sourceRow, rowIndex, errorMessage);
+												}
+											}
+										}
+									}
+								}
+							} else {
+								if (step.keyStrategy === "rekey" && primaryKeys.length) {
+									for (let rowIndex = 0; rowIndex < rowsToInsert.length; rowIndex += 1) {
+										const row = rowsToInsert[rowIndex];
+										const sourceRow = batch[rowIndex] || null;
 										try {
 											await conn.beginTransaction();
 											const [result] = await conn.query(sql, [[row.values]]);
@@ -1360,10 +1542,18 @@ async function runMigrationInternal({
 												totals.rows_total_skipped_duplicates += 1;
 												continue;
 											}
-											rowsMigrated += 1;
-											rowsInserted += 1;
-											batchInserted += 1;
-											totals.rows_total_migrated += 1;
+											const affected = Number(result?.affectedRows || 0);
+											if (step.mode === "UPSERT" && affected > 1) {
+												rowsMigrated += 1;
+												rowsUpdated += 1;
+												batchUpdated += 1;
+												totals.rows_total_migrated += 1;
+											} else {
+												rowsMigrated += 1;
+												rowsInserted += 1;
+												batchInserted += 1;
+												totals.rows_total_migrated += 1;
+											}
 											if (result.insertId && row.sourceId !== undefined) {
 												await runStore.storeIdMap(pool, {
 													runId,
@@ -1396,26 +1586,14 @@ async function runMigrationInternal({
 								} else {
 									try {
 										await conn.beginTransaction();
-										const [result] = await conn.query(sql, [toInsert.map((r) => r.row.values)]);
+										const [result] = await conn.query(sql, [rowsToInsert.map((r) => r.values)]);
 										await conn.commit();
-										const totalRows = toInsert.length;
+										const totalRows = rowsToInsert.length;
 										const affected = Number(result?.affectedRows || 0);
-
-										// MySQL UPSERT: affectedRows = (inserts * 1) + (updates * 2)
-										// So if affectedRows > totalRows, some were updates
-										let inserted, updated;
-										if (step.mode === "UPSERT") {
-											// Calculate inserts and updates from affectedRows
-											// affected = inserted + (updated * 2)
-											// totalRows = inserted + updated
-											// Solving: updated = affected - totalRows, inserted = totalRows - updated
-											updated = Math.max(affected - totalRows, 0);
-											inserted = totalRows - updated;
-										} else {
-											inserted = affected;
-											updated = 0;
-										}
-
+										const updated = step.mode === "UPSERT" ? Math.max(affected - totalRows, 0) : 0;
+										const inserted = step.mode === "UPSERT"
+											? Math.max(totalRows - updated, 0)
+											: affected;
 										const skipped =
 											ignoreDuplicatesForInsert && step.mode !== "UPSERT"
 												? Math.max(totalRows - inserted, 0)
@@ -1435,8 +1613,9 @@ async function runMigrationInternal({
 										} catch (rollbackErr) {
 											// ignore
 										}
-										for (const item of toInsert) {
-											const { row, sourceRow, rowIndex } = item;
+										for (let rowIndex = 0; rowIndex < rowsToInsert.length; rowIndex += 1) {
+											const row = rowsToInsert[rowIndex];
+											const sourceRow = batch[rowIndex] || null;
 											try {
 												await conn.beginTransaction();
 												const [result] = await conn.query(sql, [[row.values]]);
@@ -1476,196 +1655,69 @@ async function runMigrationInternal({
 								}
 							}
 						} else {
-							if (step.keyStrategy === "rekey" && primaryKeys.length) {
-								for (let rowIndex = 0; rowIndex < rowsToInsert.length; rowIndex += 1) {
-									const row = rowsToInsert[rowIndex];
-									const sourceRow = batch[rowIndex] || null;
-									try {
-										await conn.beginTransaction();
-										const [result] = await conn.query(sql, [[row.values]]);
-										await conn.commit();
-										if (ignoreDuplicatesForInsert && result.affectedRows === 0) {
-											rowsSkippedDuplicates += 1;
-											batchSkipped += 1;
-											totals.rows_total_skipped_duplicates += 1;
-											continue;
-										}
-										const affected = Number(result?.affectedRows || 0);
-										if (step.mode === "UPSERT" && affected > 1) {
-											rowsMigrated += 1;
-											rowsUpdated += 1;
-											batchUpdated += 1;
-											totals.rows_total_migrated += 1;
-										} else {
-											rowsMigrated += 1;
-											rowsInserted += 1;
-											batchInserted += 1;
-											totals.rows_total_migrated += 1;
-										}
-										if (result.insertId && row.sourceId !== undefined) {
-											await runStore.storeIdMap(pool, {
-												runId,
-												tableName,
-												sourceId: row.sourceId,
-												targetId: result.insertId
-											});
-										}
-									} catch (err) {
-										try {
-											await conn.rollback();
-										} catch (rollbackErr) {
-											// ignore
-										}
-										if (isDuplicateErr(err)) {
-											if (onDuplicate === "ERROR") {
-												const errorMessage = formatDbError(err, { firebirdConfig });
-												await logRowError(sourceRow, rowIndex, errorMessage);
-											} else {
-												rowsSkippedDuplicates += 1;
-												batchSkipped += 1;
-												totals.rows_total_skipped_duplicates += 1;
-											}
-											continue;
-										}
-										const errorMessage = formatDbError(err, { firebirdConfig });
-										await logRowError(sourceRow, rowIndex, errorMessage);
-									}
-								}
-							} else {
-								try {
-									await conn.beginTransaction();
-									const [result] = await conn.query(sql, [rowsToInsert.map((r) => r.values)]);
-									await conn.commit();
-									const totalRows = rowsToInsert.length;
-									const affected = Number(result?.affectedRows || 0);
-									const updated = step.mode === "UPSERT" ? Math.max(affected - totalRows, 0) : 0;
-									const inserted = step.mode === "UPSERT"
-										? Math.max(totalRows - updated, 0)
-										: affected;
-									const skipped =
-										ignoreDuplicatesForInsert && step.mode !== "UPSERT"
-											? Math.max(totalRows - inserted, 0)
-											: 0;
-									rowsMigrated += inserted + updated;
-									rowsInserted += inserted;
-									rowsUpdated += updated;
-									batchInserted += inserted;
-									batchUpdated += updated;
-									rowsSkippedDuplicates += skipped;
-									batchSkipped += skipped;
-									totals.rows_total_migrated += inserted + updated;
-									totals.rows_total_skipped_duplicates += skipped;
-								} catch (err) {
-									try {
-										await conn.rollback();
-									} catch (rollbackErr) {
-										// ignore
-									}
-									for (let rowIndex = 0; rowIndex < rowsToInsert.length; rowIndex += 1) {
-										const row = rowsToInsert[rowIndex];
-										const sourceRow = batch[rowIndex] || null;
-										try {
-											await conn.beginTransaction();
-											const [result] = await conn.query(sql, [[row.values]]);
-											await conn.commit();
-											if (ignoreDuplicatesForInsert && result.affectedRows === 0) {
-												rowsSkippedDuplicates += 1;
-												batchSkipped += 1;
-												totals.rows_total_skipped_duplicates += 1;
-												continue;
-											}
-											rowsMigrated += 1;
-											rowsInserted += 1;
-											batchInserted += 1;
-											totals.rows_total_migrated += 1;
-										} catch (rowErr) {
-											try {
-												await conn.rollback();
-											} catch (rollbackErr) {
-												// ignore
-											}
-											if (isDuplicateErr(rowErr)) {
-												if (onDuplicate === "ERROR") {
-													const errorMessage = formatDbError(rowErr, { firebirdConfig });
-													await logRowError(sourceRow, rowIndex, errorMessage);
-												} else {
-													rowsSkippedDuplicates += 1;
-													batchSkipped += 1;
-													totals.rows_total_skipped_duplicates += 1;
-												}
-												continue;
-											}
-											const errorMessage = formatDbError(rowErr, { firebirdConfig });
-											await logRowError(sourceRow, rowIndex, errorMessage);
-										}
-									}
-								}
-							}
+							rowsMigrated += rowsToInsert.length;
+							rowsInserted += rowsToInsert.length;
+							batchInserted += rowsToInsert.length;
+							totals.rows_total_migrated += rowsToInsert.length;
 						}
-					} else {
-						rowsMigrated += rowsToInsert.length;
-						rowsInserted += rowsToInsert.length;
-						batchInserted += rowsToInsert.length;
-						totals.rows_total_migrated += rowsToInsert.length;
+
+						logRun({
+							level: "debug",
+							phase: "write",
+							tableName,
+							tableRunId,
+							status: "end",
+							inserted: batchInserted,
+							updated: batchUpdated,
+							skipped: batchSkipped,
+							durationMs: Date.now() - batchStart
+						});
+
+						offset += rowsToInsert.length;
+
+						await runStore.updateTableProgress(pool, runId, tableName, {
+							last_offset: offset,
+							rows_migrated: rowsMigrated,
+							rows_error: rowsError,
+							rows_skipped_duplicates: rowsSkippedDuplicates
+						});
+						tableState.migrated = rowsMigrated;
+						tableState.inserted = rowsInserted;
+						tableState.updated = rowsUpdated;
+						tableState.errors = rowsError;
+						tableState.skippedDuplicates = rowsSkippedDuplicates;
+						emitRunState(runId, emitter);
 					}
 
-					logRun({
-						level: "debug",
-						phase: "write",
-						tableName,
-						tableRunId,
-						status: "end",
-						inserted: batchInserted,
-						updated: batchUpdated,
-						skipped: batchSkipped,
-						durationMs: Date.now() - batchStart
-					});
+					if (rowsError > 0) {
+						const errorMessage = `Table ${tableName} completed with ${rowsError} errors.`;
+						await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
+						await failRun(errorMessage, "Fix the row errors, then run the migration again.", "validate");
+						break;
+					}
 
-					offset += rowsToInsert.length;
+					// Post-table validation for spares_used
+					if (tableName === "spares_used") {
+						logRun({ level: "info", phase: "post_validation", tableName, tableRunId, status: "start" });
+						try {
+							// Use comprehensive validation with zero-loss tolerance
+							await validateMigrationIntegrity(
+								pool,
+								firebirdConfig,
+								tableName,
+								sourceTable,
+								{
+									readRows: offset,
+									insertedRows: rowsInserted,
+									updatedRows: rowsUpdated,
+									skippedRows: rowsSkippedDuplicates,
+									errorRows: rowsError
+								},
+								logRun
+							);
 
-					await runStore.updateTableProgress(pool, runId, tableName, {
-						last_offset: offset,
-						rows_migrated: rowsMigrated,
-						rows_error: rowsError,
-						rows_skipped_duplicates: rowsSkippedDuplicates
-					});
-					tableState.migrated = rowsMigrated;
-					tableState.inserted = rowsInserted;
-					tableState.updated = rowsUpdated;
-					tableState.errors = rowsError;
-					tableState.skippedDuplicates = rowsSkippedDuplicates;
-					emitRunState(runId, emitter);
-				}
-
-				if (rowsError > 0) {
-					const errorMessage = `Table ${tableName} completed with ${rowsError} errors.`;
-					await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
-					await failRun(errorMessage, "Fix the row errors, then run the migration again.", "validate");
-					break;
-				}
-
-				// Post-table validation for spares_used
-				if (tableName === "spares_used") {
-					logRun({ level: "info", phase: "post_validation", tableName, tableRunId, status: "start" });
-					try {
-						// Use comprehensive validation with zero-loss tolerance
-						await validateMigrationIntegrity(
-							pool, 
-							firebirdConfig, 
-							tableName, 
-							sourceTable,
-							{
-								readRows: offset,
-								insertedRows: rowsInserted,
-								updatedRows: rowsUpdated,
-								skippedRows: rowsSkippedDuplicates,
-								errorRows: rowsError
-							},
-							logRun
-						);
-
-						// Check price fields: ensure cost_price and sales_price were migrated correctly
-						const [priceCheck] = await pool.query(`
+							// Check price fields: ensure cost_price and sales_price were migrated correctly
+							const [priceCheck] = await pool.query(`
 							SELECT 
 								COUNT(*) as total_rows,
 								COUNT(CASE WHEN cost_price = 0 AND sales_price = 0 THEN 1 END) as zero_price_count,
@@ -1673,111 +1725,111 @@ async function runMigrationInternal({
 							FROM \`${tableName}\`
 						`);
 
-						// Query Firebird to check if source has non-zero prices
-						const sourceNonZeroCount = await firebird.query(firebirdConfig, `
+							// Query Firebird to check if source has non-zero prices
+							const sourceNonZeroCount = await firebird.query(firebirdConfig, `
 							SELECT COUNT(*) as cnt 
 							FROM ${sourceTable}
 							WHERE COST_PRICE > 0 OR SALES_PRICE > 0
 						`);
-						const fbNonZeroCount = sourceNonZeroCount[0]?.cnt || sourceNonZeroCount[0]?.CNT || 0;
+							const fbNonZeroCount = sourceNonZeroCount[0]?.cnt || sourceNonZeroCount[0]?.CNT || 0;
 
-						const mysqlTotal = priceCheck[0]?.total_rows || 0;
-						const mysqlZeroPrice = priceCheck[0]?.zero_price_count || 0;
-						const mysqlNonZeroPrice = priceCheck[0]?.nonzero_price_count || 0;
+							const mysqlTotal = priceCheck[0]?.total_rows || 0;
+							const mysqlZeroPrice = priceCheck[0]?.zero_price_count || 0;
+							const mysqlNonZeroPrice = priceCheck[0]?.nonzero_price_count || 0;
 
-						logRun({
-							level: "info",
-							phase: "post_validation",
-							tableName,
-							tableRunId,
-							validation: "price_check",
-							firebird_nonzero: fbNonZeroCount,
-							mysql_total: mysqlTotal,
-							mysql_zero: mysqlZeroPrice,
-							mysql_nonzero: mysqlNonZeroPrice
-						});
+							logRun({
+								level: "info",
+								phase: "post_validation",
+								tableName,
+								tableRunId,
+								validation: "price_check",
+								firebird_nonzero: fbNonZeroCount,
+								mysql_total: mysqlTotal,
+								mysql_zero: mysqlZeroPrice,
+								mysql_nonzero: mysqlNonZeroPrice
+							});
 
-						// If Firebird has many non-zero prices but MySQL has mostly zeros, fail
-						if (fbNonZeroCount > 50 && mysqlNonZeroPrice < fbNonZeroCount * 0.5) {
-							const errorMessage = `Validation failed for spares_used: Price fields not migrated correctly. Firebird has ${fbNonZeroCount} rows with non-zero prices, but MySQL only has ${mysqlNonZeroPrice}. Likely mapping is missing COST_PRICE/SALES_PRICE columns or transform is coercing nulls to 0.`;
-							await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
-							await failRun(errorMessage, "Check mapping includes COST_PRICE and SALES_PRICE columns with toNumber transform (which preserves nulls).", "post_validation");
-							break;
+							// If Firebird has many non-zero prices but MySQL has mostly zeros, fail
+							if (fbNonZeroCount > 50 && mysqlNonZeroPrice < fbNonZeroCount * 0.5) {
+								const errorMessage = `Validation failed for spares_used: Price fields not migrated correctly. Firebird has ${fbNonZeroCount} rows with non-zero prices, but MySQL only has ${mysqlNonZeroPrice}. Likely mapping is missing COST_PRICE/SALES_PRICE columns or transform is coercing nulls to 0.`;
+								await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
+								await failRun(errorMessage, "Check mapping includes COST_PRICE and SALES_PRICE columns with toNumber transform (which preserves nulls).", "post_validation");
+								break;
+							}
+
+							logRun({ level: "info", phase: "post_validation", tableName, tableRunId, status: "passed" });
+						} catch (validationErr) {
+							logRun({ level: "warn", phase: "post_validation", tableName, tableRunId, status: "error", error: validationErr?.message });
+							// Don't fail the migration for validation errors, just log them
 						}
+					}
 
-						logRun({ level: "info", phase: "post_validation", tableName, tableRunId, status: "passed" });
-					} catch (validationErr) {
-						logRun({ level: "warn", phase: "post_validation", tableName, tableRunId, status: "error", error: validationErr?.message });
-						// Don't fail the migration for validation errors, just log them
+					const durationMs = Date.now() - tableStart;
+					await runStore.finishTableRun(pool, runId, tableName, "success");
+					tableState.status = "SUCCESS";
+					tableState.durationMs = durationMs;
+					tableState.inserted = rowsInserted;
+					tableState.updated = rowsUpdated;
+					logRun({
+						level: "info",
+						phase: "table_finalize",
+						tableName,
+						tableRunId,
+						status: "success",
+						inserted: rowsInserted,
+						updated: rowsUpdated,
+						skipped: rowsSkippedDuplicates,
+						errors: rowsError,
+						durationMs
+					});
+					emitRunState(runId, emitter);
+				} finally {
+					conn.release();
+					if (tempIndexName) {
+						try {
+							await mysql.dropIndex(pool, tableName, tempIndexName);
+						} catch (err) {
+							// ignore
+						}
 					}
 				}
 
-				const durationMs = Date.now() - tableStart;
-				await runStore.finishTableRun(pool, runId, tableName, "success");
-				tableState.status = "SUCCESS";
-				tableState.durationMs = durationMs;
-				tableState.inserted = rowsInserted;
-				tableState.updated = rowsUpdated;
-				logRun({
-					level: "info",
-					phase: "table_finalize",
-					tableName,
-					tableRunId,
-					status: "success",
-					inserted: rowsInserted,
-					updated: rowsUpdated,
-					skipped: rowsSkippedDuplicates,
-					errors: rowsError,
-					durationMs
-				});
+				if (runFailed) break;
+			}
+
+			if (runFailed) {
+				await runStore.finishRun(pool, runId, "FAILED", failureInfo?.errorMessage || null);
+				logRun({ level: "error", phase: "run_finalize", status: "failed", error: failureInfo?.errorMessage || null });
 				emitRunState(runId, emitter);
-			} finally {
-				conn.release();
-				if (tempIndexName) {
-					try {
-						await mysql.dropIndex(pool, tableName, tempIndexName);
-					} catch (err) {
-						// ignore
-					}
+			} else {
+				runState.status = "SUCCESS";
+				runState.finishedAt = new Date().toISOString();
+				await runStore.finishRun(pool, runId, "SUCCESS");
+				logRun({ level: "info", phase: "run_finalize", status: "success" });
+				emitRunState(runId, emitter);
+			}
+		} finally {
+			// Always restore FK_CHECKS state, even on error
+			if (fkChecks && !originalFkState) {
+				try {
+					await pool.query("SET FOREIGN_KEY_CHECKS=1");
+					logRun({
+						level: 'info',
+						phase: 'cleanup',
+						action: 'foreign_key_checks_restored',
+						restored_state: 1
+					});
+				} catch (err) {
+					logRun({
+						level: 'error',
+						phase: 'cleanup',
+						action: 'foreign_key_checks_restore_failed',
+						error: err.message
+					});
+					throw new Error('Failed to restore FOREIGN_KEY_CHECKS=1. Database may be in inconsistent state.');
 				}
 			}
-
-			if (runFailed) break;
 		}
-
-		if (runFailed) {
-			await runStore.finishRun(pool, runId, "FAILED", failureInfo?.errorMessage || null);
-			logRun({ level: "error", phase: "run_finalize", status: "failed", error: failureInfo?.errorMessage || null });
-			emitRunState(runId, emitter);
-		} else {
-			runState.status = "SUCCESS";
-			runState.finishedAt = new Date().toISOString();
-			await runStore.finishRun(pool, runId, "SUCCESS");
-			logRun({ level: "info", phase: "run_finalize", status: "success" });
-			emitRunState(runId, emitter);
-		}
-	} finally {
-		// Always restore FK_CHECKS state, even on error
-		if (fkChecks && !originalFkState) {
-			try {
-				await pool.query("SET FOREIGN_KEY_CHECKS=1");
-				logRun({
-					level: 'info',
-					phase: 'cleanup',
-					action: 'foreign_key_checks_restored',
-					restored_state: 1
-				});
-			} catch (err) {
-				logRun({
-					level: 'error',
-					phase: 'cleanup',
-					action: 'foreign_key_checks_restore_failed',
-					error: err.message
-				});
-				throw new Error('Failed to restore FOREIGN_KEY_CHECKS=1. Database may be in inconsistent state.');
-			}
-		}
-	}
 	} catch (err) {
 		const errorMessage = formatDbError(err, { firebirdConfig });
 		const hint = getDbErrorHint(errorMessage);
