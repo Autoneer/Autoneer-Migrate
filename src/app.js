@@ -11,7 +11,7 @@ const runRoutes = require("./routes/run");
 const resultsRoutes = require("./routes/results");
 const eventsRoutes = require("./routes/events");
 const migrationRoutes = require("./routes/migration");
-const healthRoutes = require("./routes/health");
+const { router: healthRoutes } = require("./routes/health"); // Destructure router since health.js exports object
 
 const app = express();
 

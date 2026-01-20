@@ -34,10 +34,16 @@ function resolveMappingForTarget(tableName, mapping) {
 async function validatePlanForRun(pool, plan, mapping) {
 	const included = (plan || []).filter((step) => step.include);
 	const errors = [];
+	const warnings = []; // Track potential issues with dedupe keys
 
 	for (const step of included) {
 		const tableName = step.table;
 		const dedupeKeys = Array.isArray(step.dedupeKeys) ? step.dedupeKeys : [];
+
+		// Warn about dedupe keys causing skipped duplicates
+		if (dedupeKeys.length > 0) {
+			warnings.push(`Table ${tableName}: Dedupe keys (${dedupeKeys.join(', ')}) may cause skipped duplicates, leading to fewer inserted rows than migrated.`);
+		}
 
 		if (step.keyStrategy === "rekey" && step.mode === "UPSERT" && dedupeKeys.length === 0) {
 			errors.push(`Table ${tableName}: UPSERT with re-key IDs requires dedupe keys.`);
@@ -83,11 +89,17 @@ async function validatePlanForRun(pool, plan, mapping) {
 		}
 	}
 
-	return errors;
+	return { errors, warnings };
 }
 
 router.get("/run", async (req, res) => {
 	const runId = req.query.runId || null;
+	const runNotice = state.ui?.runNotice || null;
+	// Clear notice after displaying
+	if (state.ui) {
+		state.ui.runNotice = null;
+	}
+	
 	let run = null;
 	if (runId) {
 		try {
@@ -104,6 +116,7 @@ router.get("/run", async (req, res) => {
 		plan: (state.plan || []).slice().sort((a, b) => a.table.localeCompare(b.table)),
 		runId,
 		run,
+		runNotice,
 		currentStep: "run"
 	});
 });
@@ -142,7 +155,22 @@ router.post("/run/start", async (req, res) => {
 	try {
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		await mysql.ensureMigrationTables(pool);
-		const errors = await validatePlanForRun(pool, state.plan || [], state.mapping || {});
+		const { errors, warnings } = await validatePlanForRun(pool, state.plan || [], state.mapping || {});
+		
+		// Store warnings in state for UI display
+		if (!state.ui) {
+			state.ui = {};
+		}
+		if (warnings.length > 0) {
+			state.ui.runNotice = {
+				type: 'warning',
+				message: 'Potential issues detected',
+				details: warnings.join('\n')
+			};
+		} else {
+			state.ui.runNotice = null;
+		}
+		
 		await pool.end();
 		if (errors.length) {
 			const message = errors.join(" ");
@@ -254,14 +282,17 @@ router.get("/migrate/run/:runId/status", async (req, res) => {
 	}
 });
 
-router.get("/run/logs/:runId", (req, res) => {
+router.get("/run/logs/:runId", async (req, res) => {
 	const runId = req.params.runId;
 	const logPath = logger.getLogFilePath(runId);
-	if (!fs.existsSync(logPath)) {
+	
+	// Fix: Use async fs.promises.access for proper async/await
+	try {
+		await fs.promises.access(logPath, fs.constants.F_OK);
+		res.download(logPath, `${runId}.log`);
+	} catch (err) {
 		res.status(404).json({ error: "Log not found" });
-		return;
 	}
-	res.download(logPath, `${runId}.log`);
 });
 
 router.post("/run/save-profile", async (req, res) => {

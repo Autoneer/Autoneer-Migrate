@@ -38,19 +38,21 @@ router.get("/mapping", async (req, res) => {
 
 	const resolveSourceTable = (mappedSource, tableMap) => {
 		if (!mappedSource) return null;
-		const direct = tableMap.get(mappedSource.toUpperCase());
-		if (direct) return mappedSource.toUpperCase();
+		// Fix: Uppercase all comparisons for case insensitivity
+		const upperMapped = mappedSource.toUpperCase();
+		const direct = tableMap.get(upperMapped);
+		if (direct) return upperMapped;
 		const candidates = [];
-		if (mappedSource.toUpperCase().endsWith("IES")) {
-			candidates.push(mappedSource.slice(0, -3) + "Y");
+		if (upperMapped.endsWith("IES")) {
+			candidates.push(upperMapped.slice(0, -3) + "Y");
 		}
-		if (mappedSource.toUpperCase().endsWith("S")) {
-			candidates.push(mappedSource.slice(0, -1));
+		if (upperMapped.endsWith("S")) {
+			candidates.push(upperMapped.slice(0, -1));
 		}
 		for (const candidate of candidates) {
-			if (tableMap.get(candidate.toUpperCase())) return candidate.toUpperCase();
+			if (tableMap.get(candidate)) return candidate;
 		}
-		return mappedSource.toUpperCase();
+		return upperMapped;
 	};
 
 	let firebirdSchema = new Map();
@@ -72,6 +74,8 @@ router.get("/mapping", async (req, res) => {
 	).sort(([, a], [, b]) => String(a.target || "").localeCompare(String(b.target || "")));
 
 	const mismatchRows = [];
+	const defaultWarnings = []; // Track price fields with default:0
+	
 	for (const [sourceTable, def] of mappingTablesIncluded) {
 		const resolvedSourceTable = resolveSourceTable(sourceTable, firebirdSchema);
 		let sourceColumns = firebirdSchema.get(resolvedSourceTable) || [];
@@ -82,10 +86,12 @@ router.get("/mapping", async (req, res) => {
 				sourceColumns = sourceColumns || [];
 			}
 		}
-		sourceColumns = sourceColumns.slice().sort((a, b) => a.localeCompare(b));
+		// Fix: Ensure sourceColumns are uppercase for case-insensitive comparison
+		sourceColumns = sourceColumns.map(c => c.toUpperCase()).slice().sort((a, b) => a.localeCompare(b));
 		const mappingColumns = Object.keys(def.columns || {}).map((c) => c.toUpperCase());
 		const missing = mappingColumns.filter((c) => !sourceColumns.includes(c)).sort((a, b) => a.localeCompare(b));
 		missing.forEach((missingCol) => {
+			// Fix: Check both uppercase and original key
 			const rule = def.columns[missingCol] || def.columns[missingCol.toLowerCase()] || {};
 			mismatchRows.push({
 				mappingKey: sourceTable,
@@ -94,6 +100,21 @@ router.get("/mapping", async (req, res) => {
 				targetColumn: rule.target || "",
 				availableSourceColumns: sourceColumns
 			});
+		});
+		
+		// Scan for default:0 in price-related numeric fields
+		Object.entries(def.columns || {}).forEach(([sourceCol, rule]) => {
+			if (Object.prototype.hasOwnProperty.call(rule, 'default') && rule.default === 0) {
+				const colLower = sourceCol.toLowerCase();
+				if (colLower.includes('price') || colLower.includes('cost') || colLower.includes('amount')) {
+					defaultWarnings.push({
+						sourceTable: resolvedSourceTable,
+						sourceColumn: sourceCol,
+						targetColumn: rule.target || "",
+						message: `Default value 0 on price-related field may cause data loss`
+					});
+				}
+			}
 		});
 	}
 
@@ -141,6 +162,11 @@ router.get("/mapping", async (req, res) => {
 			...row,
 			availableSourceColumns: (row.availableSourceColumns || []).slice().sort((a, b) => a.localeCompare(b))
 		})),
+		defaultWarnings: defaultWarnings.slice().sort((a, b) => {
+			const tableCompare = a.sourceTable.localeCompare(b.sourceTable);
+			if (tableCompare !== 0) return tableCompare;
+			return a.sourceColumn.localeCompare(b.sourceColumn);
+		}),
 		currentStep: "mapping"
 	});
 });
@@ -222,23 +248,44 @@ router.post("/mapping/resolve", async (req, res) => {
 		const mapping = state.mapping || { tables: {} };
 		const entries = Object.entries(req.body).filter(([key]) => key.startsWith("resolve__"));
 		let appliedCount = 0;
+		const priceWarnings = []; // Track price column operations
+		
 		entries.forEach(([key, value]) => {
 			if (!value) return;
 			const [, sourceTable, sourceColumn] = key.split("__");
 			const tableDef = mapping.tables?.[sourceTable];
 			if (!tableDef || !tableDef.columns) return;
-			const rule = tableDef.columns[sourceColumn] || tableDef.columns[sourceColumn.toLowerCase()];
+			
+			// Fix: Use toUpperCase() for case-insensitive key lookup
+			const columnKey = Object.keys(tableDef.columns).find(k => k.toUpperCase() === sourceColumn.toUpperCase());
+			if (!columnKey) return;
+			
+			const rule = tableDef.columns[columnKey];
 			if (!rule) return;
 
-			delete tableDef.columns[sourceColumn];
-			delete tableDef.columns[sourceColumn.toLowerCase()];
+			// Check if this is a price-related column
+			const isPrice = sourceColumn.toLowerCase().includes('price') || 
+			               sourceColumn.toLowerCase().includes('cost') ||
+			               sourceColumn.toLowerCase().includes('amount');
+
+			delete tableDef.columns[columnKey];
 
 			if (value === "__omit__") {
+				if (isPrice) {
+					console.warn(`Omitting price-related column: ${sourceColumn} in ${sourceTable}`);
+					priceWarnings.push(`Omitted price column: ${sourceTable}.${sourceColumn}`);
+				}
 				appliedCount += 1;
 				return;
 			}
 
-			tableDef.columns[value] = rule;
+			if (isPrice && value !== sourceColumn) {
+				console.warn(`Renaming price-related column: ${sourceColumn} -> ${value} in ${sourceTable}`);
+				priceWarnings.push(`Renamed price column: ${sourceTable}.${sourceColumn} -> ${value}`);
+			}
+
+			// Fix: Normalize the new key to uppercase
+			tableDef.columns[value.toUpperCase()] = rule;
 			appliedCount += 1;
 		});
 		state.mapping = mapping;
@@ -251,9 +298,13 @@ router.post("/mapping/resolve", async (req, res) => {
 		const profileName = mapping.profileName || "";
 		let noticeMessage = `Applied ${appliedCount} fixes successfully.`;
 		let noticeDetails = "";
+		if (priceWarnings.length > 0) {
+			noticeDetails = `Price column warnings: ${priceWarnings.join('; ')}. `;
+		}
+		
 		if (profileId) {
 			const profileLabel = profileName || `#${profileId}`;
-			noticeDetails = `Profile: ${profileLabel}.`;
+			noticeDetails += `Profile: ${profileLabel}.`;
 			try {
 				const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 				try {

@@ -138,4 +138,5 @@ router.get("/health/connections", async (req, res) => {
 	});
 });
 
-module.exports = router;
+// Export caches for invalidation in setup.js after config changes
+module.exports = { router, mysqlPoolCache, healthCache };
