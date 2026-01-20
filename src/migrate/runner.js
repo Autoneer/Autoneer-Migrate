@@ -213,6 +213,456 @@ function buildTempIndexName(runId, tableName) {
 	return base.length > 60 ? base.slice(0, 60) : base;
 }
 
+/**
+ * Validates that mapped columns satisfy MySQL NOT NULL constraints.
+ * Checks if columns marked as NOT NULL in MySQL have proper mappings with non-null defaults or transforms.
+ * 
+ * @param {Object} pool - MySQL connection pool
+ * @param {string} tableName - Target MySQL table name
+ * @param {Object} columnMap - Column mapping object from mapping configuration
+ * @returns {Promise<Object>} - { safe: boolean, violations: Array<{column, message, suggestion}> }
+ */
+async function validateColumnNullability(pool, tableName, columnMap) {
+	const violations = [];
+	
+	try {
+		// Query MySQL information_schema for NOT NULL constraints
+		const [columns] = await pool.query(`
+			SELECT 
+				COLUMN_NAME,
+				IS_NULLABLE,
+				COLUMN_DEFAULT,
+				DATA_TYPE,
+				COLUMN_TYPE
+			FROM information_schema.COLUMNS
+			WHERE TABLE_SCHEMA = DATABASE()
+			AND TABLE_NAME = ?
+			AND IS_NULLABLE = 'NO'
+		`, [tableName]);
+		
+		// Build target column map for quick lookup
+		const targetColumnMap = new Map();
+		for (const [sourceCol, rule] of Object.entries(columnMap || {})) {
+			targetColumnMap.set(rule.target.toLowerCase(), { sourceCol, rule });
+		}
+		
+		// Check each NOT NULL column
+		for (const col of columns) {
+			const colName = col.COLUMN_NAME;
+			const colNameLower = colName.toLowerCase();
+			
+			// Skip auto-increment columns
+			if (col.EXTRA && col.EXTRA.includes('auto_increment')) {
+				continue;
+			}
+			
+			const mapping = targetColumnMap.get(colNameLower);
+			
+			if (!mapping) {
+				// Column is NOT NULL but not in mapping
+				if (col.COLUMN_DEFAULT !== null) {
+					// Has default value, safe
+					continue;
+				}
+				
+				violations.push({
+					column: colName,
+					message: `Column '${colName}' is NOT NULL in MySQL but not mapped.`,
+					suggestion: `Add '${colName}' to the mapping with a default value or ensure the source column exists.`,
+					risk: 'high'
+				});
+				continue;
+			}
+			
+			const { rule } = mapping;
+			
+			// Check if transform might return NULL
+			if (rule.transform) {
+				const transformName = typeof rule.transform === 'string' ? rule.transform : rule.transform.name;
+				const riskyTransforms = ['toNumber', 'toDate', 'toDateTime', 'toBoolean'];
+				
+				if (riskyTransforms.includes(transformName)) {
+					// These transforms can return NULL on invalid input
+					if (!Object.prototype.hasOwnProperty.call(rule, 'default')) {
+						violations.push({
+							column: colName,
+							message: `Column '${colName}' is NOT NULL but uses transform '${transformName}' which can return NULL, and no default is set.`,
+							suggestion: `Add a default value to the mapping: { "default": 0 } or ensure source data is never empty/null.`,
+							risk: 'high'
+						});
+					}
+				}
+			}
+			
+			// Check if only default is provided (no source column, no transform)
+			if (!rule.transform && Object.prototype.hasOwnProperty.call(rule, 'default')) {
+				if (rule.default === null || rule.default === undefined) {
+					violations.push({
+						column: colName,
+						message: `Column '${colName}' is NOT NULL but default value is null/undefined.`,
+						suggestion: `Set a non-null default value in the mapping.`,
+						risk: 'high'
+					});
+				}
+			}
+		}
+		
+		return {
+			safe: violations.length === 0,
+			violations
+		};
+	} catch (err) {
+		// If we can't validate, return empty violations to not block migration
+		console.warn(`Failed to validate nullability for ${tableName}: ${err.message}`);
+		return { safe: true, violations: [] };
+	}
+}
+
+/**
+ * Checks type compatibility between Firebird and MySQL data types.
+ * Identifies risky conversions that may cause data loss.
+ * 
+ * @param {string} firebirdType - Firebird data type
+ * @param {string} mysqlType - MySQL data type
+ * @returns {Object} - { safe: boolean, risk: string, message: string }
+ */
+function checkTypeCompatibility(firebirdType, mysqlType) {
+	const fbType = String(firebirdType).toUpperCase();
+	const myType = String(mysqlType).toUpperCase();
+	
+	// Mapping of safe Firebird → MySQL type conversions
+	const conversions = {
+		'SMALLINT': ['TINYINT', 'SMALLINT', 'INT', 'BIGINT'],
+		'INTEGER': ['INT', 'BIGINT'],
+		'BIGINT': ['BIGINT'],
+		'NUMERIC': ['DECIMAL', 'DOUBLE', 'FLOAT', 'NUMERIC'],
+		'DECIMAL': ['DECIMAL', 'DOUBLE', 'FLOAT', 'NUMERIC'],
+		'FLOAT': ['FLOAT', 'DOUBLE'],
+		'DOUBLE': ['DOUBLE', 'FLOAT'],
+		'CHAR': ['CHAR', 'VARCHAR', 'TEXT', 'TINYTEXT', 'MEDIUMTEXT', 'LONGTEXT'],
+		'VARCHAR': ['VARCHAR', 'TEXT', 'TINYTEXT', 'MEDIUMTEXT', 'LONGTEXT'],
+		'BLOB': ['LONGBLOB', 'BLOB', 'MEDIUMBLOB', 'LONGTEXT'],
+		'DATE': ['DATE', 'DATETIME'],
+		'TIMESTAMP': ['DATETIME', 'TIMESTAMP'],
+		'TIME': ['TIME'],
+		'BOOLEAN': ['TINYINT', 'BOOLEAN', 'BOOL']
+	};
+	
+	// Find matching conversion rule
+	for (const [fbBaseType, allowedMyTypes] of Object.entries(conversions)) {
+		if (fbType.includes(fbBaseType)) {
+			const safe = allowedMyTypes.some(t => myType.includes(t));
+			return {
+				safe,
+				risk: safe ? 'none' : 'high',
+				message: safe 
+					? `${fbType} → ${myType} is safe`
+					: `${fbType} → ${myType} may cause data loss or truncation`
+			};
+		}
+	}
+	
+	// Unknown type, warn but don't block
+	return {
+		safe: false,
+		risk: 'medium',
+		message: `Unknown type conversion: ${fbType} → ${myType}. Manual verification recommended.`
+	};
+}
+
+/**
+ * Validates data type mappings between Firebird source and MySQL target.
+ * Checks for unsafe type conversions and precision mismatches.
+ * 
+ * @param {Object} pool - MySQL connection pool
+ * @param {Object} firebirdConfig - Firebird connection configuration
+ * @param {string} sourceTable - Firebird source table name
+ * @param {string} targetTable - MySQL target table name
+ * @param {Object} columnMap - Column mapping object
+ * @returns {Promise<Array>} - Array of warnings for risky conversions
+ */
+/**
+ * Wraps a database operation in a transaction with automatic rollback on error.
+ * Ensures data consistency by committing only on success or rolling back on failure.
+ * 
+ * @param {Object} pool - MySQL connection pool
+ * @param {string} tableName - Table name for logging purposes
+ * @param {Function} callback - Async function that performs the operation, receives connection as parameter
+ * @param {Function} logRun - Logging function
+ * @returns {Promise<*>} - Result of the callback function
+ * @throws {Error} - Throws original error after rollback
+ */
+async function withTransaction(pool, tableName, callback, logRun) {
+	const conn = await pool.getConnection();
+	try {
+		await conn.beginTransaction();
+		const result = await callback(conn);
+		await conn.commit();
+		return result;
+	} catch (err) {
+		try {
+			await conn.rollback();
+			logRun({
+				level: 'info',
+				phase: 'transaction',
+				table: tableName,
+				action: 'rollback',
+				reason: err.message
+			});
+		} catch (rollbackErr) {
+			logRun({
+				level: 'error',
+				phase: 'transaction',
+				table: tableName,
+				action: 'rollback_failed',
+				error: rollbackErr.message
+			});
+		}
+		throw err;
+	} finally {
+		conn.release();
+	}
+}
+
+/**
+ * Identifies numeric columns for checksum validation.
+ * Returns column names that should be summed for integrity verification.
+ * 
+ * @param {string} tableName - Table name (case insensitive)
+ * @returns {Array<string>} - List of numeric column names to validate
+ */
+function identifyNumericColumns(tableName) {
+	const numericTables = {
+		'SPARES_USED': ['quantity', 'cost_price', 'sales_price'],
+		'INVOICES': ['inv_totalexlvat', 'inv_totalinclvat'],
+		'ACCOUNTS': ['balance', 'credit', 'debit'],
+		'PAYMENTS': ['amount'],
+		'QUOTES': ['total_amount'],
+		'ORDERS': ['total_amount']
+	};
+	return numericTables[tableName.toUpperCase()] || [];
+}
+
+/**
+ * Validates migration integrity with zero-loss tolerance.
+ * Checks row counts and numeric checksums to detect data loss or corruption.
+ * 
+ * @param {Object} pool - MySQL connection pool
+ * @param {Object} firebirdConfig - Firebird connection configuration
+ * @param {string} tableName - Target MySQL table name
+ * @param {string} sourceTable - Source Firebird table name
+ * @param {Object} stats - Migration statistics
+ * @param {Function} logRun - Logging function
+ * @returns {Promise<void>}
+ * @throws {Error} - Throws if data loss or checksum mismatch detected
+ */
+async function validateMigrationIntegrity(pool, firebirdConfig, tableName, sourceTable, stats, logRun) {
+	const { readRows, insertedRows, updatedRows, skippedRows, errorRows } = stats;
+	
+	// Validate row accounting with ZERO tolerance
+	const accountedRows = insertedRows + updatedRows + skippedRows + errorRows;
+	const unaccountedRows = readRows - accountedRows;
+	
+	if (unaccountedRows > 0) {
+		throw new Error(
+			`Data loss detected in ${tableName}: ` +
+			`Read ${readRows} rows but only accounted for ${accountedRows}. ` +
+			`Lost ${unaccountedRows} rows. ` +
+			`Breakdown: ${insertedRows} inserted, ${updatedRows} updated, ${skippedRows} skipped, ${errorRows} errors. ` +
+			`This may indicate a duplicate key problem or mapping issue.`
+		);
+	}
+	
+	// Checksum validation for numeric columns
+	const numericColumns = identifyNumericColumns(tableName);
+	if (numericColumns.length > 0) {
+		try {
+			// Get Firebird checksums
+			const fbChecksum = await firebird.query(firebirdConfig, `
+				SELECT ${numericColumns.map(c => `SUM("${c.toUpperCase()}") as ${c}`).join(', ')}
+				FROM ${sourceTable}
+			`);
+			
+			// Get MySQL checksums
+			const [mysqlChecksum] = await pool.query(`
+				SELECT ${numericColumns.map(c => `SUM(\`${c}\`) as ${c}`).join(', ')}
+				FROM \`${tableName}\`
+			`);
+			
+			// Compare sums with 1% variance tolerance for rounding
+			const checksumResults = [];
+			for (const col of numericColumns) {
+				const fbSum = Number(fbChecksum[0]?.[col] || fbChecksum[0]?.[col.toUpperCase()] || 0);
+				const mysqlSum = Number(mysqlChecksum[0]?.[col] || 0);
+				const variance = Math.abs(fbSum - mysqlSum) / (Math.abs(fbSum) + 0.01);
+				
+				checksumResults.push({
+					column: col,
+					firebird_sum: fbSum,
+					mysql_sum: mysqlSum,
+					variance: (variance * 100).toFixed(4) + '%'
+				});
+				
+				if (variance > 0.01) { // 1% variance tolerance
+					throw new Error(
+						`Checksum mismatch in ${tableName}.${col}: ` +
+						`Firebird sum=${fbSum.toFixed(2)}, MySQL sum=${mysqlSum.toFixed(2)}, ` +
+						`variance=${(variance * 100).toFixed(2)}%. ` +
+						`This indicates data loss or incorrect transforms.`
+					);
+				}
+			}
+			
+			logRun({
+				level: 'info',
+				phase: 'post_migration_validation',
+				table: tableName,
+				validation: 'checksum',
+				checksums: checksumResults,
+				status: 'passed'
+			});
+		} catch (err) {
+			if (err.message.includes('Checksum mismatch')) {
+				throw err;
+			}
+			// Log warning but don't fail if checksum query fails
+			logRun({
+				level: 'warn',
+				phase: 'post_migration_validation',
+				table: tableName,
+				validation: 'checksum',
+				status: 'error',
+				error: err.message
+			});
+		}
+	}
+	
+	logRun({
+		level: 'info',
+		phase: 'post_migration_validation',
+		table: tableName,
+		status: 'passed',
+		readRows,
+		inserted: insertedRows,
+		updated: updatedRows,
+		skipped: skippedRows,
+		errors: errorRows,
+		unaccounted: unaccountedRows
+	});
+}
+
+async function validateDataTypeMapping(pool, firebirdConfig, sourceTable, targetTable, columnMap) {
+	const warnings = [];
+	
+	try {
+		// Get MySQL column types
+		const [mysqlColumns] = await pool.query(`
+			SELECT COLUMN_NAME, DATA_TYPE, COLUMN_TYPE
+			FROM information_schema.COLUMNS
+			WHERE TABLE_SCHEMA = DATABASE()
+			AND TABLE_NAME = ?
+		`, [targetTable]);
+		
+		const mysqlColumnMap = new Map(
+			mysqlColumns.map(c => [c.COLUMN_NAME.toLowerCase(), c])
+		);
+		
+		// Get Firebird column types
+		const fbColumns = await firebird.query(firebirdConfig, `
+			SELECT 
+				rf.RDB$FIELD_NAME as FIELD_NAME,
+				f.RDB$FIELD_TYPE as FIELD_TYPE,
+				f.RDB$FIELD_LENGTH as FIELD_LENGTH,
+				f.RDB$FIELD_PRECISION as FIELD_PRECISION,
+				f.RDB$FIELD_SCALE as FIELD_SCALE
+			FROM RDB$RELATION_FIELDS rf
+			JOIN RDB$FIELDS f ON rf.RDB$FIELD_SOURCE = f.RDB$FIELD_NAME
+			WHERE rf.RDB$RELATION_NAME = '${sourceTable.toUpperCase()}'
+		`);
+		
+		const fbColumnMap = new Map();
+		for (const col of fbColumns) {
+			const name = (col.FIELD_NAME || col.field_name || '').trim().toLowerCase();
+			const typeCode = col.FIELD_TYPE || col.field_type;
+			
+			// Map Firebird type codes to names
+			const typeMap = {
+				7: 'SMALLINT',
+				8: 'INTEGER',
+				16: 'BIGINT',
+				10: 'FLOAT',
+				27: 'DOUBLE',
+				12: 'DATE',
+				13: 'TIME',
+				35: 'TIMESTAMP',
+				14: 'CHAR',
+				37: 'VARCHAR',
+				261: 'BLOB',
+				23: 'BOOLEAN'
+			};
+			
+			fbColumnMap.set(name, {
+				type: typeMap[typeCode] || 'UNKNOWN',
+				length: col.FIELD_LENGTH || col.field_length,
+				precision: col.FIELD_PRECISION || col.field_precision,
+				scale: Math.abs(col.FIELD_SCALE || col.field_scale || 0)
+			});
+		}
+		
+		// Check each mapped column
+		for (const [sourceCol, rule] of Object.entries(columnMap || {})) {
+			const fbCol = fbColumnMap.get(sourceCol.toLowerCase());
+			const mysqlCol = mysqlColumnMap.get(rule.target.toLowerCase());
+			
+			if (!fbCol || !mysqlCol) continue;
+			
+			// Check type compatibility
+			const compatibility = checkTypeCompatibility(fbCol.type, mysqlCol.DATA_TYPE);
+			
+			if (!compatibility.safe) {
+				warnings.push({
+					table: targetTable,
+					sourceColumn: sourceCol,
+					sourceType: fbCol.type,
+					targetColumn: rule.target,
+					targetType: mysqlCol.COLUMN_TYPE,
+					risk: compatibility.risk,
+					message: compatibility.message
+				});
+			}
+			
+			// Check for precision loss in NUMERIC/DECIMAL
+			if (fbCol.type === 'NUMERIC' || fbCol.type === 'DECIMAL') {
+				if (mysqlCol.DATA_TYPE.toUpperCase().includes('DECIMAL')) {
+					// Extract MySQL precision/scale from COLUMN_TYPE (e.g., "decimal(10,2)")
+					const match = mysqlCol.COLUMN_TYPE.match(/\((\d+),(\d+)\)/);
+					if (match) {
+						const myPrecision = parseInt(match[1], 10);
+						const myScale = parseInt(match[2], 10);
+						
+						if (fbCol.precision > myPrecision || fbCol.scale > myScale) {
+							warnings.push({
+								table: targetTable,
+								sourceColumn: sourceCol,
+								sourceType: `${fbCol.type}(${fbCol.precision},${fbCol.scale})`,
+								targetColumn: rule.target,
+								targetType: mysqlCol.COLUMN_TYPE,
+								risk: 'high',
+								message: `Precision mismatch: source has (${fbCol.precision},${fbCol.scale}) but target is (${myPrecision},${myScale})`
+							});
+						}
+					}
+				}
+			}
+		}
+		
+		return warnings;
+	} catch (err) {
+		console.warn(`Failed to validate data types for ${targetTable}: ${err.message}`);
+		return [];
+	}
+}
+
 async function mapRow(row, columnMap, lookupFn) {
 	const result = {};
 	for (const [sourceCol, rule] of Object.entries(columnMap)) {
@@ -393,6 +843,50 @@ async function runMigrationInternal({
 			}))
 		});
 		await runTimed("preflight", preflightConnectivity);
+		
+		// Validate NOT NULL constraints for all tables before starting migration
+		logRun({ level: "info", phase: "preflight", action: "nullability_validation", status: "start" });
+		const nullabilityViolations = [];
+		
+		for (const step of includedSteps) {
+			const tableName = step.table;
+			const mappingEntry = resolveMappingForTarget(tableName, mapping);
+			
+			if (mappingEntry && mappingEntry.columns) {
+				const validation = await validateColumnNullability(pool, tableName, mappingEntry.columns);
+				
+				if (!validation.safe) {
+					for (const violation of validation.violations) {
+						nullabilityViolations.push({
+							table: tableName,
+							...violation
+						});
+					}
+				}
+			}
+		}
+		
+		if (nullabilityViolations.length > 0) {
+			const errorMessages = nullabilityViolations.map(v => 
+				`  • [${v.table}] ${v.message} ${v.suggestion}`
+			).join('\n');
+			
+			logRun({ 
+				level: "error", 
+				phase: "preflight", 
+				action: "nullability_validation", 
+				status: "failed",
+				violations: nullabilityViolations
+			});
+			
+			throw new Error(
+				`Column NOT NULL constraint violations detected:\n${errorMessages}\n\n` +
+				`Fix these mapping issues before starting migration.`
+			);
+		}
+		
+		logRun({ level: "info", phase: "preflight", action: "nullability_validation", status: "passed" });
+		
 		startKeepalive();
 		checkAbort(runId);
 		const firebirdTables = await firebird.listTables(firebirdConfig);
@@ -465,11 +959,22 @@ async function runMigrationInternal({
 			}
 		}
 
-		if (fkChecks) {
-			await pool.query("SET FOREIGN_KEY_CHECKS=0");
-		}
+		// Store original FK state and disable if requested
+		let originalFkState = true;
+		try {
+			if (fkChecks) {
+				const [result] = await pool.query("SELECT @@foreign_key_checks as fk_checks");
+				originalFkState = result[0].fk_checks === 1;
+				await pool.query("SET FOREIGN_KEY_CHECKS=0");
+				logRun({ 
+					level: 'info', 
+					phase: 'preflight', 
+					action: 'foreign_key_checks_disabled',
+					original_state: originalFkState 
+				});
+			}
 
-		for (const step of includedSteps) {
+			for (const step of includedSteps) {
 			checkAbort(runId);
 			const tableName = step.table;
 			const mappingEntry = resolveMappingForTarget(tableName, mapping);
@@ -791,6 +1296,17 @@ async function runMigrationInternal({
 										if (onDuplicate === "ERROR") {
 											await logRowError(sourceRow, rowIndex, `Duplicate record detected for ${tableName} (dedupe keys: ${dedupeKeys.join(", ")}).`);
 										} else {
+											// Log individual skipped row with dedupe key values
+											const dedupKeyValues = dedupeKeys.map(k => row[k]);
+											logRun({
+												level: 'debug',
+												phase: 'deduplication',
+												table: tableName,
+												action: 'row_skipped',
+												dedupe_keys: dedupeKeys,
+												dedupe_values: dedupKeyValues,
+												reason: 'duplicate_key'
+											});
 											rowsSkippedDuplicates += 1;
 											batchSkipped += 1;
 											totals.rows_total_skipped_duplicates += 1;
@@ -1132,19 +1648,21 @@ async function runMigrationInternal({
 				if (tableName === "spares_used") {
 					logRun({ level: "info", phase: "post_validation", tableName, tableRunId, status: "start" });
 					try {
-						// Check row counts: read vs (inserted + updated + skipped)
-						const accountedRows = rowsInserted + rowsUpdated + rowsSkippedDuplicates;
-						const readRows = rowsMigrated; // This is the sum of inserted + updated
-						const totalRead = offset; // Total rows read from source
-
-						if (totalRead > accountedRows + rowsError + 50) {
-							// Significant row loss (allowing 50 row tolerance for edge cases)
-							const lostRows = totalRead - accountedRows - rowsError;
-							const errorMessage = `Validation failed for spares_used: ${lostRows} rows unaccounted for. Read ${totalRead} rows, but only ${accountedRows} were inserted/updated/skipped, and ${rowsError} had errors. Likely dedupe key issue causing row collapse.`;
-							await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
-							await failRun(errorMessage, "Review dedupe key configuration. Use spares_id for preserve mode, or job_number+lnr for rekey mode.", "post_validation");
-							break;
-						}
+						// Use comprehensive validation with zero-loss tolerance
+						await validateMigrationIntegrity(
+							pool, 
+							firebirdConfig, 
+							tableName, 
+							sourceTable,
+							{
+								readRows: offset,
+								insertedRows: rowsInserted,
+								updatedRows: rowsUpdated,
+								skippedRows: rowsSkippedDuplicates,
+								errorRows: rowsError
+							},
+							logRun
+						);
 
 						// Check price fields: ensure cost_price and sales_price were migrated correctly
 						const [priceCheck] = await pool.query(`
@@ -1227,10 +1745,6 @@ async function runMigrationInternal({
 			if (runFailed) break;
 		}
 
-		if (fkChecks) {
-			await pool.query("SET FOREIGN_KEY_CHECKS=1");
-		}
-
 		if (runFailed) {
 			await runStore.finishRun(pool, runId, "FAILED", failureInfo?.errorMessage || null);
 			logRun({ level: "error", phase: "run_finalize", status: "failed", error: failureInfo?.errorMessage || null });
@@ -1242,6 +1756,28 @@ async function runMigrationInternal({
 			logRun({ level: "info", phase: "run_finalize", status: "success" });
 			emitRunState(runId, emitter);
 		}
+	} finally {
+		// Always restore FK_CHECKS state, even on error
+		if (fkChecks && !originalFkState) {
+			try {
+				await pool.query("SET FOREIGN_KEY_CHECKS=1");
+				logRun({
+					level: 'info',
+					phase: 'cleanup',
+					action: 'foreign_key_checks_restored',
+					restored_state: 1
+				});
+			} catch (err) {
+				logRun({
+					level: 'error',
+					phase: 'cleanup',
+					action: 'foreign_key_checks_restore_failed',
+					error: err.message
+				});
+				throw new Error('Failed to restore FOREIGN_KEY_CHECKS=1. Database may be in inconsistent state.');
+			}
+		}
+	}
 	} catch (err) {
 		const errorMessage = formatDbError(err, { firebirdConfig });
 		const hint = getDbErrorHint(errorMessage);

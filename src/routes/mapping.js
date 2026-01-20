@@ -75,7 +75,7 @@ router.get("/mapping", async (req, res) => {
 
 	const mismatchRows = [];
 	const defaultWarnings = []; // Track price fields with default:0
-	
+
 	for (const [sourceTable, def] of mappingTablesIncluded) {
 		const resolvedSourceTable = resolveSourceTable(sourceTable, firebirdSchema);
 		let sourceColumns = firebirdSchema.get(resolvedSourceTable) || [];
@@ -101,7 +101,7 @@ router.get("/mapping", async (req, res) => {
 				availableSourceColumns: sourceColumns
 			});
 		});
-		
+
 		// Scan for default:0 in price-related numeric fields
 		Object.entries(def.columns || {}).forEach(([sourceCol, rule]) => {
 			if (Object.prototype.hasOwnProperty.call(rule, 'default') && rule.default === 0) {
@@ -249,24 +249,24 @@ router.post("/mapping/resolve", async (req, res) => {
 		const entries = Object.entries(req.body).filter(([key]) => key.startsWith("resolve__"));
 		let appliedCount = 0;
 		const priceWarnings = []; // Track price column operations
-		
+
 		entries.forEach(([key, value]) => {
 			if (!value) return;
 			const [, sourceTable, sourceColumn] = key.split("__");
 			const tableDef = mapping.tables?.[sourceTable];
 			if (!tableDef || !tableDef.columns) return;
-			
+
 			// Fix: Use toUpperCase() for case-insensitive key lookup
 			const columnKey = Object.keys(tableDef.columns).find(k => k.toUpperCase() === sourceColumn.toUpperCase());
 			if (!columnKey) return;
-			
+
 			const rule = tableDef.columns[columnKey];
 			if (!rule) return;
 
 			// Check if this is a price-related column
-			const isPrice = sourceColumn.toLowerCase().includes('price') || 
-			               sourceColumn.toLowerCase().includes('cost') ||
-			               sourceColumn.toLowerCase().includes('amount');
+			const isPrice = sourceColumn.toLowerCase().includes('price') ||
+				sourceColumn.toLowerCase().includes('cost') ||
+				sourceColumn.toLowerCase().includes('amount');
 
 			delete tableDef.columns[columnKey];
 
@@ -301,7 +301,7 @@ router.post("/mapping/resolve", async (req, res) => {
 		if (priceWarnings.length > 0) {
 			noticeDetails = `Price column warnings: ${priceWarnings.join('; ')}. `;
 		}
-		
+
 		if (profileId) {
 			const profileLabel = profileName || `#${profileId}`;
 			noticeDetails += `Profile: ${profileLabel}.`;

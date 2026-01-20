@@ -99,7 +99,7 @@ router.get("/run", async (req, res) => {
 	if (state.ui) {
 		state.ui.runNotice = null;
 	}
-	
+
 	let run = null;
 	if (runId) {
 		try {
@@ -156,7 +156,7 @@ router.post("/run/start", async (req, res) => {
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		await mysql.ensureMigrationTables(pool);
 		const { errors, warnings } = await validatePlanForRun(pool, state.plan || [], state.mapping || {});
-		
+
 		// Store warnings in state for UI display
 		if (!state.ui) {
 			state.ui = {};
@@ -170,7 +170,7 @@ router.post("/run/start", async (req, res) => {
 		} else {
 			state.ui.runNotice = null;
 		}
-		
+
 		await pool.end();
 		if (errors.length) {
 			const message = errors.join(" ");
@@ -285,7 +285,7 @@ router.get("/migrate/run/:runId/status", async (req, res) => {
 router.get("/run/logs/:runId", async (req, res) => {
 	const runId = req.params.runId;
 	const logPath = logger.getLogFilePath(runId);
-	
+
 	// Fix: Use async fs.promises.access for proper async/await
 	try {
 		await fs.promises.access(logPath, fs.constants.F_OK);

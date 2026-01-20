@@ -94,7 +94,7 @@ router.post("/setup/save", async (req, res) => {
 	mysqlPoolCache.clear();
 	healthCache.mysql.clear();
 	healthCache.firebird = { ts: 0, data: null };
-	
+
 	const resolved = firebird.resolveFirebirdConfig(state.firebird, process.env);
 	const validationError = firebird.validateFirebirdConfig(resolved);
 	if (validationError) {
@@ -122,7 +122,7 @@ router.post("/setup/test-firebird", async (req, res) => {
 	mysqlPoolCache.clear();
 	healthCache.mysql.clear();
 	healthCache.firebird = { ts: 0, data: null };
-	
+
 	const resolved = firebird.resolveFirebirdConfig(state.firebird, process.env);
 	const validationError = firebird.validateFirebirdConfig(resolved);
 	console.log("Firebird test config:", firebird.maskFirebirdConfig(resolved));
@@ -176,7 +176,7 @@ router.post("/setup/test-mysql", async (req, res) => {
 	mysqlPoolCache.clear();
 	healthCache.mysql.clear();
 	healthCache.firebird = { ts: 0, data: null };
-	
+
 	try {
 		await mysql.testConnection(state.mysql);
 		res.render("setup", {
@@ -224,7 +224,7 @@ router.post("/setup/check-schema", async (req, res) => {
 	mysqlPoolCache.clear();
 	healthCache.mysql.clear();
 	healthCache.firebird = { ts: 0, data: null };
-	
+
 	try {
 		const exists = await mysql.schemaExists(state.mysql, state.schemaName);
 		res.render("setup", {
@@ -280,7 +280,7 @@ router.post("/setup/create-schema", async (req, res) => {
 	mysqlPoolCache.clear();
 	healthCache.mysql.clear();
 	healthCache.firebird = { ts: 0, data: null };
-	
+
 	const ddlSchema = schemaLoader.getSchemaNameFromDDL();
 	if (ddlSchema && ddlSchema !== state.schemaName) {
 		res.render("setup", {

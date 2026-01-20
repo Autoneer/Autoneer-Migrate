@@ -7,10 +7,10 @@ const router = express.Router();
 const handleProgressStream = (req, res) => {
 	const runIdRaw = req.query.runId;
 	const runId = Number(runIdRaw);
-	
+
 	// Fix: Add logging for SSE connections
 	console.log(`SSE connection for runId: ${runId} from IP: ${req.ip}`);
-	
+
 	if (!runId) {
 		res.status(400).end();
 		return;

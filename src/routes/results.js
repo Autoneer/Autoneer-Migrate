@@ -14,13 +14,13 @@ router.get("/results/:runId", async (req, res) => {
 		await mysql.ensureMigrationTables(pool);
 		const run = await runStore.getRun(pool, runId);
 		let tables = await runStore.getRunTables(pool, runId);
-		
+
 		// Fix: Calculate inserted count for each table
 		tables = tables.map(table => ({
 			...table,
 			inserted: Math.max((table.rows_migrated || 0) - (table.rows_skipped_duplicates || 0) - (table.rows_error || 0), 0)
 		}));
-		
+
 		tables = tables.slice().sort((a, b) => String(a.table_name || "").localeCompare(String(b.table_name || "")));
 		let rawErrors = await runStore.getRowErrors(pool, runId);
 		rawErrors = rawErrors.slice().sort((a, b) => {
@@ -54,7 +54,7 @@ router.get("/results/:runId", async (req, res) => {
 
 		const validations = [];
 		const samples = [];
-		
+
 		// Hardcoded validation checks
 		const checks = [
 			{
@@ -90,22 +90,22 @@ router.get("/results/:runId", async (req, res) => {
 				validations.push({ name: check.name, orphans: rows[0].cnt });
 			}
 		}
-		
+
 		// Fix: Dynamic validations by scanning mapping for _id columns
 		if (state.mapping?.tables) {
 			for (const [sourceTable, def] of Object.entries(state.mapping.tables)) {
 				const targetTable = def.target;
 				if (!targetTable) continue;
-				
+
 				const cols = await getColumns(targetTable);
 				if (!cols || cols.length === 0) continue;
-				
+
 				// Scan for columns ending in _id
 				for (const [sourceCol, rule] of Object.entries(def.columns || {})) {
 					const targetCol = rule.target;
 					if (!targetCol || !targetCol.endsWith('_id')) continue;
 					if (!cols.includes(targetCol.toLowerCase())) continue;
-					
+
 					// Infer reference table from column name (e.g., cid -> customers, stock_id -> stock)
 					let refTable = null;
 					if (targetCol === 'cid') {
@@ -114,26 +114,26 @@ router.get("/results/:runId", async (req, res) => {
 						// Try plural form of the prefix (e.g., stock_id -> stock)
 						refTable = targetCol.slice(0, -3);
 					}
-					
+
 					if (!refTable) continue;
-					
+
 					const refCols = await getColumns(refTable);
 					if (!refCols || !refCols.includes(targetCol.toLowerCase())) continue;
-					
+
 					// Skip if already checked
-					const alreadyChecked = checks.some(c => 
+					const alreadyChecked = checks.some(c =>
 						c.table === targetTable && c.column === targetCol && c.refTable === refTable
 					);
 					if (alreadyChecked) continue;
-					
+
 					// Run orphan check
 					try {
 						const [rows] = await pool.query(
 							`select count(*) as cnt from \`${targetTable}\` t left join \`${refTable}\` r on t.\`${targetCol}\` = r.\`${targetCol}\` where t.\`${targetCol}\` is not null and r.\`${targetCol}\` is null`
 						);
-						validations.push({ 
-							name: `${targetTable}.${targetCol} -> ${refTable}.${targetCol}`, 
-							orphans: rows[0].cnt 
+						validations.push({
+							name: `${targetTable}.${targetCol} -> ${refTable}.${targetCol}`,
+							orphans: rows[0].cnt
 						});
 					} catch (err) {
 						// Skip if query fails (table doesn't exist, etc.)
