@@ -13,8 +13,14 @@ router.get("/results/:runId", async (req, res) => {
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		await mysql.ensureMigrationTables(pool);
 		const run = await runStore.getRun(pool, runId);
-		const tables = await runStore.getRunTables(pool, runId);
-		const rawErrors = await runStore.getRowErrors(pool, runId);
+		let tables = await runStore.getRunTables(pool, runId);
+		tables = tables.slice().sort((a, b) => String(a.table_name || "").localeCompare(String(b.table_name || "")));
+		let rawErrors = await runStore.getRowErrors(pool, runId);
+		rawErrors = rawErrors.slice().sort((a, b) => {
+			const tableCompare = String(a.table_name || "").localeCompare(String(b.table_name || ""));
+			if (tableCompare !== 0) return tableCompare;
+			return Number(a.row_offset || 0) - Number(b.row_offset || 0);
+		});
 		const errors = rawErrors.map((err) => ({
 			...err,
 			// normalize legacy/new fields
@@ -77,10 +83,10 @@ router.get("/results/:runId", async (req, res) => {
 		}
 
 		try {
-			const fbInvoice = await firebird.query(state.firebird, "select sum(TOTALINCLVAT) as total from INVOICES");
-			const [myInvoice] = await pool.query("select sum(totalinclvat) as total from invoices");
+			const fbInvoice = await firebird.query(state.firebird, "select sum(INV_TOTALINCLVAT) as total from INVOICES");
+			const [myInvoice] = await pool.query("select sum(inv_totalinclvat) as total from invoices");
 			samples.push({
-				name: "Invoice totals (sum totalinclvat)",
+				name: "Invoice totals (sum inv_totalinclvat)",
 				firebird: fbInvoice?.[0]?.total || 0,
 				mysql: myInvoice?.[0]?.total || 0
 			});
@@ -106,6 +112,8 @@ router.get("/results/:runId", async (req, res) => {
 		}
 		await pool.end();
 
+		validations.sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+		samples.sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
 		res.render("results", { run, tables, errors, errorsByTable, validations, samples, currentStep: "results" });
 	} catch (err) {
 		res.render("results", { error: err.message, run: null, tables: [], errors: [], errorsByTable: {}, validations: [], samples: [], currentStep: "results" });

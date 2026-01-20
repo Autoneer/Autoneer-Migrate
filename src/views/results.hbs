@@ -18,6 +18,29 @@
 			<button class="btn" type="submit">Re-run failed tables</button>
 		</form>
 	</div>
+	{{#if (eq run.status "SUCCESS")}}
+	<div class="card nested">
+		<div class="card-header">
+			<strong>Save migration profile</strong>
+			<button class="btn secondary" type="button" data-toggle="save-profile-section">Show</button>
+		</div>
+		<div class="card-body collapsed" id="save-profile-section">
+			<div class="hint">Save the current mapping and plan as a profile for future use.</div>
+			<form id="save-profile-form" method="post" action="/run/save-profile">
+				<div class="form-group">
+					<label for="profile-name">Profile Name:</label>
+					<input type="text" id="profile-name" name="profileName" placeholder="e.g., Production Migration v1"
+						required />
+				</div>
+				<div class="actions">
+					<button type="submit" class="btn primary">Save Profile</button>
+					<button type="button" class="btn secondary" data-toggle="save-profile-section">Cancel</button>
+				</div>
+			</form>
+			<div id="save-profile-message" style="display:none;" class="alert"></div>
+		</div>
+	</div>
+	{{/if}}
 	{{else}}
 	<div class="hint">No run found.</div>
 	{{/if}}
@@ -172,3 +195,59 @@
 	{{/if}}
 	{{/each}}
 </section>
+
+<script>
+	(function () {
+		const saveProfileForm = document.getElementById('save-profile-form');
+		if (!saveProfileForm) return;
+
+		saveProfileForm.addEventListener('submit', async (e) => {
+			e.preventDefault();
+			const profileName = document.getElementById('profile-name').value;
+			const messageDiv = document.getElementById('save-profile-message');
+
+			if (!profileName.trim()) {
+				messageDiv.className = 'alert error';
+				messageDiv.textContent = 'Profile name is required';
+				messageDiv.style.display = 'block';
+				return;
+			}
+
+			try {
+				const response = await fetch('/run/save-profile', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({ profileName })
+				});
+
+				const result = await response.json();
+
+				if (!response.ok) {
+					messageDiv.className = 'alert error';
+					messageDiv.textContent = 'Error: ' + (result.error || 'Failed to save profile');
+					messageDiv.style.display = 'block';
+					return;
+				}
+
+				messageDiv.className = 'alert success';
+				messageDiv.textContent = `✓ Profile "${result.profileName}" has been saved successfully and set as default!`;
+				messageDiv.style.display = 'block';
+
+				// Clear form and collapse section after success
+				saveProfileForm.reset();
+				setTimeout(() => {
+					const collapseBtn = document.querySelector('[data-toggle="save-profile-section"]');
+					if (collapseBtn) {
+						collapseBtn.click();
+					}
+				}, 2000);
+			} catch (err) {
+				messageDiv.className = 'alert error';
+				messageDiv.textContent = 'Network error: ' + err.message;
+				messageDiv.style.display = 'block';
+			}
+		});
+	})();
+</script>

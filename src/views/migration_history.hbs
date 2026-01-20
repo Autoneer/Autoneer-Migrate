@@ -6,49 +6,59 @@
 			<button class="gh-theme-toggle" type="button" data-theme-toggle>Toggle theme</button>
 		</div>
 		{{#if error}}<div class="gh-banner gh-danger">{{error}}</div>{{/if}}
-		<table class="gh-table">
-			<thead>
-				<tr>
-					<th>Run</th>
-					<th>Started</th>
-					<th>Ended</th>
-					<th>Status</th>
-					<th>Errors</th>
-					<th>Actions</th>
-				</tr>
-			</thead>
-			<tbody>
-				{{#each runs}}
-				<tr>
-					<td>{{run_label}} (#{{run_id}})</td>
-					<td>{{formatDate started_at}}</td>
-					<td>{{formatDate ended_at}}</td>
-					<td><span class="gh-badge gh-{{status}}">{{status}}</span></td>
-					<td>{{error_count}}</td>
-					<td>
-						<div class="gh-actions" style="display:flex;gap:8px;align-items:center;">
-							<a class="gh-btn" href="/migration/history/{{run_id}}">View</a>
-							<form method="post" action="/migration/history/{{run_id}}/delete"
-								onsubmit="return confirm('Delete run #{{run_id}} and all related records? This cannot be undone.')">
-								<button class="gh-btn gh-btn-sm gh-danger" type="submit">Delete</button>
-							</form>
-							{{#if (eq status 'SUCCESS')}}
-							{{#if plan_id}}
-							<form method="post" action="/migration/plans/{{plan_id}}/reuse">
-								<button class="gh-btn gh-btn-sm" type="submit">Reuse plan</button>
-							</form>
-							{{/if}}
-							{{else}}
-							<form method="post" action="/migration/plans/{{plan_id}}/reuse">
-								<button class="gh-btn gh-btn-sm gh-warning" type="submit">Clone plan</button>
-							</form>
-							{{/if}}
-						</div>
-					</td>
-				</tr>
-				{{/each}}
-			</tbody>
-		</table>
+		<form id="batchDeleteForm" method="post" action="/migration/history/delete"
+			onsubmit="return confirm('Delete selected runs and all related records? This cannot be undone.')">
+			<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+				<button class="gh-btn gh-danger" type="submit">Delete Selected</button>
+				<span style="color:#666;font-size:0.9em;">Select runs to delete using the checkboxes.</span>
+			</div>
+			<table class="gh-table">
+				<thead>
+					<tr>
+						<th style="width:26px"><input id="selectAll" type="checkbox" aria-label="Select all runs"></th>
+						<th>Run</th>
+						<th>Started</th>
+						<th>Ended</th>
+						<th>Status</th>
+						<th>Errors</th>
+						<th>Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					{{#each runs}}
+					<tr>
+						<td><input class="rowSelect" type="checkbox" name="run_ids" value="{{run_id}}"
+								aria-label="Select run {{run_id}}"></td>
+						<td>{{run_label}} (#{{run_id}})</td>
+						<td>{{formatDate started_at}}</td>
+						<td>{{formatDate ended_at}}</td>
+						<td><span class="gh-badge gh-{{status}}">{{status}}</span></td>
+						<td>{{error_count}}</td>
+						<td>
+							<div class="gh-actions" style="display:flex;gap:8px;align-items:center;">
+								<a class="gh-btn" href="/migration/history/{{run_id}}">View</a>
+								<form method="post" action="/migration/history/{{run_id}}/delete"
+									onsubmit="return confirm('Delete run #{{run_id}} and all related records? This cannot be undone.')">
+									<button class="gh-btn gh-btn-sm gh-danger" type="submit">Delete</button>
+								</form>
+								{{#if (eq status 'SUCCESS')}}
+								{{#if plan_id}}
+								<form method="post" action="/migration/plans/{{plan_id}}/reuse">
+									<button class="gh-btn gh-btn-sm" type="submit">Reuse plan</button>
+								</form>
+								{{/if}}
+								{{else}}
+								<form method="post" action="/migration/plans/{{plan_id}}/reuse">
+									<button class="gh-btn gh-btn-sm gh-warning" type="submit">Clone plan</button>
+								</form>
+								{{/if}}
+							</div>
+						</td>
+					</tr>
+					{{/each}}
+				</tbody>
+			</table>
+		</form>
 	</div>
 </div>
 
@@ -74,6 +84,21 @@
 					}
 				}
 			});
+		}
+
+		// select-all checkbox for batch deletion
+		const selectAll = document.getElementById('selectAll');
+		if (selectAll) {
+			selectAll.addEventListener('change', function () {
+				const rows = document.querySelectorAll('.rowSelect');
+				rows.forEach(r => { r.checked = selectAll.checked; });
+			});
+			// keep header checkbox in sync when user toggles individual rows
+			const rowCheckboxes = document.querySelectorAll('.rowSelect');
+			rowCheckboxes.forEach(cb => cb.addEventListener('change', function () {
+				const all = Array.from(document.querySelectorAll('.rowSelect'));
+				selectAll.checked = all.length > 0 && all.every(i => i.checked);
+			}));
 		}
 	})();
 </script>

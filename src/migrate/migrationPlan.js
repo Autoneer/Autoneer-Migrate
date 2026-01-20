@@ -27,6 +27,8 @@ const DEFAULT_ORDER = [
 	"gl_journal_lines"
 ];
 
+const MASTER_TABLES = new Set(["company", "customers", "suppliers", "stock", "staff"]);
+
 function loadDefaultMapping() {
 	const mapPath = path.join(__dirname, "mapping.default.json");
 	const raw = fs.readFileSync(mapPath, "utf8");
@@ -44,11 +46,14 @@ function buildPlan({ firebirdTables, mysqlTables, mapping }) {
 	mysqlTables.forEach((t) => tableSet.add(t));
 
 	const plan = Array.from(tableSet).map((table) => {
+		const isMaster = MASTER_TABLES.has(table.toLowerCase());
 		return {
 			table,
 			include: false,
 			mode: "UPSERT",
-			keyStrategy: "rekey"
+			keyStrategy: isMaster ? "preserve" : "rekey",
+			dedupeKeys: [],
+			onDuplicate: "SKIP"
 		};
 	});
 

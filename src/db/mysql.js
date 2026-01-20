@@ -67,6 +67,42 @@ async function getPrimaryKeys(pool, tableName) {
 	return rows.map((r) => r.name);
 }
 
+async function listUniqueIndexes(pool, tableName) {
+	const [rows] = await pool.query(
+		"select index_name as name, non_unique as nonUnique, seq_in_index as seq, column_name as columnName from information_schema.statistics where table_schema = database() and table_name = ? order by index_name, seq_in_index",
+		[tableName]
+	);
+	const map = new Map();
+	for (const row of rows) {
+		if (row.nonUnique) continue;
+		if (row.name === "PRIMARY") continue;
+		if (!map.has(row.name)) {
+			map.set(row.name, []);
+		}
+		map.get(row.name).push(row.columnName);
+	}
+	return Array.from(map.entries()).map(([name, columns]) => ({ name, columns }));
+}
+
+function hasUniqueIndexForColumns(indexes, columns) {
+	if (!columns?.length) return false;
+	const target = columns.map((c) => c.toLowerCase()).sort();
+	return indexes.some((idx) => {
+		const cols = (idx.columns || []).map((c) => c.toLowerCase()).sort();
+		if (cols.length !== target.length) return false;
+		return cols.every((col, i) => col === target[i]);
+	});
+}
+
+async function createUniqueIndex(pool, tableName, indexName, columns) {
+	const colList = columns.map((c) => `\`${c}\``).join(", ");
+	await pool.query(`create unique index \`${indexName}\` on \`${tableName}\` (${colList})`);
+}
+
+async function dropIndex(pool, tableName, indexName) {
+	await pool.query(`drop index \`${indexName}\` on \`${tableName}\``);
+}
+
 async function ensureMigrationTables(pool) {
 	const ddl = `
 		-- New migration_runs table per spec
@@ -218,5 +254,9 @@ module.exports = {
 	listTables,
 	listColumns,
 	getPrimaryKeys,
+	listUniqueIndexes,
+	hasUniqueIndexForColumns,
+	createUniqueIndex,
+	dropIndex,
 	ensureMigrationTables
 };

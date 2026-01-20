@@ -19,18 +19,45 @@ if (progressEl) {
 	const failureDetailsBtn = document.getElementById("failure-details-btn");
 	const fixModal = document.getElementById("fix-modal");
 	const fixTableEl = document.getElementById("fix-table");
+	const fixStepEl = document.getElementById("fix-step");
 	const fixCauseEl = document.getElementById("fix-cause");
 	const fixErrorEl = document.getElementById("fix-error");
 	const fixStepsEl = document.getElementById("fix-steps");
-	const fixTryAgainBtn = document.getElementById("fix-try-again");
+	const fixDetailsToggle = document.getElementById("fix-details-toggle");
+	const fixDetailsPanel = document.getElementById("fix-details");
 	const successModal = document.getElementById("success-modal");
 	const successSummary = document.getElementById("success-summary");
+	const stopRunBtn = document.getElementById("stop-run-btn");
+	const logPanel = document.getElementById("run-log");
+	const tableSuccessModal = document.getElementById("table-success-modal");
+	const tableSuccessName = document.getElementById("table-success-name");
+	const tableSuccessMode = document.getElementById("table-success-mode");
+	const tableSuccessCleaned = document.getElementById("table-success-cleaned");
+	const tableSuccessSource = document.getElementById("table-success-source");
+	const tableSuccessInserted = document.getElementById("table-success-inserted");
+	const tableSuccessUpdated = document.getElementById("table-success-updated");
+	const tableSuccessSkipped = document.getElementById("table-success-skipped");
+	const tableSuccessErrors = document.getElementById("table-success-errors");
+	const tableSuccessDuration = document.getElementById("table-success-duration");
+	const cleanAllToggle = document.getElementById("clean-all-toggle");
+	const cleanTableList = document.getElementById("clean-table-list");
 	let lastStatus = null;
 	let latestRunState = null;
+	let source = null;
+	let reconnectTimer = null;
+	let reconnectDelay = 1000;
+	let shouldReconnect = true;
+	const tableStatusCache = new Map();
 
 	const formatNumber = (value) => {
 		if (value === null || value === undefined) return "0";
 		return Number(value).toLocaleString();
+	};
+
+	const formatDuration = (ms) => {
+		if (!ms || Number.isNaN(Number(ms))) return "-";
+		const seconds = Math.round(Number(ms) / 1000);
+		return `${seconds}s`;
 	};
 
 	const openModal = (modal) => {
@@ -115,6 +142,7 @@ if (progressEl) {
 				<td class="table-label"></td>
 				<td class="table-status"></td>
 				<td class="table-progress"></td>
+				<td class="table-duplicates"></td>
 				<td class="table-errors"></td>
 			`;
 			tableBody.appendChild(row);
@@ -142,6 +170,10 @@ if (progressEl) {
 			)} rows ${status === "running" ? "<span class=\"spinner\"></span>" : ""}</span>`;
 		}
 		row.querySelector(".table-errors").textContent = formatNumber(table.errors || 0);
+		const duplicatesEl = row.querySelector(".table-duplicates");
+		if (duplicatesEl) {
+			duplicatesEl.textContent = formatNumber(table.skippedDuplicates || 0);
+		}
 	};
 
 	const renderRunState = (runState) => {
@@ -153,6 +185,23 @@ if (progressEl) {
 			tableBody.innerHTML = "";
 			tables.forEach(renderTableRow);
 		}
+
+		tables.forEach((table) => {
+			const prev = tableStatusCache.get(table.name) || null;
+			if (table.status === "SUCCESS" && (table.errors || 0) === 0 && prev && prev !== "SUCCESS" && runState.status === "RUNNING") {
+				if (tableSuccessName) tableSuccessName.textContent = table.label || table.name;
+				if (tableSuccessMode) tableSuccessMode.textContent = table.mode || "";
+				if (tableSuccessCleaned) tableSuccessCleaned.textContent = table.cleaned ? "Yes" : "No";
+				if (tableSuccessSource) tableSuccessSource.textContent = formatNumber(table.total || 0);
+				if (tableSuccessInserted) tableSuccessInserted.textContent = formatNumber(table.inserted || 0);
+				if (tableSuccessUpdated) tableSuccessUpdated.textContent = formatNumber(table.updated || 0);
+				if (tableSuccessSkipped) tableSuccessSkipped.textContent = formatNumber(table.skippedDuplicates || 0);
+				if (tableSuccessErrors) tableSuccessErrors.textContent = formatNumber(table.errors || 0);
+				if (tableSuccessDuration) tableSuccessDuration.textContent = formatDuration(table.durationMs || 0);
+				openModal(tableSuccessModal);
+			}
+			tableStatusCache.set(table.name, table.status);
+		});
 		const doneCount = tables.filter((table) => ["SUCCESS", "FAILED", "SKIPPED"].includes(table.status)).length;
 		const totalCount = tables.length;
 		const percent = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
@@ -178,6 +227,9 @@ if (progressEl) {
 		if (runButton) {
 			runButton.disabled = runState.status === "RUNNING";
 		}
+		if (stopRunBtn) {
+			stopRunBtn.disabled = runState.status !== "RUNNING";
+		}
 		if (failureHintEl) {
 			failureHintEl.hidden = runState.status !== "FAILED";
 		}
@@ -185,11 +237,13 @@ if (progressEl) {
 		if (runState.status !== lastStatus) {
 			if (runState.status === "FAILED") {
 				const failedTable = tables.find((table) => table.status === "FAILED") || currentTable;
-				const tableLabel = failedTable?.label || failedTable?.name || "the current table";
+				const tableLabel = failedTable?.label || failedTable?.name || (runState.lastError ? "preflight" : "the current table");
 				if (failureMessage) {
-					failureMessage.textContent = `The migration stopped while migrating ${tableLabel}.`;
+					const baseMessage = runState.lastError?.message || null;
+					failureMessage.textContent = baseMessage || `The migration stopped while migrating ${tableLabel}.`;
 				}
 				openModal(failureModal);
+				shouldReconnect = false;
 			} else if (runState.status === "SUCCESS") {
 				const succeeded = tables.filter((table) => table.status === "SUCCESS").length;
 				const totalRows = tables.reduce((sum, table) => sum + (table.migrated || 0), 0);
@@ -199,6 +253,7 @@ if (progressEl) {
 					)}.`;
 				}
 				openModal(successModal);
+				shouldReconnect = false;
 			}
 			lastStatus = runState.status;
 		}
@@ -210,11 +265,13 @@ if (progressEl) {
 			const tables = latestRunState?.tables || [];
 			const failedTable = tables.find((table) => table.status === "FAILED") || null;
 			const fallbackMessage = failureMessage?.textContent || "Unknown error";
-			const message = failedTable?.lastError?.message || fallbackMessage;
+			const message = failedTable?.lastError?.message || latestRunState?.lastError?.message || fallbackMessage;
+			const step = failedTable?.lastError?.phase || latestRunState?.lastError?.phase || "unknown";
 			const { cause, steps } = buildLikelyCause(message);
 			if (fixTableEl) {
-				fixTableEl.textContent = failedTable?.label || failedTable?.name || (message.includes("Connection lost") ? "Connection" : "Unknown");
+				fixTableEl.textContent = failedTable?.label || failedTable?.name || (step === "preflight" ? "Connections" : "Unknown");
 			}
+			if (fixStepEl) fixStepEl.textContent = step;
 			if (fixCauseEl) fixCauseEl.textContent = cause;
 			if (fixErrorEl) fixErrorEl.value = message;
 			if (fixStepsEl) {
@@ -225,33 +282,111 @@ if (progressEl) {
 					fixStepsEl.appendChild(li);
 				});
 			}
+			if (fixDetailsPanel) {
+				fixDetailsPanel.hidden = true;
+			}
+			if (fixDetailsToggle) {
+				fixDetailsToggle.textContent = "Show debug details";
+			}
 			openModal(fixModal);
 		});
 	}
 
-	if (fixTryAgainBtn && runForm) {
-		fixTryAgainBtn.addEventListener("click", () => {
-			closeModal(fixModal);
-			if (typeof runForm.requestSubmit === "function") {
-				runForm.requestSubmit();
-			} else {
-				runForm.submit();
+	if (fixDetailsToggle && fixDetailsPanel) {
+		fixDetailsToggle.addEventListener("click", () => {
+			const isHidden = fixDetailsPanel.hidden;
+			fixDetailsPanel.hidden = !isHidden;
+			fixDetailsToggle.textContent = isHidden ? "Hide debug details" : "Show debug details";
+		});
+	}
+
+	if (stopRunBtn) {
+		stopRunBtn.addEventListener("click", async () => {
+			if (!runId) return;
+			const confirmed = window.confirm("Stop this migration run?");
+			if (!confirmed) return;
+			stopRunBtn.disabled = true;
+			try {
+				await fetch("/run/abort", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ runId, reason: "User stopped the run" })
+				});
+			} catch (e) {
+				// ignore
 			}
 		});
 	}
 
-	if (runId) {
-		const source = new EventSource(`/run/progress?runId=${runId}`);
+	const connectEventSource = () => {
+		if (!runId || !shouldReconnect) return;
+		if (source) {
+			source.close();
+			source = null;
+		}
+		source = new EventSource(`/run/progress?runId=${runId}`);
 		source.addEventListener("runState", (event) => {
 			const runState = JSON.parse(event.data);
 			renderRunState(runState);
 			if (runState.status === "FAILED" || runState.status === "SUCCESS") {
+				shouldReconnect = false;
 				source.close();
 			}
 		});
-		source.onerror = () => {
-			if (disconnectedEl) disconnectedEl.hidden = false;
+		source.addEventListener("log", (event) => {
+			if (!logPanel) return;
+			try {
+				const entry = JSON.parse(event.data);
+				logPanel.textContent += `${JSON.stringify(entry)}\n`;
+				logPanel.scrollTop = logPanel.scrollHeight;
+			} catch (e) {
+				// ignore
+			}
+		});
+		source.onopen = () => {
+			if (disconnectedEl) disconnectedEl.hidden = true;
+			reconnectDelay = 1000;
+			if (runId) {
+				fetch(`/migrate/run/${runId}/status`, { cache: "no-store" })
+					.then((res) => res.ok ? res.json() : null)
+					.then((data) => {
+						if (data?.tables && data.status) {
+							renderRunState({
+								...latestRunState,
+								status: data.status.toUpperCase(),
+								tables: data.tables
+							});
+						}
+					});
+			}
 		};
+		source.onerror = () => {
+			if (!shouldReconnect) return;
+			if (disconnectedEl) disconnectedEl.hidden = false;
+			if (source) {
+				source.close();
+				source = null;
+			}
+			if (reconnectTimer) return;
+			reconnectTimer = window.setTimeout(() => {
+				reconnectTimer = null;
+				reconnectDelay = Math.min(reconnectDelay * 2, 10000);
+				connectEventSource();
+			}, reconnectDelay);
+		};
+	};
+
+	if (runId) {
+		connectEventSource();
+	}
+
+	if (cleanAllToggle && cleanTableList) {
+		cleanAllToggle.addEventListener("change", () => {
+			const checkboxes = cleanTableList.querySelectorAll(".clean-table-checkbox");
+			checkboxes.forEach((box) => {
+				box.checked = cleanAllToggle.checked;
+			});
+		});
 	}
 }
 

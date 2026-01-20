@@ -1,53 +1,78 @@
 <section class="card">
 	<h2>Migration plan</h2>
-	<div class="actions">
-		<button class="btn secondary" type="button" id="check-all-tables">Check all</button>
-		<button class="btn secondary" type="button" id="uncheck-all-tables">Uncheck all</button>
-	</div>
-	<form method="post" action="/plan/save">
-		<div class="actions">
-			<a class="btn secondary" href="/setup">Back</a>
-			<button class="btn primary" type="submit">Save & Next: Mapping</button>
+	<form method="post" action="/plan/save" class="plan-form-sticky">
+		<div class="plan-sticky-header">
+			<div class="actions">
+				<button class="btn secondary" type="button" id="check-all-tables">Check all</button>
+				<button class="btn secondary" type="button" id="uncheck-all-tables">Uncheck all</button>
+			</div>
+			<div class="actions">
+				<a class="btn secondary" href="/setup">Back</a>
+				<button class="btn primary" type="submit">Save & Next: Mapping</button>
+			</div>
 		</div>
-		<table>
-			<thead>
-				<tr>
-					<th>Include</th>
-					<th>Table</th>
-					<th>Mode</th>
-					<th>Key Strategy</th>
-				</tr>
-			</thead>
-			<tbody>
-				{{#each plan}}
-				<tr>
-					<td>
-						<input type="checkbox" name="include_{{table}}" {{#if include}}checked{{/if}} />
-						<input type="hidden" name="table" value="{{table}}" />
-					</td>
-					<td>{{table}}</td>
-					<td>
-						<select name="mode">
-							<option value="INSERT" {{#if (eq mode 'INSERT' )}}selected{{/if}}>INSERT</option>
-							<option value="UPSERT" {{#if (eq mode 'UPSERT' )}}selected{{/if}}>UPSERT</option>
-							<option value="TRUNCATE+INSERT" {{#if (eq mode 'TRUNCATE+INSERT' )}}selected{{/if}}>
-								TRUNCATE+INSERT</option>
-						</select>
-					</td>
-					<td>
-						<select name="keyStrategy">
-							<option value="preserve" {{#if (eq keyStrategy 'preserve' )}}selected{{/if}}>Preserve IDs
-							</option>
-							<option value="rekey" {{#if (eq keyStrategy 'rekey' )}}selected{{/if}}>Re-key IDs</option>
-						</select>
-					</td>
-				</tr>
-				{{/each}}
-			</tbody>
-		</table>
-		<div class="actions">
-			<a class="btn secondary" href="/setup">Back</a>
-			<button class="btn primary" type="submit">Save & Next: Mapping</button>
+		<div class="plan-table-wrapper">
+			<table>
+				<thead>
+					<tr>
+						<th>Include</th>
+						<th>Table</th>
+						<th>Mode</th>
+						<th>Key Strategy</th>
+						<th>Dedupe keys</th>
+						<th>On duplicate (INSERT)</th>
+					</tr>
+				</thead>
+				<tbody>
+					{{#each plan}}
+					<tr>
+						<td>
+							<input type="checkbox" name="include_{{table}}" {{#if include}}checked{{/if}} />
+							<input type="hidden" name="table" value="{{table}}" />
+						</td>
+						<td>{{table}}</td>
+						<td>
+							<select name="mode">
+								<option value="INSERT" {{#if (eq mode 'INSERT' )}}selected{{/if}}>INSERT</option>
+								<option value="UPSERT" {{#if (eq mode 'UPSERT' )}}selected{{/if}}>UPSERT</option>
+								<option value="TRUNCATE+INSERT" {{#if (eq mode 'TRUNCATE+INSERT' )}}selected{{/if}}>
+									TRUNCATE+INSERT</option>
+							</select>
+						</td>
+						<td>
+							<select name="keyStrategy">
+								<option value="preserve" {{#if (eq keyStrategy 'preserve' )}}selected{{/if}}>Preserve
+									IDs
+								</option>
+								<option value="rekey" {{#if (eq keyStrategy 'rekey' )}}selected{{/if}}>Re-key IDs
+								</option>
+							</select>
+						</td>
+						<td>
+							{{#if availableColumns.length}}
+							<select name="dedupeKeys__{{table}}" class="dedupe-keys-select" data-table="{{table}}">
+								<option value="">-- None --</option>
+								{{#each availableColumns}}
+								<option value="{{this}}" {{#if (includes ../dedupeKeys this)}}selected{{/if}}>{{this}}
+								</option>
+								{{/each}}
+							</select>
+							<input type="hidden" name="dedupeKeys__{{table}}__multi" class="dedupe-keys-multi"
+								data-table="{{table}}" value="{{dedupeKeys}}" />
+							{{else}}
+							<div class="hint">No columns detected yet.</div>
+							{{/if}}
+						</td>
+						<td>
+							<select name="onDuplicate__{{table}}">
+								<option value="SKIP" {{#if (eq onDuplicate 'SKIP' )}}selected{{/if}}>SKIP</option>
+								<option value="ERROR" {{#if (eq onDuplicate 'ERROR' )}}selected{{/if}}>ERROR</option>
+							</select>
+						</td>
+					</tr>
+					{{/each}}
+				</tbody>
+			</table>
 		</div>
 	</form>
 </section>
@@ -78,3 +103,22 @@
 		</table>
 	</div>
 </section>
+
+<script>
+	// Handle dedupe keys dropdown -> multi-value input mapping
+	document.querySelectorAll('.dedupe-keys-select').forEach(select => {
+		const table = select.getAttribute('data-table');
+		const multiInput = document.querySelector(`.dedupe-keys-multi[data-table="${table}"]`);
+
+		// On form submit, collect all dedupe selections and store in hidden input
+		const form = select.closest('form');
+		if (form) {
+			form.addEventListener('submit', (e) => {
+				if (multiInput && select.value) {
+					// For single-select: store the value as-is
+					multiInput.value = select.value;
+				}
+			});
+		}
+	});
+</script>

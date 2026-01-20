@@ -12,12 +12,14 @@
 	const lastCheckedEl = document.getElementById("conn-last-checked");
 	const recheckBtn = document.getElementById("conn-recheck-btn");
 	const runStatusLine = document.getElementById("run-status-line");
-	const runFailureModal = document.getElementById("failure-modal");
-	const runFailureMessage = document.getElementById("failure-message");
+	const runWarning = document.getElementById("conn-warning");
+	const runWarningText = document.getElementById("conn-warning-text");
 	const progressEl = document.getElementById("progress");
 
-	let lastDisconnectHandled = false;
+	let consecutiveFailures = 0;
+	let abortInProgress = false;
 	let pollTimer = null;
+	const MAX_FAILURES = 6;
 
 	const formatStatusLabel = (status) => {
 		switch (status) {
@@ -48,6 +50,18 @@
 		target.setAttribute("aria-hidden", "false");
 	};
 
+	const showWarning = (message) => {
+		if (!runWarning) return;
+		if (runWarningText) runWarningText.textContent = message;
+		runWarning.hidden = false;
+	};
+
+	const hideWarning = () => {
+		if (!runWarning) return;
+		runWarning.hidden = true;
+		if (runWarningText) runWarningText.textContent = "";
+	};
+
 	const updateModal = (data, ts) => {
 		if (firebirdStatusEl) firebirdStatusEl.textContent = formatStatusLabel(data.firebird?.status);
 		if (firebirdDetailsEl) firebirdDetailsEl.textContent = data.firebird?.details || data.firebird?.message || "";
@@ -66,35 +80,50 @@
 		return progressEl?.getAttribute("data-run-id");
 	};
 
-	const handleRunDisconnect = async (data) => {
+	const confirmAndAbortIfNeeded = async () => {
+		if (abortInProgress) return;
+		if (!isRunActive()) return;
+		abortInProgress = true;
 		const runId = currentRunId();
-		if (!runId) return;
-		if (lastDisconnectHandled) return;
-
-		const firebirdDown = data.firebird?.status !== "CONNECTED";
-		const mysqlDown = data.mysql?.status !== "CONNECTED";
-		const reason = firebirdDown && mysqlDown
-			? "Connection lost: Firebird and MySQL"
-			: firebirdDown
-				? "Connection lost: Firebird"
-				: "Connection lost: MySQL";
-
-		lastDisconnectHandled = true;
-		if (runFailureMessage) {
-			runFailureMessage.textContent = reason;
+		if (!runId) {
+			abortInProgress = false;
+			return;
 		}
-		if (runFailureModal) {
-			openModal(runFailureModal);
+		try {
+			const response = await fetch(`/health/connections?runId=${encodeURIComponent(runId)}`, { cache: "no-store" });
+			if (!response.ok) throw new Error("Failed");
+			const data = await response.json();
+			const firebirdDown = data.firebird?.status !== "CONNECTED";
+			const mysqlDown = data.mysql?.status !== "CONNECTED";
+			if (!firebirdDown && !mysqlDown) {
+				consecutiveFailures = 0;
+				hideWarning();
+				abortInProgress = false;
+				return;
+			}
+		} catch (e) {
+			// confirmation check failed
 		}
 
 		try {
 			await fetch("/run/abort", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ runId, reason })
+				body: JSON.stringify({ runId, reason: "Connectivity checks failed" })
 			});
 		} catch (e) {
 			// ignore
+		}
+		abortInProgress = false;
+	};
+
+	const handleRunConnectivityFailure = async () => {
+		const runId = currentRunId();
+		if (!runId) return;
+		consecutiveFailures += 1;
+		showWarning(`Connectivity check failed (attempt ${consecutiveFailures} of ${MAX_FAILURES}). Migration will continue unless the runner fails.`);
+		if (consecutiveFailures >= MAX_FAILURES) {
+			await confirmAndAbortIfNeeded();
 		}
 	};
 
@@ -105,10 +134,16 @@
 
 		if (isRunActive()) {
 			if (data.firebird?.status !== "CONNECTED" || data.mysql?.status !== "CONNECTED") {
-				handleRunDisconnect(data);
+				handleRunConnectivityFailure();
 			} else {
-				lastDisconnectHandled = false;
+				consecutiveFailures = 0;
+				abortInProgress = false;
+				hideWarning();
 			}
+		} else {
+			consecutiveFailures = 0;
+			abortInProgress = false;
+			hideWarning();
 		}
 	};
 
@@ -122,11 +157,20 @@
 			},
 			new Date().toLocaleString()
 		);
+		if (isRunActive()) {
+			handleRunConnectivityFailure();
+		} else {
+			consecutiveFailures = 0;
+			abortInProgress = false;
+			hideWarning();
+		}
 	};
 
 	const fetchConnections = async () => {
 		try {
-			const response = await fetch("/health/connections", { cache: "no-store" });
+			const runId = currentRunId();
+			const url = runId ? `/health/connections?runId=${encodeURIComponent(runId)}` : "/health/connections";
+			const response = await fetch(url, { cache: "no-store" });
 			if (!response.ok) throw new Error("Failed");
 			const data = await response.json();
 			applyStatus(data);

@@ -227,6 +227,12 @@ textarea.code {
 	border: 1px solid rgba(34, 197, 94, 0.4);
 }
 
+.alert.warning {
+	background: rgba(245, 158, 11, 0.12);
+	color: #92400e;
+	border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
 .alert.error {
 	background: rgba(239, 68, 68, 0.1);
 	color: var(--danger);
@@ -251,6 +257,23 @@ pre {
 	margin: 0;
 	font-family: Consolas, monospace;
 	font-size: 12px;
+}
+
+.log-panel {
+	max-height: 280px;
+	overflow: auto;
+	background: #0b1220;
+	color: #e2e8f0;
+	padding: 12px;
+	border-radius: 8px;
+	border: 1px solid var(--border-subtle);
+}
+
+.clean-table-list {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 8px;
+	margin-bottom: 12px;
 }
 
 .pill-list {
@@ -448,4 +471,48 @@ pre {
 
 .card.nested {
 	margin-top: 12px;
+}
+
+/* Plan page: sticky header + scrollable table */
+.plan-form-sticky {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+.plan-sticky-header {
+	position: sticky;
+	top: 0;
+	background: var(--panel);
+	padding: 16px;
+	border-bottom: 1px solid var(--border);
+	z-index: 10;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.plan-sticky-header .actions {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.plan-table-wrapper {
+	overflow-y: auto;
+	max-height: calc(100vh - 300px);
+}
+
+.plan-table-wrapper table {
+	width: 100%;
+	margin: 0;
+	padding: 0;
+}
+
+.plan-table-wrapper table thead {
+	position: sticky;
+	top: 0;
+	background: var(--bg);
+	z-index: 5;
 }

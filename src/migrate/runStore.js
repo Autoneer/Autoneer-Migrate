@@ -33,10 +33,11 @@ async function finishRun(pool, runId, status, errorMessage) {
 }
 
 async function startTableRun(pool, runId, tableName, mode, keyStrategy) {
-	await pool.query(
+	const [result] = await pool.query(
 		"insert into migration_table_runs (run_id, table_name, mode, key_strategy, status, started_at) values (?, ?, ?, ?, 'running', now())",
 		[runId, tableName, mode, keyStrategy]
 	);
+	return result.insertId;
 }
 
 async function updateTableProgress(pool, runId, tableName, fields) {

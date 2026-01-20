@@ -253,26 +253,26 @@
 			"mode": "INSERT",
 			"keyStrategy": "preserve",
 			"columns": {
-				"INVOICE_NR": {
+				"INV_NR": {
 					"target": "invoice_nr"
 				},
 				"CID": {
 					"target": "cid"
 				},
-				"IDATE": {
-					"target": "idate",
+				"INVOICE_DATE": {
+					"target": "invoice_date",
 					"transform": "toDate"
 				},
 				"STATUS": {
 					"target": "status",
 					"transform": "trim"
 				},
-				"TOTAL": {
-					"target": "total",
+				"INV_TOTALEXLVAT": {
+					"target": "inv_totalexlvat",
 					"transform": "toNumber"
 				},
-				"TOTALINCLVAT": {
-					"target": "totalinclvat",
+				"INV_TOTALINCLVAT": {
+					"target": "inv_totalinclvat",
 					"transform": "toNumber"
 				}
 			}
@@ -314,18 +314,29 @@
 			"mode": "INSERT",
 			"keyStrategy": "preserve",
 			"columns": {
-				"SPARE_ID": {
-					"target": "spare_id"
+				"SPARES_ID": {
+					"target": "spares_id"
 				},
-				"JOB_NUMBER": {
+				"JOB_NR": {
 					"target": "job_number"
 				},
 				"STOCK_ID": {
 					"target": "stock_id"
 				},
-				"QTY": {
-					"target": "qty",
+				"QUANTITY": {
+					"target": "quantity",
 					"transform": "toNumber"
+				},
+				"DATE_USED": {
+					"target": "date_used",
+					"transform": "toDate"
+				},
+				"STATUS": {
+					"target": "status",
+					"transform": "trim"
+				},
+				"INVOICE_NR": {
+					"target": "invoice_nr"
 				}
 			}
 		},

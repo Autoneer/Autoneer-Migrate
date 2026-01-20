@@ -34,8 +34,11 @@ router.get("/migration/history", async (req, res) => {
 			params.push(Number(range));
 		}
 
-		const sql = `select * from migration_runs ${where.length ? 'where ' + where.join(' and ') : ''} order by started_at desc limit 200`;
-		const [rows] = await pool.query(sql, params);
+		const sql = `select * from migration_runs ${where.length ? 'where ' + where.join(' and ') : ''} limit 200`;
+		let [rows] = await pool.query(sql, params);
+		rows = rows
+			.slice()
+			.sort((a, b) => String(a.run_label || "").localeCompare(String(b.run_label || "")));
 		await pool.end();
 
 		res.render('migration_history', { runs: rows, currentStep: 'migration' });
@@ -51,8 +54,14 @@ router.get('/migration/history/:run_id', async (req, res) => {
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		await mysql.ensureMigrationTables(pool);
 		const run = await runStore.getRun(pool, runId);
-		const tables = await runStore.getRunTables(pool, runId);
-		const errors = await runStore.getRowErrors(pool, runId);
+		let tables = await runStore.getRunTables(pool, runId);
+		tables = tables.slice().sort((a, b) => String(a.table_name || "").localeCompare(String(b.table_name || "")));
+		let errors = await runStore.getRowErrors(pool, runId);
+		errors = errors.slice().sort((a, b) => {
+			const tableCompare = String(a.table_name || "").localeCompare(String(b.table_name || ""));
+			if (tableCompare !== 0) return tableCompare;
+			return Number(a.row_offset || 0) - Number(b.row_offset || 0);
+		});
 		await pool.end();
 
 		res.render('migration_run', { run, tables, errors, currentStep: 'migration' });
@@ -93,6 +102,36 @@ router.post('/migration/history/:run_id/delete', async (req, res) => {
 		res.redirect('/migration/history');
 	} catch (err) {
 		res.render('migration_history', { runs: [], error: `Failed to delete run: ${err.message}`, currentStep: 'migration' });
+	}
+});
+
+router.post('/migration/history/delete', async (req, res) => {
+	// Accepts one or more run_ids from the batch-delete form (same-name inputs)
+	let runIds = req.body.run_ids || req.body.run_ids;
+	if (!runIds) return res.redirect('/migration/history');
+	try {
+		if (!Array.isArray(runIds)) {
+			// single value -> normalize to array
+			runIds = [runIds];
+		}
+		// convert to numeric ids and filter invalid
+		runIds = runIds.map(r => Number(r)).filter(n => !!n);
+		if (!runIds.length) return res.redirect('/migration/history');
+
+		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
+		await mysql.ensureMigrationTables(pool);
+		for (const id of runIds) {
+			try {
+				await runStore.deleteRun(pool, id);
+			} catch (e) {
+				// continue deleting remaining runs but log the error to console
+				console.error('Failed to delete run', id, e && e.message);
+			}
+		}
+		await pool.end();
+		res.redirect('/migration/history');
+	} catch (err) {
+		res.render('migration_history', { runs: [], error: `Failed to delete selected runs: ${err.message}`, currentStep: 'migration' });
 	}
 });
 

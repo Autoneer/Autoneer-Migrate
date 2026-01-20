@@ -24,6 +24,7 @@ app.engine(
 		partialsDir: path.join(__dirname, "views", "partials"),
 		helpers: {
 			eq: (a, b) => a === b,
+			includes: (arr, value) => Array.isArray(arr) && arr.includes(value),
 			json: (context) => JSON.stringify(context, null, 2),
 			lookup: (obj, field) => (obj ? obj[field] : undefined),
 			formatDate: (value, format) => {

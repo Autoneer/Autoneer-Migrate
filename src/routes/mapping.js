@@ -60,14 +60,16 @@ router.get("/mapping", async (req, res) => {
 		firebirdSchema = new Map();
 	}
 
-	const mappingTablesAll = Object.entries(state.mapping?.tables || {});
+	const mappingTablesAll = Object.entries(state.mapping?.tables || {})
+		.sort(([a], [b]) => a.localeCompare(b));
 	const hasPlanSelection = (state.plan || []).some((p) => p.include);
-	const mappingTablesIncluded = hasPlanSelection
+	const mappingTablesIncluded = (hasPlanSelection
 		? mappingTablesAll.filter(([, def]) => {
 			const planTable = state.plan?.find((p) => p.include && p.table.toLowerCase() === def.target.toLowerCase());
 			return !!planTable;
 		})
-		: mappingTablesAll;
+		: mappingTablesAll
+	).sort(([, a], [, b]) => String(a.target || "").localeCompare(String(b.target || "")));
 
 	const mismatchRows = [];
 	for (const [sourceTable, def] of mappingTablesIncluded) {
@@ -80,8 +82,9 @@ router.get("/mapping", async (req, res) => {
 				sourceColumns = sourceColumns || [];
 			}
 		}
+		sourceColumns = sourceColumns.slice().sort((a, b) => a.localeCompare(b));
 		const mappingColumns = Object.keys(def.columns || {}).map((c) => c.toUpperCase());
-		const missing = mappingColumns.filter((c) => !sourceColumns.includes(c));
+		const missing = mappingColumns.filter((c) => !sourceColumns.includes(c)).sort((a, b) => a.localeCompare(b));
 		missing.forEach((missingCol) => {
 			const rule = def.columns[missingCol] || def.columns[missingCol.toLowerCase()] || {};
 			mismatchRows.push({
@@ -104,6 +107,16 @@ router.get("/mapping", async (req, res) => {
 		profiles = [];
 	}
 
+	profiles = profiles.slice().sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+
+	const mismatchRowsSorted = mismatchRows
+		.slice()
+		.sort((a, b) => {
+			const tableCompare = a.sourceTable.localeCompare(b.sourceTable);
+			if (tableCompare !== 0) return tableCompare;
+			return a.sourceColumn.localeCompare(b.sourceColumn);
+		});
+
 	res.render("mapping", {
 		mappingJson: JSON.stringify(state.mapping, null, 2),
 		mappingNotice,
@@ -114,15 +127,20 @@ router.get("/mapping", async (req, res) => {
 		mappingTables: mappingTablesIncluded.map(([source, def]) => ({
 			source,
 			target: def.target,
-			columns: Object.entries(def.columns || {}).map(([srcCol, rule]) => ({
-				source: srcCol,
-				target: rule.target,
-				transform: rule.transform || "",
-				defaultValue: Object.prototype.hasOwnProperty.call(rule, "default") ? rule.default : "",
-				lookupTable: rule.lookup ? rule.lookup.table : ""
-			}))
+			columns: Object.entries(def.columns || {})
+				.sort(([a], [b]) => a.localeCompare(b))
+				.map(([srcCol, rule]) => ({
+					source: srcCol,
+					target: rule.target,
+					transform: rule.transform || "",
+					defaultValue: Object.prototype.hasOwnProperty.call(rule, "default") ? rule.default : "",
+					lookupTable: rule.lookup ? rule.lookup.table : ""
+				}))
 		})),
-		mismatchRows,
+		mismatchRows: mismatchRowsSorted.map((row) => ({
+			...row,
+			availableSourceColumns: (row.availableSourceColumns || []).slice().sort((a, b) => a.localeCompare(b))
+		})),
 		currentStep: "mapping"
 	});
 });
