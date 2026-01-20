@@ -884,7 +884,7 @@ async function runMigrationInternal({
 										await conn.commit();
 										const totalRows = toInsert.length;
 										const affected = Number(result?.affectedRows || 0);
-										
+
 										// MySQL UPSERT: affectedRows = (inserts * 1) + (updates * 2)
 										// So if affectedRows > totalRows, some were updates
 										let inserted, updated;
@@ -899,7 +899,7 @@ async function runMigrationInternal({
 											inserted = affected;
 											updated = 0;
 										}
-										
+
 										const skipped =
 											ignoreDuplicatesForInsert && step.mode !== "UPSERT"
 												? Math.max(totalRows - inserted, 0)
