@@ -430,7 +430,7 @@ async function runMigrationInternal({
 			}
 		}
 
-		// Auto-migrate old SPARES_USED column names and dedupe keys
+		// Auto-migrate old SPARES_USED column names
 		if (mapping?.tables?.SPARES_USED?.columns) {
 			const cols = mapping.tables.SPARES_USED.columns;
 			const renames = {
@@ -446,11 +446,22 @@ async function runMigrationInternal({
 				}
 			}
 		}
-		// Update plan dedupe keys for spares_used to use natural keys instead of spares_id
+		// Fix dedupe keys for spares_used based on keyStrategy
 		for (const step of plan || []) {
-			if (step.table === "spares_used" && step.dedupeKeys?.includes("spares_id")) {
-				step.dedupeKeys = ["job_number", "stock_id"];
-				logRun({ level: "info", phase: "plan_migrate", table: "spares_used", message: "Updated dedupe keys to natural keys: job_number, stock_id" });
+			if (step.table === "spares_used") {
+				// Get the mapping entry to check keyStrategy
+				const mappingEntry = mapping?.tables?.SPARES_USED;
+				const keyStrategy = step.keyStrategy || mappingEntry?.keyStrategy || "preserve";
+				
+				if (keyStrategy === "preserve" && step.dedupeKeys && !step.dedupeKeys.includes("spares_id")) {
+					// For preserve mode, dedupe on the primary key
+					step.dedupeKeys = ["spares_id"];
+					logRun({ level: "info", phase: "plan_migrate", table: "spares_used", keyStrategy, message: "Set dedupe keys to primary key: spares_id" });
+				} else if (keyStrategy === "rekey" && step.dedupeKeys && step.dedupeKeys.includes("spares_id")) {
+					// For rekey mode, use natural composite key (job_number + lnr is unique per job)
+					step.dedupeKeys = ["job_number", "lnr"];
+					logRun({ level: "info", phase: "plan_migrate", table: "spares_used", keyStrategy, message: "Set dedupe keys to natural composite: job_number, lnr" });
+				}
 			}
 		}
 
@@ -1098,6 +1109,72 @@ async function runMigrationInternal({
 					await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
 					await failRun(errorMessage, "Fix the row errors, then run the migration again.", "validate");
 					break;
+				}
+
+				// Post-table validation for spares_used
+				if (tableName === "spares_used") {
+					logRun({ level: "info", phase: "post_validation", tableName, tableRunId, status: "start" });
+					try {
+						// Check row counts: read vs (inserted + updated + skipped)
+						const accountedRows = rowsInserted + rowsUpdated + rowsSkippedDuplicates;
+						const readRows = rowsMigrated; // This is the sum of inserted + updated
+						const totalRead = offset; // Total rows read from source
+						
+						if (totalRead > accountedRows + rowsError + 50) {
+							// Significant row loss (allowing 50 row tolerance for edge cases)
+							const lostRows = totalRead - accountedRows - rowsError;
+							const errorMessage = `Validation failed for spares_used: ${lostRows} rows unaccounted for. Read ${totalRead} rows, but only ${accountedRows} were inserted/updated/skipped, and ${rowsError} had errors. Likely dedupe key issue causing row collapse.`;
+							await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
+							await failRun(errorMessage, "Review dedupe key configuration. Use spares_id for preserve mode, or job_number+lnr for rekey mode.", "post_validation");
+							break;
+						}
+
+						// Check price fields: ensure cost_price and sales_price were migrated correctly
+						const [priceCheck] = await pool.query(`
+							SELECT 
+								COUNT(*) as total_rows,
+								COUNT(CASE WHEN cost_price = 0 AND sales_price = 0 THEN 1 END) as zero_price_count,
+								COUNT(CASE WHEN cost_price > 0 OR sales_price > 0 THEN 1 END) as nonzero_price_count
+							FROM \`${tableName}\`
+						`);
+						
+						// Query Firebird to check if source has non-zero prices
+						const sourceNonZeroCount = await firebird.query(firebirdConfig, `
+							SELECT COUNT(*) as cnt 
+							FROM ${sourceTable}
+							WHERE COST_PRICE > 0 OR SALES_PRICE > 0
+						`);
+						const fbNonZeroCount = sourceNonZeroCount[0]?.cnt || sourceNonZeroCount[0]?.CNT || 0;
+						
+						const mysqlTotal = priceCheck[0]?.total_rows || 0;
+						const mysqlZeroPrice = priceCheck[0]?.zero_price_count || 0;
+						const mysqlNonZeroPrice = priceCheck[0]?.nonzero_price_count || 0;
+						
+						logRun({ 
+							level: "info", 
+							phase: "post_validation", 
+							tableName, 
+							tableRunId, 
+							validation: "price_check",
+							firebird_nonzero: fbNonZeroCount,
+							mysql_total: mysqlTotal,
+							mysql_zero: mysqlZeroPrice,
+							mysql_nonzero: mysqlNonZeroPrice
+						});
+						
+						// If Firebird has many non-zero prices but MySQL has mostly zeros, fail
+						if (fbNonZeroCount > 50 && mysqlNonZeroPrice < fbNonZeroCount * 0.5) {
+							const errorMessage = `Validation failed for spares_used: Price fields not migrated correctly. Firebird has ${fbNonZeroCount} rows with non-zero prices, but MySQL only has ${mysqlNonZeroPrice}. Likely mapping is missing COST_PRICE/SALES_PRICE columns or transform is coercing nulls to 0.`;
+							await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
+							await failRun(errorMessage, "Check mapping includes COST_PRICE and SALES_PRICE columns with toNumber transform (which preserves nulls).", "post_validation");
+							break;
+						}
+						
+						logRun({ level: "info", phase: "post_validation", tableName, tableRunId, status: "passed" });
+					} catch (validationErr) {
+						logRun({ level: "warn", phase: "post_validation", tableName, tableRunId, status: "error", error: validationErr?.message });
+						// Don't fail the migration for validation errors, just log them
+					}
 				}
 
 				const durationMs = Date.now() - tableStart;

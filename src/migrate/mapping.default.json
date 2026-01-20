@@ -320,12 +320,16 @@
 				"JOB_NR": {
 					"target": "job_number"
 				},
-				"STOCK_ID": {
-					"target": "stock_id"
+				"SPARE": {
+					"target": "spare",
+					"transform": "trim"
 				},
 				"QUANTITY": {
 					"target": "quantity",
 					"transform": "toNumber"
+				},
+				"STOCK_ID": {
+					"target": "stock_id"
 				},
 				"DATE_USED": {
 					"target": "date_used",
@@ -335,8 +339,105 @@
 					"target": "status",
 					"transform": "trim"
 				},
-				"INVOICE_NR": {
-					"target": "invoice_nr"
+				"JOBTYPE": {
+					"target": "jobtype",
+					"transform": "trim"
+				},
+				"PARTNR": {
+					"target": "partnr",
+					"transform": "trim"
+				},
+				"MARKUP": {
+					"target": "markup",
+					"transform": "toNumber"
+				},
+				"LNR": {
+					"target": "lnr",
+					"transform": "toNumber"
+				},
+				"STOCKTYPE": {
+					"target": "stocktype",
+					"transform": "trim"
+				},
+				"STAFF_ID": {
+					"target": "staff_id",
+					"transform": "toNumber"
+				},
+				"SIID": {
+					"target": "siid",
+					"transform": "toNumber"
+				},
+				"COST_PRICE": {
+					"target": "cost_price",
+					"transform": "toNumber"
+				},
+				"SALES_PRICE": {
+					"target": "sales_price",
+					"transform": "toNumber"
+				},
+				"VAT": {
+					"target": "vat",
+					"transform": "toNumber"
+				},
+				"SETTYPE": {
+					"target": "settype",
+					"transform": "trim"
+				},
+				"ACC": {
+					"target": "acc",
+					"transform": "toNumber"
+				},
+				"OUTSIDESUPPLIER": {
+					"target": "outsidesupplier",
+					"transform": "trim"
+				},
+				"INVNR": {
+					"target": "invoice_nr",
+					"transform": "toNumber"
+				},
+				"DISCOUNTAMOUNT": {
+					"target": "discountamount",
+					"transform": "toNumber"
+				},
+				"DISCOUNTPERCENT": {
+					"target": "discountpercent",
+					"transform": "toNumber"
+				},
+				"DPTMNT": {
+					"target": "dptmnt",
+					"transform": "trim"
+				},
+				"SALES_PRICEINCVAT": {
+					"target": "sales_priceincvat",
+					"transform": "toNumber"
+				},
+				"PRINTONINVOICE": {
+					"target": "printoninvoice",
+					"transform": "trim"
+				},
+				"SUPPID": {
+					"target": "suppid",
+					"transform": "toNumber"
+				},
+				"QUOTENR": {
+					"target": "quotenr",
+					"transform": "toNumber"
+				},
+				"PARTNROTHER": {
+					"target": "partnrother",
+					"transform": "trim"
+				},
+				"ACCASSET": {
+					"target": "accasset",
+					"transform": "toNumber"
+				},
+				"SAGEID": {
+					"target": "sageid",
+					"transform": "toNumber"
+				},
+				"WDID": {
+					"target": "wdid",
+					"transform": "toNumber"
 				}
 			}
 		},

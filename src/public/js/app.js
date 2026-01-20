@@ -163,11 +163,28 @@ if (progressEl) {
 			}</span>`;
 		const progressEl = row.querySelector(".table-progress");
 		if (table.total) {
-			progressEl.textContent = `${formatNumber(table.migrated)} / ${formatNumber(table.total)}`;
+			const read = table.migrated || 0;
+			const inserted = table.inserted || 0;
+			const updated = table.updated || 0;
+			// Show detailed breakdown: read / total (inserted+updated breakdown)
+			if (inserted > 0 || updated > 0) {
+				const parts = [];
+				if (inserted > 0) parts.push(`${formatNumber(inserted)} ins`);
+				if (updated > 0) parts.push(`${formatNumber(updated)} upd`);
+				progressEl.textContent = `${formatNumber(read)} / ${formatNumber(table.total)} (${parts.join(', ')})`;
+			} else {
+				progressEl.textContent = `${formatNumber(read)} / ${formatNumber(table.total)}`;
+			}
 		} else {
+			const inserted = table.inserted || 0;
+			const updated = table.updated || 0;
+			const parts = [];
+			if (inserted > 0) parts.push(`${formatNumber(inserted)} ins`);
+			if (updated > 0) parts.push(`${formatNumber(updated)} upd`);
+			const detail = parts.length > 0 ? ` (${parts.join(', ')})` : '';
 			progressEl.innerHTML = `<span class="row-progress">${formatNumber(
 				table.migrated
-			)} rows ${status === "running" ? "<span class=\"spinner\"></span>" : ""}</span>`;
+			)} rows${detail} ${status === "running" ? "<span class=\"spinner\"></span>" : ""}</span>`;
 		}
 		row.querySelector(".table-errors").textContent = formatNumber(table.errors || 0);
 		const duplicatesEl = row.querySelector(".table-duplicates");
@@ -210,9 +227,16 @@ if (progressEl) {
 		const currentTable = runState.currentTable ? tables.find((t) => t.name === runState.currentTable) : null;
 		if (currentStepEl) {
 			if (runState.status === "RUNNING" && currentTable) {
+				const read = currentTable.migrated || 0;
+				const inserted = currentTable.inserted || 0;
+				const updated = currentTable.updated || 0;
+				const parts = [];
+				if (inserted > 0) parts.push(`${formatNumber(inserted)} inserted`);
+				if (updated > 0) parts.push(`${formatNumber(updated)} updated`);
+				const detail = parts.length > 0 ? ` (${parts.join(', ')})` : '';
 				currentStepEl.textContent = `Current step: Migrating ${currentTable.label || currentTable.name}... ${formatNumber(
-					currentTable.migrated
-				)} rows`;
+					read
+				)} rows read${detail}`;
 			} else if (runState.status === "FAILED" && currentTable) {
 				currentStepEl.textContent = `Current step: Stopped due to error on ${currentTable.label || currentTable.name}`;
 			} else if (runState.status === "SUCCESS") {
@@ -246,11 +270,21 @@ if (progressEl) {
 				shouldReconnect = false;
 			} else if (runState.status === "SUCCESS") {
 				const succeeded = tables.filter((table) => table.status === "SUCCESS").length;
-				const totalRows = tables.reduce((sum, table) => sum + (table.migrated || 0), 0);
+				const totalRead = tables.reduce((sum, table) => sum + (table.migrated || 0), 0);
+				const totalInserted = tables.reduce((sum, table) => sum + (table.inserted || 0), 0);
+				const totalUpdated = tables.reduce((sum, table) => sum + (table.updated || 0), 0);
+				const totalSkipped = tables.reduce((sum, table) => sum + (table.skippedDuplicates || 0), 0);
+				const totalErrors = tables.reduce((sum, table) => sum + (table.errors || 0), 0);
 				if (successSummary) {
-					successSummary.textContent = `Tables migrated successfully: ${succeeded}. Total rows migrated: ${formatNumber(
-						totalRows
-					)}.`;
+					const parts = [
+						`${succeeded} tables migrated successfully`,
+						`${formatNumber(totalRead)} rows read`,
+						`${formatNumber(totalInserted)} inserted`,
+						`${formatNumber(totalUpdated)} updated`,
+						`${formatNumber(totalSkipped)} skipped (duplicates)`,
+						`${formatNumber(totalErrors)} errors`
+					];
+					successSummary.textContent = parts.join(' • ');
 				}
 				openModal(successModal);
 				shouldReconnect = false;
