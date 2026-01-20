@@ -96,7 +96,7 @@
 	.btn {
 		padding: 14px 24px;
 		width: 100%;
-		font-size: 1rem;
+		font-size: 0.95rem;
 	}
 
 	.btn-sm {
@@ -242,7 +242,7 @@
 
 /* Focus indicators */
 *:focus {
-	outline: 2px solid #007bff;
+	outline: 2px solid var(--wizard-primary, #0969da);
 	outline-offset: 2px;
 }
 
@@ -251,7 +251,7 @@ a:focus,
 input:focus,
 select:focus,
 textarea:focus {
-	outline: 2px solid #007bff;
+	outline: 2px solid var(--wizard-primary, #0969da);
 	outline-offset: 2px;
 }
 
@@ -260,7 +260,7 @@ textarea:focus {
 	position: absolute;
 	top: -40px;
 	left: 0;
-	background: #007bff;
+	background: var(--wizard-primary, #0969da);
 	color: white;
 	padding: 8px 16px;
 	text-decoration: none;
@@ -302,51 +302,54 @@ textarea:focus {
 	}
 }
 
-/* Dark mode support */
+/* Dark mode disabled - using light theme only */
 @media (prefers-color-scheme: dark) {
+
+	/* Override dark mode preferences to maintain light theme */
 	body {
-		background: #1a1a1a;
-		color: #e0e0e0;
+		background: var(--bg, #ffffff);
+		color: var(--text, #24292f);
 	}
 
 	#wizard-container {
-		background: #2a2a2a;
+		background: var(--wizard-bg, #ffffff);
+		color: var(--wizard-text, #24292f);
 	}
 
 	.form-control {
-		background: #333;
-		border-color: #555;
-		color: #e0e0e0;
+		background: #ffffff;
+		border-color: var(--border, #d0d7de);
+		color: var(--text, #24292f);
 	}
 
 	.form-control:focus {
-		border-color: #4a9eff;
+		border-color: var(--wizard-primary, #0969da);
 	}
 
 	table thead {
-		background: #333;
+		background: var(--panel, #f6f8fa);
 	}
 
 	table td {
-		border-color: #444;
+		border-color: var(--border, #d0d7de);
 	}
 
 	table tr:hover {
-		background: #333;
+		background: var(--panel, #f6f8fa);
 	}
 
 	.stat-card {
-		background: #333;
-		border-color: #555;
+		background: #ffffff;
+		border-color: var(--border, #d0d7de);
 	}
 
 	.modal-dialog {
-		background: #2a2a2a;
+		background: #ffffff;
 	}
 
 	.modal-header,
 	.modal-footer {
-		border-color: #444;
+		border-color: var(--border, #d0d7de);
 	}
 }
 
@@ -454,26 +457,25 @@ textarea:focus {
 
 /* Ensure minimum 4.5:1 contrast ratio for text */
 .help-text {
-	color: #555;
-	/* Better contrast than #6c757d */
+	color: var(--wizard-muted, #57606a);
 }
 
 .stat-label {
-	color: #555;
+	color: var(--wizard-muted, #57606a);
 }
 
 .step-indicator {
-	color: #555;
+	color: var(--wizard-muted, #57606a);
 }
 
 /* Link color with sufficient contrast */
 a {
-	color: #0056b3;
+	color: var(--wizard-primary, #0969da);
 	text-decoration: underline;
 }
 
 a:hover {
-	color: #003d82;
+	color: #0550ae;
 }
 
 /* ============================================
@@ -483,9 +485,9 @@ a:hover {
 /* Visible focus indicators for all interactive elements */
 input[type="checkbox"]:focus,
 input[type="radio"]:focus {
-	outline: 2px solid #007bff;
+	outline: 2px solid var(--wizard-primary, #0969da);
 	outline-offset: 2px;
-	box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+	box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.25);
 }
 
 /* Tab order visualization (optional - can be enabled for debugging) */

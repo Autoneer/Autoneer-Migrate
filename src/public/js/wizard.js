@@ -12,7 +12,7 @@ class MigrationWizard {
 	constructor() {
 		this.state = window.WizardState;
 		this.storage = window.WizardStorage;
-		this.currentStep = 1;
+		this.currentStep = 0; // Start at 0 so first showStep always renders
 		this.steps = [
 			{ number: 1, name: 'schema', title: 'Discover Schemas', component: null },
 			{ number: 2, name: 'mapping', title: 'Build Mapping', component: null },
@@ -21,6 +21,8 @@ class MigrationWizard {
 			{ number: 5, name: 'results', title: 'View Results', component: null }
 		];
 		this.initialized = false;
+		this._isShowingStep = false; // Re-entrancy guard
+		this._isBusy = false; // Busy state for async operations
 	}
 
 	/**
@@ -35,8 +37,11 @@ class MigrationWizard {
 			// Initialize state from localStorage
 			this.state.initialize();
 
-			// Get current step from state
-			this.currentStep = this.state.get('currentStep') || 1;
+			// Get saved step from state (default to 1)
+			const savedStep = this.state.get('currentStep') || 1;
+
+			// Set currentStep to 0 so first showStep() call always renders
+			this.currentStep = 0;
 
 			// Set up UI elements
 			this.setupUI();
@@ -44,8 +49,8 @@ class MigrationWizard {
 			// Load step components
 			await this.loadStepComponents();
 
-			// Show initial step
-			await this.showStep(this.currentStep);
+			// Show initial step (will always render since currentStep is 0)
+			await this.showStep(savedStep);
 
 			// Set up event listeners
 			this.setupEventListeners();
@@ -55,6 +60,10 @@ class MigrationWizard {
 
 			// Show success notification
 			this.showSuccess('Wizard loaded successfully! Ready to start migration.');
+
+			// Add diagnostics hook for debugging
+			window.__wizardDebug = () => this.exportState();
+			console.log('💡 Tip: Run __wizardDebug() in console to inspect wizard state');
 		} catch (err) {
 			console.error('Wizard initialization failed:', err);
 			this.renderInitError(err);
@@ -118,7 +127,7 @@ class MigrationWizard {
 		progressBar.innerHTML = `
       <div class="progress-steps">
         ${this.steps.map((step, idx) => `
-          <div class="progress-step ${step.number === this.currentStep ? 'active' : ''} ${step.number < this.currentStep ? 'completed' : ''}">
+          <div class="progress-step ${step.number === this.currentStep ? 'active' : ''} ${step.number < this.currentStep ? 'completed' : ''}" data-step="${step.number}">
             <div class="step-number">${step.number}</div>
             <div class="step-title">${step.title}</div>
           </div>
@@ -128,6 +137,27 @@ class MigrationWizard {
         <div class="progress-bar-fill" style="width: ${progress}%"></div>
       </div>
     `;
+
+		// Attach click handlers to step numbers for enabled steps
+		try {
+			const stepEls = progressBar.querySelectorAll('.progress-step');
+			stepEls.forEach(el => {
+				const stepNum = parseInt(el.getAttribute('data-step'), 10);
+				if (Number.isNaN(stepNum)) return;
+
+				// Enabled if first step, step is at-or-before current, or previous step completed
+				const enabled = (stepNum === 1) || (stepNum <= this.currentStep) || this.storage.isStepComplete(stepNum - 1);
+				if (enabled) {
+					el.classList.add('clickable');
+					el.addEventListener('click', (e) => {
+						if (this._isBusy) return;
+						this.goToStep(stepNum);
+					});
+				}
+			});
+		} catch (err) {
+			console.warn('Failed to attach step click handlers', err);
+		}
 	}
 
 	/**
@@ -141,28 +171,44 @@ class MigrationWizard {
 		const canGoNext = this.currentStep < this.steps.length;
 		const validation = this.state.canProceed();
 
+		// Build validation feedback HTML
+		let validationFeedback = '';
+		if (!validation.valid && validation.errors && validation.errors.length > 0) {
+			validationFeedback = `
+				<div class="nav-validation" role="status" aria-live="polite">
+					<strong>To continue:</strong>
+					<ul>
+						${validation.errors.map(err => `<li>${this.escapeHtml(err)}</li>`).join('')}
+					</ul>
+				</div>
+			`;
+		}
+
 		nav.innerHTML = `
-      <button 
-        id="btn-prev" 
-        class="btn btn-secondary" 
-        ${!canGoBack ? 'disabled' : ''}
-        ${!canGoBack ? 'style="visibility: hidden;"' : ''}
-      >
-        ← Previous
-      </button>
-      
-      <div class="nav-center">
-        <span class="step-indicator">Step ${this.currentStep} of ${this.steps.length}</span>
+      ${validationFeedback}
+      <div class="nav-buttons">
+        <button 
+          id="btn-prev" 
+          class="btn btn-secondary" 
+          ${!canGoBack || this._isBusy ? 'disabled' : ''}
+          ${!canGoBack ? 'style="visibility: hidden;"' : ''}
+        >
+          ← Previous
+        </button>
+        
+        <div class="nav-center">
+          <span class="step-indicator">Step ${this.currentStep} of ${this.steps.length}</span>
+        </div>
+        
+        <button 
+          id="btn-next" 
+          class="btn btn-primary" 
+          ${!canGoNext || !validation.valid || this._isBusy ? 'disabled' : ''}
+          title="${!validation.valid ? validation.errors.join(', ') : ''}"
+        >
+          ${this.currentStep === this.steps.length - 1 ? 'Finish' : 'Next →'}
+        </button>
       </div>
-      
-      <button 
-        id="btn-next" 
-        class="btn btn-primary" 
-        ${!canGoNext ? 'disabled' : ''}
-        ${!validation.valid ? 'disabled title="' + validation.errors.join(', ') + '"' : ''}
-      >
-        ${this.currentStep === this.steps.length - 1 ? 'Finish' : 'Next →'}
-      </button>
     `;
 
 		// Attach event listeners
@@ -188,45 +234,53 @@ class MigrationWizard {
 			return;
 		}
 
-		// Prevent infinite loop - don't update if already at this step
-		if (this.currentStep === stepNumber) {
+		// Re-entrancy guard: prevent recursive calls
+		if (this._isShowingStep) {
 			return;
 		}
 
-		// Hide all steps
-		document.querySelectorAll('.wizard-step').forEach(el => {
-			el.classList.remove('active');
-			el.style.display = 'none';
-		});
+		try {
+			this._isShowingStep = true;
 
-		// Show current step
-		const stepElement = document.getElementById(`step-${stepNumber}`);
-		if (stepElement) {
-			stepElement.classList.add('active');
-			stepElement.style.display = 'block';
-		}
+			// Hide all steps
+			document.querySelectorAll('.wizard-step').forEach(el => {
+				el.classList.remove('active');
+				el.style.display = 'none';
+			});
 
-		// Update state
-		this.currentStep = stepNumber;
-		this.state.setCurrentStep(stepNumber);
-
-		// Update UI
-		this.renderProgressBar();
-		this.renderNavigation();
-
-		// Initialize step component
-		const step = this.steps[stepNumber - 1];
-		if (step.component && typeof step.component.initialize === 'function') {
-			try {
-				await step.component.initialize();
-			} catch (err) {
-				console.error(`Failed to initialize step ${stepNumber}:`, err);
-				this.showError(`Failed to load ${step.title}: ${err.message}`);
+			// Show current step
+			const stepElement = document.getElementById(`step-${stepNumber}`);
+			if (stepElement) {
+				stepElement.classList.add('active');
+				stepElement.style.display = 'block';
 			}
-		}
 
-		// Scroll to top
-		window.scrollTo({ top: 0, behavior: 'smooth' });
+			// Update state (only if changed to avoid event loop)
+			if (this.currentStep !== stepNumber) {
+				this.currentStep = stepNumber;
+				this.state.setCurrentStep(stepNumber);
+			}
+
+			// Update UI
+			this.renderProgressBar();
+			this.renderNavigation();
+
+			// Initialize step component
+			const step = this.steps[stepNumber - 1];
+			if (step.component && typeof step.component.initialize === 'function') {
+				try {
+					await step.component.initialize();
+				} catch (err) {
+					console.error(`Failed to initialize step ${stepNumber}:`, err);
+					this.showError(`Failed to load ${step.title}: ${err.message}`);
+				}
+			}
+
+			// Scroll to top
+			window.scrollTo({ top: 0, behavior: 'smooth' });
+		} finally {
+			this._isShowingStep = false;
+		}
 	}
 
 	/**
@@ -347,16 +401,7 @@ class MigrationWizard {
 	 * @param {string} message - Error message
 	 */
 	showError(message) {
-		const errorContainer = document.getElementById('wizard-errors');
-		if (!errorContainer) return;
-
-		errorContainer.innerHTML = `
-      <div class="alert alert-error" role="alert">
-        <strong>⚠ Error:</strong> ${message}
-        <button class="close-alert" onclick="this.parentElement.remove()">×</button>
-      </div>
-    `;
-		errorContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+		this.showFlash('error', message, { autoDismiss: 0 });
 	}
 
 	/**
@@ -364,16 +409,7 @@ class MigrationWizard {
 	 * @param {string} message - Warning message
 	 */
 	showWarning(message) {
-		const errorContainer = document.getElementById('wizard-errors');
-		if (!errorContainer) return;
-
-		errorContainer.innerHTML = `
-      <div class="alert alert-warning" role="alert">
-        <strong>⚠ Warning:</strong> ${message}
-        <button class="close-alert" onclick="this.parentElement.remove()">×</button>
-      </div>
-    `;
-		errorContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+		this.showFlash('warning', message, { autoDismiss: 0 });
 	}
 
 	/**
@@ -381,25 +417,7 @@ class MigrationWizard {
 	 * @param {string} message - Success message
 	 */
 	showSuccess(message) {
-		const errorContainer = document.getElementById('wizard-errors');
-		if (!errorContainer) return;
-
-		errorContainer.innerHTML = `
-      <div class="alert alert-success" role="alert">
-        <strong>✓ Success:</strong> ${message}
-        <button class="close-alert" onclick="this.parentElement.remove()">×</button>
-      </div>
-    `;
-
-		// Auto-dismiss after 5 seconds
-		setTimeout(() => {
-			const alert = errorContainer.querySelector('.alert-success');
-			if (alert) {
-				alert.style.transition = 'opacity 0.3s ease-out';
-				alert.style.opacity = '0';
-				setTimeout(() => alert.remove(), 300);
-			}
-		}, 5000);
+		this.showFlash('success', message, { autoDismiss: 0 });
 	}
 
 	/**
@@ -407,15 +425,64 @@ class MigrationWizard {
 	 * @param {string} message - Info message
 	 */
 	showInfo(message) {
-		const errorContainer = document.getElementById('wizard-errors');
-		if (!errorContainer) return;
+		this.showFlash('info', message, { autoDismiss: 0 });
+	}
 
-		errorContainer.innerHTML = `
-      <div class="alert alert-info" role="alert">
-        <strong>ℹ Info:</strong> ${message}
-        <button class="close-alert" onclick="this.parentElement.remove()">×</button>
-      </div>
-    `;
+	/**
+	 * Show flash modal message
+	 * @param {'error'|'warning'|'success'|'info'} type
+	 * @param {string} message
+	 * @param {{ autoDismiss?: number }} options
+	 */
+	showFlash(type, message, options = {}) {
+		const existing = document.querySelector('.flash-modal-overlay');
+		if (existing) {
+			existing.remove();
+		}
+
+		const overlay = document.createElement('div');
+		overlay.className = 'flash-modal-overlay';
+
+		const titleMap = {
+			error: 'Error',
+			warning: 'Warning',
+			success: 'Success',
+			info: 'Info'
+		};
+
+		const iconMap = {
+			error: '⚠',
+			warning: '⚠',
+			success: '✓',
+			info: 'ℹ'
+		};
+
+		const safeMessage = this.escapeHtml(message);
+
+		overlay.innerHTML = `
+			<div class="flash-modal flash-${type}" role="alertdialog" aria-live="polite" aria-modal="true">
+				<button class="flash-close" aria-label="Close">×</button>
+				<div class="flash-title">${iconMap[type] || ''} ${titleMap[type] || 'Notice'}:</div>
+				<div class="flash-message">${safeMessage}</div>
+			</div>
+		`;
+
+		const close = () => overlay.remove();
+		overlay.addEventListener('click', (e) => {
+			if (e.target === overlay) close();
+		});
+		overlay.querySelector('.flash-close')?.addEventListener('click', close);
+
+		document.body.appendChild(overlay);
+
+		const autoDismiss = Number(options.autoDismiss || 0);
+		if (autoDismiss > 0) {
+			setTimeout(() => {
+				if (document.body.contains(overlay)) {
+					overlay.remove();
+				}
+			}, autoDismiss);
+		}
 	}
 
 	/**
@@ -426,6 +493,10 @@ class MigrationWizard {
 		if (errorContainer) {
 			errorContainer.innerHTML = '';
 		}
+		const flash = document.querySelector('.flash-modal-overlay');
+		if (flash) {
+			flash.remove();
+		}
 	}
 
 	/**
@@ -435,20 +506,19 @@ class MigrationWizard {
 	showLoading(message = 'Loading...') {
 		this.state.setLoading(true);
 
-		let overlay = document.getElementById('loading-overlay');
+		// Use the existing overlay in the template
+		const overlay = document.querySelector('#wizard-container .loading-overlay');
 		if (!overlay) {
-			overlay = document.createElement('div');
-			overlay.id = 'loading-overlay';
-			overlay.className = 'loading-overlay';
-			document.body.appendChild(overlay);
+			console.warn('Loading overlay not found in template');
+			return;
 		}
 
-		overlay.innerHTML = `
-      <div class="loading-spinner">
-        <div class="spinner"></div>
-        <p>${message}</p>
-      </div>
-    `;
+		// Update the message
+		const messageEl = overlay.querySelector('p');
+		if (messageEl) {
+			messageEl.textContent = message;
+		}
+
 		overlay.style.display = 'flex';
 	}
 
@@ -458,9 +528,80 @@ class MigrationWizard {
 	hideLoading() {
 		this.state.setLoading(false);
 
-		const overlay = document.getElementById('loading-overlay');
+		const overlay = document.querySelector('#wizard-container .loading-overlay');
 		if (overlay) {
 			overlay.style.display = 'none';
+		}
+	}
+
+	/**
+	 * Set wizard busy state - disables navigation during async work
+	 * @param {boolean} busy - Whether wizard is busy
+	 * @param {string} message - Optional loading message
+	 */
+	setBusy(busy, message = 'Working...') {
+		this._isBusy = busy;
+
+		if (busy) {
+			this.showLoading(message);
+			// Disable navigation buttons
+			const prevBtn = document.querySelector('#wizard-navigation .btn-prev');
+			const nextBtn = document.querySelector('#wizard-navigation .btn-next');
+			if (prevBtn) {
+				prevBtn.disabled = true;
+				prevBtn.classList.add('disabled');
+			}
+			if (nextBtn) {
+				nextBtn.disabled = true;
+				nextBtn.classList.add('disabled');
+				nextBtn.textContent = 'Working...';
+			}
+		} else {
+			this.hideLoading();
+			// Re-render navigation to restore button states
+			this.renderNavigation();
+		}
+	}
+
+	/**
+	 * Set status message for a specific step
+	 * @param {number} stepNumber - Step number (1-5)
+	 * @param {Object} status - Status object {type: 'info'|'success'|'warning'|'error', message: string}
+	 */
+	setStepStatus(stepNumber, status) {
+		const stepEl = document.getElementById(`step-${stepNumber}`);
+		if (!stepEl) return;
+
+		// Remove existing status banner
+		const existing = stepEl.querySelector('.step-status-banner');
+		if (existing) {
+			existing.remove();
+		}
+
+		// Add new status banner if message provided
+		if (status && status.message) {
+			const banner = document.createElement('div');
+			banner.className = `step-status-banner step-status-${status.type || 'info'}`;
+			banner.setAttribute('role', 'status');
+			banner.setAttribute('aria-live', 'polite');
+
+			const iconMap = {
+				info: 'ℹ️',
+				success: '✓',
+				warning: '⚠️',
+				error: '⚠️'
+			};
+
+			banner.innerHTML = `
+				<span class="status-icon">${iconMap[status.type] || 'ℹ️'}</span>
+				<span class="status-message">${this.escapeHtml(status.message)}</span>
+			`;
+
+			// Insert at the beginning of the step content
+			const contentDiv = stepEl.querySelector('[id$="-content"]');
+			if (contentDiv) {
+				contentDiv.insertBefore(banner, contentDiv.firstChild);
+			}
 		}
 	}
 
@@ -492,12 +633,7 @@ class MigrationWizard {
 	 * Render initialization error
 	 */
 	renderInitError(error) {
-		const container = document.getElementById('wizard-content');
-		if (!container) {
-			document.body.innerHTML = this.getInitErrorHTML(error);
-			return;
-		}
-
+		const container = document.getElementById('wizard-container') || document.body;
 		container.innerHTML = this.getInitErrorHTML(error);
 	}
 

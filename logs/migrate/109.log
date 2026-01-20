@@ -1,9 +1,0 @@
-{"timestamp":"2026-01-20T09:26:16.336Z","runId":109,"level":"info","phase":"run_start","dryRun":false,"batchSize":500,"fkChecks":true,"tables":[{"table":"spares_used","mode":"INSERT","keyStrategy":"rekey","dedupeKeys":["spares_id"],"onDuplicate":"SKIP","clean":false}]}
-{"timestamp":"2026-01-20T09:26:16.404Z","runId":109,"level":"info","phase":"preflight","attempt":1,"status":"ok"}
-{"timestamp":"2026-01-20T09:26:16.405Z","runId":109,"level":"debug","phase":"preflight","durationMs":69}
-{"timestamp":"2026-01-20T09:26:16.405Z","runId":109,"level":"info","phase":"preflight","action":"nullability_validation","status":"start"}
-{"timestamp":"2026-01-20T09:26:16.407Z","runId":109,"level":"info","phase":"preflight","action":"nullability_validation","status":"passed"}
-{"timestamp":"2026-01-20T09:26:16.423Z","runId":109,"level":"info","phase":"progress","status":"client_connected"}
-{"timestamp":"2026-01-20T09:26:16.478Z","runId":109,"level":"info","phase":"plan_migrate","table":"spares_used","keyStrategy":"rekey","message":"Set dedupe keys to natural composite: job_number, lnr"}
-{"timestamp":"2026-01-20T09:26:16.480Z","runId":109,"level":"info","phase":"preflight","action":"foreign_key_checks_disabled","original_state":true}
-{"timestamp":"2026-01-20T09:26:16.535Z","runId":109,"level":"warn","phase":"progress","status":"client_disconnected"}

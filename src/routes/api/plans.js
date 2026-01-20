@@ -13,6 +13,19 @@ const runStore = require("../../migrate/runStore");
 
 const router = express.Router();
 
+async function getPlanTableColumns(pool) {
+	const [rows] = await pool.query(
+		"select column_name from information_schema.columns where table_schema = database() and table_name = 'migration_plans'"
+	);
+	return new Set(rows.map(row => row.COLUMN_NAME || row.column_name));
+}
+
+function getPlanJsonColumn(columns) {
+	if (columns.has('plan_json')) return 'plan_json';
+	if (columns.has('mapping_json')) return 'mapping_json';
+	return null;
+}
+
 /**
  * POST /api/plans
  * Create a new migration plan from a mapping
@@ -20,9 +33,10 @@ const router = express.Router();
  */
 router.post("/api/plans", async (req, res) => {
 	try {
-		const { mappingId, name } = req.body;
+		const { mappingId, name, mapping: mappingPayload } = req.body;
+		const resolvedMappingId = mappingId ?? mappingPayload?.id;
 
-		if (!mappingId) {
+		if (!resolvedMappingId) {
 			return res.status(400).json({
 				success: false,
 				error: "mappingId is required"
@@ -31,9 +45,15 @@ router.post("/api/plans", async (req, res) => {
 
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		await mysql.ensureMigrationTables(pool);
+		const columns = await getPlanTableColumns(pool);
+		const planJsonColumn = getPlanJsonColumn(columns);
+		const hasMappingId = columns.has('mapping_id');
+		const hasMappingName = columns.has('mapping_name');
+		const hasName = columns.has('name');
+		const hasIsValidated = columns.has('is_validated');
 
 		// Load the mapping
-		const profile = await runStore.getMappingProfile(pool, mappingId);
+		const profile = await runStore.getMappingProfile(pool, resolvedMappingId);
 
 		if (!profile) {
 			await pool.end();
@@ -48,11 +68,40 @@ router.post("/api/plans", async (req, res) => {
 
 		// Create plan from mapping
 		const plan = Plan.fromMapping(mapping, name);
+		const planJson = JSON.stringify(plan.toJSON());
 
-		// Save plan to database
+		if (!planJsonColumn) {
+			await pool.end();
+			return res.status(500).json({
+				success: false,
+				error: "migration_plans table missing plan_json/mapping_json column"
+			});
+		}
+
+		const insertFields = [];
+		const insertValues = [];
+		if (hasMappingId) {
+			insertFields.push('mapping_id');
+			insertValues.push(resolvedMappingId);
+		}
+		if (hasMappingName) {
+			insertFields.push('mapping_name');
+			insertValues.push(mapping.name || mapping.mappingName || name || '');
+		}
+		if (hasName) {
+			insertFields.push('name');
+			insertValues.push(plan.name);
+		}
+		insertFields.push(planJsonColumn);
+		insertValues.push(planJson);
+		if (hasIsValidated) {
+			insertFields.push('is_validated');
+			insertValues.push(false);
+		}
+
 		const planResult = await pool.query(
-			"INSERT INTO migration_plans (mapping_id, plan_json, is_validated, created_at) VALUES (?, ?, ?, NOW())",
-			[mappingId, JSON.stringify(plan.toJSON()), false]
+			`INSERT INTO migration_plans (${insertFields.join(', ')}) VALUES (${insertFields.map(() => '?').join(', ')})`,
+			insertValues
 		);
 
 		const planId = planResult.insertId;
@@ -64,7 +113,7 @@ router.post("/api/plans", async (req, res) => {
 			message: "Migration plan created",
 			plan: {
 				id: planId,
-				mappingId: mappingId,
+				mappingId: resolvedMappingId,
 				name: plan.name,
 				createdAt: new Date(),
 				tables: plan.toJSON().tables
@@ -104,17 +153,18 @@ router.get("/api/plans/:id", async (req, res) => {
 		}
 
 		const planRow = rows[0];
-		const planData = JSON.parse(planRow.plan_json);
+		const rawPlanJson = planRow[planJsonColumn] || '{}';
+		const planData = JSON.parse(rawPlanJson);
 		const plan = Plan.fromJSON(planData);
 
 		res.json({
 			success: true,
 			plan: {
 				id: planRow.plan_id,
-				mappingId: planRow.mapping_id,
+				mappingId: hasMappingId ? planRow.mapping_id : plan.mappingId,
 				name: plan.name,
 				createdAt: planRow.created_at,
-				isValidated: planRow.is_validated,
+				isValidated: hasIsValidated ? planRow.is_validated : false,
 				validationResult: plan.toJSON().validationResult,
 				tables: plan.toJSON().tables
 			}
@@ -155,7 +205,8 @@ router.put("/api/plans/:id", async (req, res) => {
 		}
 
 		const planRow = rows[0];
-		const planData = JSON.parse(planRow.plan_json);
+		const rawPlanJson = planRow[planJsonColumn] || '{}';
+		const planData = JSON.parse(rawPlanJson);
 		const plan = Plan.fromJSON(planData);
 
 		// Update name if provided
@@ -175,9 +226,24 @@ router.put("/api/plans/:id", async (req, res) => {
 		}
 
 		// Mark as not validated since it changed
+		const updateFields = [];
+		const updateValues = [];
+		if (planJsonColumn) {
+			updateFields.push(`${planJsonColumn} = ?`);
+			updateValues.push(JSON.stringify(plan.toJSON()));
+		}
+		if (hasIsValidated) {
+			updateFields.push(`is_validated = ?`);
+			updateValues.push(false);
+		}
+		if (hasName && name) {
+			updateFields.push(`name = ?`);
+			updateValues.push(plan.name);
+		}
+		updateValues.push(id);
 		await pool.query(
-			"UPDATE migration_plans SET plan_json = ?, is_validated = ? WHERE plan_id = ?",
-			[JSON.stringify(plan.toJSON()), false, id]
+			`UPDATE migration_plans SET ${updateFields.join(', ')} WHERE plan_id = ?`,
+			updateValues
 		);
 
 		await pool.end();
@@ -188,7 +254,7 @@ router.put("/api/plans/:id", async (req, res) => {
 			plan: {
 				id: id,
 				name: plan.name,
-				isValidated: false
+				isValidated: hasIsValidated ? false : false
 			}
 		});
 	} catch (err) {
@@ -267,11 +333,13 @@ router.post("/api/plans/:id/validate", async (req, res) => {
 		}
 
 		const planRow = planRows[0];
-		const planData = JSON.parse(planRow.plan_json);
+		const rawPlanJson = planRow[planJsonColumn] || '{}';
+		const planData = JSON.parse(rawPlanJson);
 		const plan = Plan.fromJSON(planData);
 
 		// Load mapping
-		const profile = await runStore.getMappingProfile(pool, planRow.mapping_id);
+		const mappingIdForPlan = hasMappingId ? planRow.mapping_id : plan.mappingId;
+		const profile = await runStore.getMappingProfile(pool, mappingIdForPlan);
 
 		if (!profile) {
 			await pool.end();
@@ -299,9 +367,20 @@ router.post("/api/plans/:id/validate", async (req, res) => {
 		plan.recordValidation(validation);
 
 		// Update plan in database
+		const updateFields = [];
+		const updateValues = [];
+		if (planJsonColumn) {
+			updateFields.push(`${planJsonColumn} = ?`);
+			updateValues.push(JSON.stringify(plan.toJSON()));
+		}
+		if (hasIsValidated) {
+			updateFields.push(`is_validated = ?`);
+			updateValues.push(validation.canProceed);
+		}
+		updateValues.push(id);
 		await pool.query(
-			"UPDATE migration_plans SET plan_json = ?, is_validated = ? WHERE plan_id = ?",
-			[JSON.stringify(plan.toJSON()), validation.canProceed, id]
+			`UPDATE migration_plans SET ${updateFields.join(', ')} WHERE plan_id = ?`,
+			updateValues
 		);
 
 		await pool.end();
@@ -357,11 +436,13 @@ router.post("/api/plans/:id/dry-run", async (req, res) => {
 		}
 
 		const planRow = planRows[0];
-		const planData = JSON.parse(planRow.plan_json);
+		const rawPlanJson = planRow[planJsonColumn] || '{}';
+		const planData = JSON.parse(rawPlanJson);
 		const plan = Plan.fromJSON(planData);
 
 		// Load mapping
-		const profile = await runStore.getMappingProfile(pool, planRow.mapping_id);
+		const mappingIdForPlan = hasMappingId ? planRow.mapping_id : plan.mappingId;
+		const profile = await runStore.getMappingProfile(pool, mappingIdForPlan);
 
 		if (!profile) {
 			await pool.end();
@@ -442,7 +523,8 @@ router.post("/api/plans/estimate", async (req, res) => {
 			});
 		}
 
-		const plan = JSON.parse(planData.plan_json || "[]");
+		const planJson = planData[planJsonColumn] || planData.plan_json || planData.mapping_json || "[]";
+		const plan = JSON.parse(planJson || "[]");
 		const includedTables = plan.filter(step => step.include !== false);
 
 		await pool.end();
@@ -485,8 +567,11 @@ router.get("/api/plans", async (req, res) => {
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		await mysql.ensureMigrationTables(pool);
 
+		const selectFields = ['plan_id', 'created_at'];
+		if (hasMappingId) selectFields.push('mapping_id');
+		if (hasIsValidated) selectFields.push('is_validated');
 		const [rows] = await pool.query(
-			"SELECT plan_id, mapping_id, created_at, is_validated FROM migration_plans ORDER BY created_at DESC"
+			`SELECT ${selectFields.join(', ')} FROM migration_plans ORDER BY created_at DESC`
 		);
 
 		await pool.end();
@@ -496,9 +581,9 @@ router.get("/api/plans", async (req, res) => {
 			count: rows.length,
 			plans: rows.map(row => ({
 				id: row.plan_id,
-				mappingId: row.mapping_id,
+				mappingId: hasMappingId ? row.mapping_id : null,
 				createdAt: row.created_at,
-				isValidated: row.is_validated
+				isValidated: hasIsValidated ? row.is_validated : false
 			}))
 		});
 	} catch (err) {

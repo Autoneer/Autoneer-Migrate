@@ -44,7 +44,15 @@ class Schema {
 	 * @returns {Promise<void>}
 	 */
 	async discoverFirebird(firebirdConfig) {
+		// console.log('[Schema] Starting Firebird discovery with config:', {
+		// 	host: firebirdConfig.host,
+		// 	port: firebirdConfig.port,
+		// 	database: firebirdConfig.database,
+		// 	user: firebirdConfig.user
+		// });
+
 		const db = await firebird.attach(firebirdConfig);
+		// console.log('[Schema] Firebird connection established');
 
 		// Helper to promisify db.query
 		const query = (sql, params = []) => {
@@ -57,6 +65,38 @@ class Schema {
 		};
 
 		try {
+			// First, run diagnostic query to see ALL relations
+			const diagnosticQuery = `
+				SELECT 
+					TRIM(RDB$RELATION_NAME) AS TABLE_NAME,
+					RDB$SYSTEM_FLAG,
+					RDB$VIEW_BLR,
+					RDB$RELATION_TYPE
+				FROM RDB$RELATIONS
+				ORDER BY RDB$RELATION_NAME
+			`;
+
+			// console.log('[Schema] Running diagnostic query to see all relations...');
+			const allRelations = await query(diagnosticQuery);
+			// console.log(`[Schema] Total relations in database: ${allRelations.length}`);
+
+			// Count by type
+			const systemTables = allRelations.filter(r => (r.RDB$SYSTEM_FLAG ?? r.rdb$system_flag) === 1);
+			const views = allRelations.filter(r => (r.RDB$VIEW_BLR ?? r.rdb$view_blr) !== null && (r.RDB$VIEW_BLR ?? r.rdb$view_blr) !== undefined);
+			const userTables = allRelations.filter(r => (r.RDB$SYSTEM_FLAG ?? r.rdb$system_flag) === 0 && !(r.RDB$VIEW_BLR ?? r.rdb$view_blr));
+
+			// console.log('[Schema] Breakdown:', {
+			// 	total: allRelations.length,
+			// 	systemTables: systemTables.length,
+			// 	views: views.length,
+			// 	userTables: userTables.length,
+			// 	firstFewRelations: allRelations.slice(0, 5).map(r => ({
+			// 		name: r.TABLE_NAME ?? r.table_name ?? r.RDB$RELATION_NAME ?? r.rdb$relation_name,
+			// 		systemFlag: r.RDB$SYSTEM_FLAG ?? r.rdb$system_flag,
+			// 		isView: (r.RDB$VIEW_BLR ?? r.rdb$view_blr) ? 'YES' : 'NO'
+			// 	}))
+			// });
+
 			// Get all user tables
 			const tablesQuery = `
 				SELECT TRIM(RDB$RELATION_NAME) AS TABLE_NAME
@@ -66,11 +106,22 @@ class Schema {
 				ORDER BY RDB$RELATION_NAME
 			`;
 
+			// console.log('[Schema] Executing user tables query...');
 			const tables = await query(tablesQuery);
+			// console.log(`[Schema] Found ${tables.length} user tables in Firebird database`);
+
+			if (tables.length === 0) {
+				console.warn('[Schema] WARNING: No tables found in Firebird database. Database may be empty or query returned no results.');
+			}
 
 			for (const tableRow of tables) {
-				if (!tableRow || !tableRow.TABLE_NAME) continue;
-				const tableName = tableRow.TABLE_NAME.toUpperCase();
+				const rawTableName = tableRow?.TABLE_NAME ?? tableRow?.table_name ?? tableRow?.RDB$RELATION_NAME ?? tableRow?.rdb$relation_name;
+				if (!rawTableName) {
+					console.warn('[Schema] Skipping invalid table row:', tableRow);
+					continue;
+				}
+				const tableName = rawTableName.toUpperCase();
+				// console.log(`[Schema] Processing table: ${tableName}`);
 
 				// Get columns for this table
 				const columnsQuery = `
@@ -90,6 +141,7 @@ class Schema {
 				`;
 
 				const columns = await query(columnsQuery, [tableName]);
+				// console.log(`[Schema] Table ${tableName} has ${columns.length} columns`);
 
 				// Get primary key
 				const pkQuery = `
@@ -102,9 +154,18 @@ class Schema {
 				`;
 
 				const pkRows = await query(pkQuery, [tableName]);
+				const primaryKey = pkRows
+					.map(row => row?.COLUMN_NAME ?? row?.column_name)
+					.filter(Boolean)
+					.map(name => name.toUpperCase());
+
+				// console.log(`[Schema] Table ${tableName} primary key:`, primaryKey);
+
 				const columnMap = {};
 				for (const col of columns) {
-					if (!col || !col.COLUMN_NAME) continue; const columnName = col.COLUMN_NAME.toUpperCase();
+					const rawColumnName = col?.COLUMN_NAME ?? col?.column_name;
+					if (!rawColumnName) continue;
+					const columnName = rawColumnName.toUpperCase();
 					columnMap[columnName] = {
 						name: columnName,
 						type: this._mapFirebirdType(col),
@@ -125,8 +186,15 @@ class Schema {
 			}
 
 			this.firebird.lastUpdated = new Date();
+			const tableCount = Object.keys(this.firebird.tables).length;
+			// console.log(`[Schema] Firebird discovery complete. Total tables processed: ${tableCount}`);
+			// console.log('[Schema] Table names:', Object.keys(this.firebird.tables));
+		} catch (err) {
+			console.error('[Schema] Firebird discovery error:', err);
+			throw err;
 		} finally {
 			db.detach();
+			console.log('[Schema] Firebird connection closed');
 		}
 	}
 

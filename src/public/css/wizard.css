@@ -2,7 +2,24 @@
  * Migration Wizard Styles
  * 
  * Core styles for the 5-step migration wizard interface
+ * Uses same color scheme as main PWA (styles.css)
  */
+
+/* ============================================
+   CSS VARIABLES - Match main PWA theme
+   ============================================ */
+
+:root {
+	--wizard-bg: #ffffff;
+	--wizard-panel: #f6f8fa;
+	--wizard-text: #24292f;
+	--wizard-muted: #57606a;
+	--wizard-primary: #0969da;
+	--wizard-accent: #28a745;
+	--wizard-danger: #cf222e;
+	--wizard-border: #d0d7de;
+	--wizard-border-subtle: #e6edf3;
+}
 
 /* ============================================
    BASE & RESET
@@ -12,7 +29,7 @@
 	position: absolute;
 	top: -40px;
 	left: 0;
-	background: #007bff;
+	background: var(--wizard-primary);
 	color: white;
 	padding: 8px 16px;
 	text-decoration: none;
@@ -31,11 +48,13 @@
 #wizard-container {
 	max-width: 1200px;
 	margin: 0 auto;
-	padding: 20px;
+	padding: 10px;
 	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-	color: #333;
+	/* Slightly smaller base font for wizard steps */
+	font-size: 12px;
+	color: var(--wizard-text);
 	min-height: 600px;
-	background: #fff;
+	background: var(--wizard-bg);
 }
 
 /* ============================================
@@ -72,8 +91,8 @@
 	width: 40px;
 	height: 40px;
 	border-radius: 50%;
-	background: #e0e0e0;
-	color: #666;
+	background: #e6edf3;
+	color: #57606a;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -82,8 +101,17 @@
 	transition: all 0.3s ease;
 }
 
+.progress-step.clickable .step-number {
+	cursor: pointer;
+	transition: transform 0.15s ease;
+}
+
+.progress-step.clickable .step-number:hover {
+	transform: translateY(-3px) scale(1.05);
+}
+
 .progress-step.active .step-number {
-	background: #007bff;
+	background: #0969da;
 	color: white;
 	transform: scale(1.1);
 }
@@ -94,26 +122,26 @@
 }
 
 .progress-step .step-title {
-	font-size: 0.85rem;
-	color: #666;
+	font-size: 0.8rem;
+	color: #57606a;
 }
 
 .progress-step.active .step-title {
-	color: #007bff;
+	color: #0969da;
 	font-weight: 600;
 }
 
 .progress-bar-track {
 	width: 100%;
 	height: 6px;
-	background: #e0e0e0;
+	background: #e6edf3;
 	border-radius: 3px;
 	overflow: hidden;
 }
 
 .progress-bar-fill {
 	height: 100%;
-	background: linear-gradient(90deg, #007bff 0%, #0056b3 100%);
+	background: linear-gradient(90deg, #0969da 0%, #0550ae 100%);
 	transition: width 0.5s ease;
 }
 
@@ -147,9 +175,6 @@
    ============================================ */
 
 #wizard-navigation {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
 	margin-top: 30px;
 	padding: 20px 0;
 	border-top: 1px solid #e0e0e0;
@@ -157,6 +182,7 @@
 
 .nav-center {
 	text-align: center;
+	flex: 1;
 }
 
 .step-indicator {
@@ -172,7 +198,7 @@
 	padding: 10px 24px;
 	border: none;
 	border-radius: 4px;
-	font-size: 1rem;
+	font-size: 0.95rem;
 	font-weight: 500;
 	cursor: pointer;
 	transition: all 0.2s ease;
@@ -186,14 +212,14 @@
 }
 
 .btn-primary {
-	background: #007bff;
+	background: #0969da;
 	color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-	background: #0056b3;
+	background: #0550ae;
 	transform: translateY(-1px);
-	box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+	box-shadow: 0 2px 8px rgba(9, 105, 218, 0.3);
 }
 
 .btn-secondary {
@@ -241,8 +267,8 @@
 
 .form-control {
 	width: 100%;
-	padding: 10px 12px;
-	font-size: 1rem;
+	padding: 5px 10px;
+	font-size: 12px;
 	border: 1px solid #ced4da;
 	border-radius: 4px;
 	transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -250,8 +276,8 @@
 
 .form-control:focus {
 	outline: none;
-	border-color: #007bff;
-	box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+	border-color: var(--wizard-primary);
+	box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.1);
 }
 
 .form-control.error,
@@ -298,7 +324,7 @@ table th {
 }
 
 table td {
-	padding: 12px;
+	padding: 5px;
 	border-bottom: 1px solid #dee2e6;
 }
 
@@ -393,6 +419,109 @@ table tr.selected {
 }
 
 /* ============================================
+   FLASH MODAL ALERTS
+   ============================================ */
+
+.flash-modal-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.25);
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	padding: 80px 16px 16px;
+	z-index: 10000;
+}
+
+.flash-modal {
+	background: #ffffff;
+	color: var(--wizard-text);
+	border-radius: 8px;
+	box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+	border: 1px solid var(--wizard-border);
+	border-left: 6px solid;
+	min-width: 320px;
+	max-width: 720px;
+	width: 100%;
+	padding: 16px 18px;
+	animation: flashModalIn 0.2s ease-out;
+}
+
+.flash-modal .flash-title {
+	font-weight: 700;
+	margin-bottom: 6px;
+	font-size: 1rem;
+}
+
+.flash-modal .flash-message {
+	font-size: 0.95rem;
+	line-height: 1.4;
+}
+
+.flash-modal .flash-actions {
+	margin-top: 12px;
+	text-align: right;
+}
+
+.flash-modal .flash-close {
+	background: none;
+	border: none;
+	font-size: 1.2rem;
+	cursor: pointer;
+	opacity: 0.7;
+}
+
+.flash-modal {
+	position: relative;
+}
+
+.flash-modal .flash-close:hover {
+	opacity: 1;
+}
+
+/* Position close button in top-right of modal */
+.flash-modal .flash-close {
+	position: absolute;
+	top: 8px;
+	right: 10px;
+	line-height: 1;
+	padding: 6px 8px;
+	border-radius: 4px;
+	background-color: silver;
+}
+
+.flash-modal.flash-error {
+	border-left-color: #dc3545;
+}
+
+.flash-modal.flash-warning {
+	border-left-color: #ffc107;
+}
+
+.flash-modal.flash-success {
+	border-left-color: #28a745;
+}
+
+.flash-modal.flash-info {
+	border-left-color: #17a2b8;
+}
+
+@keyframes flashModalIn {
+	from {
+		opacity: 0;
+		transform: translateY(-8px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* ============================================
    LOADING OVERLAY
    ============================================ */
 
@@ -402,26 +531,29 @@ table tr.selected {
 	left: 0;
 	right: 0;
 	bottom: 0;
-	background: rgba(0, 0, 0, 0.5);
-	display: flex;
+	background: rgba(255, 255, 255, 0.9);
+	display: none;
+	/* Hidden by default, shown via JS with display:flex */
 	align-items: center;
 	justify-content: center;
 	z-index: 9999;
 }
 
 .loading-spinner {
-	background: white;
+	background: #f6f8fa;
 	padding: 40px;
 	border-radius: 8px;
 	text-align: center;
+	border: 1px solid #d0d7de;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .spinner {
 	width: 50px;
 	height: 50px;
 	margin: 0 auto 20px;
-	border: 4px solid #f3f3f3;
-	border-top: 4px solid #007bff;
+	border: 4px solid #e6edf3;
+	border-top: 4px solid #0969da;
 	border-radius: 50%;
 	animation: spin 1s linear infinite;
 }
@@ -475,19 +607,19 @@ table tr.selected {
 
 .stat-label {
 	font-size: 0.875rem;
-	color: #6c757d;
+	color: var(--wizard-muted);
 	margin-bottom: 4px;
 }
 
 .stat-value {
 	font-size: 2rem;
 	font-weight: 700;
-	color: #495057;
+	color: var(--wizard-text);
 }
 
 .stat-detail {
 	font-size: 0.875rem;
-	color: #6c757d;
+	color: var(--wizard-muted);
 }
 
 .schema-stats,
@@ -618,7 +750,7 @@ table tr.selected {
 
 .mini-progress-fill {
 	height: 100%;
-	background: #007bff;
+	background: var(--wizard-primary);
 	transition: width 0.3s ease;
 }
 
@@ -666,7 +798,7 @@ table tr.selected {
 
 .wizard-init-error .error-message {
 	font-size: 1.1rem;
-	color: #666;
+	color: var(--wizard-muted);
 	margin-bottom: 30px;
 	padding: 15px;
 	background: #f8d7da;
@@ -689,32 +821,32 @@ table tr.selected {
 .wizard-init-error .error-details summary {
 	cursor: pointer;
 	font-weight: bold;
-	color: #007bff;
+	color: var(--wizard-primary);
 	padding: 10px;
-	background: #f8f9fa;
+	background: var(--wizard-panel);
 	border-radius: 4px;
 }
 
 .wizard-init-error .error-details pre {
-	background: #f8f9fa;
+	background: var(--wizard-panel);
 	padding: 15px;
 	border-radius: 4px;
 	overflow-x: auto;
 	font-size: 0.85rem;
 	margin-top: 10px;
-	border: 1px solid #dee2e6;
+	border: 1px solid var(--wizard-border);
 }
 
 .wizard-init-error .troubleshooting {
 	text-align: left;
 	margin-top: 30px;
 	padding: 20px;
-	background: #f8f9fa;
+	background: var(--wizard-panel);
 	border-radius: 4px;
 }
 
 .wizard-init-error .troubleshooting h3 {
-	color: #333;
+	color: var(--wizard-text);
 	margin-top: 0;
 }
 
@@ -725,7 +857,7 @@ table tr.selected {
 
 .wizard-init-error .troubleshooting li {
 	margin: 10px 0;
-	color: #666;
+	color: var(--wizard-muted);
 }
 
 .error-state,
@@ -765,10 +897,10 @@ table tr.selected {
 
 .error-details summary {
 	cursor: pointer;
-	color: #007bff;
+	color: var(--wizard-primary);
 	font-weight: bold;
 	padding: 10px;
-	background: #f8f9fa;
+	background: var(--wizard-panel);
 	border-radius: 4px;
 }
 
@@ -779,7 +911,7 @@ table tr.selected {
 
 .error-details li {
 	margin: 8px 0;
-	color: #666;
+	color: var(--wizard-muted);
 }
 
 /* ============================================
@@ -792,7 +924,7 @@ table tr.selected {
 }
 
 .log-content {
-	background: #f8f9fa;
+	background: var(--wizard-panel);
 	padding: 15px;
 	border-radius: 4px;
 	font-family: 'Courier New', monospace;
@@ -807,7 +939,7 @@ table tr.selected {
 
 .step-help {
 	background: #e7f3ff;
-	border-left: 4px solid #007bff;
+	border-left: 4px solid var(--wizard-primary);
 	padding: 15px 20px;
 	margin-top: 30px;
 	border-radius: 4px;
@@ -815,11 +947,11 @@ table tr.selected {
 
 .step-help h3 {
 	margin-top: 0;
-	color: #007bff;
+	color: var(--wizard-primary);
 }
 
 .help-text {
-	color: #6c757d;
+	color: var(--wizard-muted);
 	font-size: 0.875rem;
 	margin: 10px 0;
 }
@@ -866,4 +998,125 @@ table tr.selected {
 
 .mt-30 {
 	margin-top: 30px;
+}
+
+/* ============================================
+   STEP STATUS BANNERS
+   ============================================ */
+
+.step-status-banner {
+	padding: 12px 16px;
+	margin-bottom: 20px;
+	border-radius: 4px;
+	border-left: 4px solid;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.step-status-banner .status-icon {
+	font-size: 1.2rem;
+	flex-shrink: 0;
+}
+
+.step-status-banner .status-message {
+	flex: 1;
+	font-size: 0.95rem;
+}
+
+.step-status-info {
+	background: #d1ecf1;
+	color: #0c5460;
+	border-left-color: #17a2b8;
+}
+
+.step-status-success {
+	background: #d4edda;
+	color: #155724;
+	border-left-color: #28a745;
+}
+
+.step-status-warning {
+	background: #fff3cd;
+	color: #856404;
+	border-left-color: #ffc107;
+}
+
+.step-status-error {
+	background: #f8d7da;
+	color: #721c24;
+	border-left-color: #dc3545;
+}
+
+/* ============================================
+   NAVIGATION VALIDATION FEEDBACK
+   ============================================ */
+
+.nav-validation {
+	background: #fff3cd;
+	border: 1px solid #ffc107;
+	border-radius: 4px;
+	padding: 12px 16px;
+	margin-bottom: 15px;
+	font-size: 0.9rem;
+	color: #856404;
+}
+
+.nav-validation strong {
+	display: block;
+	margin-bottom: 8px;
+	color: #664d03;
+}
+
+.nav-validation ul {
+	margin: 0;
+	padding-left: 20px;
+	list-style: disc;
+}
+
+.nav-validation li {
+	margin: 4px 0;
+}
+
+.nav-buttons {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 20px;
+}
+
+/* ============================================
+   WIZARD STEP PANELS
+   ============================================ */
+
+.wizard-step {
+	min-height: 400px;
+	animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+	}
+
+	to {
+		opacity: 1;
+	}
+}
+
+.wizard-step.active {
+	display: block !important;
 }

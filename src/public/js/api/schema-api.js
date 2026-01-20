@@ -149,6 +149,16 @@ class SchemaAPI {
 
 		return schema;
 	}
+
+	/**
+	 * Run Firebird diagnostic to see what's in the database
+	 * @returns {Promise<Object>} Diagnostic information
+	 */
+	async runFirebirdDiagnostic() {
+		const response = await this.client.get('/schemas/firebird/diagnostic');
+		return response;
+	}
+
 }
 
 // Export to window

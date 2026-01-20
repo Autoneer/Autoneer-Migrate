@@ -7,14 +7,42 @@
 
 <!-- Main wizard container -->
 <div id="wizard-container">
+	<!-- Error/message area - visible alerts -->
+	<div id="wizard-errors" aria-live="polite" role="status"></div>
+
 	<!-- Progress bar (auto-rendered by wizard.js) -->
 	<div id="wizard-progress"></div>
 
-	<!-- Step indicator (auto-rendered) -->
-	<div class="step-indicator">Loading wizard...</div>
+	<!-- Navigation buttons (auto-rendered) -->
+	<div id="wizard-navigation"></div>
 
-	<!-- Step content (auto-rendered by step components) -->
-	<div id="wizard-steps"></div>
+	<!-- Step content panels -->
+	<div id="wizard-steps">
+		<!-- Step 1: Schema Discovery -->
+		<section id="step-1" class="wizard-step" style="display: block;">
+			<div id="schema-content"></div>
+		</section>
+
+		<!-- Step 2: Build Mapping -->
+		<section id="step-2" class="wizard-step" style="display: none;">
+			<div id="mapping-content"></div>
+		</section>
+
+		<!-- Step 3: Create Plan -->
+		<section id="step-3" class="wizard-step" style="display: none;">
+			<div id="plan-content"></div>
+		</section>
+
+		<!-- Step 4: Execute Migration -->
+		<section id="step-4" class="wizard-step" style="display: none;">
+			<div id="run-content"></div>
+		</section>
+
+		<!-- Step 5: View Results -->
+		<section id="step-5" class="wizard-step" style="display: none;">
+			<div id="results-content"></div>
+		</section>
+	</div>
 
 	<!-- Navigation buttons (auto-rendered) -->
 	<div id="wizard-navigation"></div>

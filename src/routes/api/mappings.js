@@ -128,10 +128,16 @@ router.post("/api/mappings", async (req, res) => {
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		await mysql.ensureMigrationTables(pool);
 
-		await runStore.saveMappingProfile(pool, {
-			id: mappingId,
+		const insertId = await runStore.saveMappingProfile(pool, {
 			name: mapping.name,
-			mapping_json: JSON.stringify(mapping.toJSON())
+			mappingJson: JSON.stringify(mapping.toJSON())
+		});
+
+		// Align mapping ID with stored profile ID
+		mapping.id = insertId;
+		await runStore.updateMappingProfile(pool, insertId, {
+			name: mapping.name,
+			mappingJson: JSON.stringify(mapping.toJSON())
 		});
 
 		await pool.end();
@@ -209,7 +215,7 @@ router.put("/api/mappings/:id", async (req, res) => {
 		// Save updated mapping
 		await runStore.updateMappingProfile(pool, id, {
 			name: mapping.name,
-			mapping_json: JSON.stringify(mapping.toJSON())
+			mappingJson: JSON.stringify(mapping.toJSON())
 		});
 
 		await pool.end();

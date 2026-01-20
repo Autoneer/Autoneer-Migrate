@@ -43,7 +43,14 @@ class PlanUI {
 					validateData: true
 				}
 			};
+		} else if (Array.isArray(this.plan.tables) && this.plan.tables.length === 0) {
+			// Repair empty plan tables from current mapping
+			this.plan.tables = Object.keys(this.mapping.tables);
 		}
+
+		// Persist plan so wizard validation sees selected tables
+		this.state.setPlan(this.plan);
+		this.wizard.renderNavigation();
 
 		this.render();
 	}
@@ -100,6 +107,14 @@ class PlanUI {
         
         <!-- Table Selection and Order -->
         <div class="table-plan">
+          <div class="form-group">
+            <label for="profile-name">Save as Profile:</label>
+            <input type="text" id="profile-name" class="form-control" 
+                   value="${this.plan.name || this.mapping?.name || ''}" 
+                   placeholder="Enter profile name for this migration run">
+            <small>This name will be used to save and track the migration run</small>
+          </div>
+          
           <h3>Tables to Migrate (in order)</h3>
           <p class="help-text">Drag to reorder tables or use ↑↓ buttons</p>
           
@@ -199,6 +214,15 @@ class PlanUI {
 			});
 		}
 
+		// Profile name (save as)
+		const profileName = document.getElementById('profile-name');
+		if (profileName) {
+			profileName.addEventListener('input', (e) => {
+				this.plan.name = e.target.value;
+				this.state.set('plan.name', this.plan.name);
+			});
+		}
+
 		// Continue on error
 		const continueOnError = document.getElementById('continue-on-error');
 		if (continueOnError) {
@@ -262,13 +286,22 @@ class PlanUI {
 		this.wizard.showLoading('Running dry-run simulation...');
 
 		try {
+			// Ensure we have a mapping ID before creating plan
+			if (!this.mapping?.id) {
+				console.error('[PlanUI] No mapping ID found. Mapping:', this.mapping);
+				this.wizard.showError('No mapping profile found. Please save your mapping in Step 2 first.');
+				return;
+			}
+
+			console.log('[PlanUI] Creating plan with mapping ID:', this.mapping.id);
+
 			// Create or update plan first
 			let planId = this.plan.id;
 
 			if (!planId) {
 				const created = await this.api.create({
-					...this.plan,
-					mapping: this.mapping
+					name: this.plan.name,
+					mappingId: this.mapping.id
 				});
 				planId = created.id;
 				this.plan.id = planId;
@@ -412,8 +445,8 @@ class PlanUI {
 				await this.api.update(this.plan.id, this.plan);
 			} else {
 				const created = await this.api.create({
-					...this.plan,
-					mapping: this.mapping
+					name: this.plan.name,
+					mappingId: this.mapping?.id
 				});
 				this.plan.id = created.id;
 			}

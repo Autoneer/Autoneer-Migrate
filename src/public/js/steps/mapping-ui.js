@@ -53,13 +53,60 @@ class MappingUI {
 	}
 
 	/**
+	 * Get Firebird tables as array
+	 */
+	getFirebirdTables() {
+		const tablesObj = this.schema?.firebird?.tables || {};
+		return Array.isArray(tablesObj) ? tablesObj : Object.values(tablesObj);
+	}
+
+	/**
+	 * Get MySQL tables as array
+	 */
+	getMysqlTables() {
+		const tablesObj = this.schema?.mysql?.tables || {};
+		return Array.isArray(tablesObj) ? tablesObj : Object.values(tablesObj);
+	}
+
+	/**
+	 * Get table by name from schema
+	 */
+	getTableByName(dbType, tableName) {
+		const tables = dbType === 'firebird' ? this.getFirebirdTables() : this.getMysqlTables();
+		return tables.find(t => t?.name === tableName) || null;
+	}
+
+	/**
+	 * Get columns as array for a table
+	 */
+	getColumnsArray(table) {
+		if (!table?.columns) return [];
+		return Array.isArray(table.columns) ? table.columns : Object.values(table.columns);
+	}
+
+	/**
+	 * Get available MySQL target tables not yet used
+	 */
+	getAvailableTargetTables(sourceTableName) {
+		const mysqlTables = this.getMysqlTables();
+		const usedTargets = new Set(
+			Object.values(this.mapping.tables || {})
+				.map(t => t?.targetTable)
+				.filter(Boolean)
+		);
+
+		const currentTarget = this.mapping.tables?.[sourceTableName]?.targetTable;
+		return mysqlTables.filter(t => !usedTargets.has(t.name) || t.name === currentTarget);
+	}
+
+	/**
 	 * Render mapping builder UI
 	 */
 	render() {
 		const container = document.getElementById('mapping-content');
 		if (!container) return;
 
-		const firebirdTables = this.schema.firebird?.tables || [];
+		const firebirdTables = this.getFirebirdTables();
 
 		container.innerHTML = `
       <div class="mapping-builder">
@@ -136,10 +183,14 @@ class MappingUI {
 	 * Render table rows
 	 */
 	renderTableRows(tables) {
-		return tables.map(table => {
+		const tableList = Array.isArray(tables) ? tables : Object.values(tables || {});
+
+		return tableList.map(table => {
 			const isSelected = this.selectedTables.has(table.name);
 			const targetTable = this.mapping.tables[table.name]?.targetTable || '';
 			const status = this.getTableStatus(table.name);
+			const columnCount = table.columns ? Object.keys(table.columns).length : 0;
+			const availableTargets = this.getAvailableTargetTables(table.name);
 
 			return `
         <tr class="table-row ${isSelected ? 'selected' : ''}" data-table="${table.name}">
@@ -150,13 +201,16 @@ class MappingUI {
           </td>
           <td><strong>${table.name}</strong></td>
           <td>
-            <input type="text" class="form-control target-table-input" 
-                   placeholder="Select target..." 
-                   value="${targetTable}"
-                   data-table="${table.name}"
-                   ${!isSelected ? 'disabled' : ''}>
+						<select class="form-control target-table-select" 
+										data-table="${table.name}"
+										${!isSelected ? 'disabled' : ''}>
+							<option value="">Select target...</option>
+							${availableTargets.map(t => `
+								<option value="${t.name}" ${targetTable === t.name ? 'selected' : ''}>${t.name}</option>
+							`).join('')}
+						</select>
           </td>
-          <td>${table.columns?.length || 0}</td>
+			  <td>${columnCount}</td>
           <td>
             <span class="status-badge status-${status.level}">
               ${status.icon} ${status.label}
@@ -245,9 +299,9 @@ class MappingUI {
 			});
 		});
 
-		// Target table inputs
-		document.querySelectorAll('.target-table-input').forEach(input => {
-			input.addEventListener('change', (e) => {
+		// Target table selects
+		document.querySelectorAll('.target-table-select').forEach(select => {
+			select.addEventListener('change', (e) => {
 				const tableName = e.target.dataset.table;
 				this.setTargetTable(tableName, e.target.value);
 			});
@@ -331,14 +385,20 @@ class MappingUI {
 	 * Render field mapping editor
 	 */
 	renderFieldEditor(tableName) {
-		const sourceTable = this.schema.firebird.tables.find(t => t.name === tableName);
+		const sourceTable = this.getTableByName('firebird', tableName);
 		const targetTableName = this.mapping.tables[tableName]?.targetTable;
-		const targetTable = this.schema.mysql.tables.find(t => t.name === targetTableName);
+		const targetTable = this.getTableByName('mysql', targetTableName);
 
 		if (!sourceTable) return '<p>Source table not found</p>';
 		if (!targetTable) return '<p>Please select a target table first</p>';
 
 		const tableConfig = this.mapping.tables[tableName];
+
+		const sourceColumns = this.getColumnsArray(sourceTable);
+		const targetColumns = this.getColumnsArray(targetTable);
+		const sortedTargetColumns = [...targetColumns].sort((a, b) =>
+			(a?.name || '').localeCompare(b?.name || '', undefined, { sensitivity: 'base' })
+		);
 
 		return `
       <div class="field-editor">
@@ -366,7 +426,7 @@ class MappingUI {
             </tr>
           </thead>
           <tbody>
-            ${sourceTable.columns.map(col => {
+			${sourceColumns.map(col => {
 			const mapping = tableConfig.columns[col.name] || {};
 			return `
                 <tr>
@@ -376,7 +436,7 @@ class MappingUI {
                   <td>
                     <select class="form-control target-column" data-source="${col.name}">
                       <option value="">Select...</option>
-                      ${targetTable.columns.map(tCol => `
+											${sortedTargetColumns.map(tCol => `
                         <option value="${tCol.name}" 
                                 ${mapping.targetColumn === tCol.name ? 'selected' : ''}>
                           ${tCol.name} (${tCol.type})
@@ -432,10 +492,12 @@ class MappingUI {
 
 		// Default value inputs
 		document.querySelectorAll('.default-value').forEach(input => {
-			input.addEventListener('change', (e) => {
+			const handleUpdate = (e) => {
 				const sourceCol = e.target.dataset.source;
 				this.setFieldMapping(tableName, sourceCol, 'defaultValue', e.target.value);
-			});
+			};
+			input.addEventListener('input', handleUpdate);
+			input.addEventListener('change', handleUpdate);
 		});
 	}
 
@@ -456,24 +518,27 @@ class MappingUI {
 	 * Auto-map fields based on name matching
 	 */
 	autoMapFields(tableName) {
-		const sourceTable = this.schema.firebird.tables.find(t => t.name === tableName);
+		const sourceTable = this.getTableByName('firebird', tableName);
 		const targetTableName = this.mapping.tables[tableName]?.targetTable;
-		const targetTable = this.schema.mysql.tables.find(t => t.name === targetTableName);
+		const targetTable = this.getTableByName('mysql', targetTableName);
 
 		if (!sourceTable || !targetTable) return;
 
 		let mappedCount = 0;
 
-		sourceTable.columns.forEach(srcCol => {
+		const sourceColumns = this.getColumnsArray(sourceTable);
+		const targetColumns = this.getColumnsArray(targetTable);
+
+		sourceColumns.forEach(srcCol => {
 			const srcName = srcCol.name.toLowerCase();
 
 			// Try exact match first
-			let targetCol = targetTable.columns.find(tc => tc.name.toLowerCase() === srcName);
+			let targetCol = targetColumns.find(tc => tc.name.toLowerCase() === srcName);
 
 			if (!targetCol) {
 				// Try fuzzy match (removing underscores, etc.)
 				const fuzzyName = srcName.replace(/[_\s-]/g, '');
-				targetCol = targetTable.columns.find(tc =>
+				targetCol = targetColumns.find(tc =>
 					tc.name.toLowerCase().replace(/[_\s-]/g, '') === fuzzyName
 				);
 			}
@@ -628,24 +693,23 @@ class MappingUI {
 			return false;
 		}
 
-		// Save mapping if checkbox is checked
-		if (this.mapping.saveProfile) {
-			try {
-				this.wizard.showLoading('Saving mapping profile...');
+		// Always save mapping to ensure it has an ID for plan creation
+		// (Plans require a mapping ID reference)
+		try {
+			this.wizard.showLoading('Saving mapping profile...');
 
-				if (this.mapping.id) {
-					await this.api.update(this.mapping.id, this.mapping);
-				} else {
-					const saved = await this.api.create(this.mapping);
-					this.mapping.id = saved.id;
-				}
-
-				this.wizard.hideLoading();
-			} catch (err) {
-				this.wizard.hideLoading();
-				this.wizard.showError(`Failed to save profile: ${err.message}`);
-				return false;
+			if (this.mapping.id) {
+				await this.api.update(this.mapping.id, this.mapping);
+			} else {
+				const saved = await this.api.create(this.mapping);
+				this.mapping.id = saved.id;
 			}
+
+			this.wizard.hideLoading();
+		} catch (err) {
+			this.wizard.hideLoading();
+			this.wizard.showError(`Failed to save profile: ${err.message}`);
+			return false;
 		}
 
 		// Update state
