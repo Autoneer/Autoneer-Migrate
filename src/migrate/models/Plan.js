@@ -181,8 +181,17 @@ class Plan {
 	static fromMapping(mapping, defaultConfig = {}) {
 		const plan = new Plan(mapping.id, mapping.name);
 
-		for (const targetTable of mapping.getTargetTables()) {
-			plan.addTable(targetTable, {
+		// Only include mapping entries that have a defined target table or mapped columns
+		const tables = mapping.tables || {};
+		for (const [src, config] of Object.entries(tables)) {
+			const target = config?.targetTable || config?.target || '';
+			const hasColumns = config && Object.keys(config.columns || {}).length > 0;
+			if (!target || String(target).trim() === '') {
+				// Skip entries without a target table
+				continue;
+			}
+
+			plan.addTable(target, {
 				mode: defaultConfig.mode || 'INSERT',
 				keyStrategy: defaultConfig.keyStrategy || 'preserve',
 				dedupeKeys: defaultConfig.dedupeKeys || [],

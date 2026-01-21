@@ -27,16 +27,21 @@ function resolveMappingForTarget(tableName, mapping) {
 
 	// First, check if tableName is a custom target (e.g., customer_invoice_lines)
 	const sourceKey = Object.keys(entries).find(
-		(key) => entries[key].target.toLowerCase() === tableName.toLowerCase()
+		(key) => {
+			const target = entries[key]?.target || entries[key]?.targetTable;
+			return target && target.toLowerCase() === tableName.toLowerCase();
+		}
 	);
 	if (sourceKey) {
-		return { sourceTable: sourceKey, ...entries[sourceKey] };
+		const entry = entries[sourceKey] || {};
+		return { sourceTable: sourceKey, ...entry, target: entry.target || entry.targetTable };
 	}
 
 	// Second, check if tableName is a source table name (e.g., spares_used)
 	// This handles cases where the plan still has the source table name
 	if (entries[tableName]) {
-		return { sourceTable: tableName, ...entries[tableName] };
+		const entry = entries[tableName] || {};
+		return { sourceTable: tableName, ...entry, target: entry.target || entry.targetTable };
 	}
 
 	return null;
@@ -85,7 +90,11 @@ async function validatePlanForRun(pool, plan, mapping) {
 		if (dedupeKeys.length) {
 			const mappingEntry = resolveMappingForTarget(tableName, mapping);
 			if (mappingEntry?.columns) {
-				const mappedTargets = new Set(Object.values(mappingEntry.columns).map((c) => c.target.toLowerCase()));
+				const mappedTargets = new Set(
+					Object.values(mappingEntry.columns)
+						.map((c) => (c.target || c.targetColumn || '').toLowerCase())
+						.filter(Boolean)
+				);
 				const missingFromMapping = dedupeKeys.filter((key) => !mappedTargets.has(String(key).toLowerCase()));
 				if (missingFromMapping.length) {
 					errors.push(`Table ${tableName}: Dedupe keys not mapped from source fields: ${missingFromMapping.join(", ")}.`);

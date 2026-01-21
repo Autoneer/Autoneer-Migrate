@@ -81,6 +81,14 @@ app.use((err, req, res, next) => {
 });
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => {
+const server = app.listen(port, () => {
 	console.log(`Autoneer migrator running on http://localhost:${port}`);
+});
+server.on('error', (err) => {
+	if (err && err.code === 'EADDRINUSE') {
+		console.error(`Port ${port} already in use. Set PORT or stop the other process.`);
+		process.exit(1);
+	} else {
+		throw err;
+	}
 });

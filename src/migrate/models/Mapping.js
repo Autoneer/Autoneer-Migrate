@@ -171,12 +171,32 @@ class Mapping {
 	 * @returns {Mapping}
 	 */
 	static fromJSON(obj) {
+		const normalizedTables = {};
+		const tables = obj?.tables || {};
+		for (const [sourceTable, config] of Object.entries(tables)) {
+			const targetTable = config?.targetTable || config?.target || '';
+			const columns = {};
+			for (const [srcCol, colConfig] of Object.entries(config?.columns || {})) {
+				columns[srcCol] = {
+					sourceColumn: colConfig.sourceColumn || srcCol,
+					targetColumn: colConfig.targetColumn || colConfig.target || srcCol,
+					transform: colConfig.transform,
+					defaultValue: colConfig.defaultValue ?? colConfig.default,
+					lookup: colConfig.lookup
+				};
+			}
+			normalizedTables[sourceTable] = {
+				targetTable,
+				columns
+			};
+		}
+
 		return new Mapping(
 			obj.id,
 			obj.name,
-			obj.tables,
-			new Date(obj.createdAt),
-			new Date(obj.updatedAt)
+			normalizedTables,
+			obj.createdAt ? new Date(obj.createdAt) : null,
+			obj.updatedAt ? new Date(obj.updatedAt) : null
 		);
 	}
 

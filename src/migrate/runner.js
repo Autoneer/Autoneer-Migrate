@@ -107,10 +107,22 @@ function emitRunState(runId, emitter) {
 function resolveMappingForTarget(tableName, mapping) {
 	const entries = mapping?.tables || {};
 	const sourceKey = Object.keys(entries).find(
-		(key) => entries[key].target.toLowerCase() === tableName.toLowerCase()
+		(key) => {
+			const target = entries[key]?.target || entries[key]?.targetTable;
+			return target && target.toLowerCase() === tableName.toLowerCase();
+		}
 	);
-	if (!sourceKey) return null;
-	return { sourceTable: sourceKey, ...entries[sourceKey] };
+	if (!sourceKey) {
+		// Debug: log what targets are available
+		const availableTargets = Object.entries(entries).map(([k, v]) => ({
+			source: k,
+			target: v?.target || v?.targetTable
+		}));
+		console.log(`[Mapping] Looking for target '${tableName}' in mapping. Available entries:`, JSON.stringify(availableTargets.slice(0, 5)));
+		return null;
+	}
+	const entry = entries[sourceKey] || {};
+	return { sourceTable: sourceKey, ...entry, target: entry.target || entry.targetTable };
 }
 
 function resolveFirebirdSourceTable(mappedSource, firebirdTableMap) {
@@ -974,11 +986,16 @@ async function runMigrationInternal({
 				});
 			}
 
+			logRun({ level: 'debug', phase: 'table_loop', action: 'starting', includedCount: includedSteps.length, mappingTableCount: Object.keys(mapping?.tables || {}).length });
+
 			for (const step of includedSteps) {
 				checkAbort(runId);
 				const tableName = step.table;
+				logRun({ level: 'debug', phase: 'table_loop', action: 'processing', tableName, mappingTableKeys: Object.keys(mapping?.tables || {}).slice(0, 5) });
 				const mappingEntry = resolveMappingForTarget(tableName, mapping);
+				logRun({ level: 'debug', phase: 'table_loop', action: 'mapping_resolved', tableName, hasMappingEntry: !!mappingEntry, mappingTarget: mappingEntry?.target });
 				const tableState = tableStateMap.get(tableName);
+				let tableRunId = null; // Initialize early to avoid ReferenceError in failRun
 
 				const failRun = async (errorMessage, hint, phase = "unknown") => {
 					if (!tableState) return;
@@ -1019,7 +1036,7 @@ async function runMigrationInternal({
 				const onDuplicate = step.onDuplicate || "SKIP";
 
 				const tableRun = await runStore.getTableRun(pool, runId, tableName);
-				let tableRunId = tableRun?.id || null;
+				tableRunId = tableRun?.id || null;
 				if (tableRun?.status === "success") {
 					emitter.emit("event", {
 						type: "table_skipped",
@@ -1833,8 +1850,10 @@ async function runMigrationInternal({
 			}
 		}
 	} catch (err) {
+		console.error('[Runner] Migration error caught:', err);
 		const errorMessage = formatDbError(err, { firebirdConfig });
 		const hint = getDbErrorHint(errorMessage);
+		logRun({ level: 'error', phase: 'run_error', error: errorMessage, stack: err?.stack?.split('\n').slice(0, 5).join('\n') });
 		runState.status = "FAILED";
 		runState.finishedAt = new Date().toISOString();
 		if (runState.currentTable) {

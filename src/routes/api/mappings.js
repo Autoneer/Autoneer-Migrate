@@ -107,19 +107,24 @@ router.post("/mappings", async (req, res) => {
 		const mappingId = uuidv4();
 		const mapping = new Mapping(mappingId, name);
 
-		// If tables are provided, add them
+		// If tables are provided, add them (support legacy + new UI formats)
 		if (tables && typeof tables === "object") {
 			for (const [sourceTable, tableConfig] of Object.entries(tables)) {
-				if (tableConfig.target && tableConfig.columns) {
+				const targetTable = tableConfig?.target || tableConfig?.targetTable;
+				const columns = tableConfig?.columns || {};
+				if (targetTable && columns) {
 					const fieldMaps = new Map();
-					for (const [sourceCol, colConfig] of Object.entries(tableConfig.columns)) {
+					for (const [sourceCol, colConfig] of Object.entries(columns)) {
 						const { FieldMap } = require("../../migrate/models");
-						fieldMaps.set(
-							sourceCol,
-							new FieldMap(sourceCol, colConfig.target, colConfig)
-						);
+						const targetColumn = colConfig?.target || colConfig?.targetColumn || sourceCol;
+						const normalized = {
+							transform: colConfig?.transform,
+							defaultValue: colConfig?.defaultValue ?? colConfig?.default,
+							lookup: colConfig?.lookup
+						};
+						fieldMaps.set(sourceCol, new FieldMap(sourceCol, targetColumn, normalized));
 					}
-					mapping.addTable(sourceTable, tableConfig.target, fieldMaps);
+					mapping.addTable(sourceTable, targetTable, fieldMaps);
 				}
 			}
 		}
@@ -193,19 +198,24 @@ router.put("/mappings/:id", async (req, res) => {
 
 		if (tables && typeof tables === "object") {
 			// Clear existing tables and rebuild
-			mapping._tables = new Map();
+			mapping.tables = {};
 
 			for (const [sourceTable, tableConfig] of Object.entries(tables)) {
-				if (tableConfig.target && tableConfig.columns) {
+				const targetTable = tableConfig?.target || tableConfig?.targetTable;
+				const columns = tableConfig?.columns || {};
+				if (targetTable && columns) {
 					const fieldMaps = new Map();
-					for (const [sourceCol, colConfig] of Object.entries(tableConfig.columns)) {
+					for (const [sourceCol, colConfig] of Object.entries(columns)) {
 						const { FieldMap } = require("../../migrate/models");
-						fieldMaps.set(
-							sourceCol,
-							new FieldMap(sourceCol, colConfig.target, colConfig)
-						);
+						const targetColumn = colConfig?.target || colConfig?.targetColumn || sourceCol;
+						const normalized = {
+							transform: colConfig?.transform,
+							defaultValue: colConfig?.defaultValue ?? colConfig?.default,
+							lookup: colConfig?.lookup
+						};
+						fieldMaps.set(sourceCol, new FieldMap(sourceCol, targetColumn, normalized));
 					}
-					mapping.addTable(sourceTable, tableConfig.target, fieldMaps);
+					mapping.addTable(sourceTable, targetTable, fieldMaps);
 				}
 			}
 		}

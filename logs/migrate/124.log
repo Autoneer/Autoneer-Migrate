@@ -1,0 +1,10 @@
+{"timestamp":"2026-01-21T09:09:16.730Z","runId":124,"level":"info","phase":"run_start","dryRun":false,"batchSize":1000,"fkChecks":true,"tables":[{"table":"ACCCLASS","mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","clean":false}]}
+{"timestamp":"2026-01-21T09:09:16.846Z","runId":124,"level":"info","phase":"preflight","attempt":1,"status":"ok"}
+{"timestamp":"2026-01-21T09:09:16.847Z","runId":124,"level":"debug","phase":"preflight","durationMs":116}
+{"timestamp":"2026-01-21T09:09:16.847Z","runId":124,"level":"info","phase":"preflight","action":"nullability_validation","status":"start"}
+{"timestamp":"2026-01-21T09:09:16.849Z","runId":124,"level":"info","phase":"preflight","action":"nullability_validation","status":"passed"}
+{"timestamp":"2026-01-21T09:09:16.944Z","runId":124,"level":"info","phase":"preflight","action":"foreign_key_checks_disabled","original_state":true}
+{"timestamp":"2026-01-21T09:09:16.944Z","runId":124,"level":"debug","phase":"table_loop","action":"starting","includedCount":1,"mappingTableCount":0}
+{"timestamp":"2026-01-21T09:09:16.945Z","runId":124,"level":"debug","phase":"table_loop","action":"processing","tableName":"ACCCLASS","mappingTableKeys":[]}
+{"timestamp":"2026-01-21T09:09:16.946Z","runId":124,"level":"debug","phase":"table_loop","action":"mapping_resolved","tableName":"ACCCLASS","hasMappingEntry":false}
+{"timestamp":"2026-01-21T09:09:16.967Z","runId":124,"level":"error","phase":"run_error","error":"Cannot access 'tableRunId' before initialization","stack":"ReferenceError: Cannot access 'tableRunId' before initialization\n    at failRun (C:\\Projects\\Autoneer-Migrate\\src\\migrate\\runner.js:1001:67)\n    at runMigrationInternal (C:\\Projects\\Autoneer-Migrate\\src\\migrate\\runner.js:1014:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)"}
