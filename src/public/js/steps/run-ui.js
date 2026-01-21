@@ -302,7 +302,15 @@ class RunUI {
 	 * Start migration execution
 	 */
 	async startMigration() {
-		if (!confirm('Start migration now? This will begin transferring data to MySQL.')) {
+		const confirmed = await Modal.confirm({
+			title: 'Start Migration',
+			message: 'Start migration now? This will begin transferring data to MySQL.',
+			type: 'warning',
+			confirmText: 'Start Migration',
+			cancelText: 'Cancel'
+		});
+
+		if (!confirmed) {
 			return;
 		}
 
@@ -328,7 +336,15 @@ class RunUI {
 	 * Stop migration execution
 	 */
 	async stopMigration() {
-		if (!confirm('Stop migration? This may leave the database in an incomplete state.')) {
+		const confirmed = await Modal.confirm({
+			title: 'Stop Migration',
+			message: 'Stop migration? This may leave the database in an incomplete state.',
+			type: 'error',
+			confirmText: 'Stop Migration',
+			cancelText: 'Cancel'
+		});
+
+		if (!confirmed) {
 			return;
 		}
 

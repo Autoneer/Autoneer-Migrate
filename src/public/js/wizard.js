@@ -366,6 +366,12 @@ class MigrationWizard {
 	 * Set up global event listeners
 	 */
 	setupEventListeners() {
+		// Reset wizard button
+		const resetBtn = document.getElementById('btn-wizard-reset');
+		if (resetBtn) {
+			resetBtn.addEventListener('click', () => this.reset());
+		}
+
 		// Listen for state changes
 		this.state.on('step:change', (step) => {
 			this.showStep(step);
@@ -630,13 +636,30 @@ class MigrationWizard {
 	 * Reset wizard to initial state
 	 */
 	async reset() {
-		if (!confirm('Are you sure you want to reset the wizard? All progress will be lost.')) {
+		const confirmed = await Modal.confirm({
+			title: 'Reset Wizard',
+			message: 'Are you sure you want to reset the wizard? All progress will be lost.',
+			type: 'warning',
+			confirmText: 'Reset',
+			cancelText: 'Cancel'
+		});
+
+		if (!confirmed) {
 			return;
 		}
 
+		// Clear all storage
+		this.storage.clearAll();
 		this.state.reset();
 		this.currentStep = 1;
 		await this.showStep(1);
+
+		// Show success message
+		await Modal.alert({
+			title: 'Wizard Reset',
+			message: 'Wizard has been reset successfully. Starting from Step 1.',
+			type: 'success'
+		});
 	}
 
 	/**

@@ -303,8 +303,16 @@ class PlanUI {
 	/**
 	 * Remove table from plan
 	 */
-	removeTable(index) {
-		if (confirm(`Remove ${this.plan.tables[index]} from plan?`)) {
+	async removeTable(index) {
+		const confirmed = await Modal.confirm({
+			title: 'Remove Table',
+			message: `Remove ${this.plan.tables[index]} from plan?`,
+			type: 'warning',
+			confirmText: 'Remove',
+			cancelText: 'Cancel'
+		});
+
+		if (confirmed) {
 			this.plan.tables.splice(index, 1);
 			this.state.setPlan(this.plan);
 			this.render();

@@ -337,7 +337,13 @@ if (progressEl) {
 	if (stopRunBtn) {
 		stopRunBtn.addEventListener("click", async () => {
 			if (!runId) return;
-			const confirmed = window.confirm("Stop this migration run?");
+			const confirmed = await Modal.confirm({
+				title: 'Stop Migration',
+				message: 'Stop this migration run?',
+				type: 'warning',
+				confirmText: 'Stop',
+				cancelText: 'Cancel'
+			});
 			if (!confirmed) return;
 			stopRunBtn.disabled = true;
 			try {

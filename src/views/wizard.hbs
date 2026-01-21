@@ -1,9 +1,17 @@
 <!-- Wizard CSS - Load before content -->
 <link rel="stylesheet" href="/public/css/wizard.css" />
+<link rel="stylesheet" href="/public/css/modal.css" />
 <link rel="stylesheet" href="/public/css/responsive.css" />
 
 <!-- Skip to content link for accessibility -->
 <a href="#wizard-container" class="skip-to-content">Skip to content</a>
+
+<!-- Wizard toolbar -->
+<div class="wizard-toolbar">
+	<button id="btn-wizard-reset" class="btn btn-sm btn-danger" title="Clear all wizard progress and start over">
+		<span aria-hidden="true">🔄</span> Reset Wizard
+	</button>
+</div>
 
 <!-- Main wizard container -->
 <div id="wizard-container">

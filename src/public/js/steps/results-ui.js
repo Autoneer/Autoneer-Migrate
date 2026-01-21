@@ -329,11 +329,21 @@ class ResultsUI {
 	 * Start new migration
 	 */
 	startNewMigration() {
-		if (!confirm('Start a new migration? This will reset the wizard.')) {
-			return;
-		}
+		(async () => {
+			const confirmed = await Modal.confirm({
+				title: 'Start New Migration',
+				message: 'Start a new migration? This will reset the wizard.',
+				type: 'warning',
+				confirmText: 'Start New',
+				cancelText: 'Cancel'
+			});
 
-		this.wizard.reset();
+			if (!confirmed) {
+				return;
+			}
+
+			this.wizard.reset();
+		})();
 	}
 
 	/**

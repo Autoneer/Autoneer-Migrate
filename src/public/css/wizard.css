@@ -41,6 +41,21 @@
 	top: 0;
 }
 
+/* Wizard toolbar */
+.wizard-toolbar {
+	max-width: 1200px;
+	margin: 0 auto 20px;
+	padding: 10px 20px;
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+}
+
+.wizard-toolbar .btn-sm {
+	padding: 6px 12px;
+	font-size: 0.9em;
+}
+
 /* ============================================
    WIZARD CONTAINER
    ============================================ */

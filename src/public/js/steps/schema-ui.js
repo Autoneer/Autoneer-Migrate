@@ -105,7 +105,15 @@ class SchemaUI {
 	async refresh() {
 		if (this.isDiscovering) return;
 
-		if (!confirm('This will re-scan the databases. Continue?')) {
+		const confirmed = await Modal.confirm({
+			title: 'Rescan Databases',
+			message: 'This will re-scan the databases. Continue?',
+			type: 'info',
+			confirmText: 'Rescan',
+			cancelText: 'Cancel'
+		});
+
+		if (!confirmed) {
 			return;
 		}
 
@@ -302,7 +310,11 @@ class SchemaUI {
 				if (userViews.length > 10) message += '...';
 			}
 
-			alert(message);
+			await Modal.alert({
+				title: 'Diagnostic Complete',
+				message,
+				type: 'info'
+			});
 
 			this.wizard.setStepStatus(1, {
 				type: 'info',
@@ -311,7 +323,11 @@ class SchemaUI {
 
 		} catch (err) {
 			console.error('[SchemaUI] Diagnostic failed:', err);
-			alert(`Diagnostic failed: ${err.message}\n\nCheck browser console for details.`);
+			await Modal.alert({
+				title: 'Diagnostic Failed',
+				message: `${err.message}\n\nCheck browser console for details.`,
+				type: 'error'
+			});
 		} finally {
 			this.wizard.setBusy(false);
 		}
