@@ -116,8 +116,8 @@ class MappingUI {
         <!-- Profile Settings -->
         <div class="profile-settings">
           <div class="form-group">
-            <label for="profile-name">Profile Name:</label>
-            <input type="text" id="profile-name" class="form-control" 
+            <label for="mapping-profile-name">Profile Name:</label>
+            <input type="text" id="mapping-profile-name" class="form-control" 
                    value="${this.mapping.name}" 
                    placeholder="Enter profile name">
           </div>
@@ -253,8 +253,9 @@ class MappingUI {
 	 * Attach event listeners
 	 */
 	attachEventListeners() {
-		// Profile name input
-		const profileName = document.getElementById('profile-name');
+		// Profile name input - scoped to mapping step
+		const container = document.getElementById('mapping-content');
+		const profileName = container?.querySelector('#mapping-profile-name');
 		if (profileName) {
 			profileName.addEventListener('input', (e) => {
 				this.mapping.name = e.target.value;
@@ -312,6 +313,7 @@ class MappingUI {
 	 * Toggle table selection
 	 */
 	toggleTableSelection(tableName, selected) {
+		console.log(`[MappingUI] Toggle table ${tableName}: ${selected}`);
 		if (selected) {
 			this.selectedTables.add(tableName);
 
@@ -322,9 +324,11 @@ class MappingUI {
 					columns: {}
 				};
 			}
+			console.log(`[MappingUI] Added table ${tableName}. Total tables:`, Object.keys(this.mapping.tables));
 		} else {
 			this.selectedTables.delete(tableName);
 			delete this.mapping.tables[tableName];
+			console.log(`[MappingUI] Removed table ${tableName}. Total tables:`, Object.keys(this.mapping.tables));
 		}
 
 		this.state.updateMapping(this.mapping);
@@ -569,6 +573,9 @@ class MappingUI {
 			container.style.display = 'none';
 		}
 		this.currentTable = null;
+		
+		// Persist mapping changes to state
+		this.state.updateMapping(this.mapping);
 		this.updateValidation();
 	}
 

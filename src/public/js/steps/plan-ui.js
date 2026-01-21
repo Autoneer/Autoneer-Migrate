@@ -108,8 +108,8 @@ class PlanUI {
         <!-- Table Selection and Order -->
         <div class="table-plan">
           <div class="form-group">
-            <label for="profile-name">Save as Profile:</label>
-            <input type="text" id="profile-name" class="form-control" 
+            <label for="plan-profile-name">Save as Profile:</label>
+            <input type="text" id="plan-profile-name" class="form-control" 
                    value="${this.plan.name || this.mapping?.name || ''}" 
                    placeholder="Enter profile name for this migration run">
             <small>This name will be used to save and track the migration run</small>
@@ -214,8 +214,9 @@ class PlanUI {
 			});
 		}
 
-		// Profile name (save as)
-		const profileName = document.getElementById('profile-name');
+		// Profile name (save as) - scoped to plan step
+		const container = document.getElementById('plan-content');
+		const profileName = container?.querySelector('#plan-profile-name');
 		if (profileName) {
 			profileName.addEventListener('input', (e) => {
 				this.plan.name = e.target.value;
@@ -293,28 +294,45 @@ class PlanUI {
 				return;
 			}
 
-			console.log('[PlanUI] Creating plan with mapping ID:', this.mapping.id);
-
-			// Create or update plan first
-			let planId = this.plan.id;
-
-			if (!planId) {
-				const created = await this.api.create({
-					name: this.plan.name,
-					mappingId: this.mapping.id
-				});
-				planId = created.id;
-				this.plan.id = planId;
+			// Read current plan name from input before API calls
+			const container = document.getElementById('plan-content');
+			const planNameInput = container?.querySelector('#plan-profile-name');
+			if (planNameInput) {
+				this.plan.name = planNameInput.value.trim();
 			}
 
-			// Run dry-run
+			console.log('[PlanUI] Running dry run with plan:', { name: this.plan.name, id: this.plan.id, mappingId: this.mapping.id });
+
+			// Create or update plan first to ensure it's persisted
+			let planId = this.plan.id;
+
+			const fullPayload = {
+				name: this.plan.name,
+				mappingId: this.mapping.id,
+				tables: this.plan.tables || [],
+				config: this.plan.config
+			};
+
+			if (planId) {
+				// Update existing plan
+				await this.api.update(planId, fullPayload);
+				console.log('[PlanUI] Updated plan:', planId);
+			} else {
+				// Create new plan
+				const created = await this.api.create(fullPayload);
+				planId = created.id;
+				this.plan.id = planId;
+				this.state.setPlan(this.plan);
+				console.log('[PlanUI] Created plan:', planId);
+			}
+
+			// Run dry-run (without tableName for plan-level dry run)
 			this.dryRunResults = await this.api.dryRun(planId);
 
 			// Render results
-			this.renderDryRunResults();
-
 			const resultsDiv = document.getElementById('dry-run-results');
 			if (resultsDiv) {
+				resultsDiv.innerHTML = this.renderDryRunResults();
 				resultsDiv.style.display = 'block';
 				resultsDiv.scrollIntoView({ behavior: 'smooth' });
 			}
@@ -335,9 +353,10 @@ class PlanUI {
 			return '<p>No dry-run results available</p>';
 		}
 
-		const results = this.dryRunResults;
+		const results = this.dryRunResults.results || this.dryRunResults;
 		const hasErrors = results.errors && results.errors.length > 0;
 		const hasWarnings = results.warnings && results.warnings.length > 0;
+		const perTable = results.perTable || [];
 
 		return `
       <div class="dry-run-results">
@@ -349,7 +368,7 @@ class PlanUI {
             <span>Tables</span>
           </div>
           <div class="stat">
-            <strong>${results.estimatedRows || 0}</strong>
+            <strong>${results.estimatedRows || results.totals?.estimatedRows || 0}</strong>
             <span>Estimated Rows</span>
           </div>
           <div class="stat">
@@ -357,6 +376,34 @@ class PlanUI {
             <span>Est. Duration</span>
           </div>
         </div>
+        
+        ${perTable.length > 0 ? `
+          <div class="per-table-results">
+            <h5>Per-Table Summary</h5>
+            <table class="plan-table">
+              <thead>
+                <tr>
+                  <th>Table</th>
+                  <th>Est. Rows</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${perTable.map(t => `
+                  <tr>
+                    <td>${t.tableName}</td>
+                    <td>${t.estimatedRows || 0}</td>
+                    <td>
+                      ${t.errors.length > 0 ? '<span class="status-badge status-warning">❌ Errors</span>' : ''}
+                      ${t.warnings.length > 0 ? '<span class="status-badge status-warning">⚠ Warnings</span>' : ''}
+                      ${t.errors.length === 0 && t.warnings.length === 0 ? '<span class="status-badge status-success">✓ OK</span>' : ''}
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        ` : ''}
         
         ${hasErrors ? `
           <div class="dry-run-errors">

@@ -27,6 +27,22 @@ function getPlanJsonColumn(columns) {
 }
 
 /**
+ * Helper to get plan table metadata to avoid scoping bugs
+ * Returns: { planJsonColumn, hasMappingId, hasIsValidated, hasName, hasMappingName }
+ */
+async function getPlanTableMeta(pool) {
+	const columns = await getPlanTableColumns(pool);
+	return {
+		columns,
+		planJsonColumn: getPlanJsonColumn(columns),
+		hasMappingId: columns.has('mapping_id'),
+		hasMappingName: columns.has('mapping_name'),
+		hasIsValidated: columns.has('is_validated'),
+		hasName: columns.has('name')
+	};
+}
+
+/**
  * POST /api/plans
  * Create a new migration plan from a mapping
  * Body: { mappingId: string, name?: string }
@@ -45,12 +61,8 @@ router.post("/api/plans", async (req, res) => {
 
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		await mysql.ensureMigrationTables(pool);
-		const columns = await getPlanTableColumns(pool);
-		const planJsonColumn = getPlanJsonColumn(columns);
-		const hasMappingId = columns.has('mapping_id');
-		const hasMappingName = columns.has('mapping_name');
-		const hasName = columns.has('name');
-		const hasIsValidated = columns.has('is_validated');
+		const meta = await getPlanTableMeta(pool);
+		const { planJsonColumn, hasMappingId, hasMappingName, hasName, hasIsValidated } = meta;
 
 		// Load the mapping
 		const profile = await runStore.getMappingProfile(pool, resolvedMappingId);
@@ -137,6 +149,8 @@ router.get("/api/plans/:id", async (req, res) => {
 
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		await mysql.ensureMigrationTables(pool);
+		const meta = await getPlanTableMeta(pool);
+		const { planJsonColumn, hasMappingId, hasIsValidated } = meta;
 
 		const [rows] = await pool.query(
 			"SELECT * FROM migration_plans WHERE plan_id = ?",
@@ -189,6 +203,8 @@ router.put("/api/plans/:id", async (req, res) => {
 
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		await mysql.ensureMigrationTables(pool);
+		const meta = await getPlanTableMeta(pool);
+		const { planJsonColumn, hasIsValidated, hasName } = meta;
 
 		// Load existing plan
 		const [rows] = await pool.query(
@@ -317,6 +333,8 @@ router.post("/api/plans/:id/validate", async (req, res) => {
 
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		await mysql.ensureMigrationTables(pool);
+		const meta = await getPlanTableMeta(pool);
+		const { planJsonColumn, hasMappingId, hasIsValidated } = meta;
 
 		// Load plan
 		const [planRows] = await pool.query(
@@ -405,21 +423,22 @@ router.post("/api/plans/:id/validate", async (req, res) => {
 /**
  * POST /api/plans/:id/dry-run
  * Perform a dry-run simulation of the migration plan
+ * If tableName is provided: runs per-table dry run
+ * If tableName is missing: runs plan-level dry run across all tables
  */
 router.post("/api/plans/:id/dry-run", async (req, res) => {
 	try {
 		const { id } = req.params;
 		const { tableName } = req.body;
 
-		if (!tableName) {
-			return res.status(400).json({
-				success: false,
-				error: "tableName is required for dry-run"
-			});
-		}
+		console.log(`[Dry Run] Request for plan ${id}`, { tableName: tableName || '(all tables)' });
 
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		await mysql.ensureMigrationTables(pool);
+
+		// Get plan table metadata
+		const meta = await getPlanTableMeta(pool);
+		const { planJsonColumn, hasMappingId } = meta;
 
 		// Load plan
 		const [planRows] = await pool.query(
@@ -462,34 +481,97 @@ router.post("/api/plans/:id/dry-run", async (req, res) => {
 
 		await pool.end();
 
-		// Perform dry-run for specific table
-		const dryRunResult = await PlanValidator.dryRun(
-			plan,
-			mapping,
-			schema,
-			tableName,
-			{
-				firebird: state.firebird,
-				mysql: state.mysql,
-				schemaName: state.schemaName
+		// If tableName provided: run per-table dry run
+		if (tableName) {
+			const dryRunResult = await PlanValidator.dryRun(
+				plan,
+				mapping,
+				schema,
+				tableName,
+				{
+					firebird: state.firebird,
+					mysql: state.mysql,
+					schemaName: state.schemaName
+				}
+			);
+
+			return res.json({
+				success: true,
+				dryRun: {
+					tableName: tableName,
+					success: dryRunResult.success,
+					sampleRow: dryRunResult.sampleRow,
+					transformedRow: dryRunResult.transformedRow,
+					errors: dryRunResult.errors,
+					warnings: dryRunResult.warnings
+				}
+			});
+		}
+
+		// Plan-level dry run across all tables
+		const tables = plan.tables || [];
+		const perTableResults = [];
+		let totalEstimatedRows = 0;
+		let totalWarnings = 0;
+		let totalErrors = 0;
+
+		for (const table of tables) {
+			try {
+				const result = await PlanValidator.dryRun(
+					plan,
+					mapping,
+					schema,
+					table,
+					{
+						firebird: state.firebird,
+						mysql: state.mysql,
+						schemaName: state.schemaName
+					}
+				);
+
+				const estimatedRows = result.sampleRow ? 1000 : 0; // Default estimate
+				totalEstimatedRows += estimatedRows;
+				totalWarnings += (result.warnings || []).length;
+				totalErrors += (result.errors || []).length;
+
+				perTableResults.push({
+					tableName: table,
+					estimatedRows,
+					warnings: result.warnings || [],
+					errors: result.errors || []
+				});
+			} catch (err) {
+				perTableResults.push({
+					tableName: table,
+					estimatedRows: 0,
+					warnings: [],
+					errors: [`Failed to validate: ${err.message}`]
+				});
+				totalErrors++;
 			}
-		);
+		}
 
 		res.json({
 			success: true,
-			dryRun: {
-				tableName: tableName,
-				success: dryRunResult.success,
-				sampleRow: dryRunResult.sampleRow,
-				transformedRow: dryRunResult.transformedRow,
-				errors: dryRunResult.errors,
-				warnings: dryRunResult.warnings
+			results: {
+				tableCount: tables.length,
+				estimatedRows: totalEstimatedRows,
+				estimatedTime: `${Math.ceil(totalEstimatedRows / 100)} seconds`,
+				perTable: perTableResults,
+				totals: {
+					estimatedRows: totalEstimatedRows,
+					warningsCount: totalWarnings,
+					errorsCount: totalErrors
+				},
+				warnings: perTableResults.flatMap(t => t.warnings.map(w => `${t.tableName}: ${w}`)),
+				errors: perTableResults.flatMap(t => t.errors.map(e => `${t.tableName}: ${e}`))
 			}
 		});
 	} catch (err) {
+		console.error('[Dry Run] Error:', err);
 		res.status(500).json({
 			success: false,
-			error: err.message
+			error: { message: err.message, details: err.stack }
 		});
 	}
 });

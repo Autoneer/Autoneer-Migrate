@@ -14,10 +14,10 @@ const runStore = require("../../migrate/runStore");
 const router = express.Router();
 
 /**
- * GET /api/mappings
+ * GET /mappings
  * List all saved mapping profiles
  */
-router.get("/api/mappings", async (req, res) => {
+router.get("/mappings", async (req, res) => {
 	try {
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		await mysql.ensureMigrationTables(pool);
@@ -45,10 +45,10 @@ router.get("/api/mappings", async (req, res) => {
 });
 
 /**
- * GET /api/mappings/:id
+ * GET /mappings/:id
  * Retrieve a specific mapping profile by ID
  */
-router.get("/api/mappings/:id", async (req, res) => {
+router.get("/mappings/:id", async (req, res) => {
 	try {
 		const { id } = req.params;
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
@@ -88,11 +88,11 @@ router.get("/api/mappings/:id", async (req, res) => {
 });
 
 /**
- * POST /api/mappings
+ * POST /mappings
  * Create a new mapping profile
- * Body: { name: string, tables?: object }
+ * Body: { name: string, mapping: object }
  */
-router.post("/api/mappings", async (req, res) => {
+router.post("/mappings", async (req, res) => {
 	try {
 		const { name, tables } = req.body;
 
@@ -160,11 +160,11 @@ router.post("/api/mappings", async (req, res) => {
 });
 
 /**
- * PUT /api/mappings/:id
+ * PUT /mappings/:id
  * Update an existing mapping profile
- * Body: { name?: string, tables?: object }
+ * Body: { name?: string, mapping?: object }
  */
-router.put("/api/mappings/:id", async (req, res) => {
+router.put("/mappings/:id", async (req, res) => {
 	try {
 		const { id } = req.params;
 		const { name, tables } = req.body;
@@ -238,10 +238,10 @@ router.put("/api/mappings/:id", async (req, res) => {
 });
 
 /**
- * DELETE /api/mappings/:id
+ * DELETE /mappings/:id
  * Delete a mapping profile
  */
-router.delete("/api/mappings/:id", async (req, res) => {
+router.delete("/mappings/:id", async (req, res) => {
 	try {
 		const { id } = req.params;
 
@@ -277,10 +277,10 @@ router.delete("/api/mappings/:id", async (req, res) => {
 });
 
 /**
- * POST /api/mappings/:id/validate
+ * POST /mappings/:id/validate
  * Validate a mapping against current database schemas
  */
-router.post("/api/mappings/:id/validate", async (req, res) => {
+router.post("/mappings/:id/validate", async (req, res) => {
 	try {
 		const { id } = req.params;
 
@@ -336,11 +336,11 @@ router.post("/api/mappings/:id/validate", async (req, res) => {
 });
 
 /**
- * POST /api/mappings/auto-generate
+ * POST /mappings/auto-generate
  * Auto-generate a mapping profile based on discovered schemas
  * Body: { firebird: Schema, mysql: Schema, name?: string }
  */
-router.post("/api/mappings/auto-generate", async (req, res) => {
+router.post("/mappings/auto-generate", async (req, res) => {
 	try {
 		const { firebird, mysql, name = "Auto-generated Mapping" } = req.body;
 
@@ -399,11 +399,11 @@ router.post("/api/mappings/auto-generate", async (req, res) => {
 });
 
 /**
- * POST /api/mappings/validate
+ * POST /mappings/validate
  * Validate a mapping configuration
  * Body: { mapping: object }
  */
-router.post("/api/mappings/validate", async (req, res) => {
+router.post("/mappings/validate", async (req, res) => {
 	try {
 		const { mapping: mappingData } = req.body;
 
@@ -443,11 +443,11 @@ router.post("/api/mappings/validate", async (req, res) => {
 });
 
 /**
- * POST /api/mappings/convert-legacy
+ * POST /mappings/convert-legacy
  * Convert a legacy mapping.default.json format to new Mapping model
  * Body: { legacyMapping: object, name?: string }
  */
-router.post("/api/mappings/convert-legacy", async (req, res) => {
+router.post("/mappings/convert-legacy", async (req, res) => {
 	try {
 		const { legacyMapping, name } = req.body;
 
