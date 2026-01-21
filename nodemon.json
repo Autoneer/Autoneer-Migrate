@@ -4,7 +4,10 @@
 	],
 	"ext": "js,hbs,json,css",
 	"ignore": [
-		"src/public"
+		"src/public",
+		"logs/**",
+		"*.log",
+		"data/**"
 	],
 	"exec": "node src/app.js"
 }

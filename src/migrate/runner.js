@@ -35,6 +35,15 @@ function isRunActive(runId) {
 
 function requestAbort(runId, reason) {
 	runAbortFlags.set(runId, { reason: reason || "Migration stopped" });
+
+	// Emit an immediate update to clients so UI can react
+	const emitter = getEmitter(runId) || null;
+	const state = getRunState(runId);
+	if (state) {
+		state.status = 'ABORTING';
+		state.lastError = { message: reason || 'Migration stopped by user', phase: 'abort' };
+		emitRunState(runId, emitter);
+	}
 }
 
 function checkAbort(runId) {

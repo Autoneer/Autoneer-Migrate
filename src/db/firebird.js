@@ -99,8 +99,35 @@ function attach(config) {
 	});
 }
 
+/**
+ * Attach with a single retry for transient auth errors
+ * @param {Object} config
+ */
+async function attachWithRetry(config) {
+	try {
+		return await attach(config);
+	} catch (err) {
+		const msg = String(err?.message || "").toLowerCase();
+		const gds = err && err.gds && Number(err.gds);
+		const shouldRetry = msg.includes('user name and password are not defined') || gds === 335544472;
+		if (shouldRetry) {
+			// small jitter
+			const waitMs = 500 + Math.floor(Math.random() * 300);
+			await new Promise((r) => setTimeout(r, waitMs));
+			try {
+				return await attach(config);
+			} catch (err2) {
+				// log both attempts to console for diagnostics
+				console.warn('[firebird] attach retry failed:', err2?.message || err2);
+				throw err2;
+			}
+		}
+		throw err;
+	}
+}
+
 async function testConnection(config) {
-	const db = await attach(config);
+	const db = await attachWithRetry(config);
 	return new Promise((resolve, reject) => {
 		db.query("select 1 from rdb$database", (err, result) => {
 			db.detach();
@@ -111,7 +138,17 @@ async function testConnection(config) {
 }
 
 async function query(config, sql, params = []) {
-	const db = await attach(config);
+	// Backwards-compatible: if first arg is already a db handle, use it directly
+	if (config && typeof config.query === 'function') {
+		const db = config;
+		return new Promise((resolve, reject) => {
+			db.query(sql, params, (err, result) => {
+				if (err) return reject(err);
+				resolve(result);
+			});
+		});
+	}
+	const db = await attachWithRetry(config);
 	return new Promise((resolve, reject) => {
 		db.query(sql, params, (err, result) => {
 			db.detach();
@@ -119,6 +156,45 @@ async function query(config, sql, params = []) {
 			resolve(result);
 		});
 	});
+}
+
+// Helpers that operate on an existing db handle (avoid repeated attach/detach)
+function queryWithDb(db, sql, params = []) {
+	return new Promise((resolve, reject) => {
+		db.query(sql, params, (err, result) => {
+			if (err) return reject(err);
+			resolve(result);
+		});
+	});
+}
+
+async function listTablesWithDb(db) {
+	const sql = `
+	select trim(rdb$relation_name) as name
+	from rdb$relations
+	where rdb$view_blr is null and rdb$system_flag = 0
+	order by rdb$relation_name
+  `;
+	const rows = await queryWithDb(db, sql);
+	return rows.map((row) => row.name);
+}
+
+async function listColumnsWithDb(db, tableName) {
+	const sql = `
+	select trim(rf.rdb$field_name) as name
+	from rdb$relation_fields rf
+	where rf.rdb$relation_name = ?
+	order by rf.rdb$field_position
+  `;
+	const rows = await queryWithDb(db, sql, [tableName]);
+	return rows.map((row) => row.name);
+}
+
+async function fetchBatchWithDb(db, tableName, columns, offset, limit, orderBy) {
+	const cols = columns && columns.length ? columns.map(quoteIdentifier).join(', ') : '*';
+	const order = orderBy ? ` order by ${quoteIdentifier(orderBy)}` : '';
+	const sql = `select first ${limit} skip ${offset} ${cols} from ${quoteIdentifier(tableName)}${order}`;
+	return queryWithDb(db, sql);
 }
 
 async function listTables(config) {
@@ -156,15 +232,27 @@ async function fetchBatch(config, tableName, columns, offset, limit, orderBy) {
 	return query(config, sql);
 }
 
+async function countRowsWithDb(db, tableName) {
+	const sql = `select count(*) as cnt from ${quoteIdentifier(tableName)}`;
+	const rows = await queryWithDb(db, sql);
+	return rows?.[0]?.cnt || 0;
+}
+
 module.exports = {
 	resolveFirebirdConfig,
 	validateFirebirdConfig,
 	maskFirebirdConfig,
 	attach,
+	attachWithRetry,
 	testConnection,
 	query,
+	queryWithDb,
 	listTables,
 	listColumns,
+	listTablesWithDb,
+	listColumnsWithDb,
 	countRows,
-	fetchBatch
+	countRowsWithDb,
+	fetchBatch,
+	fetchBatchWithDb
 };
