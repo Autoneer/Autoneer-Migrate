@@ -265,6 +265,11 @@ class MigrationWizard {
 			this.renderProgressBar();
 			this.renderNavigation();
 
+			// Normalize plan state before initializing Step 3/4 components
+			if (stepNumber === 3 || stepNumber === 4) {
+				this.state.normalizePlanInState();
+			}
+
 			// Initialize step component
 			const step = this.steps[stepNumber - 1];
 			if (step.component && typeof step.component.initialize === 'function') {

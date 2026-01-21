@@ -22,9 +22,27 @@ class RunUI {
 		console.log('Initializing Execution Monitor...');
 
 		// Get plan from previous step
-		this.plan = this.state.get('plan');
+		this.plan = this.state.get('plan') || {};
+		const DEFAULT_PLAN_CONFIG = {
+			batchSize: 1000,
+			continueOnError: false,
+			validateData: true
+		};
+		this.plan.config = {
+			...DEFAULT_PLAN_CONFIG,
+			...(this.plan.config || {})
+		};
+		if (!Array.isArray(this.plan.tables)) {
+			this.plan.tables = [];
+		}
+
 		if (!this.plan || !this.plan.id) {
-			this.wizard.showError('Plan not available. Please go back to Step 3.');
+			this.wizard.showError('Plan not available. Please go back to Step 3 and save the plan.');
+			return;
+		}
+
+		if (this.plan.tables.length === 0) {
+			this.wizard.showError('Plan has no tables. Go back to Step 3 and re-save the plan.');
 			return;
 		}
 
@@ -72,6 +90,18 @@ class RunUI {
 	 * Render pre-execution state
 	 */
 	renderPreExecution() {
+		const DEFAULT_PLAN_CONFIG = {
+			batchSize: 1000,
+			continueOnError: false,
+			validateData: true
+		};
+		const config = {
+			...DEFAULT_PLAN_CONFIG,
+			...(this.plan?.config || {})
+		};
+		const planName = this.plan?.name || 'Migration Plan';
+		const tableCount = Array.isArray(this.plan?.tables) ? this.plan.tables.length : 0;
+
 		return `
       <div class="run-pre-execution">
         <h2>Execute Migration</h2>
@@ -80,10 +110,10 @@ class RunUI {
         <div class="execution-summary">
           <h3>Plan Summary</h3>
           <ul>
-            <li><strong>Plan:</strong> ${this.plan.name}</li>
-            <li><strong>Tables:</strong> ${this.plan.tables.length}</li>
-            <li><strong>Batch Size:</strong> ${this.plan.config.batchSize} rows</li>
-            <li><strong>Continue on Error:</strong> ${this.plan.config.continueOnError ? 'Yes' : 'No'}</li>
+						<li><strong>Plan:</strong> ${planName}</li>
+						<li><strong>Tables:</strong> ${tableCount}</li>
+						<li><strong>Batch Size:</strong> ${config.batchSize} rows</li>
+						<li><strong>Continue on Error:</strong> ${config.continueOnError ? 'Yes' : 'No'}</li>
           </ul>
         </div>
         
@@ -346,17 +376,22 @@ class RunUI {
 		this.pollInterval = setInterval(async () => {
 			try {
 				const progress = await this.api.getProgress(this.run.id);
+				const percent = typeof progress === 'number'
+					? progress
+					: (progress?.percent ?? progress?.progress ?? 0);
+				const status = progress?.status || this.state.get('run.status') || 'running';
+				const tables = progress?.tables || progress?.tableResults || [];
 
 				// Update state
-				this.state.set('run.progress', progress.percent);
-				this.state.set('run.status', progress.status);
-				this.state.set('run.tableResults', progress.tables || []);
+				this.state.set('run.progress', percent);
+				this.state.set('run.status', status);
+				this.state.set('run.tableResults', tables);
 
 				// Update UI
-				this.updateProgressDisplay(progress);
+				this.updateProgressDisplay({ percent, status, tables });
 
 				// Stop polling if complete
-				if (progress.status === 'completed' || progress.status === 'failed') {
+				if (status === 'completed' || status === 'failed') {
 					this.stopPolling();
 					this.run = await this.api.getById(this.run.id);
 					this.render();
@@ -385,13 +420,13 @@ class RunUI {
 		// Update overall progress bar
 		const progressBar = document.querySelector('.progress-bar-fill');
 		if (progressBar) {
-			progressBar.style.width = `${progress.percent}%`;
+			progressBar.style.width = `${progress.percent || 0}%`;
 		}
 
 		// Update progress text
 		const progressText = document.querySelector('.progress-header span');
 		if (progressText) {
-			progressText.textContent = `Overall Progress: ${progress.percent}%`;
+			progressText.textContent = `Overall Progress: ${progress.percent || 0}%`;
 		}
 
 		// Update table status list

@@ -223,6 +223,9 @@ class WizardStorage {
 	markStepComplete(stepNumber) {
 		try {
 			const progress = this.getProgress() || { completedSteps: [] };
+			if (!Array.isArray(progress.completedSteps)) {
+				progress.completedSteps = [];
+			}
 
 			if (!progress.completedSteps.includes(stepNumber)) {
 				progress.completedSteps.push(stepNumber);

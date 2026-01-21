@@ -16,7 +16,7 @@ const router = express.Router();
  * GET /api/runs
  * List all migration runs
  */
-router.get("/api/runs", async (req, res) => {
+router.get("/runs", async (req, res) => {
 	try {
 		const { limit = 50, status, planId } = req.query;
 
@@ -74,18 +74,227 @@ router.get("/api/runs", async (req, res) => {
 });
 
 /**
+ * POST /runs
+ * Start a new migration run (RESTful endpoint for client)
+ */
+router.post("/runs", async (req, res) => {
+	try {
+		const { planId, dryRun = false, tables } = req.body;
+
+		if (!planId) {
+			return res.status(400).json({
+				success: false,
+				error: "planId is required"
+			});
+		}
+
+		// Load plan from database
+		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
+		await mysql.ensureMigrationTables(pool);
+
+		const planData = await runStore.getPlan(pool, planId);
+		if (!planData) {
+			await pool.end();
+			return res.status(404).json({
+				success: false,
+				error: "Plan not found"
+			});
+		}
+
+		// Get mapping ID from plan - check both plan_json and mapping_json columns
+		const rawPlanJson = planData.plan_json || planData.mapping_json || '{}';
+		const planJson = typeof rawPlanJson === 'string'
+			? JSON.parse(rawPlanJson)
+			: (rawPlanJson || {});
+
+		// Try multiple possible column names for mapping ID
+		const mappingId = planData.mapping_id || planData.mappingId || planJson.mappingId || planJson.id;
+
+		console.log('[Runs] Plan data:', {
+			planId,
+			hasMapping_id: !!planData.mapping_id,
+			hasMappingId: !!planData.mappingId,
+			jsonMappingId: planJson.mappingId,
+			jsonId: planJson.id,
+			resolvedMappingId: mappingId,
+			planDataKeys: Object.keys(planData),
+			planJsonKeys: Object.keys(planJson)
+		});
+
+		if (!mappingId) {
+			await pool.end();
+			return res.status(400).json({
+				success: false,
+				error: "Plan has no associated mapping"
+			});
+		}
+
+		// Get mapping
+		const mappingData = await runStore.getMappingProfile(pool, mappingId);
+		if (!mappingData) {
+			await pool.end();
+			return res.status(404).json({
+				success: false,
+				error: "Mapping not found"
+			});
+		}
+
+		const mappingJson = typeof mappingData.mapping_json === 'string'
+			? JSON.parse(mappingData.mapping_json || '{}')
+			: (mappingData.mapping_json || {});
+
+		const normalizePlanSteps = (plan) => {
+			const defaultBatchSize = plan?.config?.batchSize || 1000;
+			const defaults = {
+				mode: 'INSERT',
+				keyStrategy: 'preserve',
+				dedupeKeys: [],
+				onDuplicate: 'SKIP',
+				cleanBefore: false,
+				batchSize: defaultBatchSize
+			};
+
+			if (Array.isArray(plan)) {
+				return plan;
+			}
+
+			const tables = plan?.tables;
+			if (Array.isArray(tables)) {
+				return tables.map((entry) => {
+					if (typeof entry === 'string') {
+						return { table: entry, include: true, ...defaults };
+					}
+					if (entry && typeof entry === 'object') {
+						return {
+							include: entry.include !== false,
+							table: entry.table || entry.name || entry.targetTable || entry.target || entry.tableName,
+							mode: entry.mode || defaults.mode,
+							keyStrategy: entry.keyStrategy || defaults.keyStrategy,
+							dedupeKeys: entry.dedupeKeys || defaults.dedupeKeys,
+							onDuplicate: entry.onDuplicate || defaults.onDuplicate,
+							cleanBefore: entry.cleanBefore || defaults.cleanBefore,
+							batchSize: entry.batchSize || defaults.batchSize
+						};
+					}
+					return null;
+				}).filter(Boolean);
+			}
+
+			if (tables && typeof tables === 'object') {
+				return Object.entries(tables).map(([tableName, config]) => {
+					if (typeof config === 'string') {
+						return { table: config, include: true, ...defaults };
+					}
+					const resolvedTable = config?.targetTable || config?.target || tableName;
+					return {
+						table: resolvedTable,
+						include: config?.include !== false,
+						mode: config?.mode || defaults.mode,
+						keyStrategy: config?.keyStrategy || defaults.keyStrategy,
+						dedupeKeys: config?.dedupeKeys || defaults.dedupeKeys,
+						onDuplicate: config?.onDuplicate || defaults.onDuplicate,
+						cleanBefore: config?.cleanBefore || defaults.cleanBefore,
+						batchSize: config?.batchSize || defaults.batchSize
+					};
+				});
+			}
+
+			return [];
+		};
+
+		const normalizeMapping = (mapping) => {
+			if (!mapping || !mapping.tables) return mapping;
+			const tables = mapping.tables;
+			const needsConversion = Object.values(tables).some((config) => {
+				if (!config) return false;
+				if (config.targetTable) return true;
+				const sampleColumn = config.columns ? Object.values(config.columns)[0] : null;
+				return !!sampleColumn?.targetColumn;
+			});
+
+			if (!needsConversion) return mapping;
+
+			const converted = { ...mapping, tables: {} };
+			for (const [sourceTable, config] of Object.entries(tables)) {
+				const columns = {};
+				for (const [srcCol, field] of Object.entries(config?.columns || {})) {
+					columns[srcCol] = {
+						target: field?.targetColumn || field?.target || srcCol,
+						transform: field?.transform || null,
+						defaultValue: field?.defaultValue ?? field?.default ?? null,
+						lookup: field?.lookup || null
+					};
+				}
+				converted.tables[sourceTable] = {
+					target: config?.targetTable || config?.target || sourceTable,
+					columns,
+					mode: config?.mode,
+					keyStrategy: config?.keyStrategy
+				};
+			}
+			return converted;
+		};
+
+		const normalizedPlan = normalizePlanSteps(planJson);
+		const normalizedMapping = normalizeMapping(mappingJson);
+
+		await pool.end();
+
+		// Start migration
+		const { startMigration } = require("../../migrate/runner");
+		const result = await startMigration({
+			firebirdConfig: state.firebird,
+			mysqlConfig: state.mysql,
+			schemaName: state.schemaName,
+			plan: normalizedPlan,
+			mapping: normalizedMapping,
+			dryRun: dryRun,
+			batchSize: planJson.config?.batchSize || 1000,
+			fkChecks: true
+		});
+
+		res.status(201).json({
+			success: true,
+			run: {
+				id: result.runId,
+				planId: planId,
+				status: 'running',
+				dryRun: dryRun
+			},
+			message: dryRun ? "Dry run started" : "Migration started"
+		});
+	} catch (err) {
+		console.error('[Runs] POST /runs error:', err);
+		res.status(500).json({
+			success: false,
+			error: err.message
+		});
+	}
+});
+
+/**
  * GET /api/runs/:runId
  * Get detailed information about a specific run
  */
-router.get("/api/runs/:runId", async (req, res) => {
+router.get("/runs/:runId", async (req, res) => {
 	try {
 		const { runId } = req.params;
+
+		const buildPlanAdapter = (tableNames = [], mappingId = null) => ({
+			mappingId,
+			getIncludedTables: () => tableNames
+		});
 
 		// First check in-memory state (active run)
 		const runState = getRunState(runId);
 		if (runState) {
 			// Create a Run instance from the active state
-			const plan = state.plan ? Plan.fromJSON({ name: "Active Plan", tables: state.plan }) : null;
+			const planSteps = Array.isArray(state.plan) ? state.plan : [];
+			let includedTables = planSteps.filter(step => step?.include).map(step => step.table).filter(Boolean);
+			if (includedTables.length === 0) {
+				includedTables = (runState.tables || []).map(table => table.name).filter(Boolean);
+			}
+			const plan = buildPlanAdapter(includedTables, state.plan?.mappingId || null);
 			const run = new Run(runId, plan);
 
 			// Populate with current state data
@@ -137,7 +346,8 @@ router.get("/api/runs/:runId", async (req, res) => {
 		await pool.end();
 
 		// Reconstruct Run instance
-		const plan = runData.plan_id ? Plan.fromJSON({ name: "Stored Plan" }) : null;
+		const tableNames = (tables || []).map(table => table.table_name).filter(Boolean);
+		const plan = buildPlanAdapter(tableNames, runData.plan_id || null);
 		const run = new Run(runId, plan);
 		run.status = runData.status;
 		run.startedAt = runData.started_at;
@@ -177,15 +387,25 @@ router.get("/api/runs/:runId", async (req, res) => {
  * GET /api/runs/:runId/progress
  * Get real-time progress for an active run
  */
-router.get("/api/runs/:runId/progress", async (req, res) => {
+router.get("/runs/:runId/progress", async (req, res) => {
 	try {
 		const { runId } = req.params;
+		const numericRunId = Number(runId);
+		const runKey = Number.isNaN(numericRunId) ? runId : numericRunId;
 
 		// Check in-memory state first (active run)
-		const runState = getRunState(runId);
+		const runState = getRunState(runKey);
 		if (runState) {
-			const plan = state.plan ? Plan.fromJSON({ name: "Active Plan", tables: state.plan }) : null;
-			const run = new Run(runId, plan);
+			const planSteps = Array.isArray(state.plan) ? state.plan : [];
+			let includedTables = planSteps.filter(step => step?.include).map(step => step.table).filter(Boolean);
+			if (includedTables.length === 0) {
+				includedTables = (runState.tables || []).map(table => table.name).filter(Boolean);
+			}
+			const planAdapter = {
+				mappingId: state.plan?.mappingId || null,
+				getIncludedTables: () => includedTables
+			};
+			const run = new Run(runKey, planAdapter);
 
 			run.status = runState.status;
 			run.startedAt = runState.startedAt || new Date();
@@ -204,12 +424,14 @@ router.get("/api/runs/:runId/progress", async (req, res) => {
 
 			return res.json({
 				success: true,
-				runId: runId,
+				runId: runKey,
 				status: run.status,
 				progress: run.getProgress(),
+				percent: run.getProgress(),
 				estimatedSecondsRemaining: run.getEstimatedSecondsRemaining(),
-				tablesCompleted: run.getSuccessfulTables().length,
-				tablesTotal: run.getTotalTables(),
+				tables: runState.tables || [],
+				tablesCompleted: run.getCompletedTables().length,
+				tablesTotal: includedTables.length,
 				tablesFailed: run.getFailedTables().length
 			});
 		}
@@ -235,9 +457,10 @@ router.get("/api/runs/:runId/progress", async (req, res) => {
 
 		res.json({
 			success: true,
-			runId: runId,
+			runId: runKey,
 			status: runData.status,
 			progress: progress,
+			percent: progress,
 			tablesCompleted: runData.tables_completed || 0,
 			tablesTotal: runData.tables_total || 0,
 			tablesFailed: 0
@@ -254,7 +477,7 @@ router.get("/api/runs/:runId/progress", async (req, res) => {
  * GET /api/runs/:runId/tables
  * Get table-level results for a run
  */
-router.get("/api/runs/:runId/tables", async (req, res) => {
+router.get("/runs/:runId/tables", async (req, res) => {
 	try {
 		const { runId } = req.params;
 
@@ -296,7 +519,7 @@ router.get("/api/runs/:runId/tables", async (req, res) => {
  * GET /api/runs/:runId/summary
  * Get summary statistics for a completed run
  */
-router.get("/api/runs/:runId/summary", async (req, res) => {
+router.get("/runs/:runId/summary", async (req, res) => {
 	try {
 		const { runId } = req.params;
 
@@ -364,7 +587,7 @@ router.get("/api/runs/:runId/summary", async (req, res) => {
  * POST /api/runs/start
  * Start a new migration run
  */
-router.post("/api/runs/start", async (req, res) => {
+router.post("/runs/start", async (req, res) => {
 	try {
 		const { planId, mappingId, dryRun = false } = req.body;
 
@@ -426,17 +649,19 @@ router.post("/api/runs/start", async (req, res) => {
  * POST /api/runs/:runId/stop
  * Stop an active migration run
  */
-router.post("/api/runs/:runId/stop", async (req, res) => {
+router.post("/runs/:runId/stop", async (req, res) => {
 	try {
 		const { runId } = req.params;
+		const numericRunId = Number(runId);
+		const runKey = Number.isNaN(numericRunId) ? runId : numericRunId;
 
 		// Request abort using runner
 		const { requestAbort } = require("../../migrate/runner");
-		requestAbort(runId);
+		requestAbort(runKey);
 
 		res.json({
 			success: true,
-			message: "Stop requested for run " + runId
+			message: "Stop requested for run " + runKey
 		});
 	} catch (err) {
 		res.status(500).json({
@@ -450,7 +675,7 @@ router.post("/api/runs/:runId/stop", async (req, res) => {
  * POST /api/runs/:runId/retry
  * Retry failed tables in a migration run
  */
-router.post("/api/runs/:runId/retry", async (req, res) => {
+router.post("/runs/:runId/retry", async (req, res) => {
 	try {
 		const { runId } = req.params;
 
@@ -521,7 +746,7 @@ router.post("/api/runs/:runId/retry", async (req, res) => {
  * DELETE /api/runs/:runId
  * Delete a run record
  */
-router.delete("/api/runs/:runId", async (req, res) => {
+router.delete("/runs/:runId", async (req, res) => {
 	try {
 		const { runId } = req.params;
 

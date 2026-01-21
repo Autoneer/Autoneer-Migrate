@@ -43,6 +43,22 @@ async function getPlanTableMeta(pool) {
 }
 
 /**
+ * Safely parse a JSON field that may already be an object
+ * @param {string|object} raw - Raw value from database
+ * @param {object} fallback - Fallback value if parsing fails
+ * @returns {object}
+ */
+function safeParseJson(raw, fallback = {}) {
+	if (!raw) return fallback;
+	if (typeof raw === 'object') return raw;
+	try {
+		return JSON.parse(raw);
+	} catch {
+		return fallback;
+	}
+}
+
+/**
  * POST /plans
  * Create a new migration plan from a mapping
  * Body: { mappingId: string, name?: string }
@@ -75,7 +91,7 @@ router.post("/plans", async (req, res) => {
 			});
 		}
 
-		const mappingData = JSON.parse(profile.mapping_json);
+		const mappingData = safeParseJson(profile.mapping_json);
 		const mapping = Mapping.fromJSON(mappingData);
 
 		// Create plan from mapping
@@ -170,8 +186,10 @@ router.get("/plans/:id", async (req, res) => {
 		}
 
 		const planRow = rows[0];
-		const rawPlanJson = planRow[planJsonColumn] || '{}';
-		const planData = JSON.parse(rawPlanJson);
+		const rawPlanJson = planRow[planJsonColumn] || {};
+		const planData = typeof rawPlanJson === 'string'
+			? JSON.parse(rawPlanJson || '{}')
+			: rawPlanJson;
 		const plan = Plan.fromJSON(planData);
 
 		res.json({
@@ -225,7 +243,7 @@ router.put("/plans/:id", async (req, res) => {
 
 		const planRow = rows[0];
 		const rawPlanJson = planRow[planJsonColumn] || '{}';
-		const planData = JSON.parse(rawPlanJson);
+		const planData = safeParseJson(rawPlanJson);
 		const plan = Plan.fromJSON(planData);
 
 		// Update name if provided
@@ -234,9 +252,24 @@ router.put("/plans/:id", async (req, res) => {
 		}
 
 		// Update table configurations if provided
-		if (tables && typeof tables === "object") {
+		if (Array.isArray(tables)) {
+			const normalizedTables = tables.filter(Boolean);
+			const existingConfigs = {};
+			for (const tableName of plan.getIncludedTables()) {
+				existingConfigs[tableName] = plan.getTableConfig(tableName);
+			}
+			plan.tables = {};
+			for (const tableName of normalizedTables) {
+				const existing = existingConfigs[tableName];
+				if (existing) {
+					plan.addTable(tableName, existing);
+				} else {
+					plan.addTable(tableName, {});
+				}
+			}
+		} else if (tables && typeof tables === "object") {
 			for (const [tableName, config] of Object.entries(tables)) {
-				if (plan.hasTable(tableName)) {
+				if (plan.includesTable(tableName)) {
 					plan.updateTable(tableName, config);
 				} else {
 					plan.addTable(tableName, config);
@@ -355,7 +388,7 @@ router.post("/plans/:id/validate", async (req, res) => {
 
 		const planRow = planRows[0];
 		const rawPlanJson = planRow[planJsonColumn] || '{}';
-		const planData = JSON.parse(rawPlanJson);
+		const planData = safeParseJson(rawPlanJson);
 		const plan = Plan.fromJSON(planData);
 
 		// Load mapping
@@ -370,7 +403,7 @@ router.post("/plans/:id/validate", async (req, res) => {
 			});
 		}
 
-		const mappingData = JSON.parse(profile.mapping_json);
+		const mappingData = safeParseJson(profile.mapping_json);
 		const mapping = Mapping.fromJSON(mappingData);
 
 		// Discover schemas
@@ -459,7 +492,7 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 
 		const planRow = planRows[0];
 		const rawPlanJson = planRow[planJsonColumn] || '{}';
-		const planData = JSON.parse(rawPlanJson);
+		const planData = safeParseJson(rawPlanJson);
 		const plan = Plan.fromJSON(planData);
 
 		// Load mapping
@@ -474,29 +507,94 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 			});
 		}
 
-		const mappingData = JSON.parse(profile.mapping_json);
+		const mappingData = safeParseJson(profile.mapping_json);
 		const mapping = Mapping.fromJSON(mappingData);
 
 		// Discover schemas
 		const schema = new Schema();
 		await schema.discoverFirebird(state.firebird);
-		await schema.discoverMySQL(pool, state.schemaName);
+		await schema.discoverMySQL(state.mysql, state.schemaName);
 
 		await pool.end();
 
+		const runTableDryRun = async (targetTable) => {
+			const sourceTable = mapping.getSourceTable(targetTable);
+			if (!sourceTable) {
+				return {
+					success: false,
+					sampleRow: null,
+					transformedRow: null,
+					errors: [`No mapping found for target table: ${targetTable}`],
+					warnings: []
+				};
+			}
+
+			const fieldMaps = mapping.getFieldMaps(sourceTable);
+			if (!fieldMaps || fieldMaps.size === 0) {
+				return {
+					success: false,
+					sampleRow: null,
+					transformedRow: null,
+					errors: [`No field mapping found for source table: ${sourceTable}`],
+					warnings: []
+				};
+			}
+
+			const columns = Array.from(fieldMaps.keys());
+			let sampleRow = null;
+			try {
+				const rows = await firebird.fetchBatch(state.firebird, sourceTable, columns, 0, 1);
+				sampleRow = rows?.[0] || null;
+			} catch (err) {
+				return {
+					success: false,
+					sampleRow: null,
+					transformedRow: null,
+					errors: [`Failed to fetch sample row from ${sourceTable}: ${err.message}`],
+					warnings: []
+				};
+			}
+
+			if (!sampleRow) {
+				return {
+					success: true,
+					sampleRow: null,
+					transformedRow: null,
+					errors: [],
+					warnings: [`No rows found in source table ${sourceTable}`]
+				};
+			}
+
+			const dryRunResult = await PlanValidator.dryRun(sampleRow, mapping, sourceTable);
+			const transformedRow = {};
+			for (const [srcCol, field] of fieldMaps) {
+				const sourceValue = sampleRow[srcCol.toLowerCase()] ?? sampleRow[srcCol.toUpperCase()] ?? sampleRow[srcCol];
+				let value = sourceValue;
+				if (field.transform && value !== null && value !== undefined) {
+					try {
+						value = PlanValidator.applyTransform(field.transform, value);
+					} catch (err) {
+						// Leave value as-is; dryRunResult will include transform errors
+					}
+				}
+				if ((value === null || value === undefined) && field.defaultValue !== null && field.defaultValue !== undefined) {
+					value = field.defaultValue;
+				}
+				transformedRow[field.targetColumn] = value;
+			}
+
+			return {
+				success: dryRunResult.migratable,
+				sampleRow,
+				transformedRow,
+				errors: dryRunResult.issues || [],
+				warnings: []
+			};
+		};
+
 		// If tableName provided: run per-table dry run
 		if (tableName) {
-			const dryRunResult = await PlanValidator.dryRun(
-				plan,
-				mapping,
-				schema,
-				tableName,
-				{
-					firebird: state.firebird,
-					mysql: state.mysql,
-					schemaName: state.schemaName
-				}
-			);
+			const dryRunResult = await runTableDryRun(tableName);
 
 			return res.json({
 				success: true,
@@ -512,7 +610,9 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 		}
 
 		// Plan-level dry run across all tables
-		const tables = plan.tables || [];
+		const tables = typeof plan.getIncludedTables === 'function'
+			? plan.getIncludedTables()
+			: (Array.isArray(plan.tables) ? plan.tables : Object.keys(plan.tables || {}));
 		const perTableResults = [];
 		let totalEstimatedRows = 0;
 		let totalWarnings = 0;
@@ -520,17 +620,7 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 
 		for (const table of tables) {
 			try {
-				const result = await PlanValidator.dryRun(
-					plan,
-					mapping,
-					schema,
-					table,
-					{
-						firebird: state.firebird,
-						mysql: state.mysql,
-						schemaName: state.schemaName
-					}
-				);
+				const result = await runTableDryRun(table);
 
 				const estimatedRows = result.sampleRow ? 1000 : 0; // Default estimate
 				totalEstimatedRows += estimatedRows;

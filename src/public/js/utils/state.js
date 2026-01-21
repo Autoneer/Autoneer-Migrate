@@ -53,6 +53,65 @@ class WizardState {
 	}
 
 	/**
+	 * Normalize a plan object with defaults and mapping context
+	 * @param {Object} plan - Plan to normalize
+	 * @param {Object} mapping - Mapping object for defaults
+	 * @returns {{ plan: Object, changed: boolean, before: Object }}
+	 */
+	normalizePlan(plan, mapping) {
+		const DEFAULT_PLAN_CONFIG = {
+			batchSize: 1000,
+			continueOnError: false,
+			validateData: true
+		};
+
+		const before = JSON.parse(JSON.stringify(plan || {}));
+		const normalized = (plan && typeof plan === 'object') ? { ...plan } : {};
+
+		if (!Array.isArray(normalized.tables)) {
+			normalized.tables = [];
+		}
+
+		normalized.config = {
+			...DEFAULT_PLAN_CONFIG,
+			...(normalized.config || {})
+		};
+
+		if ((!normalized.tables || normalized.tables.length === 0) && mapping && mapping.tables) {
+			normalized.tables = Object.keys(mapping.tables || {});
+		}
+
+		if (!normalized.name || typeof normalized.name !== 'string' || normalized.name.trim() === '') {
+			const baseName = (mapping && mapping.name) ? mapping.name : 'Plan';
+			normalized.name = `${baseName} ${new Date().toLocaleDateString()}`;
+		}
+
+		if (!normalized.mappingId && mapping && mapping.id) {
+			normalized.mappingId = mapping.id;
+		}
+
+		const changed = JSON.stringify(before) !== JSON.stringify(normalized);
+		return { plan: normalized, changed, before };
+	}
+
+	/**
+	 * Normalize plan in state and persist if changes found
+	 * @param {Object} mappingOverride - Optional mapping for defaults
+	 * @returns {Object} Normalized plan
+	 */
+	normalizePlanInState(mappingOverride) {
+		const mapping = mappingOverride || this.state.mapping;
+		const { plan, changed, before } = this.normalizePlan(this.state.plan, mapping);
+		if (changed) {
+			this.state.plan = plan;
+			this.persistState('plan');
+			this.emit('change:plan', this.state.plan);
+			console.info('[WizardState] Normalized plan from storage', { before, after: plan });
+		}
+		return plan;
+	}
+
+	/**
 	 * Initialize state from localStorage
 	 */
 	initialize() {
@@ -71,6 +130,7 @@ class WizardState {
 			this.state.run.progress = progress.progress || 0;
 		}
 
+		this.normalizePlanInState(this.state.mapping);
 		this.emit('initialized', this.state);
 	}
 
@@ -205,8 +265,14 @@ class WizardState {
 				break;
 
 			case 3: // Plan
-				if (!this.state.plan.tables || this.state.plan.tables.length === 0) {
+				if (!this.state.plan?.name || this.state.plan.name.trim() === '') {
+					errors.push('Plan name required');
+				}
+				if (!Array.isArray(this.state.plan?.tables) || this.state.plan.tables.length === 0) {
 					errors.push('No tables selected for migration');
+				}
+				if (typeof this.state.plan?.config?.batchSize !== 'number' || Number.isNaN(this.state.plan.config.batchSize)) {
+					errors.push('Plan batch size required');
 				}
 				break;
 

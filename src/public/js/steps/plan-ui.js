@@ -23,29 +23,39 @@ class PlanUI {
 		// Get mapping from previous step
 		this.mapping = this.state.get('mapping');
 		if (!this.mapping || !this.mapping.tables) {
-			this.wizard.showError('Mapping not available. Please go back to Step 2.');
+			this.wizard.showError('Mapping not available. Go back to Step 2 to save a mapping profile, then return to Step 3.');
 			return;
 		}
 
 		// Try to load existing plan
-		this.plan = this.state.get('plan');
+		this.plan = this.state.get('plan') || {};
 
-		if (!this.plan || !this.plan.name) {
-			// Create new plan from mapping
-			this.plan = {
-				id: null,
-				name: `Plan ${new Date().toLocaleDateString()}`,
-				mappingId: this.mapping.id,
-				tables: Object.keys(this.mapping.tables),
-				config: {
-					batchSize: 1000,
-					continueOnError: false,
-					validateData: true
-				}
-			};
-		} else if (Array.isArray(this.plan.tables) && this.plan.tables.length === 0) {
-			// Repair empty plan tables from current mapping
-			this.plan.tables = Object.keys(this.mapping.tables);
+		const DEFAULT_PLAN_CONFIG = {
+			batchSize: 1000,
+			continueOnError: false,
+			validateData: true
+		};
+
+		this.plan.config = {
+			...DEFAULT_PLAN_CONFIG,
+			...(this.plan.config || {})
+		};
+
+		if (!Array.isArray(this.plan.tables)) {
+			this.plan.tables = [];
+		}
+
+		if (this.plan.tables.length === 0) {
+			this.plan.tables = Object.keys(this.mapping.tables || {});
+		}
+
+		if (!this.plan.name || this.plan.name.trim() === '') {
+			const baseName = this.mapping?.name ? this.mapping.name : 'Plan';
+			this.plan.name = `${baseName} ${new Date().toLocaleDateString()}`;
+		}
+
+		if (this.mapping?.id) {
+			this.plan.mappingId = this.mapping.id;
 		}
 
 		// Persist plan so wizard validation sees selected tables
@@ -62,6 +72,19 @@ class PlanUI {
 		const container = document.getElementById('plan-content');
 		if (!container) return;
 
+		const DEFAULT_PLAN_CONFIG = {
+			batchSize: 1000,
+			continueOnError: false,
+			validateData: true
+		};
+
+		const planName = this.plan?.name || '';
+		const config = {
+			...DEFAULT_PLAN_CONFIG,
+			...(this.plan?.config || {})
+		};
+		const tables = Array.isArray(this.plan?.tables) ? this.plan.tables : [];
+
 		container.innerHTML = `
       <div class="plan-builder">
         <h2>Create Migration Plan</h2>
@@ -72,7 +95,7 @@ class PlanUI {
           <div class="form-group">
             <label for="plan-name">Plan Name:</label>
             <input type="text" id="plan-name" class="form-control" 
-                   value="${this.plan.name}" 
+									 value="${planName}" 
                    placeholder="Enter plan name">
           </div>
           
@@ -80,7 +103,7 @@ class PlanUI {
             <div class="form-group">
               <label for="batch-size">Batch Size:</label>
               <input type="number" id="batch-size" class="form-control" 
-                     value="${this.plan.config.batchSize}" 
+										 value="${config.batchSize}" 
                      min="100" max="10000" step="100">
               <small>Number of rows to migrate per batch</small>
             </div>
@@ -88,7 +111,7 @@ class PlanUI {
             <div class="form-group">
               <label>
                 <input type="checkbox" id="continue-on-error" 
-                       ${this.plan.config.continueOnError ? 'checked' : ''}>
+					  ${config.continueOnError ? 'checked' : ''}>
                 Continue on Error
               </label>
               <small>Keep migrating other tables if one fails</small>
@@ -97,7 +120,7 @@ class PlanUI {
             <div class="form-group">
               <label>
                 <input type="checkbox" id="validate-data" 
-                       ${this.plan.config.validateData ? 'checked' : ''}>
+											 ${config.validateData ? 'checked' : ''}>
                 Validate Data
               </label>
               <small>Validate data types and constraints</small>
@@ -110,7 +133,7 @@ class PlanUI {
           <div class="form-group">
             <label for="plan-profile-name">Save as Profile:</label>
             <input type="text" id="plan-profile-name" class="form-control" 
-                   value="${this.plan.name || this.mapping?.name || ''}" 
+				     value="${planName || this.mapping?.name || ''}" 
                    placeholder="Enter profile name for this migration run">
             <small>This name will be used to save and track the migration run</small>
           </div>
@@ -129,7 +152,7 @@ class PlanUI {
               </tr>
             </thead>
             <tbody id="plan-table-list">
-              ${this.renderPlanTables()}
+							${this.renderPlanTables(tables)}
             </tbody>
           </table>
         </div>
@@ -160,9 +183,9 @@ class PlanUI {
 	/**
 	 * Render plan tables
 	 */
-	renderPlanTables() {
-		return this.plan.tables.map((tableName, index) => {
-			const tableConfig = this.mapping.tables[tableName];
+	renderPlanTables(tables) {
+		return tables.map((tableName, index) => {
+			const tableConfig = this.mapping?.tables?.[tableName] || {};
 			const fieldCount = Object.keys(tableConfig?.columns || {}).length;
 
 			return `
@@ -179,7 +202,7 @@ class PlanUI {
             </button>
             <button class="btn btn-sm btn-secondary" 
                     onclick="window.wizard.steps[2].component.moveDown(${index})"
-                    ${index === this.plan.tables.length - 1 ? 'disabled' : ''}>
+										${index === (tables.length - 1) ? 'disabled' : ''}>
               ↓
             </button>
             <button class="btn btn-sm btn-danger" 
@@ -196,6 +219,14 @@ class PlanUI {
 	 * Attach event listeners
 	 */
 	attachEventListeners() {
+		if (!this.plan.config) {
+			this.plan.config = {
+				batchSize: 1000,
+				continueOnError: false,
+				validateData: true
+			};
+		}
+
 		// Plan name
 		const planName = document.getElementById('plan-name');
 		if (planName) {
@@ -446,12 +477,13 @@ class PlanUI {
 		if (!summary) return;
 
 		const errors = [];
+		const tables = Array.isArray(this.plan?.tables) ? this.plan.tables : [];
 
 		if (!this.plan.name || this.plan.name.trim() === '') {
 			errors.push('Plan name is required');
 		}
 
-		if (this.plan.tables.length === 0) {
+		if (tables.length === 0) {
 			errors.push('At least one table must be selected');
 		}
 
@@ -481,12 +513,17 @@ class PlanUI {
 		this.wizard.clearMessages();
 
 		if (!this.plan.name || this.plan.name.trim() === '') {
-			this.wizard.showError('Plan name is required');
+			this.wizard.showError('Missing plan name. Stay on Step 3, enter a plan name, then save the plan.');
 			return false;
 		}
 
 		if (this.plan.tables.length === 0) {
-			this.wizard.showError('At least one table must be selected');
+			this.wizard.showError('No tables selected. Stay on Step 3, select at least one table, then save the plan.');
+			return false;
+		}
+
+		if (!this.mapping?.id) {
+			this.wizard.showError('Mapping profile missing. Go back to Step 2 to save the mapping, then return to Step 3.');
 			return false;
 		}
 
@@ -494,17 +531,27 @@ class PlanUI {
 		try {
 			this.wizard.showLoading('Saving migration plan...');
 
+			const fullPayload = {
+				name: this.plan.name,
+				mappingId: this.mapping.id,
+				tables: this.plan.tables || [],
+				config: this.plan.config || {
+					batchSize: 1000,
+					continueOnError: false,
+					validateData: true
+				}
+			};
+			this.plan.mappingId = this.mapping.id;
+
 			if (this.plan.id) {
-				await this.api.update(this.plan.id, this.plan);
+				await this.api.update(this.plan.id, fullPayload);
 			} else {
-				const created = await this.api.create({
-					name: this.plan.name,
-					mappingId: this.mapping?.id
-				});
+				const created = await this.api.create(fullPayload);
 				this.plan.id = created.id;
 			}
 
 			this.state.setPlan(this.plan);
+			this.wizard.renderNavigation();
 			this.wizard.hideLoading();
 
 			return true;

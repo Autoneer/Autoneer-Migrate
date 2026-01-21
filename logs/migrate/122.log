@@ -1,0 +1,6 @@
+{"timestamp":"2026-01-21T07:51:46.173Z","runId":122,"level":"info","phase":"run_start","dryRun":false,"batchSize":1000,"fkChecks":true,"tables":[{"table":"ACCCLASS","mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","clean":false}]}
+{"timestamp":"2026-01-21T07:51:46.254Z","runId":122,"level":"info","phase":"preflight","attempt":1,"status":"ok"}
+{"timestamp":"2026-01-21T07:51:46.254Z","runId":122,"level":"debug","phase":"preflight","durationMs":81}
+{"timestamp":"2026-01-21T07:51:46.255Z","runId":122,"level":"info","phase":"preflight","action":"nullability_validation","status":"start"}
+{"timestamp":"2026-01-21T07:51:46.255Z","runId":122,"level":"info","phase":"preflight","action":"nullability_validation","status":"passed"}
+{"timestamp":"2026-01-21T07:51:46.333Z","runId":122,"level":"info","phase":"preflight","action":"foreign_key_checks_disabled","original_state":true}
