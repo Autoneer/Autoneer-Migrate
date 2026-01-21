@@ -313,7 +313,6 @@ class MappingUI {
 	 * Toggle table selection
 	 */
 	toggleTableSelection(tableName, selected) {
-		console.log(`[MappingUI] Toggle table ${tableName}: ${selected}`);
 		if (selected) {
 			this.selectedTables.add(tableName);
 
@@ -324,11 +323,9 @@ class MappingUI {
 					columns: {}
 				};
 			}
-			console.log(`[MappingUI] Added table ${tableName}. Total tables:`, Object.keys(this.mapping.tables));
 		} else {
 			this.selectedTables.delete(tableName);
 			delete this.mapping.tables[tableName];
-			console.log(`[MappingUI] Removed table ${tableName}. Total tables:`, Object.keys(this.mapping.tables));
 		}
 
 		this.state.updateMapping(this.mapping);
@@ -573,7 +570,7 @@ class MappingUI {
 			container.style.display = 'none';
 		}
 		this.currentTable = null;
-		
+
 		// Persist mapping changes to state
 		this.state.updateMapping(this.mapping);
 		this.updateValidation();

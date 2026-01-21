@@ -71,9 +71,9 @@ app.use(healthRoutes);
 app.use(schemaRoutes); // New schema API routes
 
 // Phase 2: Refactored API routes
-app.use(mappingApiRoutes); // Mapping CRUD endpoints
-app.use(planApiRoutes);    // Plan management endpoints
-app.use(runApiRoutes);     // Run tracking endpoints
+app.use("/api", mappingApiRoutes); // Mapping CRUD endpoints
+app.use("/api", planApiRoutes);    // Plan management endpoints
+app.use("/api", runApiRoutes);     // Run tracking endpoints
 
 app.use((err, req, res, next) => {
 	const message = err?.message || "Unexpected error";

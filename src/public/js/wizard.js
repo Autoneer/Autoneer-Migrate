@@ -374,6 +374,22 @@ class MigrationWizard {
 			this.showWarning(message);
 		});
 
+		this.state.on('change:mapping', () => {
+			this.renderNavigation();
+		});
+
+		this.state.on('change:plan', () => {
+			this.renderNavigation();
+		});
+
+		this.state.on('change:schema', () => {
+			this.renderNavigation();
+		});
+
+		this.state.on('change:run', () => {
+			this.renderNavigation();
+		});
+
 		// Listen for keyboard shortcuts
 		document.addEventListener('keydown', (e) => {
 			// Ctrl/Cmd + Arrow Left/Right for navigation

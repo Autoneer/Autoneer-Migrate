@@ -198,13 +198,17 @@ class WizardState {
 				if (!this.state.mapping.name) {
 					errors.push('Mapping name required');
 				}
-			const tables = this.state.mapping.tables || {};
-			const tableCount = Object.keys(tables).length;
-			console.log(`[State] canProceed check - Step 2: ${tableCount} tables in mapping`, tables);
-			if (tableCount === 0) {
-				errors.push('No tables mapped');
-			}
-			break;
+				const tables = this.state.mapping.tables || {};
+				if (Object.keys(tables).length === 0) {
+					errors.push('No tables mapped');
+				}
+				break;
+
+			case 3: // Plan
+				if (!this.state.plan.tables || this.state.plan.tables.length === 0) {
+					errors.push('No tables selected for migration');
+				}
+				break;
 
 			case 4: // Run
 				if (!this.state.run.id) {
@@ -233,11 +237,10 @@ class WizardState {
 	 * @param {Object} updates - Partial mapping updates
 	 */
 	updateMapping(updates) {
-		console.log('[State] updateMapping called with:', updates);
 		// Deep merge for tables property to avoid losing table data
 		if (updates.tables) {
 			this.state.mapping.tables = {
-				...this.state.mapping.tables,
+				...(this.state.mapping.tables || {}),
 				...updates.tables
 			};
 			// Remove tables from updates to avoid shallow overwrite
@@ -246,8 +249,6 @@ class WizardState {
 		} else {
 			this.state.mapping = { ...this.state.mapping, ...updates };
 		}
-		const tableKeys = this.state.mapping.tables ? Object.keys(this.state.mapping.tables) : [];
-		console.log('[State] After updateMapping, tables:', tableKeys);
 		this.persistState('mapping');
 		this.emit('change:mapping', this.state.mapping);
 	}

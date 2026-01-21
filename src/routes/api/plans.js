@@ -43,11 +43,11 @@ async function getPlanTableMeta(pool) {
 }
 
 /**
- * POST /api/plans
+ * POST /plans
  * Create a new migration plan from a mapping
  * Body: { mappingId: string, name?: string }
  */
-router.post("/api/plans", async (req, res) => {
+router.post("/plans", async (req, res) => {
 	try {
 		const { mappingId, name, mapping: mappingPayload } = req.body;
 		const resolvedMappingId = mappingId ?? mappingPayload?.id;
@@ -80,6 +80,8 @@ router.post("/api/plans", async (req, res) => {
 
 		// Create plan from mapping
 		const plan = Plan.fromMapping(mapping, name);
+		const resolvedPlanName = (name || plan.name || mapping.name || mapping.mappingName || `Plan ${new Date().toLocaleDateString()}`).trim();
+		plan.name = resolvedPlanName;
 		const planJson = JSON.stringify(plan.toJSON());
 
 		if (!planJsonColumn) {
@@ -111,12 +113,13 @@ router.post("/api/plans", async (req, res) => {
 			insertValues.push(false);
 		}
 
-		const planResult = await pool.query(
+		const [planResult] = await pool.query(
 			`INSERT INTO migration_plans (${insertFields.join(', ')}) VALUES (${insertFields.map(() => '?').join(', ')})`,
 			insertValues
 		);
 
 		const planId = planResult.insertId;
+		console.log('[Plans] Created plan', { id: planId, name: plan.name, mappingId: resolvedMappingId });
 
 		await pool.end();
 
@@ -140,10 +143,10 @@ router.post("/api/plans", async (req, res) => {
 });
 
 /**
- * GET /api/plans/:id
+ * GET /plans/:id
  * Retrieve a specific migration plan
  */
-router.get("/api/plans/:id", async (req, res) => {
+router.get("/plans/:id", async (req, res) => {
 	try {
 		const { id } = req.params;
 
@@ -192,11 +195,11 @@ router.get("/api/plans/:id", async (req, res) => {
 });
 
 /**
- * PUT /api/plans/:id
+ * PUT /plans/:id
  * Update an existing migration plan
  * Body: { name?: string, tables?: object }
  */
-router.put("/api/plans/:id", async (req, res) => {
+router.put("/plans/:id", async (req, res) => {
 	try {
 		const { id } = req.params;
 		const { name, tables } = req.body;
@@ -282,10 +285,10 @@ router.put("/api/plans/:id", async (req, res) => {
 });
 
 /**
- * DELETE /api/plans/:id
+ * DELETE /plans/:id
  * Delete a migration plan
  */
-router.delete("/api/plans/:id", async (req, res) => {
+router.delete("/plans/:id", async (req, res) => {
 	try {
 		const { id } = req.params;
 
@@ -324,10 +327,10 @@ router.delete("/api/plans/:id", async (req, res) => {
 });
 
 /**
- * POST /api/plans/:id/validate
+ * POST /plans/:id/validate
  * Validate a migration plan
  */
-router.post("/api/plans/:id/validate", async (req, res) => {
+router.post("/plans/:id/validate", async (req, res) => {
 	try {
 		const { id } = req.params;
 
@@ -421,12 +424,12 @@ router.post("/api/plans/:id/validate", async (req, res) => {
 });
 
 /**
- * POST /api/plans/:id/dry-run
+ * POST /plans/:id/dry-run
  * Perform a dry-run simulation of the migration plan
  * If tableName is provided: runs per-table dry run
  * If tableName is missing: runs plan-level dry run across all tables
  */
-router.post("/api/plans/:id/dry-run", async (req, res) => {
+router.post("/plans/:id/dry-run", async (req, res) => {
 	try {
 		const { id } = req.params;
 		const { tableName } = req.body;
@@ -577,11 +580,11 @@ router.post("/api/plans/:id/dry-run", async (req, res) => {
 });
 
 /**
- * POST /api/plans/estimate
+ * POST /plans/estimate
  * Estimate migration time and resource requirements
  * Body: { planId: string }
  */
-router.post("/api/plans/estimate", async (req, res) => {
+router.post("/plans/estimate", async (req, res) => {
 	try {
 		const { planId } = req.body;
 
@@ -641,13 +644,15 @@ router.post("/api/plans/estimate", async (req, res) => {
 });
 
 /**
- * GET /api/plans
+ * GET /plans
  * List all migration plans
  */
-router.get("/api/plans", async (req, res) => {
+router.get("/plans", async (req, res) => {
 	try {
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		await mysql.ensureMigrationTables(pool);
+		const meta = await getPlanTableMeta(pool);
+		const { hasMappingId, hasIsValidated } = meta;
 
 		const selectFields = ['plan_id', 'created_at'];
 		if (hasMappingId) selectFields.push('mapping_id');

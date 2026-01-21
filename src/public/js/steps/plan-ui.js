@@ -301,6 +301,12 @@ class PlanUI {
 				this.plan.name = planNameInput.value.trim();
 			}
 
+			const resolvedPlanName = this.plan.name?.trim() || this.mapping?.name || `Plan ${new Date().toLocaleDateString()}`;
+			this.plan.name = resolvedPlanName;
+			if (planNameInput && planNameInput.value.trim() !== resolvedPlanName) {
+				planNameInput.value = resolvedPlanName;
+			}
+
 			console.log('[PlanUI] Running dry run with plan:', { name: this.plan.name, id: this.plan.id, mappingId: this.mapping.id });
 
 			// Create or update plan first to ensure it's persisted
