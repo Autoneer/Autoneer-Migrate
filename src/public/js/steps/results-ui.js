@@ -34,7 +34,15 @@ class ResultsUI {
 			this.run = await this.api.getById(runId);
 			this.summary = await this.api.getSummary(runId);
 
-			if (this.run.status === 'failed' || this.summary.errorCount > 0) {
+			console.log('Results loaded:', {
+				run: this.run,
+				summary: this.summary,
+				tableDetailsType: typeof this.summary?.tableDetails,
+				tableDetailsIsArray: Array.isArray(this.summary?.tableDetails),
+				tableDetailsLength: this.summary?.tableDetails?.length
+			});
+
+			if (String(this.run.status || '').toUpperCase() === 'FAILED' || this.summary.errorCount > 0) {
 				this.errors = await this.api.getErrors(runId);
 			}
 
@@ -43,6 +51,7 @@ class ResultsUI {
 
 		} catch (err) {
 			this.wizard.hideLoading();
+			console.error('Results initialization error:', err);
 			this.wizard.showError(`Failed to load results: ${err.message}`);
 		}
 	}
@@ -54,7 +63,7 @@ class ResultsUI {
 		const container = document.getElementById('results-content');
 		if (!container) return;
 
-		const isSuccess = this.run.status === 'completed' && this.summary.errorCount === 0;
+		const isSuccess = (String(this.run.status || '').toUpperCase() === 'SUCCESS' || String(this.run.status || '').toUpperCase() === 'COMPLETED') && this.summary.errorCount === 0;
 
 		container.innerHTML = `
       <div class="results-viewer">
@@ -147,13 +156,14 @@ class ResultsUI {
 	 * Render table results
 	 */
 	renderTableResults() {
-		const tableResults = this.summary.tables || [];
+		const tableResults = this.summary.tableDetails || [];
 
 		return tableResults.map(table => {
-			const statusClass = table.status === 'completed' ? 'success' :
-				table.status === 'failed' ? 'error' : 'warning';
-			const statusIcon = table.status === 'completed' ? '✓' :
-				table.status === 'failed' ? '✕' : '⚠';
+			const normalizedStatus = String(table.status || '').toUpperCase();
+			const statusClass = normalizedStatus === 'COMPLETED' || normalizedStatus === 'SUCCESS' ? 'success' :
+				normalizedStatus === 'FAILED' ? 'error' : 'warning';
+			const statusIcon = normalizedStatus === 'COMPLETED' || normalizedStatus === 'SUCCESS' ? '✓' :
+				normalizedStatus === 'FAILED' ? '✕' : '⚠';
 
 			return `
         <tr class="table-result-${statusClass}">

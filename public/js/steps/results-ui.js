@@ -34,6 +34,14 @@ class ResultsUI {
 			this.run = await this.api.getById(runId);
 			this.summary = await this.api.getSummary(runId);
 
+			console.log('Results loaded:', {
+				run: this.run,
+				summary: this.summary,
+				tableDetailsType: typeof this.summary?.tableDetails,
+				tableDetailsIsArray: Array.isArray(this.summary?.tableDetails),
+				tableDetailsLength: this.summary?.tableDetails?.length
+			});
+
 			if (this.run.status === 'failed' || this.summary.errorCount > 0) {
 				this.errors = await this.api.getErrors(runId);
 			}
@@ -43,6 +51,7 @@ class ResultsUI {
 
 		} catch (err) {
 			this.wizard.hideLoading();
+			console.error('Results initialization error:', err);
 			this.wizard.showError(`Failed to load results: ${err.message}`);
 		}
 	}
@@ -147,7 +156,7 @@ class ResultsUI {
 	 * Render table results
 	 */
 	renderTableResults() {
-		const tableResults = this.summary.tables || [];
+		const tableResults = this.summary.tableDetails || [];
 
 		return tableResults.map(table => {
 			const statusClass = table.status === 'completed' ? 'success' :

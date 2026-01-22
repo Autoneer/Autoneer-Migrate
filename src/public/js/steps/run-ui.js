@@ -51,7 +51,7 @@ class RunUI {
 		if (runId) {
 			try {
 				this.run = await this.api.getById(runId);
-				if (this.run.status === 'running') {
+				if (String(this.run.status || '').toUpperCase() === 'RUNNING') {
 					// Resume monitoring
 					this.startPolling();
 				}
@@ -70,17 +70,20 @@ class RunUI {
 		const container = document.getElementById('run-content');
 		if (!container) return;
 
+		// Normalize status to uppercase for comparison
+		const status = this.run ? String(this.run.status || '').toUpperCase() : '';
+
 		if (!this.run) {
 			// Not started yet
 			container.innerHTML = this.renderPreExecution();
-		} else if (this.run.status === 'running') {
+		} else if (status === 'RUNNING') {
 			// Currently running
 			container.innerHTML = this.renderRunning();
 			this.startPolling();
-		} else if (this.run.status === 'completed') {
+		} else if (status === 'SUCCESS' || status === 'COMPLETED') {
 			// Completed
 			container.innerHTML = this.renderCompleted();
-		} else if (this.run.status === 'failed') {
+		} else if (status === 'FAILED') {
 			// Failed
 			container.innerHTML = this.renderFailed();
 		}
@@ -395,7 +398,7 @@ class RunUI {
 				const percent = typeof progress === 'number'
 					? progress
 					: (progress?.percent ?? progress?.progress ?? 0);
-				const status = progress?.status || this.state.get('run.status') || 'running';
+				const status = progress?.status || this.state.get('run.status') || 'RUNNING';
 				const tables = progress?.tables || progress?.tableResults || [];
 
 				// Update state
@@ -406,8 +409,9 @@ class RunUI {
 				// Update UI
 				this.updateProgressDisplay({ percent, status, tables });
 
-				// Stop polling if complete
-				if (status === 'completed' || status === 'failed') {
+				// Stop polling if complete (handle both uppercase from backend and lowercase for compatibility)
+				const normalizedStatus = String(status || '').toUpperCase();
+				if (normalizedStatus === 'SUCCESS' || normalizedStatus === 'FAILED' || normalizedStatus === 'COMPLETED') {
 					this.stopPolling();
 					this.run = await this.api.getById(this.run.id);
 					this.render();
@@ -493,7 +497,7 @@ class RunUI {
 			return false;
 		}
 
-		if (this.run.status === 'running') {
+		if (String(this.run.status || '').toUpperCase() === 'RUNNING') {
 			this.wizard.showError('Migration is still in progress. Please wait for completion.');
 			return false;
 		}
@@ -505,7 +509,7 @@ class RunUI {
 	 * Handle previous button
 	 */
 	async onPrevious() {
-		if (this.run && this.run.status === 'running') {
+		if (this.run && String(this.run.status || '').toUpperCase() === 'RUNNING') {
 			this.wizard.showError('Cannot go back while migration is running');
 			return false;
 		}

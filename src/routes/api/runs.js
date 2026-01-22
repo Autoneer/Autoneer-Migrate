@@ -563,6 +563,9 @@ router.get("/runs/:runId/summary", async (req, res) => {
 
 		await pool.end();
 
+		// Ensure tables is always an array
+		const tableArray = Array.isArray(tables) ? tables : [];
+
 		// Calculate summary statistics
 		const summary = {
 			runId: runId,
@@ -573,20 +576,36 @@ router.get("/runs/:runId/summary", async (req, res) => {
 			durationMs: runData.completed_at && runData.started_at
 				? new Date(runData.completed_at) - new Date(runData.started_at)
 				: null,
+			tableCount: tableArray.length,
+			successCount: tableArray.filter(t => t.status === "COMPLETED").length,
+			failedCount: tableArray.filter(t => t.status === "FAILED").length,
+			errorCount: tableArray.filter(t => t.error_message).length,
 			tables: {
-				total: tables.length,
-				completed: tables.filter(t => t.status === "COMPLETED").length,
-				failed: tables.filter(t => t.status === "FAILED").length,
-				pending: tables.filter(t => t.status === "PENDING").length
+				total: tableArray.length,
+				completed: tableArray.filter(t => t.status === "COMPLETED").length,
+				failed: tableArray.filter(t => t.status === "FAILED").length,
+				pending: tableArray.filter(t => t.status === "PENDING").length
 			},
+			tableDetails: tableArray.map(t => ({
+				name: t.table_name,
+				status: t.status,
+				rowsMigrated: t.rows_migrated || 0,
+				rowsInserted: t.rows_inserted || 0,
+				rowsUpdated: t.rows_updated || 0,
+				rowsSkipped: t.rows_skipped_duplicates || 0,
+				rowsError: t.rows_error || 0,
+				duration: t.duration_ms || 0,
+				errorCount: t.rows_error || 0,
+				errorMessage: t.error_message || null
+			})),
 			rows: {
-				migrated: tables.reduce((sum, t) => sum + (t.rows_migrated || 0), 0),
-				inserted: tables.reduce((sum, t) => sum + (t.rows_inserted || 0), 0),
-				updated: tables.reduce((sum, t) => sum + (t.rows_updated || 0), 0),
-				skipped: tables.reduce((sum, t) => sum + (t.rows_skipped_duplicates || 0), 0),
-				errors: tables.reduce((sum, t) => sum + (t.rows_error || 0), 0)
+				migrated: tableArray.reduce((sum, t) => sum + (t.rows_migrated || 0), 0),
+				inserted: tableArray.reduce((sum, t) => sum + (t.rows_inserted || 0), 0),
+				updated: tableArray.reduce((sum, t) => sum + (t.rows_updated || 0), 0),
+				skipped: tableArray.reduce((sum, t) => sum + (t.rows_skipped_duplicates || 0), 0),
+				errors: tableArray.reduce((sum, t) => sum + (t.rows_error || 0), 0)
 			},
-			errors: tables
+			errors: tableArray
 				.filter(t => t.error_message)
 				.map(t => ({
 					tableName: t.table_name,

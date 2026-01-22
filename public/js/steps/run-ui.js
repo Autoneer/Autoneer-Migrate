@@ -52,17 +52,20 @@ class RunUI {
 		const container = document.getElementById('run-content');
 		if (!container) return;
 
+		// Normalize status to uppercase for comparison
+		const status = this.run ? String(this.run.status || '').toUpperCase() : '';
+
 		if (!this.run) {
 			// Not started yet
 			container.innerHTML = this.renderPreExecution();
-		} else if (this.run.status === 'running') {
+		} else if (status === 'RUNNING') {
 			// Currently running
 			container.innerHTML = this.renderRunning();
 			this.startPolling();
-		} else if (this.run.status === 'completed') {
+		} else if (status === 'SUCCESS' || status === 'COMPLETED') {
 			// Completed
 			container.innerHTML = this.renderCompleted();
-		} else if (this.run.status === 'failed') {
+		} else if (status === 'FAILED') {
 			// Failed
 			container.innerHTML = this.renderFailed();
 		}
@@ -355,8 +358,9 @@ class RunUI {
 				// Update UI
 				this.updateProgressDisplay(progress);
 
-				// Stop polling if complete
-				if (progress.status === 'completed' || progress.status === 'failed') {
+				// Stop polling if complete (handle both uppercase from backend and lowercase for compatibility)
+				const status = String(progress.status || '').toUpperCase();
+				if (status === 'SUCCESS' || status === 'FAILED' || status === 'COMPLETED') {
 					this.stopPolling();
 					this.run = await this.api.getById(this.run.id);
 					this.render();

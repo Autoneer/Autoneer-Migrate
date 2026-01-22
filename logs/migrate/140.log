@@ -1,0 +1,15 @@
+{"timestamp":"2026-01-22T07:29:01.089Z","runId":140,"level":"info","phase":"run_start","dryRun":false,"batchSize":1000,"fkChecks":true,"tables":[{"table":"ACC_CLASS","mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","clean":false}]}
+{"timestamp":"2026-01-22T07:29:01.161Z","runId":140,"level":"info","phase":"preflight","attempt":1,"status":"ok"}
+{"timestamp":"2026-01-22T07:29:01.162Z","runId":140,"level":"debug","phase":"preflight","durationMs":73}
+{"timestamp":"2026-01-22T07:29:01.162Z","runId":140,"level":"info","phase":"preflight","action":"nullability_validation","status":"start"}
+{"timestamp":"2026-01-22T07:29:01.165Z","runId":140,"level":"info","phase":"preflight","action":"nullability_validation","status":"passed"}
+{"timestamp":"2026-01-22T07:29:01.232Z","runId":140,"level":"info","phase":"preflight","action":"foreign_key_checks_disabled","original_state":true}
+{"timestamp":"2026-01-22T07:29:01.233Z","runId":140,"level":"debug","phase":"table_loop","action":"starting","includedCount":1,"mappingTableCount":1}
+{"timestamp":"2026-01-22T07:29:01.233Z","runId":140,"level":"debug","phase":"table_loop","action":"processing","tableName":"ACC_CLASS","mappingTableKeys":["ACCCLASS"]}
+{"timestamp":"2026-01-22T07:29:01.233Z","runId":140,"level":"debug","phase":"table_loop","action":"mapping_resolved","tableName":"ACC_CLASS","hasMappingEntry":true,"mappingTarget":"ACC_CLASS"}
+{"timestamp":"2026-01-22T07:29:01.309Z","runId":140,"level":"info","phase":"table_start","tableName":"ACC_CLASS","tableRunId":152,"mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[]}
+{"timestamp":"2026-01-22T07:29:01.390Z","runId":140,"level":"info","phase":"fetch","tableName":"ACC_CLASS","tableRunId":152,"sourceRows":7}
+{"timestamp":"2026-01-22T07:29:01.459Z","runId":140,"level":"debug","phase":"write","tableName":"ACC_CLASS","tableRunId":152,"status":"start","batchSize":7}
+{"timestamp":"2026-01-22T07:29:01.467Z","runId":140,"level":"debug","phase":"write","tableName":"ACC_CLASS","tableRunId":152,"status":"end","inserted":7,"updated":0,"skipped":0,"durationMs":8}
+{"timestamp":"2026-01-22T07:29:01.482Z","runId":140,"level":"info","phase":"table_finalize","tableName":"ACC_CLASS","tableRunId":152,"status":"success","inserted":7,"updated":0,"skipped":0,"errors":0,"durationMs":166}
+{"timestamp":"2026-01-22T07:29:01.487Z","runId":140,"level":"info","phase":"run_finalize","status":"success"}
