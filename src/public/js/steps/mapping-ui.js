@@ -399,9 +399,14 @@ class MappingUI {
 			onMount: (modalEl) => {
 				this.attachFieldEditorListeners(tableName, modalEl);
 			},
-			onConfirm: () => {
+			// onConfirm: () => {
+			// 	this.saveFieldEditorChanges(tableName);
+			// },
+			onConfirm: (overlayEl) => {
+				this.commitFieldEditorFromModal(tableName, overlayEl);
 				this.saveFieldEditorChanges(tableName);
 			},
+
 			onCancel: () => {
 				// Discard any unsaved changes
 				this.currentTable = null;
@@ -575,6 +580,35 @@ class MappingUI {
 			};
 			input.addEventListener('input', handleUpdate);
 			input.addEventListener('change', handleUpdate);
+		});
+	}
+
+	commitFieldEditorFromModal(tableName, overlayEl) {
+		if (!overlayEl) return;
+
+		// Omit checkboxes
+		overlayEl.querySelectorAll('.field-omit').forEach(cb => {
+			const sourceCol = cb.dataset.source;
+			this.setFieldMapping(tableName, sourceCol, 'omit', cb.checked === true);
+		});
+
+		// Target selects (even if disabled, we read current value)
+		overlayEl.querySelectorAll('.target-column').forEach(sel => {
+			const sourceCol = sel.dataset.source;
+			const val = sel.value || '';
+			this.setFieldMapping(tableName, sourceCol, 'targetColumn', val);
+		});
+
+		// Transform selects
+		overlayEl.querySelectorAll('.transform').forEach(sel => {
+			const sourceCol = sel.dataset.source;
+			this.setFieldMapping(tableName, sourceCol, 'transform', sel.value || null);
+		});
+
+		// Default values
+		overlayEl.querySelectorAll('.default-value').forEach(inp => {
+			const sourceCol = inp.dataset.source;
+			this.setFieldMapping(tableName, sourceCol, 'defaultValue', inp.value ?? null);
 		});
 	}
 

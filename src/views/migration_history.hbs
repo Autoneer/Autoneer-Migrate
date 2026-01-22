@@ -6,8 +6,17 @@
 			<button class="gh-theme-toggle" type="button" data-theme-toggle>Toggle theme</button>
 		</div>
 		{{#if error}}<div class="gh-banner gh-danger">{{error}}</div>{{/if}}
+		<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+			<form id="flushHistoryForm" method="post" action="/migration/history/flush"
+				data-confirm="Flush all migration history? This will permanently delete ALL migration runs, errors, plans and related data. This cannot be undone."
+				style="display:inline;">
+				<button class="gh-btn gh-danger gh-outline" type="submit">Flush History</button>
+			</form>
+			<span style="color:#666;font-size:0.9em;">Use with caution — permanently deletes all migration
+				history.</span>
+		</div>
 		<form id="batchDeleteForm" method="post" action="/migration/history/delete"
-			onsubmit="return confirm('Delete selected runs and all related records? This cannot be undone.')">
+			data-confirm="Delete selected runs and all related records? This cannot be undone.">
 			<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
 				<button class="gh-btn gh-danger" type="submit">Delete Selected</button>
 				<span style="color:#666;font-size:0.9em;">Select runs to delete using the checkboxes.</span>
@@ -38,7 +47,7 @@
 							<div class="gh-actions" style="display:flex;gap:8px;align-items:center;">
 								<a class="gh-btn" href="/migration/history/{{run_id}}">View</a>
 								<form method="post" action="/migration/history/{{run_id}}/delete"
-									onsubmit="return confirm('Delete run #{{run_id}} and all related records? This cannot be undone.')">
+									data-confirm="Delete run #{{run_id}} and all related records? This cannot be undone.">
 									<button class="gh-btn gh-btn-sm gh-danger" type="submit">Delete</button>
 								</form>
 								{{#if (eq status 'SUCCESS')}}
@@ -100,5 +109,38 @@
 				selectAll.checked = all.length > 0 && all.every(i => i.checked);
 			}));
 		}
+	})();
+</script>
+
+<script>
+	// Intercept forms with data-confirm and use Modal.confirm (flash modal) when available
+	(function () {
+		const forms = document.querySelectorAll('form[data-confirm]');
+		if (!forms || !forms.length) return;
+		forms.forEach(form => {
+			form.addEventListener('submit', async (e) => {
+				e.preventDefault();
+				const message = form.getAttribute('data-confirm') || 'Are you sure?';
+				try {
+					if (window.Modal && typeof Modal.confirm === 'function') {
+						const confirmed = await Modal.confirm({
+							title: 'Confirm',
+							message: message,
+							type: 'warning',
+							confirmText: 'Continue',
+							cancelText: 'Cancel'
+						});
+						if (confirmed) {
+							form.submit();
+						}
+					} else {
+						if (window.confirm(message)) form.submit();
+					}
+				} catch (err) {
+					// fallback to native confirm on error
+					if (window.confirm(message)) form.submit();
+				}
+			});
+		});
 	})();
 </script>

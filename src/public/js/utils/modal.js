@@ -163,8 +163,10 @@
 
 				// Event handlers
 				const onConfirmClick = () => {
+					// this._closeModal(overlay);
+					// if (onConfirm) onConfirm();
+					if (onConfirm) onConfirm(overlay);
 					this._closeModal(overlay);
-					if (onConfirm) onConfirm();
 					resolve(true);
 				};
 

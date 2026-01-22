@@ -135,4 +135,35 @@ router.post('/migration/history/delete', async (req, res) => {
 	}
 });
 
+// Flush all migration history - DANGEROUS: permanently deletes all migration tables
+router.post('/migration/history/flush', async (req, res) => {
+	try {
+		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
+		await mysql.ensureMigrationTables(pool);
+
+		// Execute in transaction to ensure consistency
+		await pool.query('START TRANSACTION');
+		try {
+			// Delete records from all migration-related tables
+			await pool.query('delete from migration_run_errors');
+			await pool.query('delete from migration_row_errors');
+			await pool.query('delete from migration_table_runs');
+			await pool.query('delete from migration_id_map');
+			await pool.query('delete from migration_runs');
+			await pool.query('delete from migration_runs_legacy');
+			await pool.query('delete from migration_plans');
+			await pool.query('delete from migration_mapping_profiles');
+			await pool.query('COMMIT');
+		} catch (e) {
+			try { await pool.query('ROLLBACK'); } catch (r) { /* ignore */ }
+			throw e;
+		}
+
+		await pool.end();
+		res.redirect('/migration/history');
+	} catch (err) {
+		res.render('migration_history', { runs: [], error: `Failed to flush migration history: ${err.message}`, currentStep: 'migration' });
+	}
+});
+
 module.exports = router;

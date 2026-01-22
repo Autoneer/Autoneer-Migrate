@@ -1,0 +1,18 @@
+{"timestamp":"2026-01-22T11:55:41.522Z","runId":157,"level":"info","phase":"run_start","dryRun":false,"batchSize":1000,"fkChecks":true,"tables":[{"table":"ACC_CLASS","mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","clean":false},{"table":"CUSTOMERS","mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","clean":false},{"table":"ACCOUNTLINKS","mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","clean":false},{"table":"ACC_DEPARTMENT","mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","clean":false}]}
+{"timestamp":"2026-01-22T11:55:41.614Z","runId":157,"level":"info","phase":"preflight","attempt":1,"status":"ok"}
+{"timestamp":"2026-01-22T11:55:41.615Z","runId":157,"level":"debug","phase":"preflight","durationMs":92}
+{"timestamp":"2026-01-22T11:55:41.615Z","runId":157,"level":"info","phase":"preflight","action":"nullability_validation","status":"start"}
+{"timestamp":"2026-01-22T11:55:41.627Z","runId":157,"level":"info","phase":"preflight","action":"nullability_validation","status":"passed"}
+{"timestamp":"2026-01-22T11:55:41.713Z","runId":157,"level":"info","phase":"preflight","action":"foreign_key_checks_disabled","original_state":true}
+{"timestamp":"2026-01-22T11:55:41.713Z","runId":157,"level":"debug","phase":"table_loop","action":"starting","includedCount":4,"mappingTableCount":3}
+{"timestamp":"2026-01-22T11:55:41.714Z","runId":157,"level":"debug","phase":"table_loop","action":"processing","tableName":"ACC_CLASS","mappingTableKeys":["ACCCLASS","ACCDEPARTMENT","CUSTOMER"]}
+{"timestamp":"2026-01-22T11:55:41.714Z","runId":157,"level":"debug","phase":"table_loop","action":"mapping_resolved","tableName":"ACC_CLASS","hasMappingEntry":true,"mappingTarget":"ACC_CLASS"}
+{"timestamp":"2026-01-22T11:55:41.803Z","runId":157,"level":"info","phase":"table_start","tableName":"ACC_CLASS","tableRunId":167,"mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[]}
+{"timestamp":"2026-01-22T11:55:41.897Z","runId":157,"level":"info","phase":"fetch","tableName":"ACC_CLASS","tableRunId":167,"sourceRows":7}
+{"timestamp":"2026-01-22T11:55:41.988Z","runId":157,"level":"debug","phase":"write","tableName":"ACC_CLASS","tableRunId":167,"status":"start","batchSize":7}
+{"timestamp":"2026-01-22T11:55:41.992Z","runId":157,"level":"debug","phase":"write","tableName":"ACC_CLASS","tableRunId":167,"status":"end","inserted":0,"updated":0,"skipped":7,"durationMs":4}
+{"timestamp":"2026-01-22T11:55:42.012Z","runId":157,"level":"info","phase":"table_finalize","tableName":"ACC_CLASS","tableRunId":167,"status":"success","inserted":0,"updated":0,"skipped":7,"errors":0,"durationMs":200}
+{"timestamp":"2026-01-22T11:55:42.013Z","runId":157,"level":"debug","phase":"table_loop","action":"processing","tableName":"CUSTOMERS","mappingTableKeys":["ACCCLASS","ACCDEPARTMENT","CUSTOMER"]}
+{"timestamp":"2026-01-22T11:55:42.014Z","runId":157,"level":"debug","phase":"table_loop","action":"mapping_resolved","tableName":"CUSTOMERS","hasMappingEntry":true,"mappingTarget":"CUSTOMERS"}
+{"timestamp":"2026-01-22T11:55:42.102Z","runId":157,"level":"error","phase":"table_finalize","tableName":"CUSTOMERS","tableRunId":168,"status":"failed","error":"MySQL missing columns: TEL_HOME","hint":"Update your mapping or target schema so columns match."}
+{"timestamp":"2026-01-22T11:55:42.108Z","runId":157,"level":"error","phase":"run_finalize","status":"failed","error":"MySQL missing columns: TEL_HOME"}

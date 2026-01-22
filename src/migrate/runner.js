@@ -264,7 +264,10 @@ async function validateColumnNullability(pool, tableName, columnMap) {
 		// Build target column map for quick lookup
 		const targetColumnMap = new Map();
 		for (const [sourceCol, rule] of Object.entries(columnMap || {})) {
-			targetColumnMap.set(rule.target.toLowerCase(), { sourceCol, rule });
+			const targetName = rule.target ?? rule.targetColumn ?? '';
+			if (targetName) {
+				targetColumnMap.set(targetName.toLowerCase(), { sourceCol, rule });
+			}
 		}
 
 		// Check each NOT NULL column
@@ -633,7 +636,8 @@ async function validateDataTypeMapping(pool, firebirdConfig, sourceTable, target
 		// Check each mapped column
 		for (const [sourceCol, rule] of Object.entries(columnMap || {})) {
 			const fbCol = fbColumnMap.get(sourceCol.toLowerCase());
-			const mysqlCol = mysqlColumnMap.get(rule.target.toLowerCase());
+			const targetName = rule.target ?? rule.targetColumn ?? '';
+			const mysqlCol = targetName ? mysqlColumnMap.get(targetName.toLowerCase()) : null;
 
 			if (!fbCol || !mysqlCol) continue;
 
@@ -645,7 +649,7 @@ async function validateDataTypeMapping(pool, firebirdConfig, sourceTable, target
 					table: targetTable,
 					sourceColumn: sourceCol,
 					sourceType: fbCol.type,
-					targetColumn: rule.target,
+					targetColumn: rule.target ?? rule.targetColumn,
 					targetType: mysqlCol.COLUMN_TYPE,
 					risk: compatibility.risk,
 					message: compatibility.message
@@ -666,7 +670,7 @@ async function validateDataTypeMapping(pool, firebirdConfig, sourceTable, target
 								table: targetTable,
 								sourceColumn: sourceCol,
 								sourceType: `${fbCol.type}(${fbCol.precision},${fbCol.scale})`,
-								targetColumn: rule.target,
+								targetColumn: rule.target ?? rule.targetColumn,
 								targetType: mysqlCol.COLUMN_TYPE,
 								risk: 'high',
 								message: `Precision mismatch: source has (${fbCol.precision},${fbCol.scale}) but target is (${myPrecision},${myScale})`
@@ -701,7 +705,8 @@ async function mapRow(row, columnMap, lookupFn) {
 				mappedValue = rule.default;
 			}
 		}
-		result[rule.target] = mappedValue;
+		const outKey = rule.target ?? rule.targetColumn;
+		if (outKey) result[outKey] = mappedValue;
 	}
 	return result;
 }
@@ -1042,7 +1047,7 @@ async function runMigrationInternal({
 				});
 				const targetColumns = Object.values(columnsMap || {})
 					.filter(c => !c.omit) // Exclude omitted columns
-					.map((c) => c.target);
+					.map((c) => c.target || c.targetColumn);
 				const dedupeKeys = Array.isArray(step.dedupeKeys)
 					? step.dedupeKeys
 					: step.dedupeKeys
@@ -1095,7 +1100,7 @@ async function runMigrationInternal({
 				if (dedupeKeys.length && !dryRun) {
 					const dedupeSourceCols = dedupeKeys
 						.map(targetCol => {
-							const entry = Object.entries(columnsMap || {}).find(([, rule]) => rule.target === targetCol);
+							const entry = Object.entries(columnsMap || {}).find(([, rule]) => (rule.target ?? rule.targetColumn) === targetCol);
 							return entry ? entry[0] : null;
 						})
 						.filter(Boolean);
@@ -1155,7 +1160,7 @@ async function runMigrationInternal({
 				const primaryKeys = await mysql.getPrimaryKeys(pool, tableName);
 				let targetColumnsForInsert = targetColumns;
 				const sourceIdColumn = primaryKeys.length
-					? Object.entries(columnsMap).find(([, rule]) => rule.target === primaryKeys[0])?.[0]
+					? Object.entries(columnsMap).find(([, rule]) => (rule.target ?? rule.targetColumn) === primaryKeys[0])?.[0]
 					: null;
 
 				let tempIndexName = null;

@@ -47,8 +47,11 @@ class SchemaValidator {
 				missingSource.push(srcCol);
 			}
 
-			if (!schema.getColumn('mysql', targetTable, field.targetColumn)) {
-				missingTarget.push(field.targetColumn);
+			// Skip omitted fields and null/empty targets when checking target existence
+			if (field && field.omit !== true) {
+				if (!schema.getColumn('mysql', targetTable, field.targetColumn)) {
+					missingTarget.push(field.targetColumn);
+				}
 			}
 		}
 
@@ -105,7 +108,9 @@ class SchemaValidator {
 			};
 		}
 
-		const mappedCols = new Set(Array.from(fieldMaps.keys()).map(c => c.toUpperCase()));
+		const mappedCols = new Set(
+			Array.from(fieldMaps.entries()).map(([k, fm]) => (fm && fm.omit !== true ? k.toUpperCase() : null)).filter(Boolean)
+		);
 		const unmappedColumns = Object.keys(srcTable.columns || {})
 			.filter(col => !mappedCols.has(col.toUpperCase()));
 
@@ -135,7 +140,9 @@ class SchemaValidator {
 
 		// Check for required columns that aren't being mapped
 		const mappedTargetCols = new Set(
-			Array.from(fieldMaps.values()).map(fm => fm.targetColumn.toUpperCase())
+			Array.from(fieldMaps.values())
+				.map(fm => (fm && fm.omit !== true && fm.targetColumn ? fm.targetColumn.toUpperCase() : null))
+				.filter(Boolean)
 		);
 
 		for (const [colName, colMeta] of Object.entries(tgtTable.columns)) {

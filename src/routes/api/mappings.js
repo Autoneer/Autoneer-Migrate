@@ -116,12 +116,25 @@ router.post("/mappings", async (req, res) => {
 					const fieldMaps = new Map();
 					for (const [sourceCol, colConfig] of Object.entries(columns)) {
 						const { FieldMap } = require("../../migrate/models");
-						const targetColumn = colConfig?.target || colConfig?.targetColumn || sourceCol;
+						const omit =
+							colConfig?.omit === true ||
+							colConfig?.omit === 'true' ||
+							colConfig?.omit === 1 ||
+							colConfig?.omit === '1';
+
+						const rawTarget = colConfig?.target ?? colConfig?.targetColumn;
+
+						const targetColumn = omit
+							? ((rawTarget === '' || rawTarget == null) ? null : rawTarget)
+							: ((rawTarget === '' || rawTarget == null) ? sourceCol : rawTarget);
+
 						const normalized = {
-							transform: colConfig?.transform,
-							defaultValue: colConfig?.defaultValue ?? colConfig?.default,
-							lookup: colConfig?.lookup
+							transform: colConfig?.transform ?? null,
+							defaultValue: colConfig?.defaultValue ?? colConfig?.default ?? null,
+							lookup: colConfig?.lookup ?? null,
+							omit
 						};
+
 						fieldMaps.set(sourceCol, new FieldMap(sourceCol, targetColumn, normalized));
 					}
 					mapping.addTable(sourceTable, targetTable, fieldMaps);
@@ -207,12 +220,25 @@ router.put("/mappings/:id", async (req, res) => {
 					const fieldMaps = new Map();
 					for (const [sourceCol, colConfig] of Object.entries(columns)) {
 						const { FieldMap } = require("../../migrate/models");
-						const targetColumn = colConfig?.target || colConfig?.targetColumn || sourceCol;
+						const omit =
+							colConfig?.omit === true ||
+							colConfig?.omit === 'true' ||
+							colConfig?.omit === 1 ||
+							colConfig?.omit === '1';
+
+						const rawTarget = colConfig?.target ?? colConfig?.targetColumn;
+
+						const targetColumn = omit
+							? ((rawTarget === '' || rawTarget == null) ? null : rawTarget)
+							: ((rawTarget === '' || rawTarget == null) ? sourceCol : rawTarget);
+
 						const normalized = {
-							transform: colConfig?.transform,
-							defaultValue: colConfig?.defaultValue ?? colConfig?.default,
-							lookup: colConfig?.lookup
+							transform: colConfig?.transform ?? null,
+							defaultValue: colConfig?.defaultValue ?? colConfig?.default ?? null,
+							lookup: colConfig?.lookup ?? null,
+							omit
 						};
+
 						fieldMaps.set(sourceCol, new FieldMap(sourceCol, targetColumn, normalized));
 					}
 					mapping.addTable(sourceTable, targetTable, fieldMaps);

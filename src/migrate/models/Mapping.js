@@ -138,7 +138,11 @@ class Mapping {
 			for (const [srcCol, fieldJSON] of Object.entries(config.columns)) {
 				const field = FieldMap.fromJSON(fieldJSON);
 				const srcMeta = schema.getColumn('firebird', sourceTable, srcCol);
-				const tgtMeta = schema.getColumn('mysql', config.targetTable, field.targetColumn);
+				// Avoid calling getColumn with null/undefined target names or for omitted fields
+				let tgtMeta = null;
+				if (field && field.omit !== true && field.targetColumn) {
+					tgtMeta = schema.getColumn('mysql', config.targetTable, field.targetColumn);
+				}
 
 				const fieldValidation = field.validate(srcMeta, tgtMeta);
 				tableIssue.warnings.push(...fieldValidation.warnings);
@@ -182,13 +186,25 @@ class Mapping {
 			const targetTable = config?.targetTable || config?.target || '';
 			const columns = {};
 			for (const [srcCol, colConfig] of Object.entries(config?.columns || {})) {
+				const omit =
+					colConfig?.omit === true ||
+					colConfig?.omit === 'true' ||
+					colConfig?.omit === 1 ||
+					colConfig?.omit === '1';
+
+				const rawTarget = colConfig?.targetColumn ?? colConfig?.target;
+
+				const targetColumn = omit
+					? ((rawTarget === '' || rawTarget == null) ? null : rawTarget)
+					: ((rawTarget === '' || rawTarget == null) ? srcCol : rawTarget);
+
 				columns[srcCol] = {
 					sourceColumn: colConfig.sourceColumn || srcCol,
-					targetColumn: colConfig.targetColumn || colConfig.target || srcCol,
-					transform: colConfig.transform,
-					defaultValue: colConfig.defaultValue ?? colConfig.default,
-					lookup: colConfig.lookup,
-					omit: !!colConfig.omit
+					targetColumn,
+					transform: colConfig.transform ?? null,
+					defaultValue: colConfig.defaultValue ?? colConfig.default ?? null,
+					lookup: colConfig.lookup ?? null,
+					omit
 				};
 			}
 			normalizedTables[sourceTable] = {

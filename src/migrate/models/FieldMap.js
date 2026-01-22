@@ -14,8 +14,10 @@ class FieldMap {
 	 * @param {boolean} [options.omit] - If true, this column will not be migrated
 	 */
 	constructor(sourceColumn, targetColumn, { transform = null, defaultValue = null, lookup = null, omit = false } = {}) {
-		this.sourceColumn = sourceColumn.toUpperCase();
-		this.targetColumn = targetColumn.toUpperCase();
+		// this.sourceColumn = sourceColumn.toUpperCase();
+		this.sourceColumn = (sourceColumn ?? '').toString().toUpperCase();
+		// this.targetColumn = targetColumn.toUpperCase();
+		this.targetColumn = (targetColumn == null || targetColumn === '') ? null : targetColumn.toString().toUpperCase();
 		this.transform = transform;
 		this.defaultValue = defaultValue;
 		this.lookup = lookup;
@@ -32,12 +34,27 @@ class FieldMap {
 		const warnings = [];
 		const errors = [];
 
+		// If omitted, skip target validation entirely
+		if (this.omit === true) {
+			// still warn if source col missing (optional; can also skip)
+			if (!sourceColumnMetadata) {
+				errors.push(`Source column ${this.sourceColumn} not found in schema`);
+				return { valid: false, warnings, errors };
+			}
+			return { valid: true, warnings, errors };
+		}
+
 		// Check if columns exist
 		if (!sourceColumnMetadata) {
 			errors.push(`Source column ${this.sourceColumn} not found in schema`);
 		}
 
-		if (!targetColumnMetadata) {
+		// if (!targetColumnMetadata) {
+		// 	errors.push(`Target column ${this.targetColumn} not found in schema`);
+		// }
+		if (!this.targetColumn) {
+			errors.push(`Target column not set for source ${this.sourceColumn}`);
+		} else if (!targetColumnMetadata) {
 			errors.push(`Target column ${this.targetColumn} not found in schema`);
 		}
 
