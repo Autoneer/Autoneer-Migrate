@@ -152,7 +152,7 @@ router.post("/runs", async (req, res) => {
 			firstTableSample: Object.entries(mappingJson.tables || {}).slice(0, 1).map(([k, v]) => ({ source: k, targetTable: v?.targetTable, target: v?.target, hasColumns: !!v?.columns }))
 		});
 
-		const normalizePlanSteps = (plan) => {
+		const normalizePlanSteps = (plan, mappingForLookup) => {
 			const defaultBatchSize = plan?.config?.batchSize || 1000;
 			const defaults = {
 				mode: 'INSERT',
@@ -194,7 +194,15 @@ router.post("/runs", async (req, res) => {
 					if (typeof config === 'string') {
 						return { table: config, include: true, ...defaults };
 					}
-					const resolvedTable = config?.targetTable || config?.target || tableName;
+					// CRITICAL FIX: When loading from DB, tableName is SOURCE table
+					// Look up target in mapping, fall back to config.target, then config.targetTable, then tableName
+					let resolvedTable = config?.target || config?.targetTable;
+					if (!resolvedTable && mappingForLookup?.tables?.[tableName]) {
+						resolvedTable = mappingForLookup.tables[tableName].target ||
+							mappingForLookup.tables[tableName].targetTable;
+					}
+					resolvedTable = resolvedTable || tableName;
+
 					return {
 						table: resolvedTable,
 						include: config?.include !== false,
@@ -244,8 +252,8 @@ router.post("/runs", async (req, res) => {
 			return converted;
 		};
 
-		const normalizedPlan = normalizePlanSteps(planJson);
 		const normalizedMapping = normalizeMapping(mappingJson);
+		const normalizedPlan = normalizePlanSteps(planJson, normalizedMapping);
 
 		console.log('[Runs] Normalized plan (first 2):', JSON.stringify(normalizedPlan.slice(0, 2), null, 2));
 		console.log('[Runs] Normalized mapping sample:', JSON.stringify({
