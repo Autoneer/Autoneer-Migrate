@@ -186,40 +186,87 @@ class PlanValidator {
 	 * @param {any} firstRow - First row from source
 	 * @param {Mapping} mapping
 	 * @param {string} sourceTable
-	 * @returns {Promise<{ migratable: bool, issues: string[] }>}
+	 * @param {string} targetTable
+	 * @param {Schema} schema - Optional schema for target metadata
+	 * @returns {Promise<{ migratable: bool, issues: string[], warnings: string[] }>}
 	 */
-	static async dryRun(firstRow, mapping, sourceTable) {
+	static async dryRun(firstRow, mapping, sourceTable, targetTable, schema) {
 		const issues = [];
+		const warnings = [];
 
 		const fieldMaps = mapping.getFieldMaps(sourceTable);
 		if (!fieldMaps) {
-			return { migratable: false, issues: ['No field mapping found'] };
+			return { migratable: false, issues: ['No field mapping found'], warnings: [] };
 		}
 
 		for (const [srcCol, field] of fieldMaps) {
-			const srcValue = firstRow[srcCol.toLowerCase()] ?? firstRow[srcCol.toUpperCase()];
-
-			// Check if null/undefined and no default
-			if ((srcValue === null || srcValue === undefined) && !field.defaultValue) {
-				issues.push(`Source column ${srcCol} is null and no default provided`);
+			// Skip omitted fields - they won't be in the INSERT/UPSERT payload
+			if (field.omit) {
+				continue;
 			}
 
-			// Try transform
+			const srcValue = firstRow[srcCol.toLowerCase()] ?? firstRow[srcCol.toUpperCase()];
+
+			// Get target column metadata if schema provided
+			const targetColumn = schema ? schema.getColumn('mysql', targetTable, field.targetColumn) : null;
+			const targetNullable = targetColumn?.nullable ?? true; // Default to nullable if unknown
+			const targetHasDefault = targetColumn?.defaultValue !== null && targetColumn?.defaultValue !== undefined;
+			const targetIsPrimaryKey = targetColumn?.isPrimaryKey ?? false;
+
+			// Determine the actual value that would be written (after transforms/defaults)
+			let valueToWrite = srcValue;
+
+			// Apply transform if present
 			if (field.transform && srcValue !== null && srcValue !== undefined) {
 				try {
-					const transformed = this.applyTransform(field.transform, srcValue);
-					if (transformed === null && !field.defaultValue) {
-						issues.push(`Transform ${field.transform} on ${srcCol} returned null, no default`);
-					}
+					valueToWrite = this.applyTransform(field.transform, srcValue);
 				} catch (err) {
 					issues.push(`Transform ${field.transform} failed on ${srcCol}: ${err.message}`);
+					continue;
+				}
+			}
+
+			// Apply mapping default if source/transform value is null
+			if ((valueToWrite === null || valueToWrite === undefined) && field.defaultValue !== null && field.defaultValue !== undefined) {
+				valueToWrite = field.defaultValue;
+			}
+
+			// Now validate the final payload value
+			if (valueToWrite === null || valueToWrite === undefined) {
+				// Target will receive NULL
+				if (targetNullable) {
+					// OK - target allows NULL
+					continue;
+				} else if (targetHasDefault) {
+					// WARNING: If NULL is explicitly inserted into NOT NULL column with default,
+					// MySQL will reject it. The default only applies if the column is OMITTED from INSERT.
+					if (field.defaultValue === null || field.defaultValue === undefined) {
+						issues.push(
+							`Target column ${field.targetColumn} is NOT NULL with a database default, ` +
+							`but source value is NULL and no mapping default provided. ` +
+							`Either provide a mapping default or omit this field to let the database default apply.`
+						);
+					}
+				} else if (targetIsPrimaryKey) {
+					// Primary key cannot be NULL
+					issues.push(
+						`Target primary key column ${field.targetColumn} would receive NULL. ` +
+						`Provide a mapping default or mark as omitted.`
+					);
+				} else {
+					// Target is NOT NULL and no default and no primary key
+					issues.push(
+						`Target column ${field.targetColumn} is NOT NULL but source value is NULL ` +
+						`and no default provided. Source: ${srcCol}, Target: ${field.targetColumn}`
+					);
 				}
 			}
 		}
 
 		return {
 			migratable: issues.length === 0,
-			issues
+			issues,
+			warnings
 		};
 	}
 

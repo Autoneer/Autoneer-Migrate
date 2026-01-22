@@ -108,6 +108,103 @@
 		}
 
 		/**
+		 * Show a custom modal with arbitrary HTML content
+		 * @param {Object} options
+		 * @param {string} options.title - Modal title
+		 * @param {string} options.contentHTML - HTML content for modal body
+		 * @param {string} [options.type='info'] - Type: 'info', 'success', 'warning', 'error'
+		 * @param {string} [options.size='lg'] - Size: 'lg', 'xl'
+		 * @param {string} [options.confirmText='Save'] - Confirm button text
+		 * @param {string} [options.cancelText='Cancel'] - Cancel button text
+		 * @param {Function} [options.onMount] - Callback after modal inserted into DOM: (modalEl) => void
+		 * @param {Function} [options.onConfirm] - Callback when confirm clicked: () => void
+		 * @param {Function} [options.onCancel] - Callback when cancel clicked: () => void
+		 * @returns {Promise<boolean>} - true if confirmed, false if cancelled
+		 */
+		static custom({ title = 'Dialog', contentHTML = '', type = 'info', size = 'lg', confirmText = 'Save', cancelText = 'Cancel', onMount, onConfirm, onCancel }) {
+			return new Promise((resolve) => {
+				const overlay = document.createElement('div');
+				overlay.className = 'modal-overlay';
+				overlay.setAttribute('role', 'dialog');
+				overlay.setAttribute('aria-modal', 'true');
+				overlay.setAttribute('aria-labelledby', 'modal-title');
+
+				const dialog = document.createElement('div');
+				dialog.className = `modal-dialog modal-${size} modal-${type}`;
+
+				const header = document.createElement('div');
+				header.className = 'modal-header';
+				const titleEl = document.createElement('h2');
+				titleEl.id = 'modal-title';
+				titleEl.textContent = title;
+				header.appendChild(titleEl);
+
+				const body = document.createElement('div');
+				body.className = 'modal-body modal-body-custom';
+				body.innerHTML = contentHTML;
+
+				const footer = document.createElement('div');
+				footer.className = 'modal-footer';
+
+				const cancelBtn = document.createElement('button');
+				cancelBtn.className = 'btn btn-secondary modal-cancel';
+				cancelBtn.textContent = cancelText;
+				footer.appendChild(cancelBtn);
+
+				const confirmBtn = document.createElement('button');
+				confirmBtn.className = `btn ${type === 'error' || type === 'warning' ? 'btn-danger' : 'btn-primary'} modal-confirm`;
+				confirmBtn.textContent = confirmText;
+				footer.appendChild(confirmBtn);
+
+				dialog.appendChild(header);
+				dialog.appendChild(body);
+				dialog.appendChild(footer);
+				overlay.appendChild(dialog);
+
+				// Event handlers
+				const onConfirmClick = () => {
+					this._closeModal(overlay);
+					if (onConfirm) onConfirm();
+					resolve(true);
+				};
+
+				const onCancelClick = () => {
+					this._closeModal(overlay);
+					if (onCancel) onCancel();
+					resolve(false);
+				};
+
+				confirmBtn.onclick = onConfirmClick;
+				cancelBtn.onclick = onCancelClick;
+
+				// Close on overlay click
+				overlay.onclick = (e) => {
+					if (e.target === overlay) {
+						onCancelClick();
+					}
+				};
+
+				// Keyboard shortcuts
+				overlay.onkeydown = (e) => {
+					if (e.key === 'Escape') {
+						e.preventDefault();
+						onCancelClick();
+					}
+				};
+
+				// Show and mount
+				this._showModal(overlay);
+
+				// Call onMount callback after modal is in DOM
+				if (onMount) {
+					setTimeout(() => {
+						onMount(overlay);
+					}, 0);
+				}
+			});
+		}
+
+		/**
 		 * Internal: Create modal DOM structure
 		 * @private
 		 */

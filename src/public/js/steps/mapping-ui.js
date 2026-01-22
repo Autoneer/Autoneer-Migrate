@@ -191,6 +191,7 @@ class MappingUI {
 			const status = this.getTableStatus(table.name);
 			const columnCount = table.columns ? Object.keys(table.columns).length : 0;
 			const availableTargets = this.getAvailableTargetTables(table.name);
+			const canEditOrAutoMap = isSelected && targetTable;
 
 			return `
         <tr class="table-row ${isSelected ? 'selected' : ''}" data-table="${table.name}">
@@ -216,10 +217,17 @@ class MappingUI {
               ${status.icon} ${status.label}
             </span>
           </td>
-          <td>
+          <td class="actions-cell">
+            <button class="btn btn-sm btn-secondary" 
+                    onclick="window.wizard.steps[1].component.autoMapFieldsForTable('${table.name}')"
+                    title="Auto-map fields by name matching"
+                    ${!canEditOrAutoMap ? 'disabled' : ''}>
+              🪄 Auto-Map
+            </button>
             <button class="btn btn-sm btn-secondary" 
                     onclick="window.wizard.steps[1].component.editTable('${table.name}')"
-                    ${!isSelected || !targetTable ? 'disabled' : ''}>
+                    title="Edit field mappings"
+                    ${!canEditOrAutoMap ? 'disabled' : ''}>
               ⚙ Edit Fields
             </button>
           </td>
@@ -363,29 +371,48 @@ class MappingUI {
 	}
 
 	/**
-	 * Edit field mappings for a table
+	 * Edit field mappings for a table in a modal
 	 */
 	editTable(tableName) {
 		this.currentTable = tableName;
 
-		const container = document.getElementById('field-editor-container');
-		const editor = document.getElementById('field-editor');
-		if (!container || !editor) return;
+		// Create draft of current mappings
+		const sourceTable = this.getTableByName('firebird', tableName);
+		const targetTableName = this.mapping.tables[tableName]?.targetTable;
+		const targetTable = this.getTableByName('mysql', targetTableName);
 
-		container.style.display = 'block';
-		editor.innerHTML = this.renderFieldEditor(tableName);
+		if (!sourceTable || !targetTable) {
+			this.wizard.showError('Source or target table not found');
+			return;
+		}
 
-		// Scroll to editor
-		container.scrollIntoView({ behavior: 'smooth' });
+		// Create modal with field editor
+		const contentHTML = this.renderFieldEditorHTML(tableName);
 
-		// Attach field editor event listeners
-		this.attachFieldEditorListeners(tableName);
+		Modal.custom({
+			title: `Edit Field Mappings: ${tableName} → ${targetTableName}`,
+			contentHTML,
+			type: 'info',
+			size: 'xl',
+			confirmText: 'Save',
+			cancelText: 'Cancel',
+			onMount: (modalEl) => {
+				this.attachFieldEditorListeners(tableName, modalEl);
+			},
+			onConfirm: () => {
+				this.saveFieldEditorChanges(tableName);
+			},
+			onCancel: () => {
+				// Discard any unsaved changes
+				this.currentTable = null;
+			}
+		});
 	}
 
 	/**
-	 * Render field mapping editor
+	 * Render field mapping editor HTML (for use in modal)
 	 */
-	renderFieldEditor(tableName) {
+	renderFieldEditorHTML(tableName) {
 		const sourceTable = this.getTableByName('firebird', tableName);
 		const targetTableName = this.mapping.tables[tableName]?.targetTable;
 		const targetTable = this.getTableByName('mysql', targetTableName);
@@ -394,50 +421,57 @@ class MappingUI {
 		if (!targetTable) return '<p>Please select a target table first</p>';
 
 		const tableConfig = this.mapping.tables[tableName];
-
 		const sourceColumns = this.getColumnsArray(sourceTable);
 		const targetColumns = this.getColumnsArray(targetTable);
 		const sortedTargetColumns = [...targetColumns].sort((a, b) =>
 			(a?.name || '').localeCompare(b?.name || '', undefined, { sensitivity: 'base' })
 		);
 
+		// Add action button inside modal
 		return `
-      <div class="field-editor">
-        <div class="field-editor-header">
-          <h3>Field Mapping: ${tableName} → ${targetTableName}</h3>
+      <div class="field-editor-modal">
+        <div class="field-editor-actions">
           <button class="btn btn-sm btn-secondary" 
-                  onclick="window.wizard.steps[1].component.autoMapFields('${tableName}')">
+                  onclick="window.wizard.steps[1].component.autoMapFieldsForTable('${tableName}', true)"
+                  title="Auto-map fields by name matching">
             🪄 Auto-Map Fields
           </button>
-          <button class="btn btn-sm btn-secondary" 
-                  onclick="window.wizard.steps[1].component.closeFieldEditor()">
-            ✕ Close
-          </button>
         </div>
-        
+
         <table class="field-mapping-table">
           <thead>
             <tr>
+              <th width="30">Omit</th>
               <th>Source Column</th>
-              <th>Type</th>
-              <th>→</th>
+              <th width="100">Type</th>
+              <th width="30">→</th>
               <th>Target Column</th>
-              <th>Transform</th>
-              <th>Default Value</th>
+              <th width="120">Transform</th>
+              <th width="140">Default Value</th>
             </tr>
           </thead>
           <tbody>
 			${sourceColumns.map(col => {
 			const mapping = tableConfig.columns[col.name] || {};
+			const targetColMetadata = sortedTargetColumns.find(tc => tc.name === mapping.targetColumn);
+			const isOmitted = mapping.omit === true;
+			const defaultValue = mapping.defaultValue ?? this.getTypeSafeDefault(targetColMetadata?.type);
+
 			return `
-                <tr>
+                <tr class="field-row ${isOmitted ? 'omitted' : ''}">
+                  <td class="checkbox-cell">
+                    <input type="checkbox" class="field-omit" 
+                           data-source="${col.name}"
+                           ${isOmitted ? 'checked' : ''}
+                           title="Omit this field from migration">
+                  </td>
                   <td><strong>${col.name}</strong></td>
                   <td><code>${col.type}</code></td>
                   <td>→</td>
                   <td>
-                    <select class="form-control target-column" data-source="${col.name}">
+                    <select class="form-control target-column" data-source="${col.name}" ${isOmitted ? 'disabled' : ''}>
                       <option value="">Select...</option>
-											${sortedTargetColumns.map(tCol => `
+										${sortedTargetColumns.map(tCol => `
                         <option value="${tCol.name}" 
                                 ${mapping.targetColumn === tCol.name ? 'selected' : ''}>
                           ${tCol.name} (${tCol.type})
@@ -446,7 +480,7 @@ class MappingUI {
                     </select>
                   </td>
                   <td>
-                    <select class="form-control transform" data-source="${col.name}">
+                    <select class="form-control transform" data-source="${col.name}" ${isOmitted ? 'disabled' : ''}>
                       <option value="">None</option>
                       <option value="trim" ${mapping.transform === 'trim' ? 'selected' : ''}>Trim</option>
                       <option value="toNumber" ${mapping.transform === 'toNumber' ? 'selected' : ''}>To Number</option>
@@ -458,9 +492,10 @@ class MappingUI {
                   </td>
                   <td>
                     <input type="text" class="form-control default-value" 
-                           placeholder="null" 
-                           value="${mapping.defaultValue || ''}"
-                           data-source="${col.name}">
+                           placeholder="${this.getTypeSafeDefault(targetColMetadata?.type)}" 
+                           value="${defaultValue || ''}"
+                           data-source="${col.name}"
+                           ${isOmitted ? 'disabled' : ''}>
                   </td>
                 </tr>
               `;
@@ -474,17 +509,58 @@ class MappingUI {
 	/**
 	 * Attach field editor event listeners
 	 */
-	attachFieldEditorListeners(tableName) {
+	attachFieldEditorListeners(tableName, modalEl) {
+		const container = modalEl || document.body;
+
+		// Omit checkboxes
+		container.querySelectorAll('.field-omit').forEach(checkbox => {
+			checkbox.addEventListener('change', (e) => {
+				const sourceCol = e.target.dataset.source;
+				const isOmitted = e.target.checked;
+
+				// Disable/enable target column and other fields when omitted
+				const row = e.target.closest('tr');
+				if (row) {
+					const targetSelect = row.querySelector('.target-column');
+					const transformSelect = row.querySelector('.transform');
+					const defaultInput = row.querySelector('.default-value');
+
+					if (isOmitted) {
+						row.classList.add('omitted');
+						if (targetSelect) targetSelect.disabled = true;
+						if (transformSelect) transformSelect.disabled = true;
+						if (defaultInput) defaultInput.disabled = true;
+					} else {
+						row.classList.remove('omitted');
+						if (targetSelect) targetSelect.disabled = false;
+						if (transformSelect) transformSelect.disabled = false;
+						if (defaultInput) defaultInput.disabled = false;
+					}
+				}
+
+				this.setFieldMapping(tableName, sourceCol, 'omit', isOmitted);
+			});
+		});
+
 		// Target column selects
-		document.querySelectorAll('.target-column').forEach(select => {
+		container.querySelectorAll('.target-column').forEach(select => {
 			select.addEventListener('change', (e) => {
 				const sourceCol = e.target.dataset.source;
 				this.setFieldMapping(tableName, sourceCol, 'targetColumn', e.target.value);
+
+				// Update default value placeholder when target column changes
+				const targetTable = this.getTableByName('mysql', this.mapping.tables[tableName].targetTable);
+				const targetColumns = this.getColumnsArray(targetTable);
+				const targetColMetadata = targetColumns.find(tc => tc.name === e.target.value);
+				const defaultInput = e.target.closest('tr').querySelector('.default-value');
+				if (defaultInput && !defaultInput.value) {
+					defaultInput.placeholder = this.getTypeSafeDefault(targetColMetadata?.type);
+				}
 			});
 		});
 
 		// Transform selects
-		document.querySelectorAll('.transform').forEach(select => {
+		container.querySelectorAll('.transform').forEach(select => {
 			select.addEventListener('change', (e) => {
 				const sourceCol = e.target.dataset.source;
 				this.setFieldMapping(tableName, sourceCol, 'transform', e.target.value);
@@ -492,7 +568,7 @@ class MappingUI {
 		});
 
 		// Default value inputs
-		document.querySelectorAll('.default-value').forEach(input => {
+		container.querySelectorAll('.default-value').forEach(input => {
 			const handleUpdate = (e) => {
 				const sourceCol = e.target.dataset.source;
 				this.setFieldMapping(tableName, sourceCol, 'defaultValue', e.target.value);
@@ -503,22 +579,68 @@ class MappingUI {
 	}
 
 	/**
-	 * Set field mapping property
+	 * Save field editor changes and update mapping
 	 */
-	setFieldMapping(tableName, sourceColumn, property, value) {
-		if (!this.mapping.tables[tableName].columns[sourceColumn]) {
-			this.mapping.tables[tableName].columns[sourceColumn] = {};
-		}
-
-		this.mapping.tables[tableName].columns[sourceColumn][property] = value;
+	saveFieldEditorChanges(tableName) {
+		// Changes were already applied via setFieldMapping during editing
+		// Just persist to state and update validation
 		this.state.updateMapping(this.mapping);
 		this.updateValidation();
+		this.render();
+		this.currentTable = null;
 	}
 
 	/**
-	 * Auto-map fields based on name matching
+	 * Get type-safe default value for a column type
 	 */
-	autoMapFields(tableName) {
+	getTypeSafeDefault(mysqlType) {
+		if (!mysqlType) return '';
+
+		const type = mysqlType.toUpperCase();
+
+		// Numeric types
+		if (['INT', 'INTEGER', 'BIGINT', 'SMALLINT', 'TINYINT', 'DECIMAL', 'NUMERIC', 'FLOAT', 'DOUBLE'].includes(type)) {
+			return '0';
+		}
+
+		// Boolean
+		if (['BOOLEAN', 'BOOL'].includes(type)) {
+			return '0';
+		}
+
+		// Date types
+		if (['DATE'].includes(type)) {
+			return '1970-01-01';
+		}
+
+		// DateTime/Timestamp types
+		if (['DATETIME', 'TIMESTAMP'].includes(type)) {
+			return '1970-01-01 00:00:00';
+		}
+
+		// Time type
+		if (['TIME'].includes(type)) {
+			return '00:00:00';
+		}
+
+		// String types
+		if (['CHAR', 'VARCHAR', 'TEXT', 'LONGTEXT', 'MEDIUMTEXT', 'TINYTEXT'].includes(type)) {
+			return '';
+		}
+
+		// JSON type
+		if (['JSON'].includes(type)) {
+			return '{}';
+		}
+
+		// Fallback to empty string
+		return '';
+	}
+
+	/**
+	 * Auto-map fields for a specific table
+	 */
+	autoMapFieldsForTable(tableName, silent = false) {
 		const sourceTable = this.getTableByName('firebird', tableName);
 		const targetTableName = this.mapping.tables[tableName]?.targetTable;
 		const targetTable = this.getTableByName('mysql', targetTableName);
@@ -545,33 +667,48 @@ class MappingUI {
 			}
 
 			if (targetCol) {
-				this.setFieldMapping(tableName, srcCol.name, 'targetColumn', targetCol.name);
+				// Initialize if needed
+				if (!this.mapping.tables[tableName].columns[srcCol.name]) {
+					this.mapping.tables[tableName].columns[srcCol.name] = {};
+				}
+
+				// Set target column and pre-fill default value if needed
+				this.mapping.tables[tableName].columns[srcCol.name].targetColumn = targetCol.name;
+
+				// Pre-fill default value if target is NOT NULL and no default exists
+				const currentDefault = this.mapping.tables[tableName].columns[srcCol.name].defaultValue;
+				if (!currentDefault && targetCol.nullable === false) {
+					this.mapping.tables[tableName].columns[srcCol.name].defaultValue = this.getTypeSafeDefault(targetCol.type);
+				}
+
 				mappedCount++;
 			}
 		});
 
-		// Re-render field editor
-		this.editTable(tableName);
+		this.state.updateMapping(this.mapping);
 
-		this.wizard.clearMessages();
-		if (mappedCount > 0) {
-			this.wizard.showWarning(`Auto-mapped ${mappedCount} fields. Please review and adjust as needed.`);
+		// If in modal, just update without showing message
+		if (silent) {
+			return;
+		}
+
+		// Re-render field editor if open
+		if (this.currentTable === tableName) {
+			this.editTable(tableName);
 		} else {
-			this.wizard.showWarning('No automatic matches found. Please map fields manually.');
+			this.render();
 		}
 	}
 
 	/**
-	 * Close field editor
+	 * Set field mapping property
 	 */
-	closeFieldEditor() {
-		const container = document.getElementById('field-editor-container');
-		if (container) {
-			container.style.display = 'none';
+	setFieldMapping(tableName, sourceColumn, property, value) {
+		if (!this.mapping.tables[tableName].columns[sourceColumn]) {
+			this.mapping.tables[tableName].columns[sourceColumn] = {};
 		}
-		this.currentTable = null;
 
-		// Persist mapping changes to state
+		this.mapping.tables[tableName].columns[sourceColumn][property] = value;
 		this.state.updateMapping(this.mapping);
 		this.updateValidation();
 	}

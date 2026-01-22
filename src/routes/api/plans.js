@@ -565,9 +565,14 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 				};
 			}
 
-			const dryRunResult = await PlanValidator.dryRun(sampleRow, mapping, sourceTable);
+			const dryRunResult = await PlanValidator.dryRun(sampleRow, mapping, sourceTable, targetTable, schema);
 			const transformedRow = {};
 			for (const [srcCol, field] of fieldMaps) {
+				// Skip omitted fields - they won't be in the actual migration
+				if (field.omit) {
+					continue;
+				}
+
 				const sourceValue = sampleRow[srcCol.toLowerCase()] ?? sampleRow[srcCol.toUpperCase()] ?? sampleRow[srcCol];
 				let value = sourceValue;
 				if (field.transform && value !== null && value !== undefined) {
@@ -588,7 +593,7 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 				sampleRow,
 				transformedRow,
 				errors: dryRunResult.issues || [],
-				warnings: []
+				warnings: dryRunResult.warnings || []
 			};
 		};
 
@@ -618,29 +623,55 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 		let totalWarnings = 0;
 		let totalErrors = 0;
 
-		for (const table of tables) {
-			try {
-				const result = await runTableDryRun(table);
+		// Attach to Firebird once and reuse for all count queries
+		let fbDb = null;
+		try {
+			fbDb = await firebird.attachWithRetry(state.firebird);
 
-				const estimatedRows = result.sampleRow ? 1000 : 0; // Default estimate
-				totalEstimatedRows += estimatedRows;
-				totalWarnings += (result.warnings || []).length;
-				totalErrors += (result.errors || []).length;
+			for (const table of tables) {
+				try {
+					const result = await runTableDryRun(table);
 
-				perTableResults.push({
-					tableName: table,
-					estimatedRows,
-					warnings: result.warnings || [],
-					errors: result.errors || []
-				});
-			} catch (err) {
-				perTableResults.push({
-					tableName: table,
-					estimatedRows: 0,
-					warnings: [],
-					errors: [`Failed to validate: ${err.message}`]
-				});
-				totalErrors++;
+					// Get actual row count from Firebird
+					let estimatedRows = 0;
+					try {
+						const sourceTable = mapping.getSourceTable(table);
+						if (sourceTable) {
+							estimatedRows = await firebird.countRowsWithDb(fbDb, sourceTable);
+						}
+					} catch (countErr) {
+						console.warn(`[Dry Run] Failed to count rows for ${table}:`, countErr.message);
+						estimatedRows = 0;
+					}
+
+					totalEstimatedRows += estimatedRows;
+					totalWarnings += (result.warnings || []).length;
+					totalErrors += (result.errors || []).length;
+
+					perTableResults.push({
+						tableName: table,
+						estimatedRows,
+						warnings: result.warnings || [],
+						errors: result.errors || []
+					});
+				} catch (err) {
+					perTableResults.push({
+						tableName: table,
+						estimatedRows: 0,
+						warnings: [],
+						errors: [`Failed to validate: ${err.message}`]
+					});
+					totalErrors++;
+				}
+			}
+		} finally {
+			// Detach Firebird connection
+			if (fbDb) {
+				try {
+					fbDb.detach();
+				} catch (err) {
+					console.warn('[Dry Run] Error detaching Firebird:', err.message);
+				}
 			}
 		}
 

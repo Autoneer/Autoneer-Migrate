@@ -11,13 +11,15 @@ class FieldMap {
 	 * @param {string} [options.transform] - Transform function name ('trim', 'toNumber', etc)
 	 * @param {*} [options.defaultValue] - Value if source is null
 	 * @param {Object} [options.lookup] - { table: 'ID_MAP', sourceId: 'src_id', targetId: 'tgt_id' }
+	 * @param {boolean} [options.omit] - If true, this column will not be migrated
 	 */
-	constructor(sourceColumn, targetColumn, { transform = null, defaultValue = null, lookup = null } = {}) {
+	constructor(sourceColumn, targetColumn, { transform = null, defaultValue = null, lookup = null, omit = false } = {}) {
 		this.sourceColumn = sourceColumn.toUpperCase();
 		this.targetColumn = targetColumn.toUpperCase();
 		this.transform = transform;
 		this.defaultValue = defaultValue;
 		this.lookup = lookup;
+		this.omit = omit || false;
 	}
 
 	/**
@@ -202,7 +204,8 @@ class FieldMap {
 			targetColumn: this.targetColumn,
 			transform: this.transform,
 			defaultValue: this.defaultValue,
-			lookup: this.lookup
+			lookup: this.lookup,
+			omit: this.omit
 		};
 	}
 
@@ -215,7 +218,8 @@ class FieldMap {
 		return new FieldMap(obj.sourceColumn, obj.targetColumn, {
 			transform: obj.transform,
 			defaultValue: obj.defaultValue,
-			lookup: obj.lookup
+			lookup: obj.lookup,
+			omit: obj.omit
 		});
 	}
 

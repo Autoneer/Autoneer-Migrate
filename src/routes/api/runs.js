@@ -239,7 +239,8 @@ router.post("/runs", async (req, res) => {
 						target: field?.targetColumn || field?.target || srcCol,
 						transform: field?.transform || null,
 						defaultValue: field?.defaultValue ?? field?.default ?? null,
-						lookup: field?.lookup || null
+						lookup: field?.lookup || null,
+						omit: field?.omit || false  // Preserve omit flag
 					};
 				}
 				converted.tables[sourceTable] = {

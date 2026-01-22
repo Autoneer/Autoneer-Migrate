@@ -59,7 +59,7 @@ class MigrationWizard {
 			console.log(`✓ Wizard initialized successfully at step ${this.currentStep}`);
 
 			// Show success notification
-			this.showSuccess('Wizard loaded successfully! Ready to start migration.');
+			// this.showSuccess('Wizard loaded successfully! Ready to start migration.');
 
 			// Add diagnostics hook for debugging
 			window.__wizardDebug = () => this.exportState();

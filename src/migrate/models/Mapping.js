@@ -74,6 +74,7 @@ class Mapping {
 
 	/**
 	 * Get all FieldMaps for a source table
+	 * Omitted fields are automatically excluded
 	 * @param {string} sourceTable
 	 * @returns {Map<string, FieldMap>|null}
 	 */
@@ -83,7 +84,11 @@ class Mapping {
 
 		const map = new Map();
 		for (const [src, fieldJSON] of Object.entries(config.columns || {})) {
-			map.set(src, FieldMap.fromJSON(fieldJSON));
+			const fieldMap = FieldMap.fromJSON(fieldJSON);
+			// Filter out omitted fields
+			if (!fieldMap.omit) {
+				map.set(src, fieldMap);
+			}
 		}
 		return map;
 	}
@@ -182,7 +187,8 @@ class Mapping {
 					targetColumn: colConfig.targetColumn || colConfig.target || srcCol,
 					transform: colConfig.transform,
 					defaultValue: colConfig.defaultValue ?? colConfig.default,
-					lookup: colConfig.lookup
+					lookup: colConfig.lookup,
+					omit: !!colConfig.omit
 				};
 			}
 			normalizedTables[sourceTable] = {

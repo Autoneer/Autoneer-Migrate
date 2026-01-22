@@ -751,6 +751,87 @@ table tr.selected {
 	text-align: right;
 }
 
+/* Modal sizing variants */
+.modal-dialog.modal-lg {
+	max-width: 800px;
+	width: 90%;
+}
+
+.modal-dialog.modal-xl {
+	max-width: 1000px;
+	width: 95%;
+}
+
+/* Custom content modal adjustments */
+.modal-body-custom {
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+
+.modal-body-custom table {
+	border-collapse: collapse;
+	width: 100%;
+	font-size: 12px;
+}
+
+.modal-body-custom table thead {
+	background: #f6f8fa;
+	border-bottom: 2px solid #d0d7de;
+	position: sticky;
+	top: 0;
+}
+
+.modal-body-custom table th {
+	padding: 10px;
+	text-align: left;
+	font-weight: 600;
+	color: #24292f;
+	white-space: nowrap;
+}
+
+.modal-body-custom table td {
+	padding: 8px 10px;
+	border-bottom: 1px solid #d0d7de;
+}
+
+.modal-body-custom table tbody {
+	max-height: 400px;
+	overflow-y: auto;
+	display: block;
+}
+
+.modal-body-custom table thead {
+	display: table;
+	width: 100%;
+}
+
+.modal-body-custom table tbody tr {
+	/* display: table; */
+	width: 100%;
+}
+
+.modal-body-custom table td input[type="checkbox"] {
+	cursor: pointer;
+	margin: 0;
+}
+
+.modal-body-custom table td input[type="text"],
+.modal-body-custom table td select {
+	width: 100%;
+	padding: 4px 6px;
+	font-size: 11px;
+	border: 1px solid #ced4da;
+	border-radius: 3px;
+}
+
+.modal-body-custom table td input[type="text"]:focus,
+.modal-body-custom table td select:focus {
+	outline: none;
+	border-color: var(--wizard-primary);
+	box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.1);
+}
+
 /* ============================================
    PROGRESS BARS (in tables)
    ============================================ */

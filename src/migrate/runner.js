@@ -1035,8 +1035,14 @@ async function runMigrationInternal({
 				const mappedSource = mappingEntry.sourceTable;
 				const sourceTable = resolveFirebirdSourceTable(mappedSource, firebirdTableMap);
 				const columnsMap = mappingEntry.columns;
-				const firebirdColumns = Object.keys(columnsMap || {});
-				const targetColumns = Object.values(columnsMap || {}).map((c) => c.target);
+				// Filter out omitted columns from validation
+				const firebirdColumns = Object.keys(columnsMap || {}).filter(srcCol => {
+					const colConfig = columnsMap[srcCol];
+					return !colConfig.omit; // Exclude omitted columns
+				});
+				const targetColumns = Object.values(columnsMap || {})
+					.filter(c => !c.omit) // Exclude omitted columns
+					.map((c) => c.target);
 				const dedupeKeys = Array.isArray(step.dedupeKeys)
 					? step.dedupeKeys
 					: step.dedupeKeys

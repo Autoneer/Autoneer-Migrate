@@ -236,6 +236,11 @@ class TableExecutor {
 		const transformedRow = {};
 
 		for (const [sourceCol, fieldMap] of fieldMaps) {
+			// Skip omitted fields
+			if (fieldMap.omit) {
+				continue;
+			}
+
 			let value = sourceRow[sourceCol.toLowerCase()] ?? sourceRow[sourceCol.toUpperCase()];
 
 			// Apply default if null
@@ -267,8 +272,9 @@ class TableExecutor {
 	async insertBatch(rows, fieldMaps) {
 		if (rows.length === 0) return 0;
 
-		// Get target columns
+		// Get target columns from field maps (excludes omitted fields)
 		const targetColumns = Array.from(fieldMaps.values())
+			.filter(fm => !fm.omit)  // Exclude omitted fields
 			.map(fm => fm.targetColumn.toLowerCase());
 
 		// Build INSERT query

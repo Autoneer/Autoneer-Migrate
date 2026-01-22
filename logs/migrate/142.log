@@ -1,0 +1,10 @@
+{"timestamp":"2026-01-22T07:49:09.780Z","runId":142,"level":"info","phase":"run_start","dryRun":false,"batchSize":500,"fkChecks":true,"tables":[]}
+{"timestamp":"2026-01-22T07:49:09.867Z","runId":142,"level":"info","phase":"progress","status":"client_connected"}
+{"timestamp":"2026-01-22T07:49:09.872Z","runId":142,"level":"info","phase":"preflight","attempt":1,"status":"ok"}
+{"timestamp":"2026-01-22T07:49:09.873Z","runId":142,"level":"debug","phase":"preflight","durationMs":93}
+{"timestamp":"2026-01-22T07:49:09.873Z","runId":142,"level":"info","phase":"preflight","action":"nullability_validation","status":"start"}
+{"timestamp":"2026-01-22T07:49:09.873Z","runId":142,"level":"info","phase":"preflight","action":"nullability_validation","status":"passed"}
+{"timestamp":"2026-01-22T07:49:10.794Z","runId":142,"level":"info","phase":"preflight","action":"foreign_key_checks_disabled","original_state":true}
+{"timestamp":"2026-01-22T07:49:10.794Z","runId":142,"level":"debug","phase":"table_loop","action":"starting","includedCount":0,"mappingTableCount":0}
+{"timestamp":"2026-01-22T07:49:10.801Z","runId":142,"level":"info","phase":"run_finalize","status":"success"}
+{"timestamp":"2026-01-22T07:49:10.806Z","runId":142,"level":"warn","phase":"progress","status":"client_disconnected"}
