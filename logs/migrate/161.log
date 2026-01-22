@@ -1,0 +1,13 @@
+{"timestamp":"2026-01-22T12:41:37.255Z","runId":161,"level":"info","phase":"run_start","dryRun":false,"batchSize":1000,"fkChecks":true,"tables":[{"table":"JOB_INFORMATION","mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","clean":false}]}
+{"timestamp":"2026-01-22T12:41:37.316Z","runId":161,"level":"info","phase":"preflight","attempt":1,"status":"ok"}
+{"timestamp":"2026-01-22T12:41:37.316Z","runId":161,"level":"debug","phase":"preflight","durationMs":60}
+{"timestamp":"2026-01-22T12:41:37.317Z","runId":161,"level":"info","phase":"preflight","action":"nullability_validation","status":"start"}
+{"timestamp":"2026-01-22T12:41:37.319Z","runId":161,"level":"info","phase":"preflight","action":"nullability_validation","status":"passed"}
+{"timestamp":"2026-01-22T12:41:37.386Z","runId":161,"level":"info","phase":"preflight","action":"foreign_key_checks_disabled","original_state":true}
+{"timestamp":"2026-01-22T12:41:37.386Z","runId":161,"level":"debug","phase":"table_loop","action":"starting","includedCount":1,"mappingTableCount":1}
+{"timestamp":"2026-01-22T12:41:37.386Z","runId":161,"level":"debug","phase":"table_loop","action":"processing","tableName":"JOB_INFORMATION","mappingTableKeys":["JOB_INFORMATION"]}
+{"timestamp":"2026-01-22T12:41:37.386Z","runId":161,"level":"debug","phase":"table_loop","action":"mapping_resolved","tableName":"JOB_INFORMATION","hasMappingEntry":true,"mappingTarget":"JOB_INFORMATION"}
+{"timestamp":"2026-01-22T12:41:37.456Z","runId":161,"level":"info","phase":"table_start","tableName":"JOB_INFORMATION","tableRunId":174,"mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[]}
+{"timestamp":"2026-01-22T12:41:37.533Z","runId":161,"level":"info","phase":"fetch","tableName":"JOB_INFORMATION","tableRunId":174,"sourceRows":0}
+{"timestamp":"2026-01-22T12:41:37.543Z","runId":161,"level":"info","phase":"table_finalize","tableName":"JOB_INFORMATION","tableRunId":174,"status":"success","inserted":0,"updated":0,"skipped":0,"errors":0,"durationMs":79}
+{"timestamp":"2026-01-22T12:41:37.547Z","runId":161,"level":"info","phase":"run_finalize","status":"success"}

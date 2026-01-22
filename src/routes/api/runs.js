@@ -329,7 +329,8 @@ router.get("/runs/:runId", async (req, res) => {
 
 			// Add table results
 			(runState.tables || []).forEach(table => {
-				if (table.status === "COMPLETED") {
+				const s = String(table.status || '').toUpperCase();
+				if (s === 'COMPLETED' || s === 'SUCCESS') {
 					const stats = {
 						inserted: table.inserted || table.rowsInserted || 0,
 						updated: table.updated || table.rowsUpdated || 0,
@@ -338,14 +339,20 @@ router.get("/runs/:runId", async (req, res) => {
 						durationMs: table.durationMs || table.duration_ms || 0
 					};
 					run.recordTableSuccess(table.name, stats);
-				} else if (table.status === "FAILED") {
+				} else if (s === 'FAILED') {
 					run.recordTableFailure(table.name, table.lastError?.message || "Unknown error", "Check logs");
 				}
 			});
 
+			const runJson = run.toJSON();
+			// UI-friendly aliases expected by client-side RunUI
+			runJson.tablesCompleted = run.getCompletedTables().length;
+			runJson.rowsMigrated = run.totals?.migrated ?? ((run.totals?.inserted || 0) + (run.totals?.updated || 0));
+			runJson.duration = run.finishedAt ? (new Date(run.finishedAt) - new Date(run.startedAt)) : (Date.now() - new Date(run.startedAt));
+
 			return res.json({
 				success: true,
-				run: run.toJSON(),
+				run: runJson,
 				progress: run.getProgress(),
 				estimatedSecondsRemaining: run.getEstimatedSecondsRemaining()
 			});
@@ -381,7 +388,8 @@ router.get("/runs/:runId", async (req, res) => {
 
 		// Add table results
 		(tables || []).forEach(table => {
-			if (table.status === "COMPLETED") {
+			const s = String(table.status || '').toUpperCase();
+			if (s === 'COMPLETED' || s === 'SUCCESS') {
 				const stats = {
 					inserted: table.rows_inserted || table.rowsInserted || 0,
 					updated: table.rows_updated || table.rowsUpdated || 0,
@@ -390,14 +398,19 @@ router.get("/runs/:runId", async (req, res) => {
 					durationMs: table.duration_ms || 0
 				};
 				run.recordTableSuccess(table.table_name, stats);
-			} else if (table.status === "FAILED") {
+			} else if (s === 'FAILED') {
 				run.recordTableFailure(table.table_name, table.error_message || "Unknown error", "");
 			}
 		});
 
+		const runJson = run.toJSON();
+		runJson.tablesCompleted = run.getCompletedTables().length;
+		runJson.rowsMigrated = run.totals?.migrated ?? ((run.totals?.inserted || 0) + (run.totals?.updated || 0));
+		runJson.duration = run.finishedAt ? (new Date(run.finishedAt) - new Date(run.startedAt)) : (Date.now() - new Date(run.startedAt));
+
 		res.json({
 			success: true,
-			run: run.toJSON(),
+			run: runJson,
 			progress: run.getProgress(),
 			estimatedSecondsRemaining: run.getEstimatedSecondsRemaining()
 		});
