@@ -330,13 +330,14 @@ router.get("/runs/:runId", async (req, res) => {
 			// Add table results
 			(runState.tables || []).forEach(table => {
 				if (table.status === "COMPLETED") {
-					run.recordTableSuccess(table.name, {
-						rowsMigrated: table.migrated,
-						rowsInserted: table.inserted || 0,
-						rowsUpdated: table.updated || 0,
-						rowsSkipped: table.skippedDuplicates || 0,
-						durationMs: table.durationMs || 0
-					});
+					const stats = {
+						inserted: table.inserted || table.rowsInserted || 0,
+						updated: table.updated || table.rowsUpdated || 0,
+						skipped: table.skippedDuplicates || table.rowsSkipped || 0,
+						errors: table.rowsError || table.rows_error || 0,
+						durationMs: table.durationMs || table.duration_ms || 0
+					};
+					run.recordTableSuccess(table.name, stats);
 				} else if (table.status === "FAILED") {
 					run.recordTableFailure(table.name, table.lastError?.message || "Unknown error", "Check logs");
 				}
@@ -381,13 +382,14 @@ router.get("/runs/:runId", async (req, res) => {
 		// Add table results
 		(tables || []).forEach(table => {
 			if (table.status === "COMPLETED") {
-				run.recordTableSuccess(table.table_name, {
-					rowsMigrated: table.rows_migrated || 0,
-					rowsInserted: table.rows_inserted || 0,
-					rowsUpdated: table.rows_updated || 0,
-					rowsSkipped: table.rows_skipped_duplicates || 0,
-					durationMs: 0
-				});
+				const stats = {
+					inserted: table.rows_inserted || table.rowsInserted || 0,
+					updated: table.rows_updated || table.rowsUpdated || 0,
+					skipped: table.rows_skipped_duplicates || table.rowsSkipped || 0,
+					errors: table.rows_error || table.rowsError || 0,
+					durationMs: table.duration_ms || 0
+				};
+				run.recordTableSuccess(table.table_name, stats);
 			} else if (table.status === "FAILED") {
 				run.recordTableFailure(table.table_name, table.error_message || "Unknown error", "");
 			}
@@ -436,13 +438,14 @@ router.get("/runs/:runId/progress", async (req, res) => {
 
 			(runState.tables || []).forEach(table => {
 				if (table.status === "COMPLETED") {
-					run.recordTableSuccess(table.name, {
-						rowsMigrated: table.migrated,
-						rowsInserted: table.inserted || 0,
-						rowsUpdated: table.updated || 0,
-						rowsSkipped: table.skippedDuplicates || 0,
-						durationMs: table.durationMs || 0
-					});
+					const stats = {
+						inserted: table.inserted || table.rowsInserted || 0,
+						updated: table.updated || table.rowsUpdated || 0,
+						skipped: table.skippedDuplicates || table.rowsSkipped || 0,
+						errors: table.rowsError || table.rows_error || 0,
+						durationMs: table.durationMs || table.duration_ms || 0
+					};
+					run.recordTableSuccess(table.name, stats);
 				}
 			});
 
@@ -613,6 +616,14 @@ router.get("/runs/:runId/summary", async (req, res) => {
 					message: t.error_message
 				}))
 		};
+
+		// Backwards-compatible aliases expected by frontend
+		summary.totalTables = summary.tableCount;
+		summary.tablesMigrated = summary.successCount;
+		summary.rowsMigrated = summary.rows?.migrated ?? 0;
+		summary.totalRows = summary.rows?.migrated ?? 0;
+		summary.errors = summary.rows?.errors ?? summary.errorCount ?? 0;
+		summary.duration = summary.durationMs;
 
 		res.json({
 			success: true,
