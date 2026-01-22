@@ -581,14 +581,20 @@ router.get("/runs/:runId/summary", async (req, res) => {
 				? new Date(runData.completed_at) - new Date(runData.started_at)
 				: null,
 			tableCount: tableArray.length,
-			successCount: tableArray.filter(t => t.status === "COMPLETED").length,
-			failedCount: tableArray.filter(t => t.status === "FAILED").length,
+			successCount: tableArray.filter(t => {
+				const s = String(t.status || '').toUpperCase();
+				return s === 'COMPLETED' || s === 'SUCCESS';
+			}).length,
+			failedCount: tableArray.filter(t => String(t.status || '').toUpperCase() === 'FAILED').length,
 			errorCount: tableArray.filter(t => t.error_message).length,
 			tables: {
 				total: tableArray.length,
-				completed: tableArray.filter(t => t.status === "COMPLETED").length,
-				failed: tableArray.filter(t => t.status === "FAILED").length,
-				pending: tableArray.filter(t => t.status === "PENDING").length
+				completed: tableArray.filter(t => {
+					const s = String(t.status || '').toUpperCase();
+					return s === 'COMPLETED' || s === 'SUCCESS';
+				}).length,
+				failed: tableArray.filter(t => String(t.status || '').toUpperCase() === 'FAILED').length,
+				pending: tableArray.filter(t => String(t.status || '').toUpperCase() === 'PENDING').length
 			},
 			tableDetails: tableArray.map(t => ({
 				name: t.table_name,
