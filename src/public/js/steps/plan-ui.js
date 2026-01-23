@@ -88,55 +88,61 @@ class PlanUI {
 		container.innerHTML = `
       <div class="plan-builder">
         <h2>Create Migration Plan</h2>
-        <p>Review and configure the migration execution plan</p>
+
         
         <!-- Plan Settings -->
         <div class="plan-settings">
-          <div class="form-group">
-            <label for="plan-name">Plan Name:</label>
-            <input type="text" id="plan-name" class="form-control" 
+					<div class="form-group" style="display:flex;flex-direction:column;">
+						<div style="display:flex;align-items:center;gap:0.5rem;">
+							<label for="plan-name" style="margin:0;white-space:nowrap;">Plan Name:</label>
+							<input type="text" id="plan-name" class="form-control" 
 									 value="${planName}" 
-                   placeholder="Enter plan name">
-          </div>
+									 placeholder="Enter plan name" style="flex:1;min-width:160px;">
+						</div>
+					</div>
           
-          <div class="form-row">
-            <div class="form-group">
-              <label for="batch-size">Batch Size:</label>
-              <input type="number" id="batch-size" class="form-control" 
-										 value="${config.batchSize}" 
-                     min="100" max="10000" step="100">
-              <small>Number of rows to migrate per batch</small>
-            </div>
+					<div class="form-row" style="display:flex;gap:1rem;flex-wrap:wrap;">
+						<div class="form-group" style="flex:1;min-width:220px;display:flex;flex-direction:column;">
+							<div style="display:flex;align-items:center;gap:0.5rem;">
+								<label for="batch-size" style="margin:0;white-space:nowrap;">Batch Size:</label>
+								<input type="number" id="batch-size" class="form-control" 
+																					 value="${config.batchSize}" 
+											 min="100" max="10000" step="100" style="flex:1;min-width:80px;">
+							</div>
+							<small style="margin-top:0.4rem;">Number of rows to migrate per batch</small>
+						</div>
             
-            <div class="form-group">
-              <label>
-                <input type="checkbox" id="continue-on-error" 
-					  ${config.continueOnError ? 'checked' : ''}>
-                Continue on Error
-              </label>
-              <small>Keep migrating other tables if one fails</small>
-            </div>
+						<div class="form-group" style="flex:1;min-width:220px;display:flex;flex-direction:column;">
+							<label style="display:inline-flex;align-items:center;">
+								<input type="checkbox" id="continue-on-error" 
+											${config.continueOnError ? 'checked' : ''} style="margin-right:0.5rem;">
+								Continue on Error
+							</label>
+							<small style="margin-top:0.4rem;">Keep migrating other tables if one fails</small>
+						</div>
             
-            <div class="form-group">
-              <label>
-                <input type="checkbox" id="validate-data" 
-											 ${config.validateData ? 'checked' : ''}>
-                Validate Data
-              </label>
-              <small>Validate data types and constraints</small>
-            </div>
-          </div>
+						<div class="form-group" style="flex:1;min-width:220px;display:flex;flex-direction:column;">
+							<label style="display:inline-flex;align-items:center;">
+								<input type="checkbox" id="validate-data" 
+																						 ${config.validateData ? 'checked' : ''} style="margin-right:0.5rem;">
+								Validate Data
+							</label>
+							<small style="margin-top:0.4rem;">Validate data types and constraints</small>
+						</div>
+					</div> 
         </div>
         
         <!-- Table Selection and Order -->
         <div class="table-plan">
-          <div class="form-group">
-            <label for="plan-profile-name">Save as Profile:</label>
-            <input type="text" id="plan-profile-name" class="form-control" 
-				     value="${planName || this.mapping?.name || ''}" 
-                   placeholder="Enter profile name for this migration run">
-            <small>This name will be used to save and track the migration run</small>
-          </div>
+					<div class="form-group" style="display:flex;flex-direction:column;">
+						<div style="display:flex;align-items:center;gap:0.5rem;">
+							<label for="plan-profile-name" style="margin:0;white-space:nowrap;">Save as Profile:</label>
+							<input type="text" id="plan-profile-name" class="form-control" 
+									 value="${planName || this.mapping?.name || ''}" 
+									 placeholder="Enter profile name for this migration run" style="flex:1;min-width:160px;">
+						</div>
+						<small style="margin-top:0.4rem;">This name will be used to save and track the migration run</small>
+					</div>
           
           <h3>Tables to Migrate (in order)</h3>
           <p class="help-text">Drag to reorder tables or use ↑↓ buttons</p>
