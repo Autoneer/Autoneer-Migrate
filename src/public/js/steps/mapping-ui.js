@@ -16,6 +16,8 @@ class MappingUI {
 		this.mapping = null;
 		this.selectedTables = new Set();
 		this.currentTable = null;
+		// Keep the current table filter query so it survives re-renders
+		this.tableFilterQuery = '';
 	}
 
 	/**
@@ -133,9 +135,9 @@ class MappingUI {
         <div class="table-selection">
           <h3>Select Tables to Map</h3>
           
-          <div class="table-actions">
-            <input style="margin-bottom: 10px !important;" type="text" id="table-filter" class="form-control" 
-                   placeholder="🔍 Filter tables...">
+					<div class="table-actions">
+						<input style="margin-bottom: 10px !important;" type="text" id="table-filter" class="form-control" 
+									 placeholder="🔍 Filter tables..." value="${this.tableFilterQuery || ''}">
             <button class="btn btn-secondary btn-sm" onclick="window.wizard.steps[1].component.selectAll()">
               ☑ Select All
             </button>
@@ -176,6 +178,8 @@ class MappingUI {
     `;
 
 		this.attachEventListeners();
+		// Re-apply any active table filter after event handlers are attached
+		this.filterTables(this.tableFilterQuery || '');
 		this.updateValidation();
 	}
 
@@ -284,7 +288,9 @@ class MappingUI {
 		const tableFilter = document.getElementById('table-filter');
 		if (tableFilter) {
 			tableFilter.addEventListener('input', (e) => {
-				this.filterTables(e.target.value);
+				// persist the filter query so it survives render()
+				this.tableFilterQuery = e.target.value || '';
+				this.filterTables(this.tableFilterQuery);
 			});
 		}
 
