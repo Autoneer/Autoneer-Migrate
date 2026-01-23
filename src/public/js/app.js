@@ -347,10 +347,9 @@ if (progressEl) {
 			if (!confirmed) return;
 			stopRunBtn.disabled = true;
 			try {
-				await fetch("/run/abort", {
+				await fetch(`/api/runs/${encodeURIComponent(runId)}/stop`, {
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ runId, reason: "User stopped the run" })
+					headers: { "Content-Type": "application/json" }
 				});
 			} catch (e) {
 				// ignore

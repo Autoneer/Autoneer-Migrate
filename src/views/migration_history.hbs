@@ -1,4 +1,5 @@
 <link rel="stylesheet" href="/public/css/theme-github.css">
+<link rel="stylesheet" href="/public/css/wizard.css">
 <div class="gh-page">
 	<div class="gh-container">
 		<div class="gh-toolbar">
@@ -45,6 +46,8 @@
 						<td>{{error_count}}</td>
 						<td>
 							<div class="gh-actions" style="display:flex;gap:8px;align-items:center;">
+								<button class="gh-btn" type="button" style="cursor: pointer;" data-action="view-results"
+									data-run-id="{{run_id}}">View Results</button>
 								<a class="gh-btn" href="/migration/history/{{run_id}}">View</a>
 								<form method="post" action="/migration/history/{{run_id}}/delete"
 									data-confirm="Delete run #{{run_id}} and all related records? This cannot be undone.">
@@ -70,6 +73,13 @@
 		</form>
 	</div>
 </div>
+
+{{> results_modal}}
+
+<script src="/public/js/api/client.js"></script>
+<script src="/public/js/api/run-api.js"></script>
+<script src="/public/js/steps/results-ui.js"></script>
+<script src="/public/js/migration-history.js"></script>
 
 <script>
 	(function () {

@@ -5,10 +5,6 @@ const { engine } = require("express-handlebars");
 require("dotenv").config();
 
 const setupRoutes = require("./routes/setup");
-const planRoutes = require("./routes/plan");
-const mappingRoutes = require("./routes/mapping");
-const runRoutes = require("./routes/run");
-const resultsRoutes = require("./routes/results");
 const eventsRoutes = require("./routes/events");
 const migrationRoutes = require("./routes/migration");
 const wizardRoutes = require("./routes/wizard"); // Phase 3: New wizard UI
@@ -60,11 +56,7 @@ app.use("/public", express.static(path.join(__dirname, "public")));
 app.get("/", (req, res) => res.redirect("/setup"));
 
 app.use(setupRoutes);
-app.use(planRoutes);
-app.use(mappingRoutes);
 app.use(migrationRoutes);
-app.use(runRoutes);
-app.use(resultsRoutes);
 app.use(wizardRoutes); // Phase 3: Wizard UI route
 app.use(eventsRoutes);
 app.use(healthRoutes);

@@ -106,10 +106,9 @@
 		}
 
 		try {
-			await fetch("/run/abort", {
+			await fetch(`/api/runs/${encodeURIComponent(runId)}/stop`, {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ runId, reason: "Connectivity checks failed" })
+				headers: { "Content-Type": "application/json" }
 			});
 		} catch (e) {
 			// ignore

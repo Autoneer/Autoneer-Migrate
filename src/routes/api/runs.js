@@ -4,11 +4,14 @@
  */
 
 const express = require("express");
+const fs = require("fs");
+const { stringify } = require("csv-stringify/sync");
 const mysql = require("../../db/mysql");
 const { state } = require("../../config/state");
-const { Run, Plan, Mapping } = require("../../migrate/models");
+const { Run } = require("../../migrate/models");
 const runStore = require("../../migrate/runStore");
 const { getRunState } = require("../../migrate/runner");
+const logger = require("../../migrate/logger");
 
 const router = express.Router();
 
@@ -699,6 +702,125 @@ router.get("/runs/:runId/summary", async (req, res) => {
 		res.json({
 			success: true,
 			summary: summary
+		});
+	} catch (err) {
+		res.status(500).json({
+			success: false,
+			error: err.message
+		});
+	}
+});
+
+/**
+ * GET /api/runs/:runId/errors
+ * Get row-level errors for a run
+ */
+router.get("/runs/:runId/errors", async (req, res) => {
+	try {
+		const { runId } = req.params;
+		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
+		await mysql.ensureMigrationTables(pool);
+
+		const rawErrors = await runStore.getRowErrors(pool, runId);
+		await pool.end();
+
+		const errors = (rawErrors || []).map(err => ({
+			table: err.table_name || err.table || null,
+			message: err.message || err.error_message || err.error || 'Unknown error',
+			timestamp: err.created_at || err.timestamp || null,
+			row: err.source_pk || err.row_offset || null,
+			column: err.field_name || null,
+			value: err.value || null,
+			stack: err.stack || null
+		}));
+
+		res.json({
+			success: true,
+			count: errors.length,
+			errors
+		});
+	} catch (err) {
+		res.status(500).json({
+			success: false,
+			error: err.message
+		});
+	}
+});
+
+/**
+ * GET /api/runs/:runId/logs
+ * Get log entries for a run
+ */
+router.get("/runs/:runId/logs", async (req, res) => {
+	try {
+		const { runId } = req.params;
+		let logs = logger.getLogBuffer(runId) || [];
+		if (!logs.length) {
+			const logPath = logger.getLogFilePath(runId);
+			try {
+				const raw = await fs.promises.readFile(logPath, "utf8");
+				logs = raw
+					.split("\n")
+					.filter(Boolean)
+					.map(line => {
+						try {
+							return JSON.parse(line);
+						} catch (e) {
+							return { timestamp: null, level: "info", message: line };
+						}
+					});
+			} catch (err) {
+				logs = [];
+			}
+		}
+
+		res.json({
+			success: true,
+			count: logs.length,
+			logs
+		});
+	} catch (err) {
+		res.status(500).json({
+			success: false,
+			error: err.message
+		});
+	}
+});
+
+/**
+ * GET /api/runs/:runId/export
+ * Export run results as JSON or CSV
+ */
+router.get("/runs/:runId/export", async (req, res) => {
+	try {
+		const { runId } = req.params;
+		const { format = 'json' } = req.query;
+
+		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
+		await mysql.ensureMigrationTables(pool);
+
+		const run = await runStore.getRun(pool, runId);
+		const tables = await runStore.getRunTables(pool, runId);
+		const rawErrors = await runStore.getRowErrors(pool, runId);
+		await pool.end();
+
+		const errors = (rawErrors || []).map((err) => ({
+			...err,
+			error_message: err.error_message || err.message || null
+		}));
+
+		if (String(format).toLowerCase() === 'csv') {
+			const csv = stringify(errors, { header: true });
+			res.setHeader("Content-Type", "text/csv");
+			res.setHeader("Content-Disposition", "attachment; filename=migration-errors.csv");
+			return res.send(csv);
+		}
+
+		res.json({
+			success: true,
+			run,
+			tables,
+			errors
 		});
 	} catch (err) {
 		res.status(500).json({
