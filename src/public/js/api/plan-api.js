@@ -13,7 +13,7 @@ class PlanAPI {
 	 * @param {Object} options - Query options
 	 * @param {number} options.page - Page number
 	 * @param {number} options.limit - Items per page
-	 * @param {string} options.mappingId - Filter by mapping ID
+	 * @param {string} options.mappingProfileId - Filter by mapping profile ID
 	 * @returns {Promise<Object>} { plans: Array, total: number, page: number }
 	 */
 	async list(options = {}) {
@@ -49,7 +49,7 @@ class PlanAPI {
 	 * Create new migration plan
 	 * @param {Object} plan - Plan configuration
 	 * @param {string} plan.name - Plan name
-	 * @param {string} plan.mappingId - Associated mapping ID
+	 * @param {string} plan.mappingProfileId - Associated mapping profile ID
 	 * @param {Array} plan.tables - Tables to migrate
 	 * @param {Object} plan.config - Migration configuration
 	 * @returns {Promise<Object>} Created plan with ID
@@ -111,13 +111,13 @@ class PlanAPI {
 
 	/**
 	 * Generate plan from mapping
-	 * @param {string} mappingId - Mapping ID
+	 * @param {string} mappingProfileId - Mapping profile ID
 	 * @param {Object} options - Plan generation options
 	 * @returns {Promise<Object>} Generated plan
 	 */
-	async generate(mappingId, options = {}) {
+	async generate(mappingProfileId, options = {}) {
 		const response = await this.client.post('/plans/generate', {
-			mappingId,
+			mappingProfileId,
 			options
 		});
 		return response.plan;

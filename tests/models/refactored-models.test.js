@@ -185,8 +185,8 @@ describe('Plan Model', () => {
 	test('should create plan', () => {
 		const plan = new Plan('mapping-123', 'Test Mapping');
 
-		expect(plan.mappingId).toBe('mapping-123');
-		expect(plan.mappingName).toBe('Test Mapping');
+		expect(plan.mappingProfileId).toBe('mapping-123');
+		expect(plan.mappingProfileName).toBe('Test Mapping');
 		expect(plan.isValidated).toBe(false);
 	});
 

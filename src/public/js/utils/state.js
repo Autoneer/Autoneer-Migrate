@@ -17,9 +17,9 @@ class WizardState {
 			// Mapping configuration
 			mapping: {
 				id: null,
+				mappingProfileId: null,
 				name: '',
-				tables: {},
-				saveProfile: false
+				tables: {}
 			},
 
 			// Migration plan
@@ -86,8 +86,13 @@ class WizardState {
 			normalized.name = `${baseName} ${new Date().toLocaleDateString()}`;
 		}
 
-		if (!normalized.mappingId && mapping && mapping.id) {
-			normalized.mappingId = mapping.id;
+		if (!normalized.mappingProfileId) {
+			if (normalized.mappingId) {
+				normalized.mappingProfileId = normalized.mappingId;
+				delete normalized.mappingId;
+			} else if (mapping && (mapping.mappingProfileId || mapping.id)) {
+				normalized.mappingProfileId = mapping.mappingProfileId || mapping.id;
+			}
 		}
 
 		const changed = JSON.stringify(before) !== JSON.stringify(normalized);
@@ -128,6 +133,10 @@ class WizardState {
 		if (progress) {
 			this.state.run.status = progress.status || 'pending';
 			this.state.run.progress = progress.progress || 0;
+		}
+
+		if (this.state.mapping && !this.state.mapping.mappingProfileId) {
+			this.state.mapping.mappingProfileId = this.state.mapping.mappingProfileId || this.state.mapping.profileId || this.state.mapping.id || null;
 		}
 
 		this.normalizePlanInState(this.state.mapping);
@@ -425,7 +434,7 @@ class WizardState {
 		this.state = {
 			currentStep: 1,
 			schema: null,
-			mapping: { id: null, name: '', tables: {}, saveProfile: false },
+			mapping: { id: null, mappingProfileId: null, name: '', tables: {} },
 			plan: { id: null, name: '', tables: [], config: {} },
 			run: { id: null, status: 'pending', progress: 0, tableResults: [] },
 			ui: { loading: false, errors: [], warnings: [], selectedTable: null, expandedSections: [] }

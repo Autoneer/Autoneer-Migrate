@@ -421,40 +421,9 @@ router.post("/run/update-plan", async (req, res) => {
 });
 
 router.post("/run/save-profile", async (req, res) => {
-	const { profileName } = req.body;
-	if (!profileName || !String(profileName).trim()) {
-		res.status(400).json({ error: "Profile name is required" });
-		return;
-	}
-
-	try {
-		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
-		await mysql.ensureMigrationTables(pool);
-
-		const mapping = state.mapping || {};
-		const profileId = await runStore.saveMappingProfile(pool, {
-			name: profileName.trim(),
-			mappingJson: JSON.stringify(mapping)
-		});
-
-		// Update state with new profile
-		state.mapping.profileId = profileId;
-		state.mapping.profileName = profileName.trim();
-		state.settings.defaultMappingProfileId = profileId;
-		const { updateSettings } = require("../config/settings");
-		updateSettings({ defaultMappingProfileId: profileId });
-
-		await pool.end();
-
-		res.json({
-			ok: true,
-			profileId,
-			profileName: profileName.trim(),
-			message: `Profile "${profileName.trim()}" saved successfully`
-		});
-	} catch (err) {
-		res.status(500).json({ error: err.message });
-	}
+	res.status(400).json({
+		error: "Mapping profiles can only be saved in Step 2 (Build Mapping)."
+	});
 });
 
 module.exports = router;

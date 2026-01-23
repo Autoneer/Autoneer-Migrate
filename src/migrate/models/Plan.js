@@ -6,14 +6,14 @@
 
 class Plan {
 	/**
-	 * @param {string} mappingId - Reference to Mapping
-	 * @param {string} mappingName - For display
+	 * @param {string} mappingProfileId - Reference to Mapping Profile
+	 * @param {string} mappingProfileName - For display
 	 * @param {Object} tableConfigs - { TABLE: { mode, keyStrategy, dedupeKeys, cleanBefore } }
 	 * @param {Date} [createdAt]
 	 */
-	constructor(mappingId, mappingName, tableConfigs = {}, createdAt = null) {
-		this.mappingId = mappingId;
-		this.mappingName = mappingName;
+	constructor(mappingProfileId, mappingProfileName, tableConfigs = {}, createdAt = null) {
+		this.mappingProfileId = mappingProfileId;
+		this.mappingProfileName = mappingProfileName;
 		this.tables = tableConfigs; // Per-table migration config
 		this.createdAt = createdAt || new Date();
 		this.isValidated = false;
@@ -144,8 +144,8 @@ class Plan {
 	 */
 	toJSON() {
 		return {
-			mappingId: this.mappingId,
-			mappingName: this.mappingName,
+			mappingProfileId: this.mappingProfileId,
+			mappingProfileName: this.mappingProfileName,
 			createdAt: this.createdAt.toISOString(),
 			tables: this.tables,
 			isValidated: this.isValidated,
@@ -161,8 +161,8 @@ class Plan {
 	 */
 	static fromJSON(obj) {
 		const plan = new Plan(
-			obj.mappingId,
-			obj.mappingName,
+			obj.mappingProfileId || obj.mappingId,
+			obj.mappingProfileName || obj.mappingName,
 			obj.tables,
 			new Date(obj.createdAt)
 		);

@@ -54,8 +54,8 @@ class PlanUI {
 			this.plan.name = `${baseName} ${new Date().toLocaleDateString()}`;
 		}
 
-		if (this.mapping?.id) {
-			this.plan.mappingId = this.mapping.id;
+		if (this.mapping?.mappingProfileId || this.mapping?.id) {
+			this.plan.mappingProfileId = this.mapping.mappingProfileId || this.mapping.id;
 		}
 
 		// Persist plan so wizard validation sees selected tables
@@ -85,6 +85,8 @@ class PlanUI {
 		};
 		const tables = Array.isArray(this.plan?.tables) ? this.plan.tables : [];
 
+		const mappingProfileName = this.mapping?.name || 'Not set';
+
 		container.innerHTML = `
       <div class="plan-builder">
         <h2>Create Migration Plan</h2>
@@ -99,6 +101,15 @@ class PlanUI {
 									 value="${planName}" 
 									 placeholder="Enter plan name" style="flex:1;min-width:160px;">
 						</div>
+					</div>
+
+					<div class="form-group" style="display:flex;flex-direction:column;">
+						<div style="display:flex;align-items:center;gap:0.5rem;">
+							<label for="mapping-profile-display" style="margin:0;white-space:nowrap;">Mapping Profile:</label>
+							<input type="text" id="mapping-profile-display" class="form-control" 
+									 value="${mappingProfileName}" disabled style="flex:1;min-width:160px;">
+						</div>
+						<small style="margin-top:0.4rem;">Using the profile saved in Step 2</small>
 					</div>
           
 					<div class="form-row" style="display:flex;gap:1rem;flex-wrap:wrap;">
@@ -133,17 +144,7 @@ class PlanUI {
         </div>
         
         <!-- Table Selection and Order -->
-        <div class="table-plan">
-					<div class="form-group" style="display:flex;flex-direction:column;">
-						<div style="display:flex;align-items:center;gap:0.5rem;">
-							<label for="plan-profile-name" style="margin:0;white-space:nowrap;">Save as Profile:</label>
-							<input type="text" id="plan-profile-name" class="form-control" 
-									 value="${planName || this.mapping?.name || ''}" 
-									 placeholder="Enter profile name for this migration run" style="flex:1;min-width:160px;">
-						</div>
-						<small style="margin-top:0.4rem;">This name will be used to save and track the migration run</small>
-					</div>
-          
+				<div class="table-plan">
           <h3>Tables to Migrate (in order)</h3>
           <p class="help-text">Drag to reorder tables or use ↑↓ buttons</p>
           
@@ -251,15 +252,7 @@ class PlanUI {
 			});
 		}
 
-		// Profile name (save as) - scoped to plan step
-		const container = document.getElementById('plan-content');
-		const profileName = container?.querySelector('#plan-profile-name');
-		if (profileName) {
-			profileName.addEventListener('input', (e) => {
-				this.plan.name = e.target.value;
-				this.state.set('plan.name', this.plan.name);
-			});
-		}
+		// Mapping profile display is read-only
 
 		// Continue on error
 		const continueOnError = document.getElementById('continue-on-error');
@@ -332,16 +325,15 @@ class PlanUI {
 		this.wizard.showLoading('Running dry-run simulation...');
 
 		try {
-			// Ensure we have a mapping ID before creating plan
-			if (!this.mapping?.id) {
-				console.error('[PlanUI] No mapping ID found. Mapping:', this.mapping);
+			// Ensure we have a mapping profile ID before creating plan
+			if (!this.mapping?.mappingProfileId && !this.mapping?.id) {
+				console.error('[PlanUI] No mapping profile ID found. Mapping:', this.mapping);
 				this.wizard.showError('No mapping profile found. Please save your mapping in Step 2 first.');
 				return;
 			}
 
 			// Read current plan name from input before API calls
-			const container = document.getElementById('plan-content');
-			const planNameInput = container?.querySelector('#plan-profile-name');
+			const planNameInput = document.getElementById('plan-name');
 			if (planNameInput) {
 				this.plan.name = planNameInput.value.trim();
 			}
@@ -352,14 +344,15 @@ class PlanUI {
 				planNameInput.value = resolvedPlanName;
 			}
 
-			console.log('[PlanUI] Running dry run with plan:', { name: this.plan.name, id: this.plan.id, mappingId: this.mapping.id });
+			const mappingProfileId = this.mapping.mappingProfileId || this.mapping.id;
+			console.log('[PlanUI] Running dry run with plan:', { name: this.plan.name, id: this.plan.id, mappingProfileId });
 
 			// Create or update plan first to ensure it's persisted
 			let planId = this.plan.id;
 
 			const fullPayload = {
 				name: this.plan.name,
-				mappingId: this.mapping.id,
+				mappingProfileId,
 				tables: this.plan.tables || [],
 				config: this.plan.config
 			};
@@ -367,12 +360,14 @@ class PlanUI {
 			if (planId) {
 				// Update existing plan
 				await this.api.update(planId, fullPayload);
+				this.plan.mappingProfileId = mappingProfileId;
 				console.log('[PlanUI] Updated plan:', planId);
 			} else {
 				// Create new plan
 				const created = await this.api.create(fullPayload);
 				planId = created.id;
 				this.plan.id = planId;
+				this.plan.mappingProfileId = mappingProfileId;
 				this.state.setPlan(this.plan);
 				console.log('[PlanUI] Created plan:', planId);
 			}
@@ -536,7 +531,7 @@ class PlanUI {
 			return false;
 		}
 
-		if (!this.mapping?.id) {
+		if (!this.mapping?.mappingProfileId && !this.mapping?.id) {
 			this.wizard.showError('Mapping profile missing. Go back to Step 2 to save the mapping, then return to Step 3.');
 			return false;
 		}
@@ -545,9 +540,10 @@ class PlanUI {
 		try {
 			this.wizard.showLoading('Saving migration plan...');
 
+			const mappingProfileId = this.mapping.mappingProfileId || this.mapping.id;
 			const fullPayload = {
 				name: this.plan.name,
-				mappingId: this.mapping.id,
+				mappingProfileId,
 				tables: this.plan.tables || [],
 				config: this.plan.config || {
 					batchSize: 1000,
@@ -555,7 +551,7 @@ class PlanUI {
 					validateData: true
 				}
 			};
-			this.plan.mappingId = this.mapping.id;
+			this.plan.mappingProfileId = mappingProfileId;
 
 			if (this.plan.id) {
 				await this.api.update(this.plan.id, fullPayload);

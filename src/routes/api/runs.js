@@ -12,6 +12,61 @@ const { getRunState } = require("../../migrate/runner");
 
 const router = express.Router();
 
+function safeParseJson(raw, fallback = {}) {
+	if (!raw) return fallback;
+	if (typeof raw === 'object') return raw;
+	try {
+		return JSON.parse(raw);
+	} catch {
+		return fallback;
+	}
+}
+
+async function resolvePlanMappingProfileId(pool, planRow) {
+	if (planRow.mapping_profile_id) {
+		return planRow.mapping_profile_id;
+	}
+	if (planRow.mapping_id) {
+		const profile = await runStore.getMappingProfile(pool, planRow.mapping_id);
+		if (profile) {
+			await pool.query(
+				"UPDATE migration_plans SET mapping_profile_id = ? WHERE plan_id = ?",
+				[profile.id, planRow.plan_id]
+			);
+			return profile.id;
+		}
+	}
+	if (planRow.mapping_json) {
+		const mappingJson = typeof planRow.mapping_json === 'string'
+			? planRow.mapping_json
+			: JSON.stringify(planRow.mapping_json || {});
+		const profileId = await runStore.saveMappingProfile(pool, {
+			name: (planRow.name || `Migrated Profile ${planRow.plan_id}`).trim(),
+			mappingJson
+		});
+		await pool.query(
+			"UPDATE migration_plans SET mapping_profile_id = ? WHERE plan_id = ?",
+			[profileId, planRow.plan_id]
+		);
+		return profileId;
+	}
+
+	const planJson = safeParseJson(planRow.plan_json || planRow.mapping_json || '{}');
+	const legacyId = planJson.mappingProfileId || planJson.mappingId || null;
+	if (legacyId) {
+		const profile = await runStore.getMappingProfile(pool, legacyId);
+		if (profile) {
+			await pool.query(
+				"UPDATE migration_plans SET mapping_profile_id = ? WHERE plan_id = ?",
+				[profile.id, planRow.plan_id]
+			);
+			return profile.id;
+		}
+	}
+
+	return null;
+}
+
 /**
  * GET /api/runs
  * List all migration runs
@@ -54,7 +109,7 @@ router.get("/runs", async (req, res) => {
 			runs: rows.map(row => ({
 				runId: row.run_id,
 				planId: row.plan_id,
-				mappingId: row.mapping_id,
+				mappingProfileId: row.mapping_profile_id || row.mapping_id || null,
 				status: row.status,
 				startedAt: row.started_at,
 				completedAt: row.completed_at,
@@ -101,36 +156,28 @@ router.post("/runs", async (req, res) => {
 			});
 		}
 
-		// Get mapping ID from plan - check both plan_json and mapping_json columns
-		const rawPlanJson = planData.plan_json || planData.mapping_json || '{}';
-		const planJson = typeof rawPlanJson === 'string'
-			? JSON.parse(rawPlanJson)
-			: (rawPlanJson || {});
+		const mappingProfileId = await resolvePlanMappingProfileId(pool, planData);
 
-		// Try multiple possible column names for mapping ID
-		const mappingId = planData.mapping_id || planData.mappingId || planJson.mappingId || planJson.id;
+		const planJson = safeParseJson(planData.plan_json || planData.mapping_json || '{}');
 
 		console.log('[Runs] Plan data:', {
 			planId,
-			hasMapping_id: !!planData.mapping_id,
-			hasMappingId: !!planData.mappingId,
-			jsonMappingId: planJson.mappingId,
-			jsonId: planJson.id,
-			resolvedMappingId: mappingId,
-			planDataKeys: Object.keys(planData),
-			planJsonKeys: Object.keys(planJson)
+			hasMappingProfileId: !!planData.mapping_profile_id,
+			hasLegacyMappingId: !!planData.mapping_id,
+			resolvedMappingProfileId: mappingProfileId,
+			planDataKeys: Object.keys(planData)
 		});
 
-		if (!mappingId) {
+		if (!mappingProfileId) {
 			await pool.end();
 			return res.status(400).json({
 				success: false,
-				error: "Plan has no associated mapping"
+				error: "Plan is missing a mapping profile. Open the plan and re-select a profile or rebuild mapping."
 			});
 		}
 
-		// Get mapping
-		const mappingData = await runStore.getMappingProfile(pool, mappingId);
+		// Get mapping profile
+		const mappingData = await runStore.getMappingProfile(pool, mappingProfileId);
 		if (!mappingData) {
 			await pool.end();
 			return res.status(404).json({
@@ -144,7 +191,7 @@ router.post("/runs", async (req, res) => {
 			: (mappingData.mapping_json || {});
 
 		console.log('[Runs] Raw mapping from DB:', {
-			mappingId,
+			mappingProfileId,
 			hasTables: !!mappingJson.tables,
 			tablesType: typeof mappingJson.tables,
 			tableCount: Object.keys(mappingJson.tables || {}).length,
@@ -304,8 +351,9 @@ router.get("/runs/:runId", async (req, res) => {
 	try {
 		const { runId } = req.params;
 
-		const buildPlanAdapter = (tableNames = [], mappingId = null) => ({
-			mappingId,
+		const buildPlanAdapter = (tableNames = [], planId = null, mappingProfileId = null) => ({
+			id: planId,
+			mappingProfileId,
 			getIncludedTables: () => tableNames
 		});
 
@@ -318,7 +366,11 @@ router.get("/runs/:runId", async (req, res) => {
 			if (includedTables.length === 0) {
 				includedTables = (runState.tables || []).map(table => table.name).filter(Boolean);
 			}
-			const plan = buildPlanAdapter(includedTables, state.plan?.mappingId || null);
+			const plan = buildPlanAdapter(
+				includedTables,
+				state.plan?.id || null,
+				state.plan?.mappingProfileId || state.plan?.mappingId || null
+			);
 			const run = new Run(runId, plan);
 
 			// Populate with current state data
@@ -379,7 +431,7 @@ router.get("/runs/:runId", async (req, res) => {
 
 		// Reconstruct Run instance
 		const tableNames = (tables || []).map(table => table.table_name).filter(Boolean);
-		const plan = buildPlanAdapter(tableNames, runData.plan_id || null);
+		const plan = buildPlanAdapter(tableNames, runData.plan_id || null, null);
 		const run = new Run(runId, plan);
 		run.status = runData.status;
 		run.startedAt = runData.started_at;
@@ -441,7 +493,7 @@ router.get("/runs/:runId/progress", async (req, res) => {
 				includedTables = (runState.tables || []).map(table => table.name).filter(Boolean);
 			}
 			const planAdapter = {
-				mappingId: state.plan?.mappingId || null,
+				mappingProfileId: state.plan?.mappingProfileId || state.plan?.mappingId || null,
 				getIncludedTables: () => includedTables
 			};
 			const run = new Run(runKey, planAdapter);
@@ -662,12 +714,12 @@ router.get("/runs/:runId/summary", async (req, res) => {
  */
 router.post("/runs/start", async (req, res) => {
 	try {
-		const { planId, mappingId, dryRun = false } = req.body;
+		const { planId, dryRun = false } = req.body;
 
-		if (!planId || !mappingId) {
+		if (!planId) {
 			return res.status(400).json({
 				success: false,
-				error: "planId and mappingId are required"
+				error: "planId is required"
 			});
 		}
 
@@ -685,8 +737,17 @@ router.post("/runs/start", async (req, res) => {
 			});
 		}
 
+		const mappingProfileId = await resolvePlanMappingProfileId(pool, planData);
+		if (!mappingProfileId) {
+			await pool.end();
+			return res.status(400).json({
+				success: false,
+				error: "Plan is missing a mapping profile. Open the plan and re-select a profile or rebuild mapping."
+			});
+		}
+
 		// Get mapping
-		const mappingData = await runStore.getMappingProfile(pool, mappingId);
+		const mappingData = await runStore.getMappingProfile(pool, mappingProfileId);
 		if (!mappingData) {
 			await pool.end();
 			return res.status(404).json({
@@ -779,13 +840,29 @@ router.post("/runs/:runId/retry", async (req, res) => {
 
 		// Load plan and mapping
 		const planData = await runStore.getPlan(pool, runData.plan_id);
-		const mappingData = await runStore.getMappingProfile(pool, runData.mapping_id);
-
-		if (!planData || !mappingData) {
+		if (!planData) {
 			await pool.end();
 			return res.status(404).json({
 				success: false,
-				error: "Plan or mapping not found"
+				error: "Plan not found"
+			});
+		}
+
+		const mappingProfileId = await resolvePlanMappingProfileId(pool, planData);
+		if (!mappingProfileId) {
+			await pool.end();
+			return res.status(400).json({
+				success: false,
+				error: "Plan is missing a mapping profile. Open the plan and re-select a profile or rebuild mapping."
+			});
+		}
+
+		const mappingData = await runStore.getMappingProfile(pool, mappingProfileId);
+		if (!mappingData) {
+			await pool.end();
+			return res.status(404).json({
+				success: false,
+				error: "Mapping profile not found"
 			});
 		}
 

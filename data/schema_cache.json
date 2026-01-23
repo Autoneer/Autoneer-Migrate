@@ -13506,7 +13506,7 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-01-23T08:01:33.349Z"
+    "lastUpdated": "2026-01-23T09:56:24.137Z"
   },
   "mysql": {
     "tables": {
@@ -22896,6 +22896,18 @@
             "scale": null,
             "isPrimaryKey": false,
             "isUnique": false
+          },
+          "MAPPING_PROFILE_ID": {
+            "name": "MAPPING_PROFILE_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
           }
         },
         "primaryKey": [
@@ -28379,6 +28391,6 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-01-23T08:01:32.534Z"
+    "lastUpdated": "2026-01-23T09:56:24.393Z"
   }
 }

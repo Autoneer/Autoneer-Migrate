@@ -244,6 +244,93 @@ async function ensureMigrationTables(pool) {
 	if (!profileNames.includes("updated_at")) {
 		await pool.query("alter table migration_mapping_profiles add column updated_at timestamp null");
 	}
+
+	const [planTables] = await pool.query(
+		"select table_name as name from information_schema.tables where table_schema = database() and table_name = 'migration_plans'"
+	);
+	if (planTables.length > 0) {
+		const [planCols] = await pool.query(
+			"select column_name as name, is_nullable as isNullable from information_schema.columns where table_schema = database() and table_name = 'migration_plans'"
+		);
+		const planNames = planCols.map((c) => c.name.toLowerCase());
+		let mappingProfileColumn = planCols.find((c) => String(c.name).toLowerCase() === 'mapping_profile_id');
+
+		if (!planNames.includes("mapping_profile_id")) {
+			await pool.query("alter table migration_plans add column mapping_profile_id int null");
+			mappingProfileColumn = { name: 'mapping_profile_id', isNullable: 'YES' };
+		}
+
+		// Backfill from legacy mapping_id column if present
+		if (planNames.includes("mapping_id")) {
+			await pool.query(
+				"update migration_plans p join migration_mapping_profiles m on m.id = p.mapping_id set p.mapping_profile_id = m.id where p.mapping_profile_id is null and p.mapping_id is not null"
+			);
+		}
+
+		// Migrate inline mapping_json to mapping profiles
+		if (planNames.includes("mapping_json")) {
+			const [legacyPlans] = await pool.query(
+				"select plan_id, name, mapping_json from migration_plans where mapping_profile_id is null and mapping_json is not null"
+			);
+			for (const plan of legacyPlans) {
+				try {
+					const mappingJson = typeof plan.mapping_json === 'string'
+						? plan.mapping_json
+						: JSON.stringify(plan.mapping_json || {});
+					const profileName = String(plan.name || `Migrated Profile ${plan.plan_id}`).trim();
+					const [result] = await pool.query(
+						"insert into migration_mapping_profiles (name, mapping_json) values (?, ?)",
+						[profileName, mappingJson]
+					);
+					await pool.query(
+						"update migration_plans set mapping_profile_id = ? where plan_id = ?",
+						[result.insertId, plan.plan_id]
+					);
+				} catch (err) {
+					// best-effort migration; continue
+				}
+			}
+		}
+
+		// Add index for mapping_profile_id if missing
+		const [planIndexes] = await pool.query(
+			"select index_name as name from information_schema.statistics where table_schema = database() and table_name = 'migration_plans'"
+		);
+		const planIndexNames = planIndexes.map((idx) => String(idx.name).toLowerCase());
+		if (!planIndexNames.includes("idx_mapping_profile_id")) {
+			try {
+				await pool.query("create index idx_mapping_profile_id on migration_plans (mapping_profile_id)");
+			} catch (e) {
+				// ignore
+			}
+		}
+
+		// Add FK constraint if missing
+		const [planConstraints] = await pool.query(
+			"select constraint_name as name from information_schema.table_constraints where table_schema = database() and table_name = 'migration_plans' and constraint_type = 'FOREIGN KEY'"
+		);
+		const constraintNames = planConstraints.map((c) => String(c.name).toLowerCase());
+		if (!constraintNames.includes("fk_plans_mapping_profile")) {
+			try {
+				await pool.query("alter table migration_plans add constraint fk_plans_mapping_profile foreign key (mapping_profile_id) references migration_mapping_profiles(id) on delete restrict");
+			} catch (e) {
+				// ignore
+			}
+		}
+
+		// Enforce NOT NULL if safe
+		const [nullRows] = await pool.query(
+			"select count(*) as count from migration_plans where mapping_profile_id is null"
+		);
+		const nullCount = Number(nullRows?.[0]?.count || 0);
+		if (mappingProfileColumn && String(mappingProfileColumn.isNullable).toUpperCase() === 'YES' && nullCount === 0) {
+			try {
+				await pool.query("alter table migration_plans modify column mapping_profile_id int not null");
+			} catch (e) {
+				// ignore
+			}
+		}
+	}
 }
 
 module.exports = {

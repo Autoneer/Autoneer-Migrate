@@ -35,14 +35,17 @@ class MappingUI {
 
 		// Try to load existing mapping
 		this.mapping = this.state.get('mapping');
+		if (this.mapping && !this.mapping.mappingProfileId) {
+			this.mapping.mappingProfileId = this.mapping.id || this.mapping.profileId || null;
+		}
 
 		if (!this.mapping || !this.mapping.name) {
 			// Create new mapping
 			this.mapping = {
 				id: null,
+				mappingProfileId: null,
 				name: `Mapping ${new Date().toLocaleDateString()}`,
-				tables: {},
-				saveProfile: false
+				tables: {}
 			};
 		}
 
@@ -121,14 +124,6 @@ class MappingUI {
             <input type="text" id="mapping-profile-name" class="form-control" 
                    value="${this.mapping.name}" 
                    placeholder="Enter profile name">
-          </div>
-          
-          <div class="form-group">
-            <label>
-              <input type="checkbox" id="save-profile" 
-                     ${this.mapping.saveProfile ? 'checked' : ''}>
-              Save this profile for reuse
-            </label>
           </div>
         </div>
         
@@ -275,14 +270,7 @@ class MappingUI {
 			});
 		}
 
-		// Save profile checkbox
-		const saveProfile = document.getElementById('save-profile');
-		if (saveProfile) {
-			saveProfile.addEventListener('change', (e) => {
-				this.mapping.saveProfile = e.target.checked;
-				this.state.updateMapping({ saveProfile: e.target.checked });
-			});
-		}
+		// Mapping profiles are always saved on Next in this step
 
 		// Table filter
 		const tableFilter = document.getElementById('table-filter');
@@ -915,6 +903,7 @@ class MappingUI {
 				const saved = await this.api.create(this.mapping);
 				this.mapping.id = saved.id;
 			}
+			this.mapping.mappingProfileId = this.mapping.id;
 
 			this.wizard.hideLoading();
 		} catch (err) {

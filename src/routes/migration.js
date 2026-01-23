@@ -77,14 +77,33 @@ router.post('/migration/plans/:plan_id/reuse', async (req, res) => {
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		await mysql.ensureMigrationTables(pool);
 		const plan = await runStore.getPlan(pool, planId);
-		await pool.end();
-		if (plan && plan.mapping_json) {
-			state.mapping = JSON.parse(plan.mapping_json);
-			state.mapping.profileId = null;
-			state.mapping.profileName = plan.name;
-			// attach plan id so runner can reference
-			state.mapping.planId = plan.plan_id;
+		if (plan) {
+			let mappingProfileId = plan.mapping_profile_id || null;
+			if (!mappingProfileId && plan.mapping_json) {
+				const mappingJson = typeof plan.mapping_json === 'string'
+					? plan.mapping_json
+					: JSON.stringify(plan.mapping_json || {});
+				mappingProfileId = await runStore.saveMappingProfile(pool, {
+					name: (plan.name || `Migrated Profile ${plan.plan_id}`).trim(),
+					mappingJson
+				});
+				await pool.query(
+					"update migration_plans set mapping_profile_id = ? where plan_id = ?",
+					[mappingProfileId, plan.plan_id]
+				);
+			}
+			if (mappingProfileId) {
+				const profile = await runStore.getMappingProfile(pool, mappingProfileId);
+				if (profile?.mapping_json) {
+					state.mapping = JSON.parse(profile.mapping_json);
+					state.mapping.profileId = mappingProfileId;
+					state.mapping.profileName = profile.name;
+					// attach plan id so runner can reference
+					state.mapping.planId = plan.plan_id;
+				}
+			}
 		}
+		await pool.end();
 		res.redirect('/mapping');
 	} catch (err) {
 		res.redirect('/mapping');

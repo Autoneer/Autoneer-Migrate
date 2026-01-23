@@ -28,17 +28,19 @@ function getPlanJsonColumn(columns) {
 
 /**
  * Helper to get plan table metadata to avoid scoping bugs
- * Returns: { planJsonColumn, hasMappingId, hasIsValidated, hasName, hasMappingName }
+ * Returns: { planJsonColumn, hasMappingProfileId, hasMappingId, hasIsValidated, hasName, hasMappingName, hasMappingJson }
  */
 async function getPlanTableMeta(pool) {
 	const columns = await getPlanTableColumns(pool);
 	return {
 		columns,
 		planJsonColumn: getPlanJsonColumn(columns),
+		hasMappingProfileId: columns.has('mapping_profile_id'),
 		hasMappingId: columns.has('mapping_id'),
 		hasMappingName: columns.has('mapping_name'),
 		hasIsValidated: columns.has('is_validated'),
-		hasName: columns.has('name')
+		hasName: columns.has('name'),
+		hasMappingJson: columns.has('mapping_json')
 	};
 }
 
@@ -59,29 +61,107 @@ function safeParseJson(raw, fallback = {}) {
 }
 
 /**
+ * Resolve mapping profile id for a plan row, migrating legacy data if needed.
+ * @returns {Promise<{ mappingProfileId: number|null, migrated: boolean }>
+ */
+async function resolvePlanMappingProfileId(pool, planRow, meta) {
+	const { planJsonColumn, hasMappingProfileId, hasMappingId, hasMappingJson } = meta;
+
+	if (hasMappingProfileId && planRow.mapping_profile_id) {
+		return { mappingProfileId: planRow.mapping_profile_id, migrated: false };
+	}
+
+	// Legacy mapping_id column pointing at mapping profiles
+	if (hasMappingId && planRow.mapping_id) {
+		const profile = await runStore.getMappingProfile(pool, planRow.mapping_id);
+		if (profile) {
+			if (hasMappingProfileId) {
+				await pool.query(
+					"UPDATE migration_plans SET mapping_profile_id = ? WHERE plan_id = ?",
+					[profile.id, planRow.plan_id]
+				);
+			}
+			return { mappingProfileId: profile.id, migrated: true };
+		}
+	}
+
+	// Legacy mapping_json stored on plan
+	if (hasMappingJson && planRow.mapping_json) {
+		const mappingData = safeParseJson(planRow.mapping_json, null);
+		if (mappingData) {
+			const derivedName = (mappingData.name || planRow.name || `Migrated Profile ${planRow.plan_id}`).trim();
+			const [result] = await pool.query(
+				"INSERT INTO migration_mapping_profiles (name, mapping_json) VALUES (?, ?)",
+				[derivedName, JSON.stringify(mappingData)]
+			);
+			const newProfileId = result.insertId;
+			if (hasMappingProfileId) {
+				await pool.query(
+					"UPDATE migration_plans SET mapping_profile_id = ? WHERE plan_id = ?",
+					[newProfileId, planRow.plan_id]
+				);
+			}
+			return { mappingProfileId: newProfileId, migrated: true };
+		}
+	}
+
+	// Legacy mapping id in plan_json
+	if (planJsonColumn) {
+		const planJson = safeParseJson(planRow[planJsonColumn], {});
+		const legacyId = planJson.mappingProfileId || planJson.mappingId || null;
+		if (legacyId) {
+			const profile = await runStore.getMappingProfile(pool, legacyId);
+			if (profile) {
+				if (hasMappingProfileId) {
+					await pool.query(
+						"UPDATE migration_plans SET mapping_profile_id = ? WHERE plan_id = ?",
+						[profile.id, planRow.plan_id]
+					);
+				}
+				return { mappingProfileId: profile.id, migrated: true };
+			}
+		}
+	}
+
+	return { mappingProfileId: null, migrated: false };
+}
+
+/**
  * POST /plans
  * Create a new migration plan from a mapping
- * Body: { mappingId: string, name?: string }
+ * Body: { mappingProfileId: string, name?: string }
  */
 router.post("/plans", async (req, res) => {
 	try {
-		const { mappingId, name, mapping: mappingPayload } = req.body;
-		const resolvedMappingId = mappingId ?? mappingPayload?.id;
+		const { mappingProfileId, mappingId, name, mapping: mappingPayload, saveAsProfile } = req.body;
+		const resolvedMappingProfileId = mappingProfileId ?? mappingId ?? mappingPayload?.mappingProfileId ?? mappingPayload?.id;
 
-		if (!resolvedMappingId) {
+		if (saveAsProfile !== undefined) {
+			console.debug('[Plans] Ignoring legacy saveAsProfile flag');
+		}
+
+		if (!resolvedMappingProfileId) {
 			return res.status(400).json({
 				success: false,
-				error: "mappingId is required"
+				error: "mappingProfileId is required"
 			});
 		}
 
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		await mysql.ensureMigrationTables(pool);
 		const meta = await getPlanTableMeta(pool);
-		const { planJsonColumn, hasMappingId, hasMappingName, hasName, hasIsValidated } = meta;
+		const { planJsonColumn, hasMappingProfileId, hasMappingName, hasName, hasIsValidated } = meta;
+
+		if (!hasMappingProfileId) {
+			await pool.end();
+			return res.status(500).json({
+				success: false,
+				error: "migration_plans table missing mapping_profile_id column"
+			});
+		}
 
 		// Load the mapping
-		const profile = await runStore.getMappingProfile(pool, resolvedMappingId);
+		const profile = await runStore.getMappingProfile(pool, resolvedMappingProfileId);
 
 		if (!profile) {
 			await pool.end();
@@ -110,10 +190,8 @@ router.post("/plans", async (req, res) => {
 
 		const insertFields = [];
 		const insertValues = [];
-		if (hasMappingId) {
-			insertFields.push('mapping_id');
-			insertValues.push(resolvedMappingId);
-		}
+		insertFields.push('mapping_profile_id');
+		insertValues.push(resolvedMappingProfileId);
 		if (hasMappingName) {
 			insertFields.push('mapping_name');
 			insertValues.push(mapping.name || mapping.mappingName || name || '');
@@ -135,7 +213,7 @@ router.post("/plans", async (req, res) => {
 		);
 
 		const planId = planResult.insertId;
-		console.log('[Plans] Created plan', { id: planId, name: plan.name, mappingId: resolvedMappingId });
+		console.log('[Plans] Created plan', { id: planId, name: plan.name, mappingProfileId: resolvedMappingProfileId });
 
 		await pool.end();
 
@@ -144,7 +222,7 @@ router.post("/plans", async (req, res) => {
 			message: "Migration plan created",
 			plan: {
 				id: planId,
-				mappingId: resolvedMappingId,
+				mappingProfileId: resolvedMappingProfileId,
 				name: plan.name,
 				createdAt: new Date(),
 				tables: plan.toJSON().tables
@@ -169,16 +247,15 @@ router.get("/plans/:id", async (req, res) => {
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		await mysql.ensureMigrationTables(pool);
 		const meta = await getPlanTableMeta(pool);
-		const { planJsonColumn, hasMappingId, hasIsValidated } = meta;
+		const { planJsonColumn, hasMappingProfileId, hasIsValidated } = meta;
 
 		const [rows] = await pool.query(
 			"SELECT * FROM migration_plans WHERE plan_id = ?",
 			[id]
 		);
 
-		await pool.end();
-
 		if (!rows || rows.length === 0) {
+			await pool.end();
 			return res.status(404).json({
 				success: false,
 				error: "Plan not found"
@@ -191,12 +268,21 @@ router.get("/plans/:id", async (req, res) => {
 			? JSON.parse(rawPlanJson || '{}')
 			: rawPlanJson;
 		const plan = Plan.fromJSON(planData);
+		const { mappingProfileId } = await resolvePlanMappingProfileId(pool, planRow, meta);
+		let mappingProfileName = null;
+		if (mappingProfileId) {
+			const profile = await runStore.getMappingProfile(pool, mappingProfileId);
+			mappingProfileName = profile?.name || null;
+		}
+
+		await pool.end();
 
 		res.json({
 			success: true,
 			plan: {
 				id: planRow.plan_id,
-				mappingId: hasMappingId ? planRow.mapping_id : plan.mappingId,
+				mappingProfileId: mappingProfileId || plan.mappingProfileId,
+				mappingProfileName,
 				name: plan.name,
 				createdAt: planRow.created_at,
 				isValidated: hasIsValidated ? planRow.is_validated : false,
@@ -370,7 +456,7 @@ router.post("/plans/:id/validate", async (req, res) => {
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		await mysql.ensureMigrationTables(pool);
 		const meta = await getPlanTableMeta(pool);
-		const { planJsonColumn, hasMappingId, hasIsValidated } = meta;
+		const { planJsonColumn, hasIsValidated } = meta;
 
 		// Load plan
 		const [planRows] = await pool.query(
@@ -391,9 +477,16 @@ router.post("/plans/:id/validate", async (req, res) => {
 		const planData = safeParseJson(rawPlanJson);
 		const plan = Plan.fromJSON(planData);
 
-		// Load mapping
-		const mappingIdForPlan = hasMappingId ? planRow.mapping_id : plan.mappingId;
-		const profile = await runStore.getMappingProfile(pool, mappingIdForPlan);
+		// Load mapping profile
+		const { mappingProfileId } = await resolvePlanMappingProfileId(pool, planRow, meta);
+		if (!mappingProfileId) {
+			await pool.end();
+			return res.status(400).json({
+				success: false,
+				error: "Plan is missing a mapping profile. Open the plan and re-select a profile or rebuild mapping."
+			});
+		}
+		const profile = await runStore.getMappingProfile(pool, mappingProfileId);
 
 		if (!profile) {
 			await pool.end();
@@ -474,7 +567,7 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 
 		// Get plan table metadata
 		const meta = await getPlanTableMeta(pool);
-		const { planJsonColumn, hasMappingId } = meta;
+		const { planJsonColumn } = meta;
 
 		// Load plan
 		const [planRows] = await pool.query(
@@ -495,9 +588,16 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 		const planData = safeParseJson(rawPlanJson);
 		const plan = Plan.fromJSON(planData);
 
-		// Load mapping
-		const mappingIdForPlan = hasMappingId ? planRow.mapping_id : plan.mappingId;
-		const profile = await runStore.getMappingProfile(pool, mappingIdForPlan);
+		// Load mapping profile
+		const { mappingProfileId } = await resolvePlanMappingProfileId(pool, planRow, meta);
+		if (!mappingProfileId) {
+			await pool.end();
+			return res.status(400).json({
+				success: false,
+				error: "Plan is missing a mapping profile. Open the plan and re-select a profile or rebuild mapping."
+			});
+		}
+		const profile = await runStore.getMappingProfile(pool, mappingProfileId);
 
 		if (!profile) {
 			await pool.end();
@@ -773,13 +873,14 @@ router.get("/plans", async (req, res) => {
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		await mysql.ensureMigrationTables(pool);
 		const meta = await getPlanTableMeta(pool);
-		const { hasMappingId, hasIsValidated } = meta;
+		const { hasMappingProfileId, hasIsValidated } = meta;
 
-		const selectFields = ['plan_id', 'created_at'];
-		if (hasMappingId) selectFields.push('mapping_id');
-		if (hasIsValidated) selectFields.push('is_validated');
+		const selectFields = ['p.plan_id', 'p.created_at'];
+		if (hasMappingProfileId) selectFields.push('p.mapping_profile_id');
+		if (hasIsValidated) selectFields.push('p.is_validated');
+		selectFields.push('mp.name as mapping_profile_name');
 		const [rows] = await pool.query(
-			`SELECT ${selectFields.join(', ')} FROM migration_plans ORDER BY created_at DESC`
+			`SELECT ${selectFields.join(', ')} FROM migration_plans p LEFT JOIN migration_mapping_profiles mp ON p.mapping_profile_id = mp.id ORDER BY p.created_at DESC`
 		);
 
 		await pool.end();
@@ -789,7 +890,8 @@ router.get("/plans", async (req, res) => {
 			count: rows.length,
 			plans: rows.map(row => ({
 				id: row.plan_id,
-				mappingId: hasMappingId ? row.mapping_id : null,
+				mappingProfileId: hasMappingProfileId ? row.mapping_profile_id : null,
+				mappingProfileName: row.mapping_profile_name || null,
 				createdAt: row.created_at,
 				isValidated: hasIsValidated ? row.is_validated : false
 			}))

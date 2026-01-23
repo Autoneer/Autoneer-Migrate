@@ -275,7 +275,7 @@ class Run {
 	toSummary() {
 		return {
 			runId: this.id,
-			planId: this.plan.mappingId,
+			planId: this.plan?.id ?? null,
 			status: this.status,
 			startedAt: this.startedAt,
 			finishedAt: this.finishedAt,
