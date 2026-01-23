@@ -200,23 +200,25 @@ class RunUI {
 	 */
 	renderCompleted() {
 		return `
-      <div class="run-completed">
-        <div class="success-icon">✓</div>
-        <h2>Migration Completed Successfully!</h2>
-        <p>All tables have been migrated</p>
+			<div class="run-completed">
+				<div style="display:flex;align-items:center;gap:0.5rem;" class="completed-header">
+					<div class="success-icon" style="font-size:1.6rem;line-height:1;">✓</div>
+					<h2 style="margin:0;">Migration Completed Successfully!</h2>
+				</div>
+				<p style="margin-top:0.5rem;">All tables have been migrated</p>
         
         <div class="completion-summary">
           <div class="stat">
+		  <span>Tables Migrated</span>
             <strong>${this.run.tablesCompleted || 0}</strong>
-            <span>Tables Migrated</span>
           </div>
           <div class="stat">
+		  <span>Total Rows</span>
             <strong>${this.run.rowsMigrated || 0}</strong>
-            <span>Total Rows</span>
           </div>
           <div class="stat">
+		  <span>Duration</span>
             <strong>${this.formatDuration(this.run.duration)}</strong>
-            <span>Duration</span>
           </div>
         </div>
         

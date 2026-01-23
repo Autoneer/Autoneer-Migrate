@@ -111,8 +111,9 @@ class MappingUI {
 		const firebirdTables = this.getFirebirdTables();
 
 		container.innerHTML = `
-      <div class="mapping-builder">
-       
+		<div class="mapping-builder">
+		<h2>Build a table and Field Map</h2>
+		
         <!-- Profile Settings -->
         <div class="profile-settings">
           <div class="form-group">
@@ -132,9 +133,8 @@ class MappingUI {
         </div>
         
         <!-- Table Selection -->
-        <div class="table-selection">
+        <div class="table-selection"> 
           <h3>Select Tables to Map</h3>
-          
 					<div class="table-actions">
 						<input style="margin-bottom: 10px !important;" type="text" id="table-filter" class="form-control" 
 									 placeholder="🔍 Filter tables..." value="${this.tableFilterQuery || ''}">

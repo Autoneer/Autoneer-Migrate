@@ -633,6 +633,7 @@ table tr.selected {
 	border: 1px solid #dee2e6;
 	border-radius: 8px;
 	transition: transform 0.2s ease, box-shadow 0.2s ease;
+	background-color: #d4edda !important;
 }
 
 .stat-card:hover {
@@ -1000,8 +1001,8 @@ table tr.selected {
 
 .error-icon,
 .success-icon {
-	font-size: 4rem;
-	margin-bottom: 20px;
+	font-size: 40px;
+	color: #28a745;
 }
 
 .error-state .error-icon {
@@ -1160,7 +1161,7 @@ table tr.selected {
 }
 
 .step-status-banner .status-icon {
-	font-size: 1.2rem;
+	font-size: 12px;
 	flex-shrink: 0;
 }
 
@@ -1278,4 +1279,22 @@ table tr.selected {
 	background: var(--wizard-primary);
 	color: #fff;
 	border: none;
+}
+
+.completion-summary {
+	padding: 10px;
+	border-radius: 6px;
+	border: 1px solid var(--wizard-border);
+	margin: 10px;
+	width: max-content;
+	background: #d4edda;
+	font-size: 12px;
+}
+
+.stat {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 5px 0;
+	width: 200px;
 }
