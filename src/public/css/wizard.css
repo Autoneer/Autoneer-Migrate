@@ -66,7 +66,8 @@
 	padding: 10px;
 	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 	/* Slightly smaller base font for wizard steps */
-	font-size: 12px;
+	font-size: 10px;
+	line-height: 1;
 	color: var(--wizard-text);
 	min-height: 600px;
 	background: var(--wizard-bg);
@@ -257,7 +258,7 @@
 
 .btn-sm {
 	padding: 6px 12px;
-	font-size: 0.875rem;
+	font-size: 10px;
 }
 
 .btn-large {
@@ -283,7 +284,7 @@
 .form-control {
 	width: 100%;
 	padding: 5px 10px;
-	font-size: 12px;
+	font-size: 10px;
 	border: 1px solid #ced4da;
 	border-radius: 4px;
 	transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -324,6 +325,7 @@ table {
 	width: 100%;
 	border-collapse: collapse;
 	margin-bottom: 20px;
+	margin-top: 10px;
 }
 
 table thead {
@@ -339,7 +341,7 @@ table th {
 }
 
 table td {
-	padding: 5px;
+	padding: 3px;
 	border-bottom: 1px solid #dee2e6;
 }
 
@@ -358,8 +360,8 @@ table tr.selected {
 .status-badge {
 	display: inline-block;
 	padding: 4px 12px;
-	border-radius: 12px;
-	font-size: 0.875rem;
+	border-radius: 10px;
+	font-size: 10px;
 	font-weight: 500;
 }
 
@@ -772,7 +774,7 @@ table tr.selected {
 .modal-body-custom table {
 	border-collapse: collapse;
 	width: 100%;
-	font-size: 12px;
+	font-size: 10px;
 }
 
 .modal-body-custom table thead {
@@ -791,14 +793,14 @@ table tr.selected {
 }
 
 .modal-body-custom table td {
-	padding: 8px 10px;
+	padding: 4px;
 	border-bottom: 1px solid #d0d7de;
 }
 
 .modal-body-custom table tbody {
 	max-height: 400px;
 	overflow-y: auto;
-	display: block;
+	display: flow;
 }
 
 .modal-body-custom table thead {

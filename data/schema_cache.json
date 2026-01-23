@@ -1834,14 +1834,14 @@
             "nullable": true,
             "defaultValue": null
           },
-          "STOCKLOG": {
-            "name": "STOCKLOG",
+          "SUNDRYDESCRIPTIION": {
+            "name": "SUNDRYDESCRIPTIION",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
           },
-          "SUNDRYDESCRIPTIION": {
-            "name": "SUNDRYDESCRIPTIION",
+          "STOCKLOG": {
+            "name": "STOCKLOG",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -5140,6 +5140,12 @@
             "nullable": true,
             "defaultValue": null
           },
+          "TEMP_JOB_NO": {
+            "name": "TEMP_JOB_NO",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
           "INSPECTIONDONE": {
             "name": "INSPECTIONDONE",
             "type": "UNKNOWN",
@@ -5152,8 +5158,8 @@
             "nullable": true,
             "defaultValue": null
           },
-          "TEMP_JOB_NO": {
-            "name": "TEMP_JOB_NO",
+          "COMEBACK": {
+            "name": "COMEBACK",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -5178,12 +5184,6 @@
           },
           "LICENSEEXPIRE": {
             "name": "LICENSEEXPIRE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "COMEBACK": {
-            "name": "COMEBACK",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -13506,7 +13506,7 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-01-22T12:36:45.722Z"
+    "lastUpdated": "2026-01-23T05:54:32.115Z"
   },
   "mysql": {
     "tables": {
@@ -28379,6 +28379,6 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-01-22T12:36:44.712Z"
+    "lastUpdated": "2026-01-23T05:54:31.289Z"
   }
 }
