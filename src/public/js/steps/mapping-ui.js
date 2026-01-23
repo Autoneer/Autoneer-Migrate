@@ -110,9 +110,7 @@ class MappingUI {
 
 		container.innerHTML = `
       <div class="mapping-builder">
-        <h2>Build Mapping Profile</h2>
-        <p>Select tables to migrate and configure field mappings</p>
-        
+       
         <!-- Profile Settings -->
         <div class="profile-settings">
           <div class="form-group">
@@ -136,7 +134,7 @@ class MappingUI {
           <h3>Select Tables to Map</h3>
           
           <div class="table-actions">
-            <input type="text" id="table-filter" class="form-control" 
+            <input style="margin-bottom: 10px !important;" type="text" id="table-filter" class="form-control" 
                    placeholder="🔍 Filter tables...">
             <button class="btn btn-secondary btn-sm" onclick="window.wizard.steps[1].component.selectAll()">
               ☑ Select All
@@ -170,8 +168,10 @@ class MappingUI {
           <div id="field-editor"></div>
         </div>
         
-        <!-- Validation Summary -->
-        <div id="validation-summary" class="validation-summary"></div>
+				<!-- Validation Summary -->
+				<div id="validation-summary" class="validation-summary"></div>
+				<!-- Floating scroll-to-top button -->
+				<button id="scroll-top-btn" class="btn btn-primary scroll-top-btn" title="Back to top">↑</button>
       </div>
     `;
 
@@ -202,7 +202,7 @@ class MappingUI {
           </td>
           <td><strong>${table.name}</strong></td>
           <td>
-						<select class="form-control target-table-select" 
+						<select class="form-control target-table-select ${!targetTable ? 'empty' : ''}" 
 										data-table="${table.name}"
 										${!isSelected ? 'disabled' : ''}>
 							<option value="">Select target...</option>
@@ -313,8 +313,36 @@ class MappingUI {
 			select.addEventListener('change', (e) => {
 				const tableName = e.target.dataset.table;
 				this.setTargetTable(tableName, e.target.value);
+				// toggle empty class so placeholder selects appear silver
+				e.target.classList.toggle('empty', !e.target.value);
 			});
 		});
+
+		// Scroll-to-top floating button
+		const scrollBtn = document.getElementById('scroll-top-btn');
+		if (scrollBtn) {
+			scrollBtn.addEventListener('click', (e) => {
+				const containerEl = document.getElementById('mapping-content');
+				if (containerEl && containerEl.scrollTo) {
+					containerEl.scrollTo({ top: 0, behavior: 'smooth' });
+				}
+				window.scrollTo({ top: 0, behavior: 'smooth' });
+			});
+
+			// Optionally hide button when near top
+			const toggleVisibility = () => {
+				const containerEl = document.getElementById('mapping-content');
+				const scrolled = (containerEl && containerEl.scrollTop) ? containerEl.scrollTop : window.scrollY;
+				scrollBtn.classList.toggle('hidden', scrolled < 120);
+			};
+
+			// Attach scroll listeners
+			const containerEl = document.getElementById('mapping-content');
+			if (containerEl) containerEl.addEventListener('scroll', toggleVisibility);
+			window.addEventListener('scroll', toggleVisibility);
+			// initialize visibility
+			toggleVisibility();
+		}
 	}
 
 	/**
@@ -474,15 +502,15 @@ class MappingUI {
                   <td><code>${col.type}</code></td>
                   <td>→</td>
                   <td>
-                    <select class="form-control target-column" data-source="${col.name}" ${isOmitted ? 'disabled' : ''}>
-                      <option value="">Select...</option>
-										${sortedTargetColumns.map(tCol => `
-                        <option value="${tCol.name}" 
-                                ${mapping.targetColumn === tCol.name ? 'selected' : ''}>
-                          ${tCol.name} (${tCol.type})
-                        </option>
-                      `).join('')}
-                    </select>
+										<select class="form-control target-column ${!mapping.targetColumn ? 'empty' : ''}" data-source="${col.name}" ${isOmitted ? 'disabled' : ''}>
+											<option value="">Select...</option>
+						${sortedTargetColumns.map(tCol => `
+												<option value="${tCol.name}" 
+																${mapping.targetColumn === tCol.name ? 'selected' : ''}>
+													${tCol.name} (${tCol.type})
+												</option>
+											`).join('')}
+										</select>
                   </td>
                   <td>
                     <select class="form-control transform" data-source="${col.name}" ${isOmitted ? 'disabled' : ''}>
@@ -552,6 +580,8 @@ class MappingUI {
 			select.addEventListener('change', (e) => {
 				const sourceCol = e.target.dataset.source;
 				this.setFieldMapping(tableName, sourceCol, 'targetColumn', e.target.value);
+				// toggle empty class so placeholder selects appear silver
+				e.target.classList.toggle('empty', !e.target.value);
 
 				// Update default value placeholder when target column changes
 				const targetTable = this.getTableByName('mysql', this.mapping.tables[tableName].targetTable);

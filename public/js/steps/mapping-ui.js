@@ -63,9 +63,7 @@ class MappingUI {
 
 		container.innerHTML = `
       <div class="mapping-builder">
-        <h2>Build Mapping Profile</h2>
-        <p>Select tables to migrate and configure field mappings</p>
-        
+       
         <!-- Profile Settings -->
         <div class="profile-settings">
           <div class="form-group">
@@ -89,7 +87,7 @@ class MappingUI {
           <h3>Select Tables to Map</h3>
           
           <div class="table-actions">
-            <input type="text" id="table-filter" class="form-control" 
+            <input style="margin-bottom: 10px !important;" type="text" id="table-filter" class="form-control" 
                    placeholder="🔍 Filter tables...">
             <button class="btn btn-secondary btn-sm" onclick="window.wizard.steps[1].component.selectAll()">
               ☑ Select All
