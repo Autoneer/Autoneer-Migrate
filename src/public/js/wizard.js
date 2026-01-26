@@ -703,11 +703,11 @@ class MigrationWizard {
 		await this.showStep(1);
 
 		// Show success message
-		await Modal.alert({
-			title: 'Wizard Reset',
-			message: 'Wizard has been reset successfully. Starting from Step 1.',
-			type: 'success'
-		});
+		// await Modal.alert({
+		// 	title: 'Wizard Reset',
+		// 	message: 'Wizard has been reset successfully. Starting from Step 1.',
+		// 	type: 'success'
+		// });
 	}
 
 	/**
