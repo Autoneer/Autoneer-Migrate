@@ -778,6 +778,10 @@ async function runMigrationInternal({
 		return result;
 	};
 
+	// Clamp global batch size to safe bounds (defensive)
+	const DEFAULT_BATCH = 1000;
+	batchSize = Math.min(Math.max(Number(batchSize) || DEFAULT_BATCH, 1), 10000);
+
 	const preflightConnectivity = async () => {
 		const checkFirebird = async () => {
 			await Promise.race([
@@ -1313,14 +1317,18 @@ async function runMigrationInternal({
 						});
 					};
 
-					while (offset < totalSource) {
+                    while (offset < totalSource) {
+						// Allow per-table override but clamp to safe bounds
+						const effectiveBatch = (typeof step.batchSize === 'number' && !Number.isNaN(step.batchSize))
+							? Math.min(Math.max(Number(step.batchSize), 1), 10000)
+							: batchSize;
 						checkAbort(runId);
 						const batch = await firebird.fetchBatch(
 							firebirdConfig,
 							sourceTable,
 							firebirdColumns,
 							offset,
-							batchSize,
+							effectiveBatch,
 							firebirdColumns[0]
 						);
 
