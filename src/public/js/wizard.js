@@ -69,10 +69,32 @@ class MigrationWizard {
 							// Set state for wizard
 							this.state.set('mapping', normalizedMapping);
 							this.state.set('plan', plan);
-							// Force mapping step when reusing plan (ignore localStorage)
-							// Mapping UI is step 2 in the current wizard definition
-							initialStep = 2;
-							console.log('[Wizard] Loaded plan and mapping for reuse');
+							// Try to ensure a schema is available when reusing a plan.
+							// If a cached schema exists, load it; otherwise fall back to Step 1.
+							const schemaAPI = window.SchemaAPI;
+							let schemaPresent = !!this.state.get('schema');
+							if (!schemaPresent && schemaAPI && typeof schemaAPI.getCached === 'function') {
+								try {
+									const cached = await schemaAPI.getCached();
+									if (cached) {
+										this.state.set('schema', cached);
+										schemaPresent = true;
+										console.log('[Wizard] Loaded cached schema for reused plan');
+									}
+								} catch (e) {
+									console.error('[Wizard] Failed to load cached schema:', e);
+								}
+							}
+							if (!schemaPresent) {
+								// No schema available — user must go through Step 1
+								this.showInfo('Reused plan requires schema discovery. Please run Step 1.');
+								initialStep = 1;
+							} else {
+								// Force mapping step when reusing plan (ignore localStorage)
+								// Mapping UI is step 2 in the current wizard definition
+								initialStep = 2;
+								console.log('[Wizard] Loaded plan, mapping and schema for reuse');
+							}
 						} else {
 							throw new Error('Mapping profile loaded but has no tables');
 						}
