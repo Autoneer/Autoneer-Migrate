@@ -314,6 +314,10 @@ router.post("/runs", async (req, res) => {
 
 		await pool.end();
 
+		// Add planId and profileId to mapping object so runner can store them
+		normalizedMapping.planId = planId;
+		normalizedMapping.profileId = mappingProfileId;
+
 		// Start migration
 		const { startMigration } = require("../../migrate/runner");
 		const result = await startMigration({
@@ -343,6 +347,91 @@ router.post("/runs", async (req, res) => {
 			success: false,
 			error: err.message
 		});
+	}
+});
+
+/**
+ * GET /api/runs/:runId/metadata
+ * Return plan and mapping profile names associated with a run (best-effort)
+ */
+router.get('/runs/:runId/metadata', async (req, res) => {
+	try {
+		const { runId } = req.params;
+		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
+		await mysql.ensureMigrationTables(pool);
+
+		const runData = await runStore.getRun(pool, runId);
+		if (!runData) {
+			await pool.end();
+			return res.status(404).json({ success: false, error: 'Run not found' });
+		}
+
+		let planName = null;
+		let planId = runData.plan_id || null;
+		let mappingProfileId = null;
+		let mappingName = null;
+
+		// Look up plan name and mapping profile id if plan_id is available
+		if (planId) {
+			try {
+				const planRow = await runStore.getPlan(pool, planId);
+				if (planRow) {
+					planName = planRow.name || null;
+					mappingProfileId = planRow.mapping_profile_id || null;
+				}
+			} catch (e) {
+				// ignore plan lookup errors
+			}
+		}
+
+		// If plan_id is null, try legacy table
+		if (!planId && !mappingProfileId) {
+			try {
+				const [legacyRows] = await pool.query(
+					'select mapping_profile_id, plan_json from migration_runs_legacy order by created_at desc limit 1'
+				);
+				const legacy = legacyRows && legacyRows[0] ? legacyRows[0] : null;
+				if (legacy) {
+					mappingProfileId = legacy.mapping_profile_id || null;
+					if (legacy.plan_json) {
+						try {
+							const pj = typeof legacy.plan_json === 'string' ? JSON.parse(legacy.plan_json) : legacy.plan_json;
+							planName = pj?.name || null;
+						} catch (e) {
+							// ignore parse errors
+						}
+					}
+				}
+			} catch (e) {
+				// ignore legacy lookup errors
+			}
+		}
+
+		// Look up mapping profile name if mapping_profile_id is available
+		if (mappingProfileId) {
+			try {
+				const mappingRow = await runStore.getMappingProfile(pool, mappingProfileId);
+				if (mappingRow) {
+					mappingName = mappingRow.name || null;
+				}
+			} catch (e) {
+				// ignore mapping lookup errors
+			}
+		}
+
+		await pool.end();
+
+		return res.json({
+			success: true,
+			metadata: {
+				planId: planId || null,
+				planName: planName || null,
+				mappingProfileId: mappingProfileId || null,
+				mappingName: mappingName || null
+			}
+		});
+	} catch (err) {
+		res.status(500).json({ success: false, error: err.message });
 	}
 });
 
@@ -462,6 +551,18 @@ router.get("/runs/:runId", async (req, res) => {
 		runJson.tablesCompleted = run.getCompletedTables().length;
 		runJson.rowsMigrated = run.totals?.migrated ?? ((run.totals?.inserted || 0) + (run.totals?.updated || 0));
 		runJson.duration = run.finishedAt ? (new Date(run.finishedAt) - new Date(run.startedAt)) : (Date.now() - new Date(run.startedAt));
+		// Attach plan/mapping ids for metadata lookup
+		runJson.planId = runData.plan_id || null;
+		if (runData.plan_id) {
+			try {
+				const planRow = await runStore.getPlan(pool, runData.plan_id);
+				runJson.mappingProfileId = planRow?.mapping_profile_id || null;
+			} catch (e) {
+				runJson.mappingProfileId = null;
+			}
+		} else {
+			runJson.mappingProfileId = null;
+		}
 
 		res.json({
 			success: true,

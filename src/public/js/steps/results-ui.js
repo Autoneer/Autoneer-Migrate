@@ -196,6 +196,36 @@ const ResultsRenderer = {
 				if (action === 'start-new' && handlers.onStartNew) handlers.onStartNew();
 			});
 		});
+
+		// Populate profile/plan names in modal header
+		const populateMetadata = async () => {
+			try {
+				const runId = payload?.run?.id || payload?.run?.runId;
+				if (!runId) return;
+
+				const profileEl = document.getElementById('results-profile-name');
+				const planEl = document.getElementById('results-plan-name');
+				if (!profileEl && !planEl) return;
+
+				// Attempt to fetch metadata from server
+				try {
+					const response = await fetch(`/api/runs/${runId}/metadata`).catch(() => null);
+					if (response && response.ok) {
+						const data = await response.json();
+						const meta = data?.metadata || {};
+						if (meta.planName && planEl) planEl.textContent = meta.planName;
+						if (meta.mappingName && profileEl) profileEl.textContent = meta.mappingName;
+					}
+				} catch (e) {
+					// ignore API errors
+				}
+			} catch (err) {
+				// silently ignore metadata population errors
+			}
+		};
+
+		// Trigger population after a brief delay to ensure DOM is ready
+		setTimeout(populateMetadata, 100);
 	}
 };
 
@@ -300,62 +330,62 @@ class ResultsUI {
 			ResultsModal.open();
 		}
 
-			// Populate profile and plan meta in the modal header
-			(async () => {
-				try {
-					const profileEl = document.getElementById('results-profile-name');
-					const planEl = document.getElementById('results-plan-name');
-					if (!profileEl && !planEl) return;
+		// Populate profile and plan meta in the modal header
+		(async () => {
+			try {
+				const profileEl = document.getElementById('results-profile-name');
+				const planEl = document.getElementById('results-plan-name');
+				if (!profileEl && !planEl) return;
 
-					// Try several locations for ids (server responses vary)
-					const run = this.run || {};
-					const possiblePlanId = run.planId || run.plan?.id || run.planId || run.plan_id || (run.toJSON ? (run.toJSON().planId || null) : null);
-					const possibleMappingId = run.mappingProfileId || run.mapping_profile_id || run.mappingId || run.mapping_id || run.mappingProfile || run.mappingProfileId || null;
+				// Try several locations for ids (server responses vary)
+				const run = this.run || {};
+				const possiblePlanId = run.planId || run.plan?.id || run.planId || run.plan_id || (run.toJSON ? (run.toJSON().planId || null) : null);
+				const possibleMappingId = run.mappingProfileId || run.mapping_profile_id || run.mappingId || run.mapping_id || run.mappingProfile || run.mappingProfileId || null;
 
-					// Resolve plan name
-					if (planEl) {
-						if (possiblePlanId && window.PlanAPI && typeof window.PlanAPI.getById === 'function') {
-							try {
-								const plan = await window.PlanAPI.getById(possiblePlanId);
-								if (plan && plan.name) {
-									planEl.textContent = plan.name;
-								} else {
-									planEl.textContent = String(possiblePlanId);
-								}
-							} catch (e) {
-								// fallback to cached plan
-								const cached = window.WizardStorage?.getPlan();
-								if (cached && cached.name) planEl.textContent = cached.name;
+				// Resolve plan name
+				if (planEl) {
+					if (possiblePlanId && window.PlanAPI && typeof window.PlanAPI.getById === 'function') {
+						try {
+							const plan = await window.PlanAPI.getById(possiblePlanId);
+							if (plan && plan.name) {
+								planEl.textContent = plan.name;
+							} else {
+								planEl.textContent = String(possiblePlanId);
 							}
-						} else {
+						} catch (e) {
+							// fallback to cached plan
 							const cached = window.WizardStorage?.getPlan();
 							if (cached && cached.name) planEl.textContent = cached.name;
 						}
+					} else {
+						const cached = window.WizardStorage?.getPlan();
+						if (cached && cached.name) planEl.textContent = cached.name;
 					}
+				}
 
-					// Resolve mapping/profile name
-					if (profileEl) {
-						if (possibleMappingId && window.MappingAPI && typeof window.MappingAPI.getById === 'function') {
-							try {
-								const mapping = await window.MappingAPI.getById(possibleMappingId);
-								if (mapping && mapping.name) {
-									profileEl.textContent = mapping.name;
-								} else {
-									profileEl.textContent = String(possibleMappingId);
-								}
-							} catch (e) {
-								const cached = window.WizardStorage?.getMapping();
-								if (cached && cached.name) profileEl.textContent = cached.name;
+				// Resolve mapping/profile name
+				if (profileEl) {
+					if (possibleMappingId && window.MappingAPI && typeof window.MappingAPI.getById === 'function') {
+						try {
+							const mapping = await window.MappingAPI.getById(possibleMappingId);
+							if (mapping && mapping.name) {
+								profileEl.textContent = mapping.name;
+							} else {
+								profileEl.textContent = String(possibleMappingId);
 							}
-						} else {
+						} catch (e) {
 							const cached = window.WizardStorage?.getMapping();
 							if (cached && cached.name) profileEl.textContent = cached.name;
 						}
+					} else {
+						const cached = window.WizardStorage?.getMapping();
+						if (cached && cached.name) profileEl.textContent = cached.name;
 					}
-				} catch (err) {
-					console.error('Failed to populate results metadata:', err);
 				}
-			})();
+			} catch (err) {
+				console.error('Failed to populate results metadata:', err);
+			}
+		})();
 	}
 
 	/**

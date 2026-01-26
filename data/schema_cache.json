@@ -13506,7 +13506,7 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-01-23T10:57:18.767Z"
+    "lastUpdated": "2026-01-26T05:42:56.287Z"
   },
   "mysql": {
     "tables": {
@@ -22786,6 +22786,75 @@
         ],
         "uniqueIndexes": []
       },
+      "MIGRATION_MAPPINGS": {
+        "name": "MIGRATION_MAPPINGS",
+        "columns": {
+          "MAPPING_ID": {
+            "name": "MAPPING_ID",
+            "type": "VARCHAR",
+            "columnType": "varchar(36)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 36,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "NAME": {
+            "name": "NAME",
+            "type": "VARCHAR",
+            "columnType": "varchar(255)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 255,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": true,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "UPDATED_AT": {
+            "name": "UPDATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": true,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "MAPPING_JSON": {
+            "name": "MAPPING_JSON",
+            "type": "LONGTEXT",
+            "columnType": "longtext",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 4294967295,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "MAPPING_ID"
+        ],
+        "uniqueIndexes": []
+      },
       "MIGRATION_PLANS": {
         "name": "MIGRATION_PLANS",
         "columns": {
@@ -28391,6 +28460,6 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-01-23T10:57:17.924Z"
+    "lastUpdated": "2026-01-26T05:42:55.517Z"
   }
 }
