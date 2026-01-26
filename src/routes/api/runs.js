@@ -223,7 +223,7 @@ router.post("/runs", async (req, res) => {
 				keyStrategy: 'preserve',
 				dedupeKeys: [],
 				onDuplicate: 'SKIP',
-				cleanBefore: false,
+				cleanBefore: true,
 				batchSize: defaultBatchSize
 			};
 

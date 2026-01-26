@@ -1222,7 +1222,7 @@ async function runMigrationInternal({
 
 				const conn = await pool.getConnection();
 				try {
-					const cleanBefore = step.cleanBefore === true;
+					const cleanBefore = !!step.cleanBefore;
 					if (step.keyStrategy === "rekey" && primaryKeys.length) {
 						targetColumnsForInsert = targetColumnsForInsert.filter((c) => !primaryKeys.includes(c));
 					}
@@ -1317,7 +1317,7 @@ async function runMigrationInternal({
 						});
 					};
 
-                    while (offset < totalSource) {
+					while (offset < totalSource) {
 						// Allow per-table override but clamp to safe bounds
 						const effectiveBatch = (typeof step.batchSize === 'number' && !Number.isNaN(step.batchSize))
 							? Math.min(Math.max(Number(step.batchSize), 1), 10000)
