@@ -72,7 +72,7 @@ router.get('/migration/history/:run_id', async (req, res) => {
 
 router.post('/migration/plans/:plan_id/reuse', async (req, res) => {
 	const planId = Number(req.params.plan_id);
-	if (!planId) return res.redirect('/mapping');
+	if (!planId) return res.redirect('/wizard?step=3');
 	try {
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		await mysql.ensureMigrationTables(pool);
@@ -104,9 +104,9 @@ router.post('/migration/plans/:plan_id/reuse', async (req, res) => {
 			}
 		}
 		await pool.end();
-		res.redirect('/mapping');
+		res.redirect(`/wizard?reusePlanId=${planId}&step=3`);
 	} catch (err) {
-		res.redirect('/mapping');
+		res.redirect('/wizard?step=3');
 	}
 });
 

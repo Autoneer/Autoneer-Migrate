@@ -10,6 +10,7 @@ const { state } = require("../../config/state");
 const { Plan, Mapping, Schema } = require("../../migrate/models");
 const { PlanValidator } = require("../../migrate/validators");
 const runStore = require("../../migrate/runStore");
+const { normalizePlanTables, needsNormalization, resolveTargetTableName } = require("../../migrate/utils/tableNameCanonical");
 
 const router = express.Router();
 
@@ -128,13 +129,17 @@ async function resolvePlanMappingProfileId(pool, planRow, meta) {
 
 /**
  * POST /plans
- * Create a new migration plan from a mapping
- * Body: { mappingProfileId: string, name?: string }
+ * Create a new migration plan from a mapping or from full plan config
+ * Body: { mappingProfileId: string, name?: string, tables?: Array|Object, config?: Object }
+ * If 'plan' object with full config is provided, it will be persisted as-is.
+ * Otherwise, fallback to creating from mapping (legacy behavior).
  */
 router.post("/plans", async (req, res) => {
 	try {
-		const { mappingProfileId, mappingId, name, mapping: mappingPayload, saveAsProfile } = req.body;
-		const resolvedMappingProfileId = mappingProfileId ?? mappingId ?? mappingPayload?.mappingProfileId ?? mappingPayload?.id;
+		// Support both req.body.plan and top-level fields for flexibility
+		const bodyPlan = req.body.plan;
+		const { mappingProfileId, mappingId, name, mapping: mappingPayload, tables, config, saveAsProfile } = req.body;
+		const resolvedMappingProfileId = (bodyPlan?.mappingProfileId) ?? mappingProfileId ?? mappingId ?? mappingPayload?.mappingProfileId ?? mappingPayload?.id;
 
 		if (saveAsProfile !== undefined) {
 			console.debug('[Plans] Ignoring legacy saveAsProfile flag');
@@ -160,7 +165,7 @@ router.post("/plans", async (req, res) => {
 			});
 		}
 
-		// Load the mapping
+		// Load the mapping profile
 		const profile = await runStore.getMappingProfile(pool, resolvedMappingProfileId);
 
 		if (!profile) {
@@ -174,8 +179,68 @@ router.post("/plans", async (req, res) => {
 		const mappingData = safeParseJson(profile.mapping_json);
 		const mapping = Mapping.fromJSON(mappingData);
 
-		// Create plan from mapping
-		const plan = Plan.fromMapping(mapping, name);
+		// Determine if we have a full plan config to persist
+		// Priority: req.body.plan > top-level fields from wizard
+		let plan;
+		if (bodyPlan && bodyPlan.config && Array.isArray(bodyPlan.tables)) {
+			// Full plan config provided - use it as-is
+			console.log('[Plans] Creating plan from full config payload');
+			plan = Plan.fromJSON(bodyPlan);
+			plan.mappingProfileId = resolvedMappingProfileId;
+		} else if ((tables || config) && resolvedMappingProfileId) {
+			// Partial full config from wizard - merge with mapping defaults
+			console.log('[Plans] Creating plan from partial wizard config');
+			plan = Plan.fromMapping(mapping, {});
+
+			// Apply config overrides
+			if (config) {
+				plan.config = { ...plan.config, ...config };
+			}
+
+			// Apply table config overrides with canonical normalization
+			if (Array.isArray(tables)) {
+				// Build enriched table objects from array
+				const enrichedTables = tables.map(entry => {
+					if (typeof entry === 'string') {
+						return { table: entry };
+					}
+					return entry;
+				}).filter(e => e.table);
+
+				// Normalize to target table names ONLY
+				const normalized = normalizePlanTables(
+					enrichedTables.reduce((acc, e) => {
+						const key = e.table || e.name || e.targetTable;
+						if (key) {
+							acc[key] = {
+								mode: e.mode || 'INSERT',
+								keyStrategy: e.keyStrategy || 'preserve',
+								onDuplicate: e.onDuplicate || 'SKIP',
+								dedupeKeys: e.dedupeKeys || [],
+								batchSize: e.batchSize,
+								cleanBefore: e.cleanBefore
+							};
+						}
+						return acc;
+					}, {}),
+					mappingData
+				);
+
+				// Replace plan.tables with normalized (TARGET names only)
+				plan.tables = normalized.tablesObject;
+				console.log('[Plans] Normalized table keys to targets:', Object.keys(normalized.tablesObject));
+			}
+		} else {
+			// Legacy behavior - create from mapping only (already uses target names)
+			console.log('[Plans] Creating plan from mapping only (legacy)');
+			plan = Plan.fromMapping(mapping, {});
+		}
+
+		// Ensure plan uses config object if provided
+		if (config) {
+			plan.config = { ...plan.config, ...config };
+		}
+
 		const resolvedPlanName = (name || plan.name || mapping.name || mapping.mappingName || `Plan ${new Date().toLocaleDateString()}`).trim();
 		plan.name = resolvedPlanName;
 		const planJson = JSON.stringify(plan.toJSON());
@@ -270,12 +335,47 @@ router.get("/plans/:id", async (req, res) => {
 		const plan = Plan.fromJSON(planData);
 		const { mappingProfileId } = await resolvePlanMappingProfileId(pool, planRow, meta);
 		let mappingProfileName = null;
+		let mappingData = null;
+
 		if (mappingProfileId) {
 			const profile = await runStore.getMappingProfile(pool, mappingProfileId);
 			mappingProfileName = profile?.name || null;
+			if (profile) {
+				mappingData = safeParseJson(profile.mapping_json);
+			}
+		}
+
+		// SELF-HEAL: Normalize plan tables to target names if needed
+		let normalized = null;
+		if (mappingData && plan.tables) {
+			normalized = normalizePlanTables(plan.tables, mappingData);
+
+			// Check if normalization changed keys
+			if (needsNormalization(plan.tables, mappingData)) {
+				console.warn('[Plans] Auto-repairing plan tables to target-table keys', {
+					planId: id,
+					before: Object.keys(plan.tables),
+					after: Object.keys(normalized.tablesObject)
+				});
+
+				// Update plan in-memory
+				plan.tables = normalized.tablesObject;
+
+				// Write back to DB (self-heal)
+				const repairedPlanJson = JSON.stringify(plan.toJSON());
+				await pool.query(
+					`UPDATE migration_plans SET ${planJsonColumn} = ? WHERE plan_id = ?`,
+					[repairedPlanJson, id]
+				);
+			}
 		}
 
 		await pool.end();
+
+		// Prepare response: tables as ARRAY (for UI), tableConfigs as OBJECT (for per-table settings)
+		const planJson = plan.toJSON();
+		const tableConfigs = planJson.tables || {};
+		const tableList = Object.keys(tableConfigs); // Extract target table names as array
 
 		res.json({
 			success: true,
@@ -286,8 +386,10 @@ router.get("/plans/:id", async (req, res) => {
 				name: plan.name,
 				createdAt: planRow.created_at,
 				isValidated: hasIsValidated ? planRow.is_validated : false,
-				validationResult: plan.toJSON().validationResult,
-				tables: plan.toJSON().tables
+				validationResult: planJson.validationResult,
+				tables: tableList,        // ARRAY of target table names for UI
+				tableConfigs: tableConfigs, // OBJECT with per-table configs
+				config: planJson.config || null // Global config (batchSize, continueOnError, etc.)
 			}
 		});
 	} catch (err) {
@@ -332,33 +434,51 @@ router.put("/plans/:id", async (req, res) => {
 		const planData = safeParseJson(rawPlanJson);
 		const plan = Plan.fromJSON(planData);
 
+		// Load mapping for normalization
+		const { mappingProfileId } = await resolvePlanMappingProfileId(pool, planRow, meta);
+		let mappingData = null;
+		if (mappingProfileId) {
+			const profile = await runStore.getMappingProfile(pool, mappingProfileId);
+			if (profile) {
+				mappingData = safeParseJson(profile.mapping_json);
+			}
+		}
+
 		// Update name if provided
 		if (name) {
 			plan.name = name;
 		}
 
-		// Update table configurations if provided
-		if (Array.isArray(tables)) {
-			const normalizedTables = tables.filter(Boolean);
-			const existingConfigs = {};
-			for (const tableName of plan.getIncludedTables()) {
-				existingConfigs[tableName] = plan.getTableConfig(tableName);
-			}
-			plan.tables = {};
-			for (const tableName of normalizedTables) {
-				const existing = existingConfigs[tableName];
-				if (existing) {
-					plan.addTable(tableName, existing);
-				} else {
-					plan.addTable(tableName, {});
+		// Update table configurations if provided with normalization
+		if (tables && mappingData) {
+			// Normalize tables to target names
+			const normalized = normalizePlanTables(tables, mappingData);
+			plan.tables = normalized.tablesObject;
+			console.log('[Plans] Normalized tables on update:', Object.keys(normalized.tablesObject));
+		} else if (tables) {
+			// Fallback without mapping (try to preserve structure)
+			if (Array.isArray(tables)) {
+				const normalizedTables = tables.filter(Boolean);
+				const existingConfigs = {};
+				for (const tableName of plan.getIncludedTables()) {
+					existingConfigs[tableName] = plan.getTableConfig(tableName);
 				}
-			}
-		} else if (tables && typeof tables === "object") {
-			for (const [tableName, config] of Object.entries(tables)) {
-				if (plan.includesTable(tableName)) {
-					plan.updateTable(tableName, config);
-				} else {
-					plan.addTable(tableName, config);
+				plan.tables = {};
+				for (const tableName of normalizedTables) {
+					const existing = existingConfigs[tableName];
+					if (existing) {
+						plan.addTable(tableName, existing);
+					} else {
+						plan.addTable(tableName, {});
+					}
+				}
+			} else if (typeof tables === "object") {
+				for (const [tableName, config] of Object.entries(tables)) {
+					if (plan.includesTable(tableName)) {
+						plan.updateTable(tableName, config);
+					} else {
+						plan.addTable(tableName, config);
+					}
 				}
 			}
 		}
@@ -609,6 +729,30 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 
 		const mappingData = safeParseJson(profile.mapping_json);
 		const mapping = Mapping.fromJSON(mappingData);
+
+		// SELF-HEAL: Normalize plan tables before dry-run
+		if (plan.tables && mappingData) {
+			const normalized = normalizePlanTables(plan.tables, mappingData);
+			if (needsNormalization(plan.tables, mappingData)) {
+				console.warn('[Dry Run] Auto-repairing plan tables to target-table keys', {
+					planId: id,
+					before: Object.keys(plan.tables),
+					after: Object.keys(normalized.tablesObject)
+				});
+
+				// Update plan in-memory for this request
+				plan.tables = normalized.tablesObject;
+
+				// Write back to DB (self-heal for future requests)
+				const repairedPlanJson = JSON.stringify(plan.toJSON());
+				const poolForUpdate = await mysql.connectToSchema(state.mysql, state.schemaName);
+				await poolForUpdate.query(
+					`UPDATE migration_plans SET ${planJsonColumn} = ? WHERE plan_id = ?`,
+					[repairedPlanJson, id]
+				);
+				await poolForUpdate.end();
+			}
+		}
 
 		// Discover schemas
 		const schema = new Schema();

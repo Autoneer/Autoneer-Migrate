@@ -1,0 +1,12 @@
+{"timestamp":"2026-01-26T07:40:32.246Z","runId":183,"level":"info","phase":"run_start","dryRun":false,"batchSize":1000,"fkChecks":true,"tables":[{"table":"[OBJECT OBJECT]","mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","clean":false}]}
+{"timestamp":"2026-01-26T07:40:32.293Z","runId":183,"level":"info","phase":"preflight","attempt":1,"status":"ok"}
+{"timestamp":"2026-01-26T07:40:32.293Z","runId":183,"level":"debug","phase":"preflight","durationMs":47}
+{"timestamp":"2026-01-26T07:40:32.293Z","runId":183,"level":"info","phase":"preflight","action":"nullability_validation","status":"start"}
+{"timestamp":"2026-01-26T07:40:32.294Z","runId":183,"level":"info","phase":"preflight","action":"nullability_validation","status":"passed"}
+{"timestamp":"2026-01-26T07:40:32.335Z","runId":183,"level":"info","phase":"preflight","action":"foreign_key_checks_disabled","original_state":true}
+{"timestamp":"2026-01-26T07:40:32.335Z","runId":183,"level":"debug","phase":"table_loop","action":"starting","includedCount":1,"mappingTableCount":1}
+{"timestamp":"2026-01-26T07:40:32.336Z","runId":183,"level":"info","phase":"table_loop","action":"normalized_tables","sampleTables":["[OBJECT OBJECT]"]}
+{"timestamp":"2026-01-26T07:40:32.336Z","runId":183,"level":"debug","phase":"table_loop","action":"processing","tableName":"[OBJECT OBJECT]","mappingTableKeys":["WORKDONE"]}
+{"timestamp":"2026-01-26T07:40:32.337Z","runId":183,"level":"debug","phase":"table_loop","action":"mapping_resolved","tableName":"[OBJECT OBJECT]","hasMappingEntry":false}
+{"timestamp":"2026-01-26T07:40:32.348Z","runId":183,"level":"error","phase":"table_finalize","tableName":"[OBJECT OBJECT]","tableRunId":null,"status":"failed","error":"No mapping found for target table [OBJECT OBJECT].","hint":"Update your mapping to include this table."}
+{"timestamp":"2026-01-26T07:40:32.352Z","runId":183,"level":"error","phase":"run_finalize","status":"failed","error":"No mapping found for target table [OBJECT OBJECT]."}

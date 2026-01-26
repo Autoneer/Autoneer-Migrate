@@ -905,6 +905,9 @@ class MappingUI {
 			}
 			this.mapping.mappingProfileId = this.mapping.id;
 
+			// Store mappingProfileId in state for subsequent steps
+			this.state.set('mappingProfileId', this.mapping.id);
+
 			this.wizard.hideLoading();
 		} catch (err) {
 			this.wizard.hideLoading();

@@ -198,18 +198,23 @@ async function deleteMappingProfile(pool, id) {
 }
 
 async function storeIdMap(pool, { runId, tableName, sourceId, targetId }) {
-	await pool.query(
-		"insert into migration_id_map (run_id, table_name, source_id, target_id) values (?, ?, ?, ?)",
-		[String(runId), tableName, String(sourceId), String(targetId)]
-	);
+	// Persist source -> target PK mapping using new column names
+	try {
+		await pool.query(
+			"INSERT INTO migration_id_map (run_id, table_name, source_pk, target_pk, operation, created_at) VALUES (?, ?, ?, ?, 'INSERT', NOW()) ON DUPLICATE KEY UPDATE target_pk = VALUES(target_pk), operation = VALUES(operation)",
+			[String(runId), tableName, String(sourceId), String(targetId)]
+		);
+	} catch (err) {
+		console.error('[RunStore] storeIdMap failed:', err.message);
+	}
 }
 
 async function lookupIdMap(pool, { runId, tableName, sourceId }) {
 	const [rows] = await pool.query(
-		"select target_id from migration_id_map where run_id = ? and table_name = ? and source_id = ?",
+		"SELECT target_pk FROM migration_id_map WHERE run_id = ? AND table_name = ? AND source_pk = ? ORDER BY created_at DESC LIMIT 1",
 		[String(runId), tableName, String(sourceId)]
 	);
-	return rows[0]?.target_id || null;
+	return rows[0]?.target_pk || null;
 }
 
 async function deleteRun(pool, runId) {

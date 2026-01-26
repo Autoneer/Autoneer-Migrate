@@ -171,11 +171,13 @@ router.post("/runs", async (req, res) => {
 			planDataKeys: Object.keys(planData)
 		});
 
+		// CRITICAL: Enforce mapping requirement (defense-in-depth)
 		if (!mappingProfileId) {
 			await pool.end();
 			return res.status(400).json({
 				success: false,
-				error: "Plan is missing a mapping profile. Open the plan and re-select a profile or rebuild mapping."
+				error: "MAPPING_REQUIRED",
+				message: "Plan is missing a mapping profile. Open the plan and re-select a profile or rebuild mapping."
 			});
 		}
 
@@ -185,14 +187,26 @@ router.post("/runs", async (req, res) => {
 			await pool.end();
 			return res.status(404).json({
 				success: false,
-				error: "Mapping not found"
+				error: "MAPPING_NOT_FOUND",
+				message: "Mapping profile not found in database."
 			});
 		}
 
+		// Validate mapping has tables
 		const mappingJson = typeof mappingData.mapping_json === 'string'
 			? JSON.parse(mappingData.mapping_json || '{}')
 			: (mappingData.mapping_json || {});
 
+		if (!mappingJson.tables || Object.keys(mappingJson.tables).length === 0) {
+			await pool.end();
+			return res.status(400).json({
+				success: false,
+				error: "MAPPING_EMPTY",
+				message: "Mapping profile exists but contains no table mappings. Rebuild mapping in Step 2."
+			});
+		}
+
+		// mappingJson already parsed in validation block above
 		console.log('[Runs] Raw mapping from DB:', {
 			mappingProfileId,
 			hasTables: !!mappingJson.tables,

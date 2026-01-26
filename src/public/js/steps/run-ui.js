@@ -83,6 +83,9 @@ class RunUI {
 		} else if (status === 'SUCCESS' || status === 'COMPLETED') {
 			// Completed
 			container.innerHTML = this.renderCompleted();
+		} else if (status === 'COMPLETED_WITH_ERRORS') {
+			// Completed with errors
+			container.innerHTML = this.renderCompletedWithErrors();
 		} else if (status === 'FAILED') {
 			// Failed
 			container.innerHTML = this.renderFailed();
@@ -220,6 +223,51 @@ class RunUI {
 		  <span>Duration</span>
             <strong>${this.formatDuration(this.run.duration)}</strong>
           </div>
+        </div>
+        
+        <div class="completion-actions">
+          <button class="btn btn-primary" onclick="window.wizard.nextStep()">
+            View Results →
+          </button>
+        </div>
+      </div>
+    `;
+	}
+
+	/**
+	 * Render completed with errors state
+	 */
+	renderCompletedWithErrors() {
+		return `
+			<div class="run-completed-with-errors">
+				<div style="display:flex;align-items:center;gap:0.5rem;" class="completed-header">
+					<div class="warning-icon" style="font-size:1.6rem;line-height:1;">⚠</div>
+					<h2 style="margin:0;">Migration Completed With Errors</h2>
+				</div>
+				<p style="margin-top:0.5rem;">Some tables failed but migration continued for remaining tables</p>
+        
+        <div class="completion-summary">
+          <div class="stat">
+		  <span>Tables Completed</span>
+            <strong>${this.run.tablesCompleted || 0}</strong>
+          </div>
+          <div class="stat">
+		  <span>Tables Failed</span>
+            <strong style="color:#d9534f;">${this.run.tablesFailed || 0}</strong>
+          </div>
+          <div class="stat">
+		  <span>Total Rows Migrated</span>
+            <strong>${this.run.rowsMigrated || 0}</strong>
+          </div>
+          <div class="stat">
+		  <span>Duration</span>
+            <strong>${this.formatDuration(this.run.duration)}</strong>
+          </div>
+        </div>
+
+        <div style="background:#fcf8e3;border:1px solid #faebcc;border-radius:4px;padding:1rem;margin:1rem 0;">
+          <h4 style="margin-top:0;">Error Details</h4>
+          <p>${this.run.errorMessage || 'See logs for details'}</p>
         </div>
         
         <div class="completion-actions">

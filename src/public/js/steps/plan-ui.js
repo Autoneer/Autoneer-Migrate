@@ -27,8 +27,28 @@ class PlanUI {
 			return;
 		}
 
-		// Try to load existing plan
-		this.plan = this.state.get('plan') || {};
+		// Try to load existing plan from state
+		let planFromState = this.state.get('plan') || {};
+
+		// If planId exists, reload from DB to ensure we have latest state
+		if (planFromState.id) {
+			console.log('[PlanUI] Reloading plan from DB:', planFromState.id);
+			try {
+				const reloadedPlan = await this.api.getById(planFromState.id);
+				if (reloadedPlan) {
+					planFromState = reloadedPlan;
+					// Set tableConfigs from reloaded plan
+					if (reloadedPlan.tableConfigs) {
+						planFromState.tableConfigs = reloadedPlan.tableConfigs;
+					}
+					console.log('[PlanUI] Plan reloaded from DB');
+				}
+			} catch (err) {
+				console.warn('[PlanUI] Failed to reload plan from DB, using local state:', err);
+			}
+		}
+
+		this.plan = planFromState;
 
 		const DEFAULT_PLAN_CONFIG = {
 			batchSize: 1000,
@@ -45,8 +65,21 @@ class PlanUI {
 			this.plan.tables = [];
 		}
 
+		// Default to TARGET table names (not source keys)
 		if (this.plan.tables.length === 0) {
-			this.plan.tables = Object.keys(this.mapping.tables || {});
+			this.plan.tables = Object.entries(this.mapping.tables || {})
+				.map(([src, cfg]) => (cfg?.targetTable || cfg?.target || '').toUpperCase())
+				.filter(Boolean);
+		}
+
+		// CRITICAL: Normalize existing tables to TARGET names (fix reused plans with source keys)
+		// This fixes "0 fields mapped" when plan contains WORKDONE instead of WORK_DONE
+		if (this.plan.tables.length > 0 && window.TableNameUtils) {
+			const normalizedTables = window.TableNameUtils.normalizePlanTables(this.plan.tables, this.mapping);
+			if (JSON.stringify(normalizedTables) !== JSON.stringify(this.plan.tables)) {
+				console.warn('[PlanUI] Normalized plan tables to targets:', { before: this.plan.tables, after: normalizedTables });
+				this.plan.tables = normalizedTables;
+			}
 		}
 
 		if (!this.plan.name || this.plan.name.trim() === '') {
@@ -56,6 +89,11 @@ class PlanUI {
 
 		if (this.mapping?.mappingProfileId || this.mapping?.id) {
 			this.plan.mappingProfileId = this.mapping.mappingProfileId || this.mapping.id;
+		}
+
+		// Load per-table configs
+		if (!this.plan.tableConfigs) {
+			this.plan.tableConfigs = this.state.get('plan.tableConfigs') || {};
 		}
 
 		// Persist plan so wizard validation sees selected tables
@@ -191,15 +229,30 @@ class PlanUI {
 	 * Render plan tables
 	 */
 	renderPlanTables(tables) {
-		return tables.map((tableName, index) => {
-			const tableConfig = this.mapping?.tables?.[tableName] || {};
+		return tables.map((targetTableName, index) => {
+			// tables array now contains TARGET table names (e.g., WORK_DONE)
+			// Find the source table entry in mapping by matching targetTable
+			let sourceTableName = targetTableName;
+			let tableConfig = null;
+
+			// Search mapping.tables to find entry where targetTable matches
+			if (this.mapping?.tables) {
+				for (const [srcName, cfg] of Object.entries(this.mapping.tables)) {
+					if ((cfg?.targetTable || '').toUpperCase() === targetTableName.toUpperCase()) {
+						sourceTableName = srcName;
+						tableConfig = cfg;
+						break;
+					}
+				}
+			}
+
 			const fieldCount = Object.keys(tableConfig?.columns || {}).length;
 
 			return `
-        <tr data-table="${tableName}">
+        <tr data-table="${targetTableName}">
           <td>${index + 1}</td>
-          <td><strong>${tableName}</strong></td>
-          <td>${tableName} → ${tableConfig?.targetTable || '?'}</td>
+          <td><strong>${targetTableName}</strong></td>
+          <td>${sourceTableName} → ${targetTableName}</td>
           <td>${fieldCount} fields</td>
           <td>
             <button class="btn btn-sm btn-secondary" 
@@ -209,8 +262,12 @@ class PlanUI {
             </button>
             <button class="btn btn-sm btn-secondary" 
                     onclick="window.wizard.steps[2].component.moveDown(${index})"
-										${index === (tables.length - 1) ? 'disabled' : ''}>
+					${index === (tables.length - 1) ? 'disabled' : ''}>
               ↓
+            </button>
+            <button class="btn btn-sm btn-info" 
+                    onclick="window.wizard.steps[2].component.showTableOptions(${index})">
+              ⚙ Options
             </button>
             <button class="btn btn-sm btn-danger" 
                     onclick="window.wizard.steps[2].component.removeTable(${index})">
@@ -300,6 +357,118 @@ class PlanUI {
 	}
 
 	/**
+	 * Show per-table advanced options modal
+	 */
+	showTableOptions(index) {
+		const tableName = this.plan.tables[index];
+		if (!tableName) return;
+
+		if (!this.plan.tableConfigs) {
+			this.plan.tableConfigs = {};
+		}
+		if (!this.plan.tableConfigs[tableName]) {
+			this.plan.tableConfigs[tableName] = {};
+		}
+
+		const config = this.plan.tableConfigs[tableName];
+		const batchSize = config.batchSize || this.plan.config?.batchSize || 1000;
+		const cleanBefore = config.cleanBefore || false;
+
+		const html = `
+			<div class="table-options-modal" style="padding:0;">
+				<h3 style="margin-top:0;">Advanced Options: ${tableName}</h3>
+				<div style="margin-top:1.5rem;">
+					<div class="form-group">
+						<label for="table-batch-size-${index}" style="display:block;margin-bottom:0.5rem;">
+							<strong>Batch Size (rows per write):</strong>
+						</label>
+						<input type="number" id="table-batch-size-${index}" class="form-control" 
+						       value="${batchSize}" min="100" max="10000" step="100">
+						<small>Override global batch size for this table. Leave blank to use plan default (${this.plan.config?.batchSize || 1000}).</small>
+					</div>
+					<div class="form-group" style="margin-top:1rem;">
+						<label style="display:inline-flex;align-items:center;">
+							<input type="checkbox" id="table-clean-before-${index}" 
+							       ${cleanBefore ? 'checked' : ''} style="margin-right:0.5rem;">
+							<strong>Clean target table before migrate</strong>
+						</label>
+						<small style="display:block;margin-top:0.5rem;">
+							Deletes all rows in the target table before inserting. Use with caution.
+						</small>
+					</div>
+				</div>
+			</div>
+		`;
+
+		const modal = document.createElement('div');
+		modal.innerHTML = html;
+
+		const confirmBtn = document.createElement('button');
+		confirmBtn.className = 'btn btn-primary';
+		confirmBtn.textContent = 'Save';
+		confirmBtn.onclick = () => this.saveTableOptions(index, overlay);
+
+		const cancelBtn = document.createElement('button');
+		cancelBtn.className = 'btn btn-secondary';
+		cancelBtn.textContent = 'Cancel';
+		cancelBtn.onclick = () => overlay.remove();
+
+		const footer = document.createElement('div');
+		footer.style.marginTop = '1.5rem';
+		footer.style.display = 'flex';
+		footer.style.gap = '0.5rem';
+		footer.appendChild(confirmBtn);
+		footer.appendChild(cancelBtn);
+		modal.querySelector('.table-options-modal').appendChild(footer);
+
+		const overlay = document.createElement('div');
+		overlay.className = 'modal-overlay';
+		overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;';
+		const dialogBox = document.createElement('div');
+		dialogBox.className = 'modal-dialog';
+		dialogBox.style.cssText = 'background:white;border-radius:8px;padding:1.5rem;max-width:500px;box-shadow:0 2px 8px rgba(0,0,0,0.15);';
+		dialogBox.appendChild(modal.querySelector('.table-options-modal'));
+		overlay.appendChild(dialogBox);
+		overlay.onclick = (e) => {
+			if (e.target === overlay) overlay.remove();
+		};
+
+		document.body.appendChild(overlay);
+	}
+
+	/**
+	 * Save per-table options
+	 */
+	saveTableOptions(index, overlay) {
+		const tableName = this.plan.tables[index];
+		if (!tableName) return;
+
+		if (!this.plan.tableConfigs) {
+			this.plan.tableConfigs = {};
+		}
+
+		const batchSizeInput = document.getElementById(`table-batch-size-${index}`);
+		const cleanBeforeInput = document.getElementById(`table-clean-before-${index}`);
+
+		const config = {};
+		if (batchSizeInput && batchSizeInput.value.trim()) {
+			config.batchSize = parseInt(batchSizeInput.value, 10);
+		}
+		if (cleanBeforeInput) {
+			config.cleanBefore = cleanBeforeInput.checked;
+		}
+
+		this.plan.tableConfigs[tableName] = config;
+		this.state.set(`plan.tableConfigs.${tableName}`, config);
+
+		// Close modal
+		overlay.remove();
+
+		// Show success message
+		this.wizard.showSuccess(`Updated options for ${tableName}`);
+	}
+
+	/**
 	 * Remove table from plan
 	 */
 	async removeTable(index) {
@@ -325,10 +494,49 @@ class PlanUI {
 		this.wizard.showLoading('Running dry-run simulation...');
 
 		try {
-			// Ensure we have a mapping profile ID before creating plan
-			if (!this.mapping?.mappingProfileId && !this.mapping?.id) {
+			// CRITICAL: Determine mappingProfileId with strict precedence
+			let mappingProfileId = null;
+
+			// If plan exists in DB, reload to get its mappingProfileId
+			if (this.plan?.id) {
+				try {
+					const reloadedPlan = await this.api.getById(this.plan.id);
+					if (reloadedPlan?.mappingProfileId) {
+						mappingProfileId = reloadedPlan.mappingProfileId;
+					}
+				} catch (err) {
+					console.warn('[PlanUI] Could not reload plan for mappingProfileId:', err);
+				}
+			}
+
+			// Fall back to state mapping
+			if (!mappingProfileId) {
+				mappingProfileId = this.state.get('mappingProfileId') || this.mapping?.mappingProfileId || this.mapping?.id;
+			}
+
+			// HARD BLOCK: No mapping = no dry run
+			if (!mappingProfileId) {
 				console.error('[PlanUI] No mapping profile ID found. Mapping:', this.mapping);
-				this.wizard.showError('No mapping profile found. Please save your mapping in Step 2 first.');
+				this.wizard.hideLoading();
+
+				// Show modal with action to go back to Step 2
+				const confirmGoBack = confirm(
+					'No mapping found.\n\n' +
+					'Dry Run requires a saved mapping profile. ' +
+					'Go back to Step 2 and create/save a mapping.\n\n' +
+					'Click OK to go to Step 2, or Cancel to stay here.'
+				);
+
+				if (confirmGoBack) {
+					await this.wizard.showStep(2);
+				}
+				return;
+			}
+
+			// Validate mapping has tables
+			if (!this.mapping?.tables || Object.keys(this.mapping.tables).length === 0) {
+				this.wizard.hideLoading();
+				this.wizard.showError('Mapping profile is empty. Go back to Step 2 and map at least one table.');
 				return;
 			}
 
@@ -344,7 +552,7 @@ class PlanUI {
 				planNameInput.value = resolvedPlanName;
 			}
 
-			const mappingProfileId = this.mapping.mappingProfileId || this.mapping.id;
+			// mappingProfileId already determined above with strict precedence
 			console.log('[PlanUI] Running dry run with plan:', { name: this.plan.name, id: this.plan.id, mappingProfileId });
 
 			// Create or update plan first to ensure it's persisted
@@ -541,10 +749,27 @@ class PlanUI {
 			this.wizard.showLoading('Saving migration plan...');
 
 			const mappingProfileId = this.mapping.mappingProfileId || this.mapping.id;
+
+			// Build full plan payload with per-table configs
+			const normalizedTables = (this.plan.tables || []).map(tableName => {
+				const tableConfig = this.plan.tableConfigs?.[tableName] || {};
+				const result = {
+					table: tableName,
+					include: true,
+					mode: 'INSERT',
+					keyStrategy: 'preserve',
+					onDuplicate: 'SKIP',
+					dedupeKeys: []
+				};
+				if (tableConfig.batchSize) result.batchSize = tableConfig.batchSize;
+				if (tableConfig.cleanBefore) result.cleanBefore = tableConfig.cleanBefore;
+				return result;
+			});
+
 			const fullPayload = {
 				name: this.plan.name,
 				mappingProfileId,
-				tables: this.plan.tables || [],
+				tables: normalizedTables,
 				config: this.plan.config || {
 					batchSize: 1000,
 					continueOnError: false,

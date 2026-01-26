@@ -13506,7 +13506,7 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-01-26T05:42:56.287Z"
+    "lastUpdated": "2026-01-26T07:46:22.254Z"
   },
   "mysql": {
     "tables": {
@@ -23320,10 +23320,10 @@
           "STATUS": {
             "name": "STATUS",
             "type": "ENUM",
-            "columnType": "enum('RUNNING','SUCCESS','FAILED','CANCELLED')",
+            "columnType": "enum('RUNNING','SUCCESS','FAILED','CANCELLED','COMPLETED_WITH_ERRORS')",
             "nullable": false,
             "defaultValue": "RUNNING",
-            "length": 9,
+            "length": 21,
             "precision": null,
             "scale": null,
             "isPrimaryKey": false,
@@ -28460,6 +28460,6 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-01-26T05:42:55.517Z"
+    "lastUpdated": "2026-01-26T07:46:21.450Z"
   }
 }

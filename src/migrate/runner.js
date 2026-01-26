@@ -4,6 +4,9 @@ const mysql = require("../db/mysql");
 const { applyTransform } = require("./mappers");
 const runStore = require("./runStore");
 const logger = require("./logger");
+const { resolveTargetTableName } = require("./utils/tableNameCanonical");
+const mappingPersistence = require("./mappingPersistence");
+const idMapTracker = require("./idMapTracker");
 
 const runEmitters = new Map();
 const runStates = new Map();
@@ -1002,6 +1005,21 @@ async function runMigrationInternal({
 
 			logRun({ level: 'debug', phase: 'table_loop', action: 'starting', includedCount: includedSteps.length, mappingTableCount: Object.keys(mapping?.tables || {}).length });
 
+			// CRITICAL: Normalize all table names to canonical TARGET names
+			for (const step of includedSteps) {
+				const originalName = step.table;
+				const canonicalName = resolveTargetTableName(originalName, mapping);
+				if (canonicalName !== originalName) {
+					console.warn('[Runner] Normalized table name:', { original: originalName, canonical: canonicalName });
+					step.table = canonicalName;
+				}
+			}
+			logRun({ level: 'info', phase: 'table_loop', action: 'normalized_tables', sampleTables: includedSteps.slice(0, 5).map(s => s.table) });
+
+			// Extract continueOnError from plan config
+			const continueOnError = plan && Array.isArray(plan) ? false : (plan?.config?.continueOnError || false);
+			let tableErrors = [];
+
 			for (const step of includedSteps) {
 				checkAbort(runId);
 				const tableName = step.table;
@@ -1013,15 +1031,23 @@ async function runMigrationInternal({
 
 				const failRun = async (errorMessage, hint, phase = "unknown") => {
 					if (!tableState) return;
+					tableErrors.push({ tableName, errorMessage, hint, phase });
 					runFailed = true;
-					failureInfo = { tableName, errorMessage, hint };
+					if (!continueOnError) {
+						failureInfo = { tableName, errorMessage, hint };
+						runState.status = "FAILED";
+						runState.currentTable = tableName;
+						runState.finishedAt = new Date().toISOString();
+						markRemainingNotRun(tableName);
+					} else {
+						// Mark table as failed but continue to next
+						tableState.status = "FAILED";
+						tableState.lastError = { message: errorMessage, hint, phase };
+						runState.tables = runState.tables || [];
+					}
 					tableState.status = "FAILED";
 					tableState.lastError = { message: errorMessage, hint, phase };
-					runState.status = "FAILED";
-					runState.currentTable = tableName;
-					runState.finishedAt = new Date().toISOString();
 					logRun({ level: "error", phase: "table_finalize", tableName, tableRunId, status: "failed", error: errorMessage, hint });
-					markRemainingNotRun(tableName);
 					emitRunState(runId, emitter);
 				};
 
@@ -1034,7 +1060,8 @@ async function runMigrationInternal({
 					}
 					await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
 					await failRun(errorMessage, hint, "precheck");
-					break;
+					if (!continueOnError) break;
+					continue;
 				}
 
 				const mappedSource = mappingEntry.sourceTable;
@@ -1074,7 +1101,8 @@ async function runMigrationInternal({
 					}
 					await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
 					await failRun(errorMessage, "Check that the Firebird schema contains this table and the mapping is correct.", "precheck");
-					break;
+					if (!continueOnError) break;
+					continue;
 				}
 
 				const firebirdColumnNames = (await firebird.listColumns(firebirdConfig, sourceTable)).map((c) => c.toLowerCase());
@@ -1093,7 +1121,8 @@ async function runMigrationInternal({
 					}
 					await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
 					await failRun(errorMessage, "Update your mapping or target schema so columns match.", "precheck");
-					break;
+					if (!continueOnError) break;
+					continue;
 				}
 
 				// Validate dedupe keys for NULL values in source data
@@ -1142,7 +1171,8 @@ async function runMigrationInternal({
 					}
 					await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
 					await failRun(errorMessage, "Select dedupe keys in the plan or switch to Preserve IDs.", "precheck");
-					break;
+					if (!continueOnError) break;
+					continue;
 				}
 
 				if (!tableRun) {
@@ -1292,11 +1322,15 @@ async function runMigrationInternal({
 						for (const row of batch) {
 							const mappedRow = await mapRow(row, columnsMap, async (lookupTable, id) => {
 								if (id === null || id === undefined) return id;
-								return runStore.lookupIdMap(pool, {
+								const target = await idMapTracker.lookupTargetPk(pool, {
 									runId,
-									tableName: lookupTable,
-									sourceId: id
+									parentTable: lookupTable,
+									sourcePk: id
 								});
+								if (target == null) {
+									throw new Error(`Missing ID mapping for foreign key ${lookupTable}.${id} in run ${runId}`);
+								}
+								return target;
 							});
 							const values = targetColumnsForInsert.map((c) => mappedRow[c]);
 							const sourceId = sourceIdColumn ? row[sourceIdColumn.toLowerCase()] : undefined;
@@ -1376,11 +1410,12 @@ async function runMigrationInternal({
 											toUpdate.push({ row, sourceRow, rowIndex, key });
 											const existingPk = existingMap.get(key);
 											if (step.keyStrategy === "rekey" && existingPk && row.sourceId !== undefined) {
-												await runStore.storeIdMap(pool, {
+												await idMapTracker.recordIdMapping(pool, {
 													runId,
 													tableName,
-													sourceId: row.sourceId,
-													targetId: existingPk
+													sourcePk: row.sourceId,
+													targetPk: existingPk,
+													operation: 'UPDATE'
 												});
 											}
 										} else {
@@ -1456,11 +1491,12 @@ async function runMigrationInternal({
 												batchInserted += 1;
 												totals.rows_total_migrated += 1;
 												if (result.insertId && row.sourceId !== undefined) {
-													await runStore.storeIdMap(pool, {
+													await idMapTracker.recordIdMapping(pool, {
 														runId,
 														tableName,
-														sourceId: row.sourceId,
-														targetId: result.insertId
+														sourcePk: row.sourceId,
+														targetPk: result.insertId,
+														operation: 'INSERT'
 													});
 												}
 											} catch (err) {
@@ -1511,6 +1547,27 @@ async function runMigrationInternal({
 												ignoreDuplicatesForInsert && step.mode !== "UPSERT"
 													? Math.max(totalRows - inserted, 0)
 													: 0;
+
+											// Record ID mappings for bulk inserts when possible (non-UPSERT)
+											try {
+												if (result.insertId && primaryKeys.length === 1 && step.mode !== 'UPSERT') {
+													const firstId = Number(result.insertId);
+													const mappings = [];
+													for (let i = 0; i < inserted; i += 1) {
+														const item = toInsert[i];
+														if (item && item.sourceId !== undefined) {
+															mappings.push({ sourcePk: item.sourceId, targetPk: String(firstId + i), operation: 'INSERT' });
+														}
+													}
+													if (mappings.length) {
+														await idMapTracker.recordBatch(pool, { runId, tableName, mappings });
+													}
+												}
+											} catch (err) {
+												// best-effort: log and continue
+												console.warn('[Runner] Failed to record bulk ID mappings:', err?.message || err);
+											}
+
 											rowsMigrated += inserted + updated;
 											rowsInserted += inserted;
 											rowsUpdated += updated;
@@ -1594,11 +1651,12 @@ async function runMigrationInternal({
 												totals.rows_total_migrated += 1;
 											}
 											if (result.insertId && row.sourceId !== undefined) {
-												await runStore.storeIdMap(pool, {
+												await idMapTracker.recordIdMapping(pool, {
 													runId,
 													tableName,
-													sourceId: row.sourceId,
-													targetId: result.insertId
+													sourcePk: row.sourceId,
+													targetPk: result.insertId,
+													operation: 'INSERT'
 												});
 											}
 										} catch (err) {
@@ -1637,6 +1695,26 @@ async function runMigrationInternal({
 											ignoreDuplicatesForInsert && step.mode !== "UPSERT"
 												? Math.max(totalRows - inserted, 0)
 												: 0;
+
+										// Record ID mappings for bulk inserts when possible (non-UPSERT)
+										try {
+											if (result.insertId && primaryKeys.length === 1 && step.mode !== 'UPSERT') {
+												const firstId = Number(result.insertId);
+												const mappings = [];
+												for (let i = 0; i < inserted; i += 1) {
+													const item = rowsToInsert[i];
+													if (item && item.sourceId !== undefined) {
+														mappings.push({ sourcePk: item.sourceId, targetPk: String(firstId + i), operation: 'INSERT' });
+													}
+												}
+												if (mappings.length) {
+													await idMapTracker.recordBatch(pool, { runId, tableName, mappings });
+												}
+											}
+										} catch (err) {
+											console.warn('[Runner] Failed to record bulk ID mappings:', err?.message || err);
+										}
+
 										rowsMigrated += inserted + updated;
 										rowsInserted += inserted;
 										rowsUpdated += updated;
@@ -1837,9 +1915,21 @@ async function runMigrationInternal({
 			}
 
 			if (runFailed) {
-				await runStore.finishRun(pool, runId, "FAILED", failureInfo?.errorMessage || null);
-				logRun({ level: "error", phase: "run_finalize", status: "failed", error: failureInfo?.errorMessage || null });
-				emitRunState(runId, emitter);
+				if (continueOnError && tableErrors.length > 0) {
+					// Migration completed but with errors on some tables
+					runState.status = "COMPLETED_WITH_ERRORS";
+					runState.finishedAt = new Date().toISOString();
+					await runStore.finishRun(pool, runId, "COMPLETED_WITH_ERRORS", `${tableErrors.length} table(s) failed`);
+					logRun({ level: "warn", phase: "run_finalize", status: "completed_with_errors", tableErrorCount: tableErrors.length });
+					emitRunState(runId, emitter);
+				} else {
+					// Hard failure - stop migration
+					runState.status = "FAILED";
+					runState.finishedAt = new Date().toISOString();
+					await runStore.finishRun(pool, runId, "FAILED", failureInfo?.errorMessage || null);
+					logRun({ level: "error", phase: "run_finalize", status: "failed", error: failureInfo?.errorMessage || null });
+					emitRunState(runId, emitter);
+				}
 			} else {
 				runState.status = "SUCCESS";
 				runState.finishedAt = new Date().toISOString();
@@ -1933,6 +2023,26 @@ async function startMigration({
 		plan,
 		mappingProfileId: mapping?.profileId || null
 	});
+
+	// CRITICAL: Save immutable mapping snapshot for deterministic reuse
+	try {
+		const includedTables = (plan || []).filter(step => step.include).map(step => {
+			// Normalize to canonical target names
+			return resolveTargetTableName(step.table, mapping);
+		});
+		const savedCount = await mappingPersistence.saveRunMappings(pool, {
+			runId,
+			planId: mapping?.planId || null,
+			mappingProfileId: mapping?.profileId || null,
+			mapping,
+			includedTables
+		});
+		console.log(`[Runner] Saved ${savedCount} mapping snapshots for run ${runId}`);
+	} catch (err) {
+		console.error('[Runner] Failed to save run mappings:', err.message);
+		// Don't fail the run, but log warning
+	}
+
 	await pool.end();
 	createEmitter(runId);
 	createRunState(runId, plan, mapping);

@@ -37,8 +37,56 @@ class MigrationWizard {
 			// Initialize state from localStorage
 			this.state.initialize();
 
-			// Get saved step from state (default to 1)
-			const savedStep = this.state.get('currentStep') || 1;
+			// Check for reusePlanId query param
+			const urlParams = new URLSearchParams(window.location.search);
+			const reusePlanId = urlParams.get('reusePlanId');
+			const stepParam = urlParams.get('step');
+
+			let initialStep = this.state.get('currentStep') || 1;
+			if (stepParam) {
+				initialStep = parseInt(stepParam, 10);
+			}
+
+			// If reusePlanId provided, load plan and mapping before showing step 3
+			if (reusePlanId) {
+				console.log('[Wizard] Loading reused plan:', reusePlanId);
+				try {
+					// Fetch plan details using singleton API (not constructor)
+					const planAPI = window.PlanAPI;
+					const plan = await planAPI.getById(reusePlanId);
+					if (plan && plan.mappingProfileId) {
+						// Load mapping profile using singleton API (not constructor)
+						const mappingAPI = window.MappingAPI;
+						const mappingProfile = await mappingAPI.getById(plan.mappingProfileId);
+						// API returns { id, name, tables } - no .mapping property
+						if (mappingProfile?.tables) {
+							// Normalize mapping object for wizard compatibility
+							const normalizedMapping = {
+								...mappingProfile,
+								mappingProfileId: mappingProfile.id,
+								id: mappingProfile.id
+							};
+							// Set state for wizard
+							this.state.set('mapping', normalizedMapping);
+							this.state.set('plan', plan);
+							// Force step 3 when reusing plan (ignore localStorage)
+							initialStep = 3;
+							console.log('[Wizard] Loaded plan and mapping for reuse');
+						} else {
+							throw new Error('Mapping profile loaded but has no tables');
+						}
+					} else {
+						throw new Error('Plan loaded but has no mappingProfileId');
+					}
+					// Clean up URL to avoid re-loading on refresh (after successful load)
+					window.history.replaceState({}, document.title, '/wizard');
+				} catch (err) {
+					console.error('[Wizard] Failed to load reused plan:', err);
+					this.wizard?.showError?.(`Failed to load plan: ${err.message}`);
+					// Fall back to step 1
+					initialStep = 1;
+				}
+			}
 
 			// Set currentStep to 0 so first showStep() call always renders
 			this.currentStep = 0;
@@ -50,7 +98,7 @@ class MigrationWizard {
 			await this.loadStepComponents();
 
 			// Show initial step (will always render since currentStep is 0)
-			await this.showStep(savedStep);
+			await this.showStep(initialStep);
 
 			// Set up event listeners
 			this.setupEventListeners();
