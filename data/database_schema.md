@@ -1362,3 +1362,138 @@ create table xero_settings (
     created_at timestamp default current_timestamp,
     updated_at timestamp
 );
+
+-- ============================================================================
+-- Migration runtime tables (used by the migration service)
+-- Ensure these tables exist and match the application expectations
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS migration_runs (
+    run_id INT AUTO_INCREMENT PRIMARY KEY,
+    plan_id INT NULL,
+    run_label VARCHAR(150) NULL,
+    source_conn_name VARCHAR(150) NULL,
+    target_schema_name VARCHAR(150) NULL,
+    started_at DATETIME NULL,
+    ended_at DATETIME NULL,
+    status ENUM('RUNNING','SUCCESS','FAILED','CANCELLED','COMPLETED_WITH_ERRORS') NOT NULL DEFAULT 'RUNNING',
+    table_summary_json JSON NULL,
+    error_count INT DEFAULT 0,
+    warn_count INT DEFAULT 0,
+    error_message VARCHAR(1000) NULL,
+    INDEX idx_runs_status_started (status, started_at)
+);
+
+CREATE TABLE IF NOT EXISTS migration_runs_legacy (
+    id VARCHAR(36) PRIMARY KEY,
+    status VARCHAR(20) NOT NULL,
+    error_message VARCHAR(1000) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    started_at TIMESTAMP NULL,
+    finished_at TIMESTAMP NULL,
+    dry_run TINYINT(1) DEFAULT 0,
+    batch_size INT DEFAULT 500,
+    fk_checks TINYINT(1) DEFAULT 1,
+    schema_name VARCHAR(100) NOT NULL,
+    plan_json LONGTEXT,
+    mapping_profile_id INT NULL
+);
+
+CREATE TABLE IF NOT EXISTS migration_table_runs (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    run_id VARCHAR(36) NOT NULL,
+    table_name VARCHAR(100) NOT NULL,
+    mode VARCHAR(30) NOT NULL,
+    key_strategy VARCHAR(30) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    started_at TIMESTAMP NULL,
+    finished_at TIMESTAMP NULL,
+    last_offset INT DEFAULT 0,
+    rows_source INT DEFAULT 0,
+    rows_migrated INT DEFAULT 0,
+    rows_skipped INT DEFAULT 0,
+    rows_skipped_duplicates INT DEFAULT 0,
+    rows_error INT DEFAULT 0,
+    error_message VARCHAR(500) NULL,
+    INDEX idx_migration_table_runs_run (run_id)
+);
+
+CREATE TABLE IF NOT EXISTS migration_row_errors (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    run_id VARCHAR(36) NOT NULL,
+    table_name VARCHAR(100) NOT NULL,
+    source_table VARCHAR(100) NULL,
+    target_table VARCHAR(100) NULL,
+    row_offset INT,
+    source_pk VARCHAR(100) NULL,
+    error_message VARCHAR(1000),
+    hint VARCHAR(500) NULL,
+    row_json LONGTEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_migration_row_errors_run (run_id)
+);
+
+CREATE TABLE IF NOT EXISTS migration_run_errors (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    run_id INT NOT NULL,
+    table_name VARCHAR(100) NOT NULL,
+    source_pk VARCHAR(100) NULL,
+    field_name VARCHAR(100) NULL,
+    error_code VARCHAR(50) NULL,
+    message TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_run_errors_run (run_id, table_name)
+);
+
+CREATE TABLE IF NOT EXISTS migration_mapping_profiles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    mapping_json LONGTEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL
+);
+
+CREATE TABLE IF NOT EXISTS migration_plans (
+    plan_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    mapping_json LONGTEXT NULL,
+    source_schema_signature VARCHAR(255) NULL,
+    target_schema_signature VARCHAR(255) NULL,
+    created_by_staff_id INT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL,
+    mapping_profile_id INT NULL
+);
+
+CREATE TABLE IF NOT EXISTS migration_run_mappings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    run_id INT NOT NULL,
+    plan_id INT NULL,
+    mapping_profile_id VARCHAR(36) NULL,
+    table_name VARCHAR(100) NOT NULL COMMENT 'Canonical uppercase TARGET table name',
+    source_table VARCHAR(100) NOT NULL COMMENT 'Firebird source table name',
+    target_table VARCHAR(100) NOT NULL COMMENT 'MySQL target table name',
+    mapping_json LONGTEXT NOT NULL COMMENT 'Full resolved column mappings (no placeholders)',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_run_id (run_id),
+    INDEX idx_plan_id (plan_id),
+    INDEX idx_table_name (table_name),
+    UNIQUE KEY uk_run_table (run_id, table_name)
+);
+
+CREATE TABLE IF NOT EXISTS migration_id_map (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    run_id VARCHAR(36) NOT NULL,
+    table_name VARCHAR(100) NOT NULL COMMENT 'Canonical uppercase TARGET table name',
+    source_pk VARCHAR(255) NOT NULL COMMENT 'Source primary key value (composite keys pipe-delimited)',
+    target_pk VARCHAR(255) NOT NULL COMMENT 'Target primary key value (composite keys pipe-delimited)',
+    operation ENUM('INSERT','SKIP','UPDATE') NOT NULL COMMENT 'INSERT=new row, SKIP=duplicate found, UPDATE=updated existing',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_run_id (run_id),
+    INDEX idx_table_name (table_name),
+    INDEX idx_source_pk (table_name, source_pk(100)),
+    INDEX idx_run_table_source (run_id, table_name, source_pk(100)),
+    UNIQUE KEY uk_run_table_source (run_id, table_name, source_pk(255))
+);
+
+-- End of migration runtime tables

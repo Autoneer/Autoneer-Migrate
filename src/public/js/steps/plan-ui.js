@@ -465,7 +465,7 @@ class PlanUI {
 		overlay.remove();
 
 		// Show success message
-		this.wizard.showSuccess(`Updated options for ${tableName}`);
+		// this.wizard.showSuccess(`Updated options for ${tableName}`);
 	}
 
 	/**
