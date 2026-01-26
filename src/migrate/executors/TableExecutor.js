@@ -41,7 +41,12 @@ class TableExecutor {
 	 * @returns {Promise<{ inserted: number, updated: number, skipped: number, errors: number }>}
 	 */
 	async execute(options = {}) {
-		const { batchSize = 500, dryRun = false } = options;
+		let { batchSize = 500, dryRun = false } = options;
+
+		// Defensive clamping: ensure batchSize is a sane positive integer
+		batchSize = Number(batchSize) || 500;
+		if (Number.isNaN(batchSize) || !isFinite(batchSize)) batchSize = 500;
+		batchSize = Math.min(Math.max(Math.floor(batchSize), 1), 10000);
 
 		this.logger?.log({
 			level: 'info',
@@ -60,7 +65,7 @@ class TableExecutor {
 				await this.clean();
 			}
 
-			// 3. Migrate in batches
+			// 3. Migrate in batches (using clamped batch size)
 			await this.migrateInBatches(batchSize, dryRun);
 
 			// 4. Post-validation (if implemented)
