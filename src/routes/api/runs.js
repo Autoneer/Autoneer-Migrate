@@ -484,8 +484,8 @@ router.get("/runs/:runId", async (req, res) => {
 
 			// Populate with current state data
 			run.status = runState.status;
-			run.startedAt = runState.startedAt || new Date();
-			run.completedAt = runState.completedAt || null;
+			run.startedAt = runState.startedAt ? new Date(runState.startedAt) : new Date();
+			run.completedAt = runState.completedAt ? new Date(runState.completedAt) : null;
 			run.dryRun = runState.dryRun || false;
 
 			// Add table results
@@ -620,7 +620,7 @@ router.get("/runs/:runId/progress", async (req, res) => {
 			const run = new Run(runKey, planAdapter);
 
 			run.status = runState.status;
-			run.startedAt = runState.startedAt || new Date();
+			run.startedAt = runState.startedAt ? new Date(runState.startedAt) : new Date();
 
 			(runState.tables || []).forEach(table => {
 				if (table.status === "COMPLETED") {
