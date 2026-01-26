@@ -354,6 +354,20 @@ class WizardState {
 	 * @param {Object} plan - Plan object
 	 */
 	setPlan(plan) {
+		// Ensure plan.tables is an array of canonical string table names
+		if (plan && Array.isArray(plan.tables)) {
+			plan.tables = plan.tables.map(t => {
+				if (typeof t === 'string') return t.toUpperCase();
+				if (t && typeof t === 'object') {
+					// Common UI select shapes: { value: 'NAME' } or { targetTable: 'NAME' }
+					if (t.value) return String(t.value).toUpperCase();
+					if (t.targetTable) return String(t.targetTable).toUpperCase();
+					if (t.table) return String(t.table).toUpperCase();
+					return JSON.stringify(t).toUpperCase();
+				}
+				return String(t || '').toUpperCase();
+			});
+		}
 		this.set('plan', plan);
 		window.WizardStorage.markStepComplete(3);
 	}

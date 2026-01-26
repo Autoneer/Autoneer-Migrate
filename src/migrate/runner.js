@@ -863,7 +863,15 @@ async function runMigrationInternal({
 			batchSize,
 			fkChecks,
 			tables: (plan || []).filter((step) => step.include).map((step) => ({
-				table: step.table,
+				table: (function () {
+					try {
+						// Prefer canonical target name if mapping available, else coerce to string
+						const resolved = resolveTargetTableName(step.table, mapping);
+						return resolved || String(step.table || '').toUpperCase();
+					} catch (e) {
+						return String(step.table || '').toUpperCase();
+					}
+				})(),
 				mode: step.mode,
 				keyStrategy: step.keyStrategy,
 				dedupeKeys: step.dedupeKeys || [],

@@ -13506,7 +13506,7 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-01-26T07:46:22.254Z"
+    "lastUpdated": "2026-01-26T09:07:26.645Z"
   },
   "mysql": {
     "tables": {
@@ -23230,6 +23230,123 @@
         ],
         "uniqueIndexes": []
       },
+      "MIGRATION_RUN_MAPPINGS": {
+        "name": "MIGRATION_RUN_MAPPINGS",
+        "columns": {
+          "ID": {
+            "name": "ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "RUN_ID": {
+            "name": "RUN_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "PLAN_ID": {
+            "name": "PLAN_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "MAPPING_PROFILE_ID": {
+            "name": "MAPPING_PROFILE_ID",
+            "type": "VARCHAR",
+            "columnType": "varchar(36)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 36,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "TABLE_NAME": {
+            "name": "TABLE_NAME",
+            "type": "VARCHAR",
+            "columnType": "varchar(100)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 100,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "SOURCE_TABLE": {
+            "name": "SOURCE_TABLE",
+            "type": "VARCHAR",
+            "columnType": "varchar(100)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 100,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "TARGET_TABLE": {
+            "name": "TARGET_TABLE",
+            "type": "VARCHAR",
+            "columnType": "varchar(100)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 100,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "MAPPING_JSON": {
+            "name": "MAPPING_JSON",
+            "type": "LONGTEXT",
+            "columnType": "longtext",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 4294967295,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": true,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ID"
+        ],
+        "uniqueIndexes": []
+      },
       "MIGRATION_RUNS": {
         "name": "MIGRATION_RUNS",
         "columns": {
@@ -23533,6 +23650,63 @@
         },
         "primaryKey": [
           "ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "MIGRATION_SCHEMAS": {
+        "name": "MIGRATION_SCHEMAS",
+        "columns": {
+          "SCHEMA_ID": {
+            "name": "SCHEMA_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "DB_NAME": {
+            "name": "DB_NAME",
+            "type": "VARCHAR",
+            "columnType": "varchar(50)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 50,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": true
+          },
+          "SCHEMA_JSON": {
+            "name": "SCHEMA_JSON",
+            "type": "LONGTEXT",
+            "columnType": "longtext",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 4294967295,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CACHED_AT": {
+            "name": "CACHED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": true,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "SCHEMA_ID"
         ],
         "uniqueIndexes": []
       },
@@ -28460,6 +28634,6 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-01-26T07:46:21.450Z"
+    "lastUpdated": "2026-01-26T09:07:25.607Z"
   }
 }

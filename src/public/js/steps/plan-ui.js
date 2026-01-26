@@ -558,10 +558,22 @@ class PlanUI {
 			// Create or update plan first to ensure it's persisted
 			let planId = this.plan.id;
 
+			// Ensure tables are serialized as plain uppercase strings
+			const normalizedTables = (this.plan.tables || []).map(t => {
+				if (typeof t === 'string') return t.toUpperCase();
+				if (t && typeof t === 'object') {
+					if (t.value) return String(t.value).toUpperCase();
+					if (t.targetTable) return String(t.targetTable).toUpperCase();
+					if (t.table) return String(t.table).toUpperCase();
+					return JSON.stringify(t).toUpperCase();
+				}
+				return String(t || '').toUpperCase();
+			});
+
 			const fullPayload = {
 				name: this.plan.name,
 				mappingProfileId,
-				tables: this.plan.tables || [],
+				tables: normalizedTables,
 				config: this.plan.config
 			};
 
