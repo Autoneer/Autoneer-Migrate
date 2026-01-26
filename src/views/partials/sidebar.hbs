@@ -1,9 +1,9 @@
 <aside class="sidebar">
 	<div class="brand">Autoneer Migrator</div>
 	<nav class="steps">
+		<a class="step {{#if (eq currentStep 'setup')}}active{{/if}}" href="/setup">🛠 Setup</a>
 		<a class="step {{#if (eq currentStep 'wizard')}}active{{/if}}" href="/wizard">🧙 Migration Wizard</a>
-		<a class="step {{#if (eq currentStep 'setup')}}active{{/if}}" href="/setup">Setup</a>
-		<a class="step {{#if (eq currentStep 'migration')}}active{{/if}}" href="/migration/history">Migration
+		<a class="step {{#if (eq currentStep 'migration')}}active{{/if}}" href="/migration/history"> 📜 Migration
 			History</a>
 	</nav>
 </aside>

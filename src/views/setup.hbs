@@ -57,12 +57,6 @@
 			</div>
 		</div>
 	</form>
-	<div class="actions">
-		<button class="btn primary" id="next-plan" type="submit" formaction="/setup/save" formmethod="post"
-			form="setup-form">
-			Next: Plan
-		</button>
-	</div>
 </section>
 
 <section class="card">
@@ -94,12 +88,12 @@
 	{{/if}}
 </section>
 
-<div class="modal" id="loading-modal" aria-hidden="true">
+{{!-- <div class="modal" id="loading-modal" aria-hidden="true">
 	<div class="modal-content">
 		<div class="spinner"></div>
 		<div>Loading plan…</div>
 	</div>
-</div>
+</div> --}}
 
 {{#if testResult}}
 <script id="test-result-data" type="application/json">{{{json testResult}}}</script>

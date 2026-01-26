@@ -7,7 +7,8 @@
 		"dev": "nodemon src/app.js",
 		"start": "node src/app.js",
 		"diagnostics": "node src/scripts/diagnostics.js",
-		"test": "node scripts/test_validation.js"
+		"test": "node scripts/test_validation.js",
+		"check:public-dup": "node scripts/check_public_dup.js"
 	},
 	"dependencies": {
 		"body-parser": "^1.20.3",

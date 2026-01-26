@@ -265,29 +265,29 @@ class WizardState {
 
 			case 2: // Mapping
 				if (!this.state.mapping.name) {
-					errors.push('Mapping name required');
+					errors.push('You must supply a Profile Name');
 				}
 				const tables = this.state.mapping.tables || {};
 				if (Object.keys(tables).length === 0) {
-					errors.push('No tables mapped');
+					errors.push('You must map at least one table');
 				}
 				break;
 
 			case 3: // Plan
 				if (!this.state.plan?.name || this.state.plan.name.trim() === '') {
-					errors.push('Plan name required');
+					errors.push('You must supply a Plan Name');
 				}
 				if (!Array.isArray(this.state.plan?.tables) || this.state.plan.tables.length === 0) {
-					errors.push('No tables selected for migration');
+					errors.push('You must select at least one table for migration');
 				}
 				if (typeof this.state.plan?.config?.batchSize !== 'number' || Number.isNaN(this.state.plan.config.batchSize)) {
-					errors.push('Plan batch size required');
+					errors.push('You must specify a Plan batch size');
 				}
 				break;
 
 			case 4: // Run
 				if (!this.state.run.id) {
-					errors.push('Migration not started');
+					errors.push('Click "Start Migration" to begin the migration run');
 				}
 				break;
 		}

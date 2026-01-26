@@ -242,8 +242,7 @@
 
 /* Focus indicators */
 *:focus {
-	outline: 2px solid var(--wizard-primary, #0969da);
-	outline-offset: 2px;
+	outline: 1px solid var(--wizard-primary, #0969da);
 }
 
 button:focus,
@@ -251,8 +250,7 @@ a:focus,
 input:focus,
 select:focus,
 textarea:focus {
-	outline: 2px solid var(--wizard-primary, #0969da);
-	outline-offset: 2px;
+	outline: 1px solid var(--wizard-primary, #0969da);
 }
 
 /* Skip to content link */
@@ -485,8 +483,7 @@ a:hover {
 /* Visible focus indicators for all interactive elements */
 input[type="checkbox"]:focus,
 input[type="radio"]:focus {
-	outline: 2px solid var(--wizard-primary, #0969da);
-	outline-offset: 2px;
+	outline: 1px solid var(--wizard-primary, #0969da);
 	box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.25);
 }
 

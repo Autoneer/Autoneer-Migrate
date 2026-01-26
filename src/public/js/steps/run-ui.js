@@ -110,10 +110,8 @@ class RunUI {
 
 		return `
       <div class="run-pre-execution">
-        <h2>Execute Migration</h2>
-        <p>Ready to start migrating data from Firebird to MySQL</p>
-        
-        <div class="execution-summary">
+       
+        <div class="execution-summary"> 
           <h3>Plan Summary</h3>
           <ul>
 						<li><strong>Plan:</strong> ${planName}</li>
@@ -123,19 +121,9 @@ class RunUI {
           </ul>
         </div>
         
-        <div class="execution-warning">
-          <h4>⚠ Important</h4>
-          <ul>
-            <li>This will migrate data to the target MySQL database</li>
-            <li>Ensure you have a backup of the target database</li>
-            <li>Do not close this window during migration</li>
-            <li>You can monitor progress in real-time</li>
-          </ul>
-        </div>
-        
         <div class="execution-actions">
           <button class="btn btn-primary btn-large" onclick="window.wizard.steps[3].component.startMigration()">
-            ▶ Start Migration
+            ▶  Start Migration
           </button>
         </div>
       </div>
@@ -355,17 +343,17 @@ class RunUI {
 	 * Start migration execution
 	 */
 	async startMigration() {
-		const confirmed = await Modal.confirm({
-			title: 'Start Migration',
-			message: 'Start migration now? This will begin transferring data to MySQL.',
-			type: 'warning',
-			confirmText: 'Start Migration',
-			cancelText: 'Cancel'
-		});
+		// const confirmed = await Modal.confirm({
+		// 	title: 'Start Migration',
+		// 	message: 'Start migration now? This will begin transferring data to MySQL.',
+		// 	type: 'warning',
+		// 	confirmText: 'Start Migration',
+		// 	cancelText: 'Cancel'
+		// });
 
-		if (!confirmed) {
-			return;
-		}
+		// if (!confirmed) {
+		// 	return;
+		// }
 
 		this.wizard.showLoading('Starting migration...');
 

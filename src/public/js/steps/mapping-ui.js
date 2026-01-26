@@ -1,5 +1,5 @@
 /**
- * MappingUI - Step 2: Build Mapping Profile
+ * MappingUI - Step 2: Build Mapping Profile 
  * 
  * Handles table and field mapping configuration with:
  * - Table selection
