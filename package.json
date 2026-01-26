@@ -8,6 +8,7 @@
 		"start": "node src/app.js",
 		"diagnostics": "node src/scripts/diagnostics.js",
 		"test": "node scripts/test_validation.js",
+		"test:all": "node scripts/test_validation.js && node scripts/test_mapping_persistence.js",
 		"check:public-dup": "node scripts/check_public_dup.js"
 	},
 	"dependencies": {
