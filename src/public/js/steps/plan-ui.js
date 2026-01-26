@@ -534,6 +534,26 @@ class PlanUI {
 			}
 
 			// Validate mapping has tables
+			// Ensure we have the latest mapping loaded from the profile before dry-run
+			try {
+				if (mappingProfileId) {
+					const mappingProfile = await window.MappingAPI.getById(mappingProfileId);
+					if (mappingProfile) {
+						// mappingProfile contains { id, name, tables }
+						this.mapping = {
+							id: mappingProfile.id,
+							mappingProfileId: mappingProfile.id,
+							name: mappingProfile.name,
+							tables: mappingProfile.tables
+						};
+						// Persist mapping into wizard state so it survives navigation
+						this.state.set('mapping', this.mapping);
+					}
+				}
+			} catch (err) {
+				console.warn('[PlanUI] Failed to load mapping profile for dry-run:', err);
+			}
+
 			if (!this.mapping?.tables || Object.keys(this.mapping.tables).length === 0) {
 				this.wizard.hideLoading();
 				this.wizard.showError('Mapping profile is empty. Go back to Step 2 and map at least one table.');
