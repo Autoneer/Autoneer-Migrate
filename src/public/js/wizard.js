@@ -69,8 +69,9 @@ class MigrationWizard {
 							// Set state for wizard
 							this.state.set('mapping', normalizedMapping);
 							this.state.set('plan', plan);
-							// Force step 3 when reusing plan (ignore localStorage)
-							initialStep = 3;
+							// Force mapping step when reusing plan (ignore localStorage)
+							// Mapping UI is step 2 in the current wizard definition
+							initialStep = 2;
 							console.log('[Wizard] Loaded plan and mapping for reuse');
 						} else {
 							throw new Error('Mapping profile loaded but has no tables');
