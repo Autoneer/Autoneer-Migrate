@@ -69,6 +69,18 @@ app.use("/api", runApiRoutes);     // Run tracking endpoints
 
 app.use((err, req, res, next) => {
 	const message = err?.message || "Unexpected error";
+
+	// If this is an API request, return standardized JSON error
+	const wantsJson = req.path.startsWith('/api') || req.xhr || (req.get && req.get('Accept') && req.get('Accept').includes('application/json'));
+	if (wantsJson) {
+		return res.status(500).json({
+			success: false,
+			error: 'INTERNAL_ERROR',
+			message
+		});
+	}
+
+	// Fallback: render HTML error page for browser routes
 	res.status(500).render("error", { message });
 });
 
