@@ -30,17 +30,7 @@ IF NOT EXISTS migration_run_mappings
   INDEX idx_table_name
 (table_name),
   UNIQUE KEY uk_run_table
-(run_id, table_name),
-  
-  FOREIGN KEY
-(run_id) REFERENCES migration_runs
-(run_id) ON
-DELETE CASCADE,
-  FOREIGN KEY (plan_id)
-REFERENCES migration_plans
-(plan_id) ON
-DELETE
-SET NULL
+(run_id, table_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 COMMENT='Immutable per-run mapping snapshots for deterministic reuse';
 
@@ -75,12 +65,7 @@ IF NOT EXISTS migration_id_map
 (100)),
   UNIQUE KEY uk_run_table_source
 (run_id, table_name, source_pk
-(255)),
-  
-  FOREIGN KEY
-(run_id) REFERENCES migration_runs
-(run_id) ON
-DELETE CASCADE
+(255))
 ) ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 COMMENT='Source → target PK mappings for FK resolution and auditability';

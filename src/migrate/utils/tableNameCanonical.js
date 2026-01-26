@@ -12,6 +12,26 @@
  */
 function canonicalUpper(name) {
 	if (!name) return '';
+	// Defensive: if an object is passed, try to extract common string fields
+	if (typeof name === 'object') {
+		const candidates = [
+			name.targetTable,
+			name.target,
+			name.table,
+			name.tableName,
+			name.name,
+			name.value
+		];
+		for (const c of candidates) {
+			if (c && typeof c === 'string') return c.trim().toUpperCase();
+		}
+		// Fallback to JSON string if nothing useful found
+		try {
+			return JSON.stringify(name).trim().toUpperCase();
+		} catch (e) {
+			return String(name).trim().toUpperCase();
+		}
+	}
 	return String(name).trim().toUpperCase();
 }
 

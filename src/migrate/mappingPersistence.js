@@ -35,10 +35,18 @@ async function saveRunMappings(pool, { runId, planId, mappingProfileId, mapping,
 		// Ensure canonical uppercase target name
 		const canonicalName = canonicalUpper(tableName);
 
-		// Find the mapping entry for this table
-		const tableMapping = Object.values(mapping.tables).find(t =>
-			canonicalUpper(t.targetTable) === canonicalName
-		);
+		// Find the mapping entry for this table (support multiple mapping shapes)
+		let tableMapping = null;
+		for (const [srcKey, entry] of Object.entries(mapping.tables || {})) {
+			const targetCandidate = (entry && (entry.targetTable || entry.target)) || '';
+			if (canonicalUpper(targetCandidate) === canonicalName) {
+				tableMapping = Object.assign({}, entry);
+				// Ensure we have the sourceTable recorded (use the source key if not present)
+				if (!tableMapping.sourceTable) tableMapping.sourceTable = srcKey;
+				if (!tableMapping.targetTable) tableMapping.targetTable = targetCandidate;
+				break;
+			}
+		}
 
 		if (!tableMapping) {
 			console.warn(`[MappingPersistence] No mapping found for table ${canonicalName}, skipping`);
@@ -188,9 +196,16 @@ async function autoGenerateMissingMappings(pool, { runId, mapping, plan, planId,
 	console.warn(`[MappingPersistence] Auto-generating missing mappings for run ${runId}`);
 
 	// Get table list from plan (normalize to target names)
-	const includedTables = Array.isArray(plan.tables)
-		? plan.tables.map(t => resolveTargetTableName(t, mapping))
-		: Object.keys(plan.tables || {}).map(t => resolveTargetTableName(t, mapping));
+	let planEntries = [];
+	if (Array.isArray(plan)) {
+		planEntries = plan;
+	} else if (Array.isArray(plan.tables)) {
+		planEntries = plan.tables;
+	} else if (plan.tables && typeof plan.tables === 'object') {
+		planEntries = Object.keys(plan.tables);
+	}
+
+	const includedTables = planEntries.map(t => resolveTargetTableName(t, mapping));
 
 	// Save mappings
 	const count = await saveRunMappings(pool, {
@@ -212,14 +227,40 @@ async function autoGenerateMissingMappings(pool, { runId, mapping, plan, planId,
  * @returns {Promise<Array>} Array of {run_id, started_at, status}
  */
 async function findRunsWithoutMappings(pool, limit = 100) {
+	// Some installations use legacy `migration_runs` schema with `id` (varchar) instead of `run_id` (int).
+	// Detect which column exists and return rows with a normalized `run_id` field.
+	const [cols] = await pool.query(
+		`select column_name from information_schema.columns where table_schema = database() and table_name = 'migration_runs'`
+	);
+	const columnNames = cols.map(c => String(c.COLUMN_NAME || c.column_name).toLowerCase());
+	const hasRunId = columnNames.includes('run_id');
+	const hasPlanId = columnNames.includes('plan_id');
+
+	if (hasRunId) {
+		const planSelect = hasPlanId ? 'r.plan_id' : 'NULL as plan_id';
+		const [rows] = await pool.query(
+			`SELECT r.run_id as run_id, r.started_at, r.status, ${planSelect}
+	 FROM migration_runs r
+	 LEFT JOIN migration_run_mappings m ON r.run_id = m.run_id
+	 WHERE m.id IS NULL
+	 AND r.status IN ('SUCCESS', 'COMPLETED_WITH_ERRORS', 'RUNNING')
+	 ORDER BY r.started_at DESC
+	 LIMIT ?`,
+			[limit]
+		);
+		return rows;
+	}
+
+	// Fallback for legacy schema using `id` as identifier
+	const planSelectLegacy = hasPlanId ? 'r.plan_id' : 'NULL as plan_id';
 	const [rows] = await pool.query(
-		`SELECT r.run_id, r.started_at, r.status, r.plan_id
-     FROM migration_runs r
-     LEFT JOIN migration_run_mappings m ON r.run_id = m.run_id
-     WHERE m.id IS NULL
-     AND r.status IN ('SUCCESS', 'COMPLETED_WITH_ERRORS', 'RUNNING')
-     ORDER BY r.started_at DESC
-     LIMIT ?`,
+		`SELECT r.id as run_id, r.started_at, r.status, ${planSelectLegacy}
+	 FROM migration_runs r
+	 LEFT JOIN migration_run_mappings m ON r.id = m.run_id
+	 WHERE m.id IS NULL
+	 AND r.status IN ('SUCCESS', 'COMPLETED_WITH_ERRORS', 'RUNNING')
+	 ORDER BY r.started_at DESC
+	 LIMIT ?`,
 		[limit]
 	);
 
