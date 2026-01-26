@@ -455,7 +455,10 @@ router.get('/runs/:runId/metadata', async (req, res) => {
  */
 router.get("/runs/:runId", async (req, res) => {
 	try {
-		const { runId } = req.params;
+		const { runId: rawRunId } = req.params;
+		// Normalize runId to numeric when possible to match in-memory keys
+		const numericRunId = Number(rawRunId);
+		const runId = Number.isNaN(numericRunId) ? rawRunId : numericRunId;
 
 		const buildPlanAdapter = (tableNames = [], planId = null, mappingProfileId = null) => ({
 			id: planId,
