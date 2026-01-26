@@ -76,7 +76,8 @@ class RunAPI {
 	 */
 	async getProgress(id) {
 		const response = await this.client.get(`/runs/${id}/progress`);
-		return response.progress;
+		// Return the full response so callers receive status, percent, tables, etc.
+		return response;
 	}
 
 	/**

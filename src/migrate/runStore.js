@@ -97,8 +97,22 @@ async function logRowError(pool, { runId, tableName, sourceTable, targetTable, r
 }
 
 async function getRun(pool, runId) {
-	const [rows] = await pool.query("select * from migration_runs where run_id = ?", [runId]);
-	return rows[0] || null;
+	// Try new schema first (run_id). If the column doesn't exist, fall back to legacy `id`.
+	try {
+		const [rows] = await pool.query("select * from migration_runs where run_id = ?", [runId]);
+		return rows[0] || null;
+	} catch (err) {
+		// If the error indicates missing column `run_id`, try legacy id column
+		if (err && err.code === 'ER_BAD_FIELD_ERROR' && /run_id/i.test(err.sqlMessage || '')) {
+			try {
+				const [rows2] = await pool.query("select * from migration_runs where id = ?", [runId]);
+				return rows2[0] || null;
+			} catch (e2) {
+				return null;
+			}
+		}
+		throw err;
+	}
 }
 
 async function getRunTables(pool, runId) {
