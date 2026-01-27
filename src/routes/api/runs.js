@@ -1126,11 +1126,31 @@ router.post("/runs/:runId/retry", async (req, res) => {
 		}
 
 		// Get failed tables (case-insensitive) and honor requested list
-		const tables = await runStore.getRunTables(pool, runId);
-		const requested = Array.isArray(req.body?.tables) ? req.body.tables.map(t => String(t).toUpperCase()) : null;
-		const failedTables = (tables || []).filter(t => String(t.status || '').toUpperCase() === 'FAILED');
+		let tables = await runStore.getRunTables(pool, runId);
+		// fallback: older runs may have summary JSON in migration_runs.table_summary_json
+		if ((!tables || tables.length === 0) && runData && runData.table_summary_json) {
+			try {
+				const summary = JSON.parse(runData.table_summary_json || "{}") || {};
+				const summaryTables = Object.keys(summary).map(name => {
+					const entry = summary[name] || {};
+					// entry might be a status string or an object with status
+					const status = typeof entry === 'string' ? entry : (entry.status || entry.state || entry.status_text || null);
+					return { table_name: name, status };
+				});
+				if (summaryTables.length) tables = summaryTables;
+			} catch (e) {
+				// ignore parse errors and continue with empty tables
+			}
+		}
 
-		let toRetry = failedTables.map(t => t.table_name);
+		const requested = Array.isArray(req.body?.tables) ? req.body.tables.map(t => String(t).toUpperCase()) : null;
+		// consider several statuses as retryable: failed, error, cancelled
+		const failedTables = (tables || []).filter(t => {
+			const s = String((t.status || t.state || '') || '').toUpperCase();
+			return ['FAILED', 'ERROR', 'CANCELLED'].includes(s);
+		});
+
+		let toRetry = failedTables.map(t => t.table_name || t.table);
 		if (requested) {
 			// intersect requested with actually failed
 			toRetry = requested.filter(r => toRetry.map(x => x.toUpperCase()).includes(r));

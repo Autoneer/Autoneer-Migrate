@@ -118,7 +118,7 @@ class RunUI {
 				</div>
 				<div class="completion-actions">
 					<button class="btn btn-primary" onclick="window.wizard.steps[3].component.retryMigration()">Retry Failed Tables</button>
-					<button class="btn btn-secondary" onclick="window.wizard.prevStep()">Back to Plan</button>
+					<button class="btn btn-secondary" onclick="window.wizard.previousStep()">Back to Plan</button>
 				</div>
 			</div>
 		`;
