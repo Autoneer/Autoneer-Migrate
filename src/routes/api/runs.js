@@ -1138,7 +1138,7 @@ router.post("/runs/:runId/retry", async (req, res) => {
 				await pool.end();
 				return res.status(400).json({
 					success: false,
-					error: `No requested tables match failed tables. Available failed tables: ${failedTables.map(t=>t.table_name).join(', ')}`
+					error: `No requested tables match failed tables. Available failed tables: ${failedTables.map(t => t.table_name).join(', ')}`
 				});
 			}
 		}
@@ -1184,7 +1184,7 @@ router.post("/runs/:runId/retry", async (req, res) => {
 		// Update state with only failed tables
 		const fullPlan = JSON.parse(planData.plan_json || "[]");
 		const failedTableNames = toRetry.map(t => String(t));
-		state.plan = fullPlan.filter(step => failedTableNames.map(f=>f.toUpperCase()).includes(String(step.target || step.table).toUpperCase()));
+		state.plan = fullPlan.filter(step => failedTableNames.map(f => f.toUpperCase()).includes(String(step.target || step.table).toUpperCase()));
 		state.mapping = JSON.parse(mappingData.mapping_json || "{}");
 
 		console.log(`[API] Retry requested for run ${runId}, tables: ${failedTableNames.join(', ')}`);
