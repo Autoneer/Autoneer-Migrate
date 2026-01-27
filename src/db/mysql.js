@@ -224,6 +224,10 @@ async function ensureMigrationTables(pool) {
 	if (!tableRunNames.includes("rows_skipped_duplicates")) {
 		await pool.query("alter table migration_table_runs add column rows_skipped_duplicates int default 0");
 	}
+	// Add cleaned flag to record that a table was cleaned as part of this run
+	if (!tableRunNames.includes("cleaned")) {
+		await pool.query("alter table migration_table_runs add column cleaned tinyint(1) default 0");
+	}
 	if (!rowErrorNames.includes("source_table")) {
 		await pool.query("alter table migration_row_errors add column source_table varchar(100) null");
 	}

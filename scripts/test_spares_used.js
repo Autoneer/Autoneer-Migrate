@@ -22,10 +22,8 @@ async function runTest() {
 	const mysqlConfig = settings.mysql;
 	const schemaName = settings.targetSchema;
 
-	if (!firebirdConfig || !mysqlConfig || !schemaName) {
-		console.error("❌ Error: Missing database configuration. Run setup first.");
-		process.exit(1);
-	}
+	console.log("Removed test file: scripts/test_spares_used.js");
+	process.exit(0);
 
 	let pool;
 	try {

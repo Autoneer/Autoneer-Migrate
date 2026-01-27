@@ -32,7 +32,7 @@ class Plan {
 			keyStrategy: config.keyStrategy || 'preserve',  // preserve, rekey
 			dedupeKeys: config.dedupeKeys || [],
 			onDuplicate: config.onDuplicate || 'SKIP',  // SKIP, ERROR, UPDATE
-			cleanBefore: config.cleanBefore || false,
+			cleanBefore: config.cleanBefore || true,
 			batchSize: config.batchSize || 500
 		};
 	}

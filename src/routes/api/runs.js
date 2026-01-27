@@ -216,72 +216,7 @@ router.post("/runs", async (req, res) => {
 			firstTableSample: Object.entries(mappingJson.tables || {}).slice(0, 1).map(([k, v]) => ({ source: k, targetTable: v?.targetTable, target: v?.target, hasColumns: !!v?.columns }))
 		});
 
-		const normalizePlanSteps = (plan, mappingForLookup) => {
-			const defaultBatchSize = plan?.config?.batchSize || 1000;
-			const defaults = {
-				mode: 'INSERT',
-				keyStrategy: 'preserve',
-				dedupeKeys: [],
-				onDuplicate: 'SKIP',
-				cleanBefore: true,
-				batchSize: defaultBatchSize
-			};
-
-			if (Array.isArray(plan)) {
-				return plan;
-			}
-
-			const tables = plan?.tables;
-			if (Array.isArray(tables)) {
-				return tables.map((entry) => {
-					if (typeof entry === 'string') {
-						return { table: entry, include: true, ...defaults };
-					}
-					if (entry && typeof entry === 'object') {
-						return {
-							include: entry.include !== false,
-							table: entry.table || entry.name || entry.targetTable || entry.target || entry.tableName,
-							mode: entry.mode || defaults.mode,
-							keyStrategy: entry.keyStrategy || defaults.keyStrategy,
-							dedupeKeys: entry.dedupeKeys || defaults.dedupeKeys,
-							onDuplicate: entry.onDuplicate || defaults.onDuplicate,
-							cleanBefore: entry.cleanBefore || defaults.cleanBefore,
-							batchSize: entry.batchSize || defaults.batchSize
-						};
-					}
-					return null;
-				}).filter(Boolean);
-			}
-
-			if (tables && typeof tables === 'object') {
-				return Object.entries(tables).map(([tableName, config]) => {
-					if (typeof config === 'string') {
-						return { table: config, include: true, ...defaults };
-					}
-					// CRITICAL FIX: When loading from DB, tableName is SOURCE table
-					// Look up target in mapping, fall back to config.target, then config.targetTable, then tableName
-					let resolvedTable = config?.target || config?.targetTable;
-					if (!resolvedTable && mappingForLookup?.tables?.[tableName]) {
-						resolvedTable = mappingForLookup.tables[tableName].target ||
-							mappingForLookup.tables[tableName].targetTable;
-					}
-					resolvedTable = resolvedTable || tableName;
-
-					return {
-						table: resolvedTable,
-						include: config?.include !== false,
-						mode: config?.mode || defaults.mode,
-						keyStrategy: config?.keyStrategy || defaults.keyStrategy,
-						dedupeKeys: config?.dedupeKeys || defaults.dedupeKeys,
-						onDuplicate: config?.onDuplicate || defaults.onDuplicate,
-						cleanBefore: config?.cleanBefore || defaults.cleanBefore,
-						batchSize: config?.batchSize || defaults.batchSize
-					};
-				});
-			}
-
-			return [];
-		};
+		const { normalizePlanSteps } = require('../../migrate/planNormalize');
 
 		const normalizeMapping = (mapping) => {
 			if (!mapping || !mapping.tables) return mapping;

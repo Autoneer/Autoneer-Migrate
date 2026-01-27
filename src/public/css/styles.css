@@ -399,6 +399,118 @@ pre {
 	background: #f6f8fa;
 }
 
+/* Styling for live log cleaning entries */
+.log-container {
+	max-height: 300px;
+	overflow: auto;
+	padding: 8px;
+}
+
+.log-entry {
+	padding: 10px 12px;
+	border-radius: 8px;
+	margin-bottom: 8px;
+	background: #ffffff;
+	border: 1px solid var(--border-subtle);
+	font-size: 13px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+	transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+}
+
+.log-entry:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+}
+
+.log-entry .log-icon {
+	flex: 0 0 34px;
+	height: 34px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 16px;
+	border-radius: 6px;
+}
+
+.log-entry .log-body {
+	flex: 1 1 auto;
+}
+
+.log-entry strong {
+	font-weight: 600;
+}
+
+.log-entry em {
+	font-style: normal;
+	color: var(--muted);
+	font-weight: 500;
+}
+
+.log-entry small {
+	color: var(--muted);
+	margin-left: 6px;
+}
+
+
+.log-cleaning-start {
+	background: linear-gradient(90deg, rgba(255, 250, 240, 1), rgba(255, 255, 255, 1));
+	border-left: 4px solid #f59e0b;
+	/* amber */
+}
+
+.log-cleaning-start .log-icon {
+	background: rgba(245, 158, 11, 0.08);
+	color: #92400e;
+}
+
+
+.log-cleaned {
+	background: linear-gradient(90deg, rgba(241, 255, 247, 1), rgba(255, 255, 255, 1));
+	border-left: 4px solid #10b981;
+	/* green */
+}
+
+.log-cleaned .log-icon {
+	background: rgba(16, 185, 129, 0.08);
+	color: #047857;
+}
+
+.log-cleaned small {
+	color: var(--muted);
+}
+
+
+.log-cleaned small {
+	color: var(--muted);
+	margin-left: 6px;
+}
+
+.log-error {
+	background: #fff6f6;
+	border-left: 4px solid var(--danger);
+}
+
+.log-generic {
+	color: var(--muted);
+}
+
+/* Compact layout on narrow screens */
+@media (max-width: 520px) {
+	.log-entry {
+		padding: 8px;
+		gap: 8px;
+	}
+
+	.log-entry .log-icon {
+		flex: 0 0 28px;
+		height: 28px;
+		font-size: 14px;
+	}
+}
+
 .table-progress-header {
 	display: flex;
 	justify-content: space-between;

@@ -13,6 +13,7 @@ class RunUI {
 		this.run = null;
 		this.pollInterval = null;
 		this.startTime = null;
+		this._lastLogTs = null;
 	}
 
 	/**
@@ -118,6 +119,7 @@ class RunUI {
 						<li><strong>Tables:</strong> ${tableCount}</li>
 						<li><strong>Batch Size:</strong> ${config.batchSize} rows</li>
 						<li><strong>Continue on Error:</strong> ${config.continueOnError ? 'Yes' : 'No'}</li>
+				<li><strong>Clean target before migrate:</strong> ${(() => { const anyClean = Object.values(this.plan.tableConfigs || {}).some(c => c && c.cleanBefore === true); return anyClean ? 'Yes' : 'No'; })()}</li>
           </ul>
         </div>
         
@@ -444,8 +446,8 @@ class RunUI {
 				this.state.set('run.status', status);
 				this.state.set('run.tableResults', tables);
 
-				// Update UI
-				this.updateProgressDisplay({ percent, status, tables });
+				// Update UI (including logs)
+				await this.updateProgressDisplay({ percent, status, tables });
 
 				// Stop polling if complete (handle both uppercase from backend and lowercase for compatibility)
 				const normalizedStatus = String(status || '').toUpperCase();
@@ -474,7 +476,7 @@ class RunUI {
 	/**
 	 * Update progress display
 	 */
-	updateProgressDisplay(progress) {
+	async updateProgressDisplay(progress) {
 		// Update overall progress bar
 		const progressBar = document.querySelector('.progress-bar-fill');
 		if (progressBar) {
@@ -498,6 +500,124 @@ class RunUI {
 		if (timeDisplay) {
 			timeDisplay.textContent = this.getElapsedTime();
 		}
+
+		// Fetch and render logs (new entries only)
+		try {
+			const runId = this.state.get('run.id');
+			if (runId) {
+				const resp = await this.api.getLogs(runId);
+				const logs = resp?.logs || [];
+				// Filter logs newer than last seen timestamp
+				const newLogs = [];
+				for (const l of logs) {
+					const ts = l.timestamp ? new Date(l.timestamp).getTime() : 0;
+					if (!this._lastLogTs || ts > this._lastLogTs) newLogs.push(l);
+				}
+				if (newLogs.length) {
+					this._lastLogTs = newLogs[newLogs.length - 1].timestamp ? new Date(newLogs[newLogs.length - 1].timestamp).getTime() : this._lastLogTs;
+					this.appendLogEntries(newLogs);
+				}
+			}
+		} catch (e) {
+			console.warn('Failed to fetch logs:', e);
+		}
+	}
+
+	/**
+	 * Append log entries to the live log container with special rendering
+	 */
+	appendLogEntries(entries) {
+		const container = document.getElementById('log-container');
+		if (!container || !entries || !entries.length) return;
+		for (const e of entries) {
+			const el = document.createElement('div');
+			el.className = 'log-entry';
+
+			// icon element
+			const iconDiv = document.createElement('div');
+			iconDiv.className = 'log-icon';
+
+			// body element
+			const bodyDiv = document.createElement('div');
+			bodyDiv.className = 'log-body';
+
+			if (e.type === 'table_cleaning_started') {
+				iconDiv.textContent = '🧹';
+				el.classList.add('log-cleaning-start');
+
+				const strong = document.createElement('strong');
+				strong.textContent = 'Cleaning started';
+				const sep = document.createTextNode(' — ');
+				const em = document.createElement('em');
+				em.textContent = e.table || '';
+
+				const wrapper = document.createElement('div');
+				wrapper.className = 'log-cleaning-start';
+				wrapper.appendChild(strong);
+				wrapper.appendChild(sep);
+				wrapper.appendChild(em);
+				bodyDiv.appendChild(wrapper);
+
+			} else if (e.type === 'table_cleaned') {
+				iconDiv.textContent = '✅';
+				el.classList.add('log-cleaned');
+
+				const strong = document.createElement('strong');
+				strong.textContent = 'Table cleaned';
+				const sep = document.createTextNode(' — ');
+				const em = document.createElement('em');
+				em.textContent = e.table || '';
+				const small = document.createElement('small');
+				const method = e.method || 'DELETE';
+				let smallText = `(${method}`;
+				if (typeof e.affectedRows === 'number') smallText += `, rows:${e.affectedRows}`;
+				smallText += ')';
+				small.textContent = smallText;
+
+				const wrapper = document.createElement('div');
+				wrapper.className = 'log-cleaned';
+				wrapper.appendChild(strong);
+				wrapper.appendChild(sep);
+				wrapper.appendChild(em);
+				wrapper.appendChild(small);
+				bodyDiv.appendChild(wrapper);
+
+			} else if (e.level === 'error' || e.type === 'table_failed') {
+				iconDiv.textContent = '❌';
+				el.classList.add('log-error');
+
+				const strong = document.createElement('strong');
+				strong.textContent = e.phase || e.type || 'error';
+				const sep = document.createTextNode(' — ');
+				const textNode = document.createTextNode(e.error || e.message || JSON.stringify(e));
+
+				const wrapper = document.createElement('div');
+				wrapper.className = 'log-error';
+				wrapper.appendChild(strong);
+				wrapper.appendChild(sep);
+				wrapper.appendChild(textNode);
+				bodyDiv.appendChild(wrapper);
+
+			} else {
+				// Generic log line
+				iconDiv.textContent = '•';
+				el.classList.add('log-generic');
+
+				if (e.timestamp) {
+					const smallTs = document.createElement('small');
+					smallTs.textContent = e.timestamp;
+					bodyDiv.appendChild(smallTs);
+				}
+				const msg = document.createTextNode(e.message || e.phase || e.type || JSON.stringify(e));
+				bodyDiv.appendChild(msg);
+			}
+
+			el.appendChild(iconDiv);
+			el.appendChild(bodyDiv);
+			container.appendChild(el);
+		}
+		// Auto-scroll
+		container.scrollTop = container.scrollHeight;
 	}
 
 	/**

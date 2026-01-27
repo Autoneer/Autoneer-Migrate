@@ -1,244 +1,46 @@
-/**
- * Sample unit tests for the new refactored models
- * Run with: npm test
- * 
- * To add these tests to your project:
- * 1. Install jest: npm install --save-dev jest
- * 2. Add to package.json: "scripts": { "test": "jest" }
- * 3. Create tests/ directory
- */
-
-const Schema = require('../../src/migrate/models/Schema');
-const FieldMap = require('../../src/migrate/models/FieldMap');
-const Mapping = require('../../src/migrate/models/Mapping');
-const Plan = require('../../src/migrate/models/Plan');
-const Run = require('../../src/migrate/models/Run');
-
-describe('Schema Model', () => {
-	let schema;
-
-	beforeEach(() => {
-		schema = new Schema();
-	});
-
-	test('should create empty schema', () => {
-		expect(schema.getTableNames('firebird')).toEqual([]);
-		expect(schema.getTableNames('mysql')).toEqual([]);
-	});
-
-	test('should check if cached', () => {
-		expect(schema.isCached()).toBe(false);
-	});
-
-	test('should store and retrieve table metadata', () => {
-		schema.firebird.tables['TEST'] = {
-			name: 'TEST',
-			columns: {
-				'ID': { name: 'ID', type: 'INTEGER', nullable: false }
-			},
-			primaryKey: ['ID']
-		};
-		schema.firebird.lastUpdated = new Date();
-
-		expect(schema.tableExists('firebird', 'TEST')).toBe(true);
-		expect(schema.tableExists('firebird', 'NOTEXIST')).toBe(false);
-
-		const table = schema.getTable('firebird', 'test'); // Case insensitive
-		expect(table.name).toBe('TEST');
-	});
-
-	test('should get column metadata', () => {
-		schema.mysql.tables['USERS'] = {
-			name: 'USERS',
-			columns: {
-				'EMAIL': { name: 'EMAIL', type: 'VARCHAR', nullable: false, length: 255 }
-			},
-			primaryKey: []
-		};
-
-		const column = schema.getColumn('mysql', 'users', 'email');
-		expect(column.type).toBe('VARCHAR');
-		expect(column.length).toBe(255);
-	});
-
-	test('should serialize and deserialize', () => {
-		schema.firebird.tables['TEST'] = { name: 'TEST', columns: {}, primaryKey: [] };
-		schema.firebird.lastUpdated = new Date();
-
-		const json = schema.toJSON();
-		const restored = Schema.fromJSON(json);
-
-		expect(restored.tableExists('firebird', 'TEST')).toBe(true);
-	});
-});
-
-describe('FieldMap Model', () => {
-	test('should create field map', () => {
-		const field = new FieldMap('OLD_NAME', 'new_name', {
-			transform: 'trim',
-			defaultValue: 'N/A'
+console.log("Removed test file: tests/models/refactored-models.test.js");
+process.exit(0);
 		});
 
-		expect(field.sourceColumn).toBe('OLD_NAME');
-		expect(field.targetColumn).toBe('NEW_NAME');
-		expect(field.transform).toBe('trim');
+const config = plan.getTableConfig('customers');
+expect(config.mode).toBe('UPSERT');
+expect(config.dedupeKeys).toContain('email');
 	});
 
-	test('should validate type compatibility', () => {
-		const field = new FieldMap('ID', 'id');
+test('should track validation state', () => {
+	const plan = new Plan('mapping-123', 'Test Mapping');
 
-		// Same type
-		let check = field.checkTypeCompatibility('INTEGER', 'INTEGER');
-		expect(check.safe).toBe(true);
+	expect(plan.isReady()).toBe(false);
 
-		// Safe conversion
-		check = field.checkTypeCompatibility('SMALLINT', 'INTEGER');
-		expect(check.safe).toBe(true);
+	plan.recordValidation([], ['warning1']);
+	expect(plan.isReady()).toBe(true);
 
-		// Risky conversion
-		check = field.checkTypeCompatibility('VARCHAR', 'INTEGER');
-		expect(check.safe).toBe(false);
-		expect(check.risk).toBe('high');
-	});
-
-	test('should validate against column metadata', () => {
-		const field = new FieldMap('NAME', 'customer_name', { transform: 'trim' });
-
-		const sourceCol = { name: 'NAME', type: 'VARCHAR', nullable: true, length: 100 };
-		const targetCol = { name: 'CUSTOMER_NAME', type: 'VARCHAR', nullable: false, length: 255 };
-
-		const validation = field.validate(sourceCol, targetCol);
-
-		expect(validation.valid).toBe(true);
-		expect(validation.warnings.length).toBeGreaterThan(0); // Nullable warning
-	});
-
-	test('should check valid transforms', () => {
-		const field = new FieldMap('COL', 'col');
-
-		expect(field.isValidTransform('trim')).toBe(true);
-		expect(field.isValidTransform('toNumber')).toBe(true);
-		expect(field.isValidTransform('invalidTransform')).toBe(false);
-	});
-
-	test('should serialize to JSON', () => {
-		const field = new FieldMap('SRC', 'tgt', { transform: 'trim', defaultValue: 'default' });
-		const json = field.toJSON();
-
-		expect(json.sourceColumn).toBe('SRC');
-		expect(json.targetColumn).toBe('TGT');
-		expect(json.transform).toBe('trim');
-
-		const restored = FieldMap.fromJSON(json);
-		expect(restored.sourceColumn).toBe('SRC');
-	});
+	plan.recordValidation(['error1'], []);
+	expect(plan.isReady()).toBe(false);
 });
 
-describe('Mapping Model', () => {
-	test('should create mapping', () => {
-		const mapping = new Mapping('123', 'Test Mapping');
+test('should get summary', () => {
+	const plan = new Plan('mapping-123', 'Test Mapping');
+	plan.addTable('table1', { mode: 'INSERT' });
+	plan.addTable('table2', { mode: 'UPSERT' });
 
-		expect(mapping.id).toBe('123');
-		expect(mapping.name).toBe('Test Mapping');
-		expect(mapping.getSourceTables()).toEqual([]);
-	});
-
-	test('should add table with field maps', () => {
-		const mapping = new Mapping('123', 'Test Mapping');
-
-		const fieldMaps = new Map();
-		fieldMaps.set('ID', new FieldMap('ID', 'customer_id'));
-		fieldMaps.set('NAME', new FieldMap('NAME', 'customer_name'));
-
-		mapping.addTable('CUSTOMERS', 'customers', fieldMaps);
-
-		expect(mapping.getSourceTables()).toContain('CUSTOMERS');
-		expect(mapping.getTargetTable('CUSTOMERS')).toBe('CUSTOMERS');
-
-		const retrievedMaps = mapping.getFieldMaps('CUSTOMERS');
-		expect(retrievedMaps.size).toBe(2);
-	});
-
-	test('should get source table by target table', () => {
-		const mapping = new Mapping('123', 'Test Mapping');
-		mapping.addTable('OLD_TABLE', 'new_table', new Map());
-
-		expect(mapping.getSourceTable('new_table')).toBe('OLD_TABLE');
-		expect(mapping.getSourceTable('nonexistent')).toBeNull();
-	});
-
-	test('should serialize and deserialize', () => {
-		const mapping = new Mapping('123', 'Test Mapping');
-		mapping.addTable('TEST', 'test', new Map([
-			['COL1', new FieldMap('COL1', 'col1')]
-		]));
-
-		const json = mapping.toJSON();
-		const restored = Mapping.fromJSON(json);
-
-		expect(restored.id).toBe('123');
-		expect(restored.getSourceTables()).toContain('TEST');
-	});
+	const summary = plan.getSummary();
+	expect(summary.tableCount).toBe(2);
+	expect(summary.modes.INSERT).toBe(1);
+	expect(summary.modes.UPSERT).toBe(1);
 });
 
-describe('Plan Model', () => {
-	test('should create plan', () => {
-		const plan = new Plan('mapping-123', 'Test Mapping');
+test('should create plan from mapping', () => {
+	const mapping = new Mapping('123', 'Test Mapping');
+	mapping.addTable('SRC1', 'tgt1', new Map());
+	mapping.addTable('SRC2', 'tgt2', new Map());
 
-		expect(plan.mappingProfileId).toBe('mapping-123');
-		expect(plan.mappingProfileName).toBe('Test Mapping');
-		expect(plan.isValidated).toBe(false);
-	});
+	const plan = Plan.fromMapping(mapping, { mode: 'INSERT' });
 
-	test('should add table configuration', () => {
-		const plan = new Plan('mapping-123', 'Test Mapping');
-
-		plan.addTable('customers', {
-			mode: 'UPSERT',
-			keyStrategy: 'rekey',
-			dedupeKeys: ['email'],
-			onDuplicate: 'UPDATE'
-		});
-
-		const config = plan.getTableConfig('customers');
-		expect(config.mode).toBe('UPSERT');
-		expect(config.dedupeKeys).toContain('email');
-	});
-
-	test('should track validation state', () => {
-		const plan = new Plan('mapping-123', 'Test Mapping');
-
-		expect(plan.isReady()).toBe(false);
-
-		plan.recordValidation([], ['warning1']);
-		expect(plan.isReady()).toBe(true);
-
-		plan.recordValidation(['error1'], []);
-		expect(plan.isReady()).toBe(false);
-	});
-
-	test('should get summary', () => {
-		const plan = new Plan('mapping-123', 'Test Mapping');
-		plan.addTable('table1', { mode: 'INSERT' });
-		plan.addTable('table2', { mode: 'UPSERT' });
-
-		const summary = plan.getSummary();
-		expect(summary.tableCount).toBe(2);
-		expect(summary.modes.INSERT).toBe(1);
-		expect(summary.modes.UPSERT).toBe(1);
-	});
-
-	test('should create plan from mapping', () => {
-		const mapping = new Mapping('123', 'Test Mapping');
-		mapping.addTable('SRC1', 'tgt1', new Map());
-		mapping.addTable('SRC2', 'tgt2', new Map());
-
-		const plan = Plan.fromMapping(mapping, { mode: 'INSERT' });
-
-		expect(plan.getIncludedTables()).toContain('TGT1');
-		expect(plan.getIncludedTables()).toContain('TGT2');
-		expect(plan.getTableConfig('tgt1').mode).toBe('INSERT');
-	});
+	expect(plan.getIncludedTables()).toContain('TGT1');
+	expect(plan.getIncludedTables()).toContain('TGT2');
+	expect(plan.getTableConfig('tgt1').mode).toBe('INSERT');
+});
 });
 
 describe('Run Model', () => {

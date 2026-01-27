@@ -393,7 +393,7 @@ class PlanUI {
 							<strong>Clean target table before migrate</strong>
 						</label>
 						<small style="display:block;margin-top:0.5rem;">
-							Deletes all rows in the target table before inserting. Use with caution.
+							Empties the target table before inserting (uses TRUNCATE, falls back to DELETE). Use with caution.
 						</small>
 					</div>
 				</div>
@@ -578,22 +578,26 @@ class PlanUI {
 			// Create or update plan first to ensure it's persisted
 			let planId = this.plan.id;
 
-			// Ensure tables are serialized as plain uppercase strings
-			const normalizedTables = (this.plan.tables || []).map(t => {
-				if (typeof t === 'string') return t.toUpperCase();
-				if (t && typeof t === 'object') {
-					if (t.value) return String(t.value).toUpperCase();
-					if (t.targetTable) return String(t.targetTable).toUpperCase();
-					if (t.table) return String(t.table).toUpperCase();
-					return JSON.stringify(t).toUpperCase();
-				}
-				return String(t || '').toUpperCase();
-			});
+			// Build tables payload including per-table overrides (batchSize, cleanBefore)
+			const normalizedTablesObj = {};
+			const tableConfigs = this.plan.tableConfigs || {};
+			for (const t of (this.plan.tables || [])) {
+				const target = (typeof t === 'string') ? t.toUpperCase() : (t && (t.targetTable || t.table || t.value) ? String(t.targetTable || t.table || t.value).toUpperCase() : String(t || '').toUpperCase());
+				const cfg = tableConfigs[target] || {};
+				normalizedTablesObj[target] = {
+					mode: cfg.mode || 'INSERT',
+					keyStrategy: cfg.keyStrategy || 'preserve',
+					onDuplicate: cfg.onDuplicate || 'SKIP',
+					dedupeKeys: cfg.dedupeKeys || [],
+					batchSize: cfg.batchSize || undefined,
+					cleanBefore: typeof cfg.cleanBefore === 'boolean' ? cfg.cleanBefore : false
+				};
+			}
 
 			const fullPayload = {
 				name: this.plan.name,
 				mappingProfileId,
-				tables: normalizedTables,
+				tables: normalizedTablesObj,
 				config: this.plan.config
 			};
 

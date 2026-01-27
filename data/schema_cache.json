@@ -13506,7 +13506,7 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-01-26T14:36:30.429Z"
+    "lastUpdated": "2026-01-27T07:13:13.528Z"
   },
   "mysql": {
     "tables": {
@@ -17671,6 +17671,264 @@
             "columnType": "timestamp",
             "nullable": true,
             "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "GL_BACKFILL_RUN_ITEMS": {
+        "name": "GL_BACKFILL_RUN_ITEMS",
+        "columns": {
+          "ID": {
+            "name": "ID",
+            "type": "BIGINT",
+            "columnType": "bigint",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 19,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "RUN_ID": {
+            "name": "RUN_ID",
+            "type": "BIGINT",
+            "columnType": "bigint",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 19,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "DOC_TYPE": {
+            "name": "DOC_TYPE",
+            "type": "VARCHAR",
+            "columnType": "varchar(32)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 32,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "SOURCE": {
+            "name": "SOURCE",
+            "type": "VARCHAR",
+            "columnType": "varchar(32)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 32,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "SOURCE_ID": {
+            "name": "SOURCE_ID",
+            "type": "VARCHAR",
+            "columnType": "varchar(64)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 64,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "DOC_DATE": {
+            "name": "DOC_DATE",
+            "type": "DATE",
+            "columnType": "date",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "STATUS": {
+            "name": "STATUS",
+            "type": "ENUM",
+            "columnType": "enum('POSTED','EXISTS','FAILED','SKIPPED')",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 7,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "MESSAGE": {
+            "name": "MESSAGE",
+            "type": "TEXT",
+            "columnType": "text",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 65535,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "GL_BACKFILL_RUNS": {
+        "name": "GL_BACKFILL_RUNS",
+        "columns": {
+          "ID": {
+            "name": "ID",
+            "type": "BIGINT",
+            "columnType": "bigint",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 19,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "STARTED_AT": {
+            "name": "STARTED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "FINISHED_AT": {
+            "name": "FINISHED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "STARTED_BY_STAFF_ID": {
+            "name": "STARTED_BY_STAFF_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "FROM_DATE": {
+            "name": "FROM_DATE",
+            "type": "DATE",
+            "columnType": "date",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "TO_DATE": {
+            "name": "TO_DATE",
+            "type": "DATE",
+            "columnType": "date",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "TYPES_JSON": {
+            "name": "TYPES_JSON",
+            "type": "JSON",
+            "columnType": "json",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "DRY_RUN": {
+            "name": "DRY_RUN",
+            "type": "TINYINT",
+            "columnType": "tinyint(1)",
+            "nullable": false,
+            "defaultValue": "0",
+            "length": null,
+            "precision": 3,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "STATUS": {
+            "name": "STATUS",
+            "type": "ENUM",
+            "columnType": "enum('RUNNING','DONE','FAILED','CANCELLED')",
+            "nullable": false,
+            "defaultValue": "RUNNING",
+            "length": 9,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "SUMMARY_JSON": {
+            "name": "SUMMARY_JSON",
+            "type": "JSON",
+            "columnType": "json",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "TIMESTAMP",
+            "columnType": "timestamp",
+            "nullable": true,
+            "defaultValue": "CURRENT_TIMESTAMP",
             "length": null,
             "precision": null,
             "scale": null,
@@ -23892,6 +24150,18 @@
             "scale": 0,
             "isPrimaryKey": false,
             "isUnique": false
+          },
+          "CLEANED": {
+            "name": "CLEANED",
+            "type": "TINYINT",
+            "columnType": "tinyint(1)",
+            "nullable": true,
+            "defaultValue": "0",
+            "length": null,
+            "precision": 3,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
           }
         },
         "primaryKey": [
@@ -28634,6 +28904,6 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-01-26T14:36:29.542Z"
+    "lastUpdated": "2026-01-27T07:13:12.622Z"
   }
 }

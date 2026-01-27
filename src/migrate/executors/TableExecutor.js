@@ -124,18 +124,68 @@ class TableExecutor {
 			action: 'start'
 		});
 
-		const query = `DELETE FROM ${this.targetTable}`;
-		const [result] = await this.connections.mysql.query(query);
+		let pool = this.connections.mysql;
+		let conn = pool;
+		let releaseConn = false;
+		try {
+			if (typeof pool.getConnection === 'function') {
+				conn = await pool.getConnection();
+				releaseConn = true;
+			}
 
-		this.stats.cleaned = result.affectedRows || 0;
+			let fkDisabled = false;
+			try {
+				// Attempt to disable FK checks for this session (best-effort)
+				try {
+					await conn.query('SET FOREIGN_KEY_CHECKS=0');
+					fkDisabled = true;
+					this.logger?.log({ level: 'debug', phase: 'table_clean', table: this.targetTable, action: 'fk_checks_disabled' });
+				} catch (e) {
+					// ignore - continue
+					this.logger?.log({ level: 'warn', phase: 'table_clean', table: this.targetTable, action: 'fk_disable_failed', error: e.message });
+				}
 
-		this.logger?.log({
-			level: 'info',
-			phase: 'table_clean',
-			table: this.targetTable,
-			action: 'complete',
-			rowsDeleted: this.stats.cleaned
-		});
+				// Prefer TRUNCATE, fallback to DELETE
+				let method = 'TRUNCATE';
+				let affectedRows = null;
+				try {
+					await conn.query(`truncate table \`${this.targetTable}\``);
+				} catch (truncateErr) {
+					method = 'DELETE';
+					const [result] = await conn.query(`delete from \`${this.targetTable}\``);
+					affectedRows = Number(result?.affectedRows || 0);
+				}
+
+				// Post-clean verification
+				let postCount = null;
+				try {
+					const [rows] = await conn.query(`select count(*) as cnt from \`${this.targetTable}\``);
+					postCount = Number(rows[0]?.cnt || 0);
+				} catch (e) {
+					this.logger?.log({ level: 'warn', phase: 'table_clean', table: this.targetTable, action: 'post_clean_count_failed', error: e.message });
+				}
+
+				this.stats.cleaned = affectedRows || 0;
+				this.logger?.log({ level: 'info', phase: 'table_clean', table: this.targetTable, action: 'complete', method, affectedRows, postCount });
+
+				if (typeof postCount === 'number' && postCount > 0) {
+					throw new Error(`Post-clean verification failed: ${postCount} rows remain in ${this.targetTable}`);
+				}
+			} finally {
+				if (fkDisabled) {
+					try {
+						await conn.query('SET FOREIGN_KEY_CHECKS=1');
+						this.logger?.log({ level: 'debug', phase: 'table_clean', table: this.targetTable, action: 'fk_checks_restored' });
+					} catch (e) {
+						this.logger?.log({ level: 'error', phase: 'table_clean', table: this.targetTable, action: 'fk_restore_failed', error: e.message });
+					}
+				}
+			}
+		} finally {
+			if (releaseConn && conn && typeof conn.release === 'function') {
+				try { await conn.release(); } catch (e) { /* ignore */ }
+			}
+		}
 	}
 
 	/**
