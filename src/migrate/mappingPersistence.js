@@ -29,7 +29,7 @@ async function saveRunMappings(pool, { runId, planId, mappingProfileId, mapping,
 	const timestamp = new Date();
 	let savedCount = 0;
 
-	console.log(`[MappingPersistence] Saving mappings for run ${runId}, ${includedTables.length} tables`);
+	// console.log(`[MappingPersistence] Saving mappings for run ${runId}, ${includedTables.length} tables`);
 
 	for (const tableName of includedTables) {
 		// Ensure canonical uppercase target name
@@ -89,7 +89,7 @@ async function saveRunMappings(pool, { runId, planId, mappingProfileId, mapping,
 		}
 	}
 
-	console.log(`[MappingPersistence] Saved ${savedCount} mapping snapshots for run ${runId}`);
+	// console.log(`[MappingPersistence] Saved ${savedCount} mapping snapshots for run ${runId}`);
 	return savedCount;
 }
 
@@ -141,7 +141,7 @@ async function loadRunMappings(pool, runId) {
 		};
 	}
 
-	console.log(`[MappingPersistence] Loaded ${rows.length} mappings for run ${runId}`);
+	// console.log(`[MappingPersistence] Loaded ${rows.length} mappings for run ${runId}`);
 	return mapping;
 }
 
@@ -189,7 +189,7 @@ async function autoGenerateMissingMappings(pool, { runId, mapping, plan, planId,
 
 	// Check if already has mappings
 	if (await hasRunMappings(pool, runId)) {
-		console.log(`[MappingPersistence] Run ${runId} already has mappings, skipping auto-generation`);
+		// console.log(`[MappingPersistence] Run ${runId} already has mappings, skipping auto-generation`);
 		return 0;
 	}
 
@@ -216,7 +216,7 @@ async function autoGenerateMissingMappings(pool, { runId, mapping, plan, planId,
 		includedTables
 	});
 
-	console.log(`[MappingPersistence] Auto-generated ${count} mappings for run ${runId}`);
+	// console.log(`[MappingPersistence] Auto-generated ${count} mappings for run ${runId}`);
 	return count;
 }
 

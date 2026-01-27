@@ -1017,7 +1017,7 @@ async function runMigrationInternal({
 			const originalName = step.table;
 			const canonicalName = resolveTargetTableName(originalName, mapping);
 			if (canonicalName !== originalName) {
-				console.warn('[Runner] Normalized table name:', { original: originalName, canonical: canonicalName });
+				// console.warn('[Runner] Normalized table name:', { original: originalName, canonical: canonicalName });
 				step.table = canonicalName;
 			}
 		}
@@ -1054,7 +1054,7 @@ async function runMigrationInternal({
 			tableStateMap = new Map((runState.tables || []).map((table) => [table.name, table]));
 		} catch (e) {
 			// best-effort: if rebuilding fails, leave existing runState.tables as-is
-			console.warn('[Runner] Failed to rebuild runState.tables after normalization:', e.message);
+			// console.warn('[Runner] Failed to rebuild runState.tables after normalization:', e.message);
 		}
 		logRun({ level: 'info', phase: 'table_loop', action: 'normalized_tables', sampleTables: includedSteps.slice(0, 5).map(s => s.table) });
 
@@ -1672,7 +1672,7 @@ async function runMigrationInternal({
 											}
 										} catch (err) {
 											// best-effort: log and continue
-											console.warn('[Runner] Failed to record bulk ID mappings:', err?.message || err);
+											// console.warn('[Runner] Failed to record bulk ID mappings:', err?.message || err);
 										}
 
 										rowsMigrated += inserted + updated;
@@ -1819,7 +1819,7 @@ async function runMigrationInternal({
 											}
 										}
 									} catch (err) {
-										console.warn('[Runner] Failed to record bulk ID mappings:', err?.message || err);
+										// console.warn('[Runner] Failed to record bulk ID mappings:', err?.message || err);
 									}
 
 									rowsMigrated += inserted + updated;
@@ -2045,7 +2045,7 @@ async function runMigrationInternal({
 			emitRunState(runId, emitter);
 		}
 	} catch (err) {
-		console.error('[Runner] Migration error caught:', err);
+		// console.error('[Runner] Migration error caught:', err);
 		const errorMessage = formatDbError(err, { firebirdConfig });
 		const hint = getDbErrorHint(errorMessage);
 		logRun({ level: 'error', phase: 'run_error', error: errorMessage, stack: err?.stack?.split('\n').slice(0, 5).join('\n') });
@@ -2122,9 +2122,9 @@ async function startMigration({
 			mapping,
 			includedTables
 		});
-		console.log(`[Runner] Saved ${savedCount} mapping snapshots for run ${runId}`);
+		// console.log(`[Runner] Saved ${savedCount} mapping snapshots for run ${runId}`);
 	} catch (err) {
-		console.error('[Runner] Failed to save run mappings:', err.message);
+		// console.error('[Runner] Failed to save run mappings:', err.message);
 		// Don't fail the run, but log warning
 	}
 

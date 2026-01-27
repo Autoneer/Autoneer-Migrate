@@ -163,13 +163,13 @@ router.post("/runs", async (req, res) => {
 
 		const planJson = safeParseJson(planData.plan_json || planData.mapping_json || '{}');
 
-		console.log('[Runs] Plan data:', {
-			planId,
-			hasMappingProfileId: !!planData.mapping_profile_id,
-			hasLegacyMappingId: !!planData.mapping_id,
-			resolvedMappingProfileId: mappingProfileId,
-			planDataKeys: Object.keys(planData)
-		});
+		// console.log('[Runs] Plan data:', {
+		// 	planId,
+		// 	hasMappingProfileId: !!planData.mapping_profile_id,
+		// 	hasLegacyMappingId: !!planData.mapping_id,
+		// 	resolvedMappingProfileId: mappingProfileId,
+		// 	planDataKeys: Object.keys(planData)
+		// });
 
 		// CRITICAL: Enforce mapping requirement (defense-in-depth)
 		if (!mappingProfileId) {
@@ -207,14 +207,14 @@ router.post("/runs", async (req, res) => {
 		}
 
 		// mappingJson already parsed in validation block above
-		console.log('[Runs] Raw mapping from DB:', {
-			mappingProfileId,
-			hasTables: !!mappingJson.tables,
-			tablesType: typeof mappingJson.tables,
-			tableCount: Object.keys(mappingJson.tables || {}).length,
-			tableKeys: Object.keys(mappingJson.tables || {}).slice(0, 3),
-			firstTableSample: Object.entries(mappingJson.tables || {}).slice(0, 1).map(([k, v]) => ({ source: k, targetTable: v?.targetTable, target: v?.target, hasColumns: !!v?.columns }))
-		});
+		// console.log('[Runs] Raw mapping from DB:', {
+		// 	mappingProfileId,
+		// 	hasTables: !!mappingJson.tables,
+		// 	tablesType: typeof mappingJson.tables,
+		// 	tableCount: Object.keys(mappingJson.tables || {}).length,
+		// 	tableKeys: Object.keys(mappingJson.tables || {}).slice(0, 3),
+		// 	firstTableSample: Object.entries(mappingJson.tables || {}).slice(0, 1).map(([k, v]) => ({ source: k, targetTable: v?.targetTable, target: v?.target, hasColumns: !!v?.columns }))
+		// });
 
 		const { normalizePlanSteps } = require('../../migrate/planNormalize');
 
@@ -255,11 +255,11 @@ router.post("/runs", async (req, res) => {
 		const normalizedMapping = normalizeMapping(mappingJson);
 		const normalizedPlan = normalizePlanSteps(planJson, normalizedMapping);
 
-		console.log('[Runs] Normalized plan (first 2):', JSON.stringify(normalizedPlan.slice(0, 2), null, 2));
-		console.log('[Runs] Normalized mapping sample:', JSON.stringify({
-			tableCount: Object.keys(normalizedMapping?.tables || {}).length,
-			firstTable: Object.entries(normalizedMapping?.tables || {}).slice(0, 1).map(([k, v]) => ({ source: k, target: v?.target, columnCount: Object.keys(v?.columns || {}).length }))
-		}, null, 2));
+		// console.log('[Runs] Normalized plan (first 2):', JSON.stringify(normalizedPlan.slice(0, 2), null, 2));
+		// console.log('[Runs] Normalized mapping sample:', JSON.stringify({
+		// 	tableCount: Object.keys(normalizedMapping?.tables || {}).length,
+		// 	firstTable: Object.entries(normalizedMapping?.tables || {}).slice(0, 1).map(([k, v]) => ({ source: k, target: v?.target, columnCount: Object.keys(v?.columns || {}).length }))
+		// }, null, 2));
 
 		await pool.end();
 

@@ -184,12 +184,12 @@ router.post("/plans", async (req, res) => {
 		let plan;
 		if (bodyPlan && bodyPlan.config && Array.isArray(bodyPlan.tables)) {
 			// Full plan config provided - use it as-is
-			console.log('[Plans] Creating plan from full config payload');
+			// console.log('[Plans] Creating plan from full config payload');
 			plan = Plan.fromJSON(bodyPlan);
 			plan.mappingProfileId = resolvedMappingProfileId;
 		} else if ((tables || config) && resolvedMappingProfileId) {
 			// Partial full config from wizard - merge with mapping defaults
-			console.log('[Plans] Creating plan from partial wizard config');
+			// console.log('[Plans] Creating plan from partial wizard config');
 			plan = Plan.fromMapping(mapping, {});
 
 			// Apply config overrides
@@ -228,11 +228,11 @@ router.post("/plans", async (req, res) => {
 
 				// Replace plan.tables with normalized (TARGET names only)
 				plan.tables = normalized.tablesObject;
-				console.log('[Plans] Normalized table keys to targets:', Object.keys(normalized.tablesObject));
+				// console.log('[Plans] Normalized table keys to targets:', Object.keys(normalized.tablesObject));
 			}
 		} else {
 			// Legacy behavior - create from mapping only (already uses target names)
-			console.log('[Plans] Creating plan from mapping only (legacy)');
+			// console.log('[Plans] Creating plan from mapping only (legacy)');
 			plan = Plan.fromMapping(mapping, {});
 		}
 
@@ -278,7 +278,7 @@ router.post("/plans", async (req, res) => {
 		);
 
 		const planId = planResult.insertId;
-		console.log('[Plans] Created plan', { id: planId, name: plan.name, mappingProfileId: resolvedMappingProfileId });
+		// console.log('[Plans] Created plan', { id: planId, name: plan.name, mappingProfileId: resolvedMappingProfileId });
 
 		await pool.end();
 
@@ -454,7 +454,7 @@ router.put("/plans/:id", async (req, res) => {
 			// Normalize tables to target names
 			const normalized = normalizePlanTables(tables, mappingData);
 			plan.tables = normalized.tablesObject;
-			console.log('[Plans] Normalized tables on update:', Object.keys(normalized.tablesObject));
+			// console.log('[Plans] Normalized tables on update:', Object.keys(normalized.tablesObject));
 		} else if (tables) {
 			// Fallback without mapping (try to preserve structure)
 			if (Array.isArray(tables)) {
@@ -680,7 +680,7 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 		const { id } = req.params;
 		const { tableName } = req.body;
 
-		console.log(`[Dry Run] Request for plan ${id}`, { tableName: tableName || '(all tables)' });
+		// console.log(`[Dry Run] Request for plan ${id}`, { tableName: tableName || '(all tables)' });
 
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		await mysql.ensureMigrationTables(pool);
