@@ -16,8 +16,216 @@ class MappingUI {
 		this.mapping = null;
 		this.selectedTables = new Set();
 		this.currentTable = null;
+		this.showOnlySelected = false;
 		// Keep the current table filter query so it survives re-renders
 		this.tableFilterQuery = '';
+	}
+
+	/**
+	 * Load presets from API and render buttons
+	 */
+	async loadPresets() {
+		const container = document.getElementById('preset-shortcuts-container');
+		if (!container) return;
+		container.innerHTML = '<em>Loading presets...</em>';
+		try {
+			const res = await fetch('/api/presets');
+			const data = await res.json();
+			if (!data || !data.presets) {
+				container.innerHTML = '';
+				return;
+			}
+			container.innerHTML = '';
+			// render system presets first
+			data.presets.forEach(p => {
+				const btn = document.createElement('button');
+				btn.className = 'btn btn-secondary btn-sm';
+				btn.textContent = p.name;
+				btn.title = p.description || p.code;
+				btn.dataset.presetId = p.preset_id;
+				btn.addEventListener('click', async () => {
+					if (!window.confirm(`Replace current mappings with '${p.name}' preset?`)) return;
+					try {
+						// Create profile from preset on server and get mapping
+						const resp = await fetch(`/api/profiles/from-preset/${p.preset_id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: `${p.name} (temp)` }) });
+						const jr = await resp.json();
+						if (!jr.success) {
+							console.error('Failed to apply preset', jr);
+							return;
+						}
+						const mapping = jr.mapping;
+						if (mapping) {
+							this.mapping = mapping;
+							// populate selectedTables set
+							this.selectedTables = new Set(Object.keys(this.mapping.tables || {}));
+							this.state.updateMapping(this.mapping);
+							this.render();
+							console.debug('[MappingShortcut] Applied preset', p.code || p.name);
+						}
+					} catch (e) {
+						console.error('Preset apply error', e);
+					}
+				});
+				container.appendChild(btn);
+				container.appendChild(document.createTextNode(' '));
+			});
+		} catch (e) {
+			container.innerHTML = '';
+			console.debug('[MappingShortcut] Failed to load presets', e.message);
+		}
+	}
+
+	/**
+	 * Load saved profiles into dropdown
+	 */
+	async loadProfiles() {
+		const select = document.getElementById('profile-load-select');
+		if (!select) return;
+		select.innerHTML = '<option value="">Loading...</option>';
+		try {
+			const res = await fetch('/api/profiles');
+			const data = await res.json();
+			select.innerHTML = '';
+			if (!data || !data.profiles) return;
+			const placeholder = document.createElement('option');
+			placeholder.value = '';
+			placeholder.textContent = 'Load Profile...';
+			select.appendChild(placeholder);
+			data.profiles.forEach(p => {
+				const opt = document.createElement('option');
+				opt.value = p.profile_id;
+				opt.textContent = `${p.name} ${p.created_from_preset_code ? '(' + p.created_from_preset_code + ')' : ''}`;
+				select.appendChild(opt);
+			});
+			// wire buttons
+			const loadBtn = document.getElementById('btn-load-profile');
+			if (loadBtn) loadBtn.onclick = () => this.handleLoadProfile();
+			const updateBtn = document.getElementById('btn-update-profile');
+			if (updateBtn) updateBtn.onclick = () => this.handleUpdateProfile();
+			const deleteBtn = document.getElementById('btn-delete-profile');
+			if (deleteBtn) deleteBtn.onclick = () => this.handleDeleteProfile();
+			const saveBtn = document.getElementById('btn-save-profile');
+			if (saveBtn) saveBtn.onclick = () => this.handleSaveProfile();
+		} catch (e) {
+			select.innerHTML = '';
+			console.debug('[Profiles] Failed to load profiles', e.message);
+		}
+	}
+
+	/**
+	 * Handle Save as Profile action (open modal for name/description)
+	 */
+	async handleSaveProfile() {
+		const currentMapping = this.mapping;
+		if (!currentMapping) return Modal.alert({ title: 'No mapping', message: 'No mapping to save' });
+		const result = await Modal.custom({
+			title: 'Save Mapping as Profile',
+			contentHTML: `<div class="form-group"><label>Name</label><input id="save-profile-name" class="form-control" value="${this.mapping.name || ''}"></div><div class="form-group"><label>Description</label><input id="save-profile-desc" class="form-control"></div>`,
+			onMount: (el) => { },
+			onConfirm: async (overlayEl) => {
+				const nameEl = overlayEl.querySelector('#save-profile-name');
+				const descEl = overlayEl.querySelector('#save-profile-desc');
+				const name = nameEl ? nameEl.value : (this.mapping.name || `Profile ${new Date().toLocaleString()}`);
+				const desc = descEl ? descEl.value : null;
+				try {
+					const resp = await fetch('/api/profiles', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, description: desc, mapping_json: currentMapping }) });
+					const jr = await resp.json();
+					if (jr.success) {
+						Modal.alert({ title: 'Saved', message: 'Profile saved successfully' });
+						this.loadProfiles();
+					} else {
+						Modal.alert({ title: 'Error', message: JSON.stringify(jr) });
+					}
+				} catch (e) {
+					Modal.alert({ title: 'Error', message: e.message });
+				}
+			}
+		});
+	}
+
+	/**
+	 * Update selected profile with current mapping
+	 */
+	async handleUpdateProfile() {
+		const select = document.getElementById('profile-load-select');
+		if (!select) return Modal.alert({ title: 'Error', message: 'Profile selector not found' });
+		const id = select.value;
+		if (!id) return Modal.alert({ title: 'Select', message: 'Please choose a profile to update' });
+		const proceed = await Modal.confirm({ title: 'Confirm', message: 'This will overwrite the selected profile with the current mapping. Continue?' });
+		if (!proceed) return;
+		const currentMapping = this.mapping;
+		if (!currentMapping) return Modal.alert({ title: 'No mapping', message: 'No mapping to save' });
+		// Use profile name input value if available
+		const container = document.getElementById('mapping-content');
+		const nameInput = container?.querySelector('#mapping-profile-name');
+		const name = nameInput ? nameInput.value : (currentMapping.name || `Profile ${new Date().toLocaleString()}`);
+		try {
+			const resp = await fetch(`/api/profiles/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, description: null, mapping_json: currentMapping }) });
+			const jr = await resp.json();
+			if (jr.success) {
+				Modal.alert({ title: 'Updated', message: 'Profile updated successfully' });
+				this.loadProfiles();
+			} else {
+				Modal.alert({ title: 'Error', message: JSON.stringify(jr) });
+			}
+		} catch (e) {
+			Modal.alert({ title: 'Error', message: e.message });
+		}
+	}
+
+	/**
+	 * Delete selected profile after confirmation
+	 */
+	async handleDeleteProfile() {
+		const select = document.getElementById('profile-load-select');
+		if (!select) return Modal.alert({ title: 'Error', message: 'Profile selector not found' });
+		const id = select.value;
+		if (!id) return Modal.alert({ title: 'Select', message: 'Please choose a profile to delete' });
+		const proceed = await Modal.confirm({ title: 'Confirm Deletion', message: 'This will permanently delete the selected profile. Continue?' });
+		if (!proceed) return;
+		try {
+			const resp = await fetch(`/api/profiles/${id}`, { method: 'DELETE' });
+			const jr = await resp.json();
+			if (jr.success) {
+				Modal.alert({ title: 'Deleted', message: 'Profile deleted' });
+				this.loadProfiles();
+				// clear selection/state if the deleted profile was applied
+				if (this.mapping && String(this.mapping.id) === String(id)) {
+					this.mapping = { id: null, mappingProfileId: null, name: `Mapping ${new Date().toLocaleDateString()}`, tables: {} };
+					this.state.updateMapping(this.mapping);
+					this.render();
+				}
+			} else {
+				Modal.alert({ title: 'Error', message: JSON.stringify(jr) });
+			}
+		} catch (e) {
+			Modal.alert({ title: 'Error', message: e.message });
+		}
+	}
+
+	/**
+	 * Handle Load Profile action: confirm and apply
+	 */
+	async handleLoadProfile() {
+		const select = document.getElementById('profile-load-select');
+		if (!select) return;
+		const id = select.value;
+		if (!id) return Modal.alert({ title: 'Select', message: 'Please choose a profile to load' });
+		const ok = await Modal.confirm({ title: 'Confirm', message: 'Replace current mappings with selected profile?' });
+		if (!ok) return;
+		try {
+			const res = await fetch(`/api/profiles/${id}`);
+			const data = await res.json();
+			if (!data || !data.profile) return Modal.alert({ title: 'Error', message: 'Failed to load profile' });
+			const mapping = typeof data.profile.mapping_json === 'string' ? JSON.parse(data.profile.mapping_json) : data.profile.mapping_json;
+			this.mapping = mapping;
+			this.selectedTables = new Set(Object.keys(this.mapping.tables || {}));
+			this.state.updateMapping(this.mapping);
+			this.render();
+			Modal.alert({ title: 'Loaded', message: 'Profile applied' });
+		} catch (e) {
+			Modal.alert({ title: 'Error', message: e.message });
+		}
 	}
 
 	/**
@@ -112,6 +320,7 @@ class MappingUI {
 		if (!container) return;
 
 		const firebirdTables = this.getFirebirdTables();
+		const visibleTables = this.showOnlySelected ? firebirdTables.filter(t => this.selectedTables.has(t.name)) : firebirdTables;
 
 		container.innerHTML = `
 		<div class="mapping-builder">
@@ -127,19 +336,36 @@ class MappingUI {
           </div>
         </div>
         
-        <!-- Table Selection -->
-        <div class="table-selection"> 
+				<!-- Table Selection -->
+				<div class="table-selection"> 
+					<!-- Preset shortcuts (populated from server) -->
+					<div class="preset-shortcuts" style="margin-bottom:10px;" id="preset-shortcuts-container">
+						<!-- Buttons loaded dynamically -->
+					</div>
+					<div class="profile-actions" style="margin-bottom:10px;">
+						<select id="profile-load-select" class="form-control" style="display:inline-block; width:300px; margin-right:8px;"></select>
+						<button class="btn btn-secondary btn-sm" id="btn-load-profile">Load Profile</button>
+						<button class="btn btn-secondary btn-sm" id="btn-update-profile">Update Profile</button>
+						<button class="btn btn-danger btn-sm" id="btn-delete-profile">Delete Profile</button>
+						<button class="btn btn-secondary btn-sm" id="btn-save-profile">Save as Profile</button>
+					</div>
           <h3>Select Tables to Map</h3>
 					<div class="table-actions">
 						<input style="margin-bottom: 10px !important;" type="text" id="table-filter" class="form-control" 
-									 placeholder="🔍 Filter tables..." value="${this.tableFilterQuery || ''}">
-            <button class="btn btn-secondary btn-sm" onclick="window.wizard.steps[1].component.selectAll()">
-              ☑ Select All
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="window.wizard.steps[1].component.deselectAll()">
-              ☐ Deselect All
-            </button>
-          </div>
+								 placeholder="🔍 Filter tables..." value="${this.tableFilterQuery || ''}">
+						<div style="display:inline-block; margin-left:8px; vertical-align: top;">
+						  <select id="table-visibility-select" class="form-control">
+							<option value="all" ${this.showOnlySelected ? '' : 'selected'}>All</option>
+							<option value="checked" ${this.showOnlySelected ? 'selected' : ''}>Checked</option>
+						  </select>
+						</div>
+						<button class="btn btn-secondary btn-sm" onclick="window.wizard.steps[1].component.selectAll()">
+						  ☑ Select All
+						</button>
+						<button class="btn btn-secondary btn-sm" onclick="window.wizard.steps[1].component.deselectAll()">
+						  ☐ Deselect All
+						</button>
+					  </div>
           
           <table class="mapping-table">
             <thead>
@@ -154,9 +380,9 @@ class MappingUI {
                 <th>Actions</th>
               </tr>
             </thead>
-            <tbody id="table-list">
-              ${this.renderTableRows(firebirdTables)}
-            </tbody>
+						<tbody id="table-list">
+							${this.renderTableRows(visibleTables)}
+						</tbody>
           </table>
         </div>
         
@@ -173,6 +399,10 @@ class MappingUI {
     `;
 
 		this.attachEventListeners();
+		// Load presets from server and wire handlers
+		this.loadPresets();
+		// Load profiles for load/save
+		this.loadProfiles();
 		// Re-apply any active table filter after event handlers are attached
 		this.filterTables(this.tableFilterQuery || '');
 		this.updateValidation();
@@ -279,6 +509,15 @@ class MappingUI {
 				// persist the filter query so it survives render()
 				this.tableFilterQuery = e.target.value || '';
 				this.filterTables(this.tableFilterQuery);
+			});
+		}
+
+		// Table visibility select (All / Checked)
+		const visibilitySelect = document.getElementById('table-visibility-select');
+		if (visibilitySelect) {
+			visibilitySelect.addEventListener('change', (e) => {
+				this.showOnlySelected = e.target.value === 'checked';
+				this.render();
 			});
 		}
 
@@ -808,6 +1047,146 @@ class MappingUI {
 		this.mapping.tables = {};
 		this.state.updateMapping(this.mapping);
 		this.render();
+	}
+
+	/**
+	 * Confirm replacement if mappings exist and clear current mappings
+	 * @returns {boolean} proceed
+	 */
+	confirmReplaceAndClear() {
+		const hasMappings = this.mapping && this.mapping.tables && Object.keys(this.mapping.tables).length > 0;
+		if (!hasMappings) return true;
+		const proceed = window.confirm('This will replace current mappings. Continue?');
+		if (!proceed) return false;
+		this.deselectAll();
+		return true;
+	}
+
+	/**
+	 * Apply Stock preset mappings (STOCK -> stock, PRICING -> labour_pricing)
+	 */
+	async applyStockPreset() {
+		console.debug('[MappingShortcut] Applying Stock preset');
+		if (!this.confirmReplaceAndClear()) return;
+
+		const presets = [
+			{ source: 'STOCK', target: 'stock' },
+			{ source: 'PRICING', target: 'labour_pricing' }
+		];
+
+		for (const p of presets) {
+			const src = p.source;
+			const tgt = p.target;
+			const srcTable = this.getTableByName('firebird', src);
+			const tgtTable = this.getTableByName('mysql', tgt);
+			if (!srcTable || !tgtTable) {
+				console.debug('[MappingShortcut] Stock preset skipped missing table', p);
+				continue;
+			}
+
+			// Use actual schema table name so UI selection matches
+			const srcKey = srcTable.name;
+			// Add mapping entry
+			this.selectedTables.add(srcKey);
+			this.mapping.tables[srcKey] = this.mapping.tables[srcKey] || { targetTable: '', columns: {} };
+			this.mapping.tables[srcKey].targetTable = tgt;
+			this.mapping.tables[src].autoGenerated = true;
+
+			// Auto-map fields silently then apply forced overrides
+			this.autoMapFieldsForTable(srcKey, true);
+
+			// Forced field mappings for STOCK only
+			if (src === 'STOCK') {
+				const overrides = { LOCATION: 'location', WIPSTATUS: 'wip_status' };
+				// Try to map source column names case-insensitively
+				const srcCols = this.getColumnsArray(srcTable).map(c => c.name);
+				const normalizedOverrides = {};
+				for (const [s, t] of Object.entries(overrides)) {
+					const match = srcCols.find(c => c.toLowerCase() === s.toLowerCase());
+					if (match) normalizedOverrides[match] = t;
+				}
+				window.MappingEngine.applyForcedFieldMappings(this.mapping.tables[srcKey], normalizedOverrides);
+			}
+		}
+
+		this.state.updateMapping(this.mapping);
+		this.render();
+		console.debug('[MappingShortcut] Applied Stock preset');
+	}
+
+	/**
+	 * Apply Customer preset mappings (only if tables exist on both schemas)
+	 */
+	async applyCustomerPreset() {
+		console.debug('[MappingShortcut] Applying Customer preset');
+		if (!this.confirmReplaceAndClear()) return;
+
+		const list = [
+			['CUSTOMER', 'customers'],
+			['INVOICES', 'invoices'],
+			['CNOTE', 'credit_notes'],
+			['JOB_INFORMATION', 'job_information'],
+			['SPARES_USED', 'spares_used'],
+			['WORKDONE', 'work_done'],
+			['PAYMENTS', 'payments'],
+			['JOBREPORT', 'job_report']
+		];
+
+		for (const [src, tgt] of list) {
+			const srcTable = this.getTableByName('firebird', src);
+			const tgtTable = this.getTableByName('mysql', tgt);
+			if (!srcTable || !tgtTable) {
+				console.debug('[MappingShortcut] Customer preset skipped missing table', { src, tgt });
+				continue;
+			}
+
+			const srcKey = srcTable.name;
+			this.selectedTables.add(srcKey);
+			this.mapping.tables[srcKey] = this.mapping.tables[srcKey] || { targetTable: '', columns: {} };
+			this.mapping.tables[srcKey].targetTable = tgt;
+			this.mapping.tables[srcKey].autoGenerated = true;
+			this.autoMapFieldsForTable(srcKey, true);
+		}
+
+		this.state.updateMapping(this.mapping);
+		this.render();
+		console.debug('[MappingShortcut] Applied Customer preset');
+	}
+
+	/**
+	 * Apply Supplier preset mappings (only if tables exist on both schemas)
+	 */
+	async applySupplierPreset() {
+		console.debug('[MappingShortcut] Applying Supplier preset');
+		if (!this.confirmReplaceAndClear()) return;
+
+		const list = [
+			['SUPPLIER', 'suppliers'],
+			['INVOICESUPPLIER', 'invoices_supplier'],
+			['CNOTESUPP', 'credit_notes_supplier'],
+			['PAYMENTSSUPP', 'payments_suppliers'],
+			['INVTOTAL', 'invoice_items']
+		];
+
+		for (const [src, tgt] of list) {
+			const srcTable = this.getTableByName('firebird', src);
+			const tgtTable = this.getTableByName('mysql', tgt);
+			if (!srcTable || !tgtTable) {
+				console.debug('[MappingShortcut] Supplier preset skipped missing table', { src, tgt });
+				continue;
+			}
+
+			const srcKey = srcTable.name;
+			this.selectedTables.add(srcKey);
+			this.mapping.tables[srcKey] = this.mapping.tables[srcKey] || { targetTable: '', columns: {} };
+			this.mapping.tables[srcKey].targetTable = tgt;
+			this.mapping.tables[srcKey].autoGenerated = true;
+			this.autoMapFieldsForTable(srcKey, true);
+		}
+
+		this.state.updateMapping(this.mapping);
+		this.render();
+		console.debug('[MappingShortcut] Applied Supplier preset');
 	}
 
 	/**

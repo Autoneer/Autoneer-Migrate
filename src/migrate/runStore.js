@@ -176,6 +176,66 @@ async function listPlans(pool) {
 	return rows;
 }
 
+/* Presets and Profiles storage helpers */
+async function upsertPreset(pool, { code, name, description, definitionJson, isSystem = 0, isActive = 1 }) {
+	// Try update first
+	try {
+		const [existing] = await pool.query('select preset_id from migration_presets where code = ?', [code]);
+		if (existing && existing.length > 0) {
+			await pool.query('update migration_presets set name = ?, description = ?, definition_json = ?, is_system = ?, is_active = ?, updated_at = now() where code = ?', [name, JSON.stringify(definitionJson), JSON.stringify(definitionJson) === definitionJson ? definitionJson : JSON.stringify(definitionJson), isSystem, isActive, code]);
+			const [row] = await pool.query('select preset_id from migration_presets where code = ?', [code]);
+			return row[0]?.preset_id || null;
+		}
+	} catch (e) {
+		// ignore
+	}
+
+	const [result] = await pool.query('insert into migration_presets (code, name, description, definition_json, is_active, is_system) values (?, ?, ?, ?, ?, ?)', [code, name, description || null, JSON.stringify(definitionJson), isActive, isSystem]);
+	return result.insertId;
+}
+
+async function listPresets(pool) {
+	const [rows] = await pool.query('select preset_id, code, name, description, is_active, is_system, created_at, updated_at from migration_presets where is_active = 1 order by is_system desc, name');
+	return rows;
+}
+
+async function getPreset(pool, id) {
+	const [rows] = await pool.query('select * from migration_presets where preset_id = ?', [id]);
+	return rows[0] || null;
+}
+
+async function updatePreset(pool, id, { name, description, definitionJson, isActive }) {
+	await pool.query('update migration_presets set name = ?, description = ?, definition_json = ?, is_active = ?, updated_at = now() where preset_id = ?', [name, description || null, JSON.stringify(definitionJson), isActive ? 1 : 0, id]);
+}
+
+async function deactivatePreset(pool, id) {
+	await pool.query('update migration_presets set is_active = 0 where preset_id = ?', [id]);
+}
+
+// Profiles
+async function saveProfile(pool, { name, description, mappingJson, sourceSig, targetSig, createdFromPresetCode }) {
+	const [result] = await pool.query('insert into migration_profiles (name, description, mapping_json, source_schema_signature, target_schema_signature, created_from_preset_code, created_at) values (?, ?, ?, ?, ?, ?, now())', [name, description || null, JSON.stringify(mappingJson), sourceSig || null, targetSig || null, createdFromPresetCode || null]);
+	return result.insertId;
+}
+
+async function listProfiles(pool) {
+	const [rows] = await pool.query('select profile_id, name, description, created_from_preset_code, created_at, updated_at from migration_profiles order by created_at desc');
+	return rows;
+}
+
+async function getProfile(pool, id) {
+	const [rows] = await pool.query('select * from migration_profiles where profile_id = ?', [id]);
+	return rows[0] || null;
+}
+
+async function updateProfile(pool, id, { name, description, mappingJson }) {
+	await pool.query('update migration_profiles set name = ?, description = ?, mapping_json = ?, updated_at = now() where profile_id = ?', [name, description || null, JSON.stringify(mappingJson), id]);
+}
+
+async function deleteProfile(pool, id) {
+	await pool.query('delete from migration_profiles where profile_id = ?', [id]);
+}
+
 // keep mapping profile functions for UI compatibility
 async function saveMappingProfile(pool, { name, mappingJson }) {
 	const [result] = await pool.query(
@@ -283,4 +343,18 @@ module.exports = {
 	listPlans
 	,
 	deleteRun
+	,
+	// presets
+	upsertPreset,
+	listPresets,
+	getPreset,
+	updatePreset,
+	deactivatePreset,
+
+	// profiles
+	saveProfile,
+	listProfiles,
+	getProfile,
+	updateProfile,
+	deleteProfile
 };

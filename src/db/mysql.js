@@ -192,6 +192,35 @@ async function ensureMigrationTables(pool) {
 			updated_at timestamp null
     );
 
+		-- Presets table for admin-editable migration presets
+		create table if not exists migration_presets (
+			preset_id int auto_increment primary key,
+			code varchar(50) not null unique,
+			name varchar(100) not null,
+			description varchar(255) null,
+			definition_json json not null,
+			is_active tinyint(1) not null default 1,
+			is_system tinyint(1) not null default 0,
+			created_at timestamp default current_timestamp,
+			updated_at timestamp null default null on update current_timestamp,
+			index idx_presets_active (is_active)
+		);
+
+		-- Saved reusable profiles (mapping snapshots)
+		create table if not exists migration_profiles (
+			profile_id int auto_increment primary key,
+			name varchar(150) not null unique,
+			description varchar(255) null,
+			mapping_json json not null,
+			source_schema_signature varchar(255) null,
+			target_schema_signature varchar(255) null,
+			created_by_staff_id int null,
+			created_from_preset_code varchar(50) null,
+			created_at timestamp default current_timestamp,
+			updated_at timestamp null default null on update current_timestamp,
+			index idx_profiles_from_preset (created_from_preset_code)
+		);
+
     create table if not exists migration_id_map (
       id bigint auto_increment primary key,
       run_id varchar(36) not null,

@@ -1,0 +1,114 @@
+[
+	{
+		"version": 1,
+		"code": "STOCK",
+		"name": "Select Stock",
+		"description": "Standard stock + pricing migration",
+		"tablePairs": [
+			{
+				"sourceTable": "STOCK",
+				"targetTable": "stock"
+			},
+			{
+				"sourceTable": "PRICING",
+				"targetTable": "labour_pricing"
+			}
+		],
+		"forcedFieldMappings": [
+			{
+				"sourceTable": "STOCK",
+				"targetTable": "stock",
+				"overrides": [
+					{
+						"sourceField": "LOCATION",
+						"targetField": "location"
+					},
+					{
+						"sourceField": "WIPSTATUS",
+						"targetField": "wip_status"
+					}
+				]
+			}
+		],
+		"options": {
+			"replaceExistingMappings": true,
+			"skipMissingTables": true
+		}
+	},
+	{
+		"version": 1,
+		"code": "CUSTOMER_DATA",
+		"name": "Customer Data",
+		"description": "Common customer-related tables",
+		"tablePairs": [
+			{
+				"sourceTable": "CUSTOMER",
+				"targetTable": "customers"
+			},
+			{
+				"sourceTable": "INVOICES",
+				"targetTable": "invoices"
+			},
+			{
+				"sourceTable": "CNOTE",
+				"targetTable": "credit_notes"
+			},
+			{
+				"sourceTable": "JOB_INFORMATION",
+				"targetTable": "job_information"
+			},
+			{
+				"sourceTable": "SPARES_USED",
+				"targetTable": "spares_used"
+			},
+			{
+				"sourceTable": "WORKDONE",
+				"targetTable": "work_done"
+			},
+			{
+				"sourceTable": "PAYMENTS",
+				"targetTable": "payments"
+			},
+			{
+				"sourceTable": "JOBREPORT",
+				"targetTable": "job_report"
+			}
+		],
+		"options": {
+			"replaceExistingMappings": true,
+			"skipMissingTables": true
+		}
+	},
+	{
+		"version": 1,
+		"code": "SUPPLIER_DATA",
+		"name": "Supplier Data",
+		"description": "Common supplier-related tables",
+		"tablePairs": [
+			{
+				"sourceTable": "SUPPLIER",
+				"targetTable": "suppliers"
+			},
+			{
+				"sourceTable": "INVOICESUPPLIER",
+				"targetTable": "invoices_supplier"
+			},
+			{
+				"sourceTable": "CNOTESUPP",
+				"targetTable": "credit_notes_supplier"
+			},
+			{
+				"sourceTable": "PAYMENTSSUPP",
+				"targetTable": "payments_suppliers"
+			},
+			{
+				"sourceTable": "INVTOTAL",
+				"targetTable": "invoice_items"
+			}
+		],
+		"options": {
+			"replaceExistingMappings": true,
+			"skipMissingTables": true
+		}
+	}
+]

@@ -8,6 +8,7 @@ const setupRoutes = require("./routes/setup");
 const eventsRoutes = require("./routes/events");
 const migrationRoutes = require("./routes/migration");
 const wizardRoutes = require("./routes/wizard"); // Phase 3: New wizard UI
+const adminPresetsRoutes = require("./routes/admin/presets");
 const { router: healthRoutes } = require("./routes/health"); // Destructure router since health.js exports object
 const schemaRoutes = require("./routes/schema"); // New refactored schema API
 
@@ -15,6 +16,8 @@ const schemaRoutes = require("./routes/schema"); // New refactored schema API
 const mappingApiRoutes = require("./routes/api/mappings");
 const planApiRoutes = require("./routes/api/plans");
 const runApiRoutes = require("./routes/api/runs");
+const presetsApiRoutes = require("./routes/api/presets");
+const profilesApiRoutes = require("./routes/api/profiles");
 
 const app = express();
 
@@ -58,6 +61,7 @@ app.get("/", (req, res) => res.redirect("/setup"));
 app.use(setupRoutes);
 app.use(migrationRoutes);
 app.use(wizardRoutes); // Phase 3: Wizard UI route
+app.use(adminPresetsRoutes);
 app.use(eventsRoutes);
 app.use(healthRoutes);
 app.use(schemaRoutes); // New schema API routes
@@ -66,6 +70,8 @@ app.use(schemaRoutes); // New schema API routes
 app.use("/api", mappingApiRoutes); // Mapping CRUD endpoints
 app.use("/api", planApiRoutes);    // Plan management endpoints
 app.use("/api", runApiRoutes);     // Run tracking endpoints
+app.use("/api", presetsApiRoutes);
+app.use("/api", profilesApiRoutes);
 
 app.use((err, req, res, next) => {
 	const message = err?.message || "Unexpected error";
@@ -96,3 +102,26 @@ server.on('error', (err) => {
 		throw err;
 	}
 });
+
+// Seed system presets on startup (best-effort)
+(async () => {
+	try {
+		const mysql = require('./db/mysql');
+		const runStore = require('./migrate/runStore');
+		const defaults = require('./migrate/default_presets.json');
+		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
+		await mysql.ensureMigrationTables(pool);
+		for (const def of defaults) {
+			try {
+				await runStore.upsertPreset(pool, { code: def.code, name: def.name, description: def.description || null, definitionJson: def, isSystem: 1, isActive: 1 });
+			} catch (e) {
+				// ignore per-preset error
+				console.debug('Preset seed error', e.message);
+			}
+		}
+		await pool.end();
+		console.info('[Presets] Seeded default presets');
+	} catch (e) {
+		console.debug('[Presets] Seed step failed', e.message);
+	}
+})();

@@ -1,0 +1,21 @@
+<link rel="stylesheet" href="/public/css/wizard.css" />
+<div class="admin-page">
+	<h2>Preset Manager</h2>
+	<div id="preset-list" style="float:left; width:30%; padding-right:10px;"></div>
+	<div id="preset-editor" style="float:left; width:65%;">
+		<h3 id="editor-title">Select a preset</h3>
+		<input id="preset-name" placeholder="Name" class="form-control" />
+		<input id="preset-code" placeholder="Code" class="form-control" />
+		<textarea id="preset-json" rows="20" class="form-control"
+			style="font-family: monospace; margin-top:8px;"></textarea>
+		<div style="margin-top:8px;">
+			<button id="btn-validate" class="btn btn-secondary">Validate JSON</button>
+			<button id="btn-save" class="btn btn-primary">Save</button>
+			<button id="btn-deactivate" class="btn btn-danger">Deactivate</button>
+		</div>
+		<div id="preset-messages" style="margin-top:8px;color:#a00;"></div>
+	</div>
+	<div style="clear:both"></div>
+
+	<script src="/public/js/admin-presets.js"></script>
+</div>
