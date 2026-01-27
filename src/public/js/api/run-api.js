@@ -107,12 +107,6 @@ class RunAPI {
 	 */
 	async stop(id) {
 		const response = await this.client.post(`/runs/${id}/stop`);
-
-		// Stop polling if active
-		if (this.activeRuns.has(id)) {
-			this.stopPolling(id);
-		}
-
 		return response;
 	}
 

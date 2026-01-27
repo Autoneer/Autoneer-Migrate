@@ -25,6 +25,56 @@ function safeParseJson(raw, fallback = {}) {
 	}
 }
 
+/**
+ * Normalize table status to UI-friendly values
+ */
+function normalizeTableStatus(s) {
+	const st = String(s || '').toUpperCase();
+	switch (st) {
+		case 'QUEUED':
+		case 'PENDING':
+		case 'NOT_RUN':
+			return 'pending';
+		case 'RUNNING':
+			return 'running';
+		case 'COMPLETED':
+		case 'SUCCESS':
+			return 'completed';
+		case 'FAILED':
+			return 'failed';
+		case 'CANCELLED':
+		case 'STOPPED':
+			return 'skipped';
+		case 'SKIPPED':
+			return 'skipped';
+		default:
+			return 'pending';
+	}
+}
+
+function normalizeTables(runStateTables) {
+	if (!Array.isArray(runStateTables)) return [];
+	return runStateTables.map(t => {
+		const migrated = Number(t.migrated ?? t.rowsMigrated ?? t.rows_migrated ?? 0) || 0;
+		const total = (t.total == null ? null : Number(t.total));
+		const progress = (total ? Math.min(100, Math.round((migrated / total) * 100)) : 0);
+
+		return {
+			table: t.name || t.table || t.table_name || '',
+			status: normalizeTableStatus(t.status || t.state),
+			rowsProcessed: migrated,
+			totalRows: total,
+			progress: progress,
+			duration: Number(t.durationMs ?? t.duration_ms ?? t.duration ?? 0) || 0,
+			inserted: Number(t.inserted ?? t.rowsInserted ?? t.rows_inserted ?? 0) || 0,
+			updated: Number(t.updated ?? t.rowsUpdated ?? t.rows_updated ?? 0) || 0,
+			skippedDuplicates: Number(t.skippedDuplicates ?? t.rowsSkipped ?? t.rows_skipped_duplicates ?? 0) || 0,
+			errors: Number(t.errors ?? t.rowsError ?? t.rows_error ?? 0) || 0,
+			lastError: t.lastError ?? t.error_message ?? null
+		};
+	});
+}
+
 async function resolvePlanMappingProfileId(pool, planRow) {
 	if (planRow.mapping_profile_id) {
 		return planRow.mapping_profile_id;
@@ -570,17 +620,45 @@ router.get("/runs/:runId/progress", async (req, res) => {
 				}
 			});
 
+			// Normalize table rows for UI
+			const normalizedTables = normalizeTables(runState.tables || []);
+
+			// compute overall percent based on normalized tables and includedTables
+			const tablesTotal = (includedTables && includedTables.length) || normalizedTables.length || 0;
+			let fractionSum = 0;
+			let countCompleted = 0;
+			let countFailed = 0;
+			for (const t of normalizedTables) {
+				if (t.status === 'completed') {
+					fractionSum += 1;
+					countCompleted += 1;
+				} else if (t.status === 'running') {
+					if (t.totalRows && t.totalRows > 0) {
+						fractionSum += (t.rowsProcessed / t.totalRows);
+					} else {
+						fractionSum += 0;
+					}
+				} else if (t.status === 'failed') {
+					countFailed += 1;
+					// do not count failed as completed
+				} else {
+					// pending/skipped => 0
+				}
+			}
+
+			const overallPercent = tablesTotal > 0 ? Math.round((fractionSum / tablesTotal) * 100) : 0;
+
 			return res.json({
 				success: true,
 				runId: runKey,
 				status: run.status,
-				progress: run.getProgress(),
-				percent: run.getProgress(),
+				progress: overallPercent,
+				percent: overallPercent,
 				estimatedSecondsRemaining: run.getEstimatedSecondsRemaining(),
-				tables: runState.tables || [],
-				tablesCompleted: run.getCompletedTables().length,
-				tablesTotal: includedTables.length,
-				tablesFailed: run.getFailedTables().length
+				tables: normalizedTables,
+				tablesCompleted: countCompleted,
+				tablesTotal: tablesTotal,
+				tablesFailed: countFailed
 			});
 		}
 
@@ -589,6 +667,9 @@ router.get("/runs/:runId/progress", async (req, res) => {
 		await mysql.ensureMigrationTables(pool);
 
 		const runData = await runStore.getRun(pool, runId);
+
+		// Load table rows so UI can render details for DB-loaded runs
+		const dbTables = await runStore.getRunTables(pool, runId);
 
 		await pool.end();
 
@@ -599,19 +680,42 @@ router.get("/runs/:runId/progress", async (req, res) => {
 			});
 		}
 
-		const progress = runData.tables_completed && runData.tables_total
-			? Math.round((runData.tables_completed / runData.tables_total) * 100)
-			: 0;
+		// Normalize DB tables for UI
+		const normalizedTables = normalizeTables(dbTables || []);
+
+		// Compute overall percent similarly to in-memory path
+		const tablesTotal = (runData.tables_total && Number(runData.tables_total)) || normalizedTables.length || 0;
+		let fractionSum = 0;
+		let countCompleted = 0;
+		let countFailed = 0;
+		for (const t of normalizedTables) {
+			if (t.status === 'completed') {
+				fractionSum += 1;
+				countCompleted += 1;
+			} else if (t.status === 'running') {
+				if (t.totalRows && t.totalRows > 0) {
+					fractionSum += (t.rowsProcessed / t.totalRows);
+				} else {
+					fractionSum += 0;
+				}
+			} else if (t.status === 'failed') {
+				countFailed += 1;
+			}
+		}
+
+		const overallPercent = tablesTotal > 0 ? Math.round((fractionSum / tablesTotal) * 100) : 0;
 
 		res.json({
 			success: true,
 			runId: runKey,
 			status: runData.status,
-			progress: progress,
-			percent: progress,
-			tablesCompleted: runData.tables_completed || 0,
-			tablesTotal: runData.tables_total || 0,
-			tablesFailed: 0
+			progress: overallPercent,
+			percent: overallPercent,
+			estimatedSecondsRemaining: null,
+			tables: normalizedTables,
+			tablesCompleted: countCompleted || (runData.tables_completed || 0),
+			tablesTotal: tablesTotal,
+			tablesFailed: countFailed || 0
 		});
 	} catch (err) {
 		res.status(500).json({
@@ -964,12 +1068,32 @@ router.post("/runs/:runId/stop", async (req, res) => {
 		const numericRunId = Number(runId);
 		const runKey = Number.isNaN(numericRunId) ? runId : numericRunId;
 
+		// Validate run exists (in-memory or DB)
+		const { requestAbort, getRunState } = require("../../migrate/runner");
+		const inMemory = getRunState(runKey);
+		if (!inMemory) {
+			// Check DB as best-effort
+			const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
+			await mysql.ensureMigrationTables(pool);
+			const runData = await runStore.getRun(pool, runKey);
+			await pool.end();
+			if (!runData) {
+				return res.status(404).json({ success: false, error: 'Run not found' });
+			}
+			// If run is not running, still accept request but inform client
+			if (String(runData.status || '').toUpperCase() !== 'RUNNING') {
+				requestAbort(runKey);
+				return res.json({ success: true, status: 'STOP_REQUESTED', message: 'Stop requested; run is not actively running' });
+			}
+		}
+
 		// Request abort using runner
-		const { requestAbort } = require("../../migrate/runner");
+		console.log(`[API] Stop requested for run ${runKey}`);
 		requestAbort(runKey);
 
 		res.json({
 			success: true,
+			status: 'STOP_REQUESTED',
 			message: "Stop requested for run " + runKey
 		});
 	} catch (err) {
@@ -1001,11 +1125,25 @@ router.post("/runs/:runId/retry", async (req, res) => {
 			});
 		}
 
-		// Get failed tables
+		// Get failed tables (case-insensitive) and honor requested list
 		const tables = await runStore.getRunTables(pool, runId);
-		const failedTables = tables.filter(t => t.status === "FAILED");
+		const requested = Array.isArray(req.body?.tables) ? req.body.tables.map(t => String(t).toUpperCase()) : null;
+		const failedTables = (tables || []).filter(t => String(t.status || '').toUpperCase() === 'FAILED');
 
-		if (failedTables.length === 0) {
+		let toRetry = failedTables.map(t => t.table_name);
+		if (requested) {
+			// intersect requested with actually failed
+			toRetry = requested.filter(r => toRetry.map(x => x.toUpperCase()).includes(r));
+			if (toRetry.length === 0) {
+				await pool.end();
+				return res.status(400).json({
+					success: false,
+					error: `No requested tables match failed tables. Available failed tables: ${failedTables.map(t=>t.table_name).join(', ')}`
+				});
+			}
+		}
+
+		if (!toRetry || toRetry.length === 0) {
 			await pool.end();
 			return res.status(400).json({
 				success: false,
@@ -1045,17 +1183,27 @@ router.post("/runs/:runId/retry", async (req, res) => {
 
 		// Update state with only failed tables
 		const fullPlan = JSON.parse(planData.plan_json || "[]");
-		const failedTableNames = failedTables.map(t => t.table_name);
-		state.plan = fullPlan.filter(step => failedTableNames.includes(step.target || step.table));
+		const failedTableNames = toRetry.map(t => String(t));
+		state.plan = fullPlan.filter(step => failedTableNames.map(f=>f.toUpperCase()).includes(String(step.target || step.table).toUpperCase()));
 		state.mapping = JSON.parse(mappingData.mapping_json || "{}");
 
-		// Start new migration run for failed tables
+		console.log(`[API] Retry requested for run ${runId}, tables: ${failedTableNames.join(', ')}`);
+		// Start new migration run for failed tables using state.plan and state.mapping
 		const { startMigration } = require("../../migrate/runner");
-		const newRunId = await startMigration(runData.dry_run);
+		const startResp = await startMigration({
+			firebirdConfig: state.firebird,
+			mysqlConfig: state.mysql,
+			schemaName: state.schemaName,
+			plan: state.plan,
+			mapping: state.mapping,
+			dryRun: !!runData.dry_run,
+			batchSize: state.plan?.config?.batchSize || 1000,
+			fkChecks: true
+		});
 
 		res.json({
 			success: true,
-			runId: newRunId,
+			runId: startResp.runId,
 			retriedTables: failedTableNames,
 			message: `Retrying ${failedTableNames.length} failed table(s)`
 		});

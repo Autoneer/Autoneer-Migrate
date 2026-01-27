@@ -881,43 +881,6 @@
         "primaryKey": [],
         "uniqueIndexes": []
       },
-      "BOOKSYNC": {
-        "name": "BOOKSYNC",
-        "columns": {
-          "BSYNCID": {
-            "name": "BSYNCID",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "SYNCDATE": {
-            "name": "SYNCDATE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "STATUS": {
-            "name": "STATUS",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "CID": {
-            "name": "CID",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "JOB_NUMBER": {
-            "name": "JOB_NUMBER",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          }
-        },
-        "primaryKey": [],
-        "uniqueIndexes": []
-      },
       "BREAKDOWN": {
         "name": "BREAKDOWN",
         "columns": {
@@ -1816,14 +1779,14 @@
             "nullable": true,
             "defaultValue": null
           },
-          "STRICT": {
-            "name": "STRICT",
+          "SIGNPDF": {
+            "name": "SIGNPDF",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
           },
-          "SIGNPDF": {
-            "name": "SIGNPDF",
+          "STRICT": {
+            "name": "STRICT",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -1836,12 +1799,6 @@
           },
           "SUNDRYDESCRIPTIION": {
             "name": "SUNDRYDESCRIPTIION",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "STOCKLOG": {
-            "name": "STOCKLOG",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -2979,12 +2936,6 @@
             "nullable": true,
             "defaultValue": null
           },
-          "LICENSEEXPIRYDATE": {
-            "name": "LICENSEEXPIRYDATE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
           "DAYSTOEXPIRE": {
             "name": "DAYSTOEXPIRE",
             "type": "UNKNOWN",
@@ -2993,6 +2944,24 @@
           },
           "DLEAVE": {
             "name": "DLEAVE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "PDPTYPE": {
+            "name": "PDPTYPE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "DAYSWORKED": {
+            "name": "DAYSWORKED",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "LICENSEEXPIRYDATE": {
+            "name": "LICENSEEXPIRYDATE",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -3041,18 +3010,6 @@
           },
           "FNR": {
             "name": "FNR",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "DAYSWORKED": {
-            "name": "DAYSWORKED",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "PDPTYPE": {
-            "name": "PDPTYPE",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -5140,12 +5097,6 @@
             "nullable": true,
             "defaultValue": null
           },
-          "TEMP_JOB_NO": {
-            "name": "TEMP_JOB_NO",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
           "INSPECTIONDONE": {
             "name": "INSPECTIONDONE",
             "type": "UNKNOWN",
@@ -5158,14 +5109,8 @@
             "nullable": true,
             "defaultValue": null
           },
-          "COMEBACK": {
-            "name": "COMEBACK",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "ALERT_SERVICE_ADVISOR": {
-            "name": "ALERT_SERVICE_ADVISOR",
+          "TEMP_JOB_NO": {
+            "name": "TEMP_JOB_NO",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -5182,8 +5127,20 @@
             "nullable": true,
             "defaultValue": null
           },
+          "ALERT_SERVICE_ADVISOR": {
+            "name": "ALERT_SERVICE_ADVISOR",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
           "LICENSEEXPIRE": {
             "name": "LICENSEEXPIRE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "COMEBACK": {
+            "name": "COMEBACK",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -6441,12 +6398,6 @@
           },
           "MESSAGE_BODY": {
             "name": "MESSAGE_BODY",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "MESSAGE_BODY_TEXT": {
-            "name": "MESSAGE_BODY_TEXT",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -13506,7 +13457,7 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-01-27T07:13:13.528Z"
+    "lastUpdated": "2026-01-27T09:22:59.632Z"
   },
   "mysql": {
     "tables": {
@@ -28904,6 +28855,6 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-01-27T07:13:12.622Z"
+    "lastUpdated": "2026-01-27T09:22:58.537Z"
   }
 }

@@ -52,7 +52,9 @@ function requestAbort(runId, reason) {
 function checkAbort(runId) {
 	const abortInfo = runAbortFlags.get(runId);
 	if (abortInfo) {
-		throw new Error(abortInfo.reason || "Migration stopped");
+		const err = new Error(abortInfo.reason || "Migration stopped");
+		err.code = 'RUN_ABORTED';
+		throw err;
 	}
 }
 
@@ -2045,30 +2047,59 @@ async function runMigrationInternal({
 			emitRunState(runId, emitter);
 		}
 	} catch (err) {
-		// console.error('[Runner] Migration error caught:', err);
-		const errorMessage = formatDbError(err, { firebirdConfig });
-		const hint = getDbErrorHint(errorMessage);
-		logRun({ level: 'error', phase: 'run_error', error: errorMessage, stack: err?.stack?.split('\n').slice(0, 5).join('\n') });
-		runState.status = "FAILED";
-		runState.finishedAt = new Date().toISOString();
-		if (runState.currentTable) {
-			const tableState = tableStateMap.get(runState.currentTable);
-			if (tableState) {
-				tableState.status = "FAILED";
-				tableState.lastError = { message: errorMessage, hint, phase: "run" };
+		// Special handling for user-requested aborts
+		if (err && err.code === 'RUN_ABORTED') {
+			const msg = err.message || 'Run aborted by user';
+			logRun({ level: 'info', phase: 'run_aborted', message: msg });
+			runState.status = "STOPPED";
+			runState.finishedAt = new Date().toISOString();
+			// mark current table as cancelled
+			if (runState.currentTable) {
+				const tableState = tableStateMap.get(runState.currentTable);
+				if (tableState) {
+					tableState.status = "CANCELLED";
+					tableState.lastError = { message: msg, phase: 'abort' };
+				}
+				try {
+					await runStore.finishTableRun(pool, runId, runState.currentTable, "cancelled", msg);
+				} catch (finishErr) {
+					// ignore
+				}
 			}
+			// mark queued/running tables as not run
+			markRemainingNotRun(runState.currentTable);
 			try {
-				await runStore.finishTableRun(pool, runId, runState.currentTable, "failed", errorMessage);
+				await runStore.finishRun(pool, runId, "STOPPED", msg);
 			} catch (finishErr) {
 				// ignore
 			}
+			emitRunState(runId, emitter);
+		} else {
+			// console.error('[Runner] Migration error caught:', err);
+			const errorMessage = formatDbError(err, { firebirdConfig });
+			const hint = getDbErrorHint(errorMessage);
+			logRun({ level: 'error', phase: 'run_error', error: errorMessage, stack: err?.stack?.split('\n').slice(0, 5).join('\n') });
+			runState.status = "FAILED";
+			runState.finishedAt = new Date().toISOString();
+			if (runState.currentTable) {
+				const tableState = tableStateMap.get(runState.currentTable);
+				if (tableState) {
+					tableState.status = "FAILED";
+					tableState.lastError = { message: errorMessage, hint, phase: "run" };
+				}
+				try {
+					await runStore.finishTableRun(pool, runId, runState.currentTable, "failed", errorMessage);
+				} catch (finishErr) {
+					// ignore
+				}
+			}
+			if (!runState.currentTable) {
+				runState.lastError = { message: errorMessage, hint, phase: "preflight" };
+			}
+			markRemainingNotRun(runState.currentTable);
+			await runStore.finishRun(pool, runId, "FAILED", errorMessage);
+			emitRunState(runId, emitter);
 		}
-		if (!runState.currentTable) {
-			runState.lastError = { message: errorMessage, hint, phase: "preflight" };
-		}
-		markRemainingNotRun(runState.currentTable);
-		await runStore.finishRun(pool, runId, "FAILED", errorMessage);
-		emitRunState(runId, emitter);
 	} finally {
 		runAbortFlags.delete(runId);
 		if (keepaliveTimer) {

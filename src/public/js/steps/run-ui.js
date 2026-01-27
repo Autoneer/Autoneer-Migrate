@@ -84,6 +84,8 @@ class RunUI {
 		} else if (status === 'SUCCESS' || status === 'COMPLETED') {
 			// Completed
 			container.innerHTML = this.renderCompleted();
+		} else if (status === 'STOPPED' || status === 'CANCELLED') {
+			container.innerHTML = this.renderStopped();
 		} else if (status === 'COMPLETED_WITH_ERRORS') {
 			// Completed with errors
 			container.innerHTML = this.renderCompletedWithErrors();
@@ -91,6 +93,35 @@ class RunUI {
 			// Failed
 			container.innerHTML = this.renderFailed();
 		}
+	}
+
+	/**
+	 * Render stopped/cancelled state
+	 */
+	renderStopped() {
+		return `
+			<div class="run-stopped">
+				<div style="display:flex;align-items:center;gap:0.5rem;" class="stopped-header">
+					<div class="stopped-icon" style="font-size:1.6rem;line-height:1;">■</div>
+					<h2 style="margin:0;">Migration Stopped</h2>
+				</div>
+				<p style="margin-top:0.5rem;">The migration was stopped by user request. Some tables may have completed while others were not run.</p>
+				<div class="completion-summary">
+					<div class="stat">
+						<span>Tables Completed</span>
+						<strong>${this.run?.tablesCompleted || this.state.get('run.tablesCompleted') || 0}</strong>
+					</div>
+					<div class="stat">
+						<span>Tables Not Run</span>
+						<strong>${(this.run?.tablesTotal || this.state.get('run.tablesTotal') || 0) - (this.run?.tablesCompleted || this.state.get('run.tablesCompleted') || 0)}</strong>
+					</div>
+				</div>
+				<div class="completion-actions">
+					<button class="btn btn-primary" onclick="window.wizard.steps[3].component.retryMigration()">Retry Failed Tables</button>
+					<button class="btn btn-secondary" onclick="window.wizard.prevStep()">Back to Plan</button>
+				</div>
+			</div>
+		`;
 	}
 
 	/**
@@ -137,6 +168,7 @@ class RunUI {
 	 */
 	renderRunning() {
 		const progress = this.state.get('run.progress') || 0;
+		const currentStatus = String(this.state.get('run.status') || '').toUpperCase();
 		const tableResults = this.state.get('run.tableResults') || [];
 
 		return `
@@ -154,7 +186,9 @@ class RunUI {
           </div>
         </div>
         
-        <!-- Table Progress -->
+		${currentStatus === 'ABORTING' ? `<div class="alert alert-warning">Stopping migration... (please wait)</div>` : ''}
+
+		<!-- Table Progress -->
         <div class="table-progress">
           <h3>Table Status</h3>
           <table class="status-table">
@@ -179,11 +213,11 @@ class RunUI {
           <div id="log-container" class="log-container"></div>
         </div>
         
-        <div class="execution-actions">
-          <button class="btn btn-danger" onclick="window.wizard.steps[3].component.stopMigration()">
-            ■ Stop Migration
-          </button>
-        </div>
+				<div class="execution-actions">
+					<button class="btn btn-danger" onclick="window.wizard.steps[3].component.stopMigration()" ${currentStatus === 'ABORTING' ? 'disabled' : ''}>
+						■ Stop Migration
+					</button>
+				</div>
       </div>
     `;
 	}
@@ -307,21 +341,33 @@ class RunUI {
 	 */
 	renderTableStatus(tableResults) {
 		return this.plan.tables.map(tableName => {
-			const result = tableResults.find(r => r.table === tableName) || {};
-			const status = result.status || 'pending';
+			// find result by normalized key (support .table or .name)
+			const result = (tableResults || []).find(r => {
+				const key = (r.table || r.name || '').toString().toUpperCase();
+				return key === (tableName || '').toString().toUpperCase();
+			}) || {};
+			// determine status with fallback normalization
+			const rawStatus = (result.status || result.state || 'pending');
+			const status = String(rawStatus || '').toLowerCase();
 			const icon = this.getStatusIcon(status);
+
+			const rowsProcessed = Number(result.rowsProcessed ?? result.migrated ?? result.rowsMigrated ?? result.rows_migrated ?? 0) || 0;
+			const totalRowsVal = (result.totalRows ?? result.total ?? result.totalRows === 0 ? result.totalRows : null);
+			const totalRows = (totalRowsVal === null || totalRowsVal === undefined) ? '?' : totalRowsVal;
+			const progress = Number(result.progress ?? (typeof totalRowsVal === 'number' && totalRowsVal > 0 ? Math.round((rowsProcessed / totalRowsVal) * 100) : 0)) || 0;
+			const duration = Number(result.duration ?? result.durationMs ?? 0) || 0;
 
 			return `
         <tr class="table-status-${status}">
           <td><strong>${tableName}</strong></td>
           <td><span class="status-badge status-${status}">${icon} ${status}</span></td>
-          <td>${result.rowsProcessed || 0} / ${result.totalRows || '?'}</td>
+          <td>${rowsProcessed} / ${totalRows}</td>
           <td>
             <div class="mini-progress-bar">
-              <div class="mini-progress-fill" style="width: ${result.progress || 0}%"></div>
+              <div class="mini-progress-fill" style="width: ${progress}%"></div>
             </div>
           </td>
-          <td>${this.formatDuration(result.duration)}</td>
+          <td>${this.formatDuration(duration)}</td>
         </tr>
       `;
 		}).join('');
@@ -391,16 +437,16 @@ class RunUI {
 			return;
 		}
 
+		// Immediately reflect stopping state in UI and keep polling to observe final state
+		this.state.set('run.status', 'ABORTING');
 		this.wizard.showLoading('Stopping migration...');
 
 		try {
-			await this.api.stop(this.run.id);
-			this.stopPolling();
-
-			this.state.set('run.status', 'stopped');
+			const resp = await this.api.stop(this.run.id);
+			console.log('Stop requested:', resp);
+			// don't stop polling here; wait for runner to transition to STOPPED/CANCELLED
 			this.wizard.hideLoading();
 			this.render();
-
 		} catch (err) {
 			this.wizard.hideLoading();
 			this.wizard.showError(`Failed to stop migration: ${err.message}`);
@@ -414,11 +460,26 @@ class RunUI {
 		this.wizard.showLoading('Retrying failed tables...');
 
 		try {
-			this.run = await this.api.retry(this.run.id);
+			const resp = await this.api.retry(this.run.id);
+			if (!resp || !resp.success) {
+				this.wizard.hideLoading();
+				await Modal.alert({ title: 'Retry Failed', message: resp?.error || 'No failed tables recorded for this run.', type: 'info' });
+				return;
+			}
 
-			this.state.set('run.status', 'running');
+			// If a new run was started, navigate into it
+			const newRunId = resp.runId || resp.run?.id || null;
+			if (newRunId) {
+				this.state.set('run.id', newRunId);
+				this.state.set('run.status', 'running');
+				this.startTime = Date.now();
+				this.wizard.hideLoading();
+				this.render();
+				return;
+			}
+
 			this.wizard.hideLoading();
-			this.render();
+			await Modal.alert({ title: 'Retry', message: resp.message || 'Retry requested', type: 'info' });
 
 		} catch (err) {
 			this.wizard.hideLoading();
@@ -451,7 +512,7 @@ class RunUI {
 
 				// Stop polling if complete (handle both uppercase from backend and lowercase for compatibility)
 				const normalizedStatus = String(status || '').toUpperCase();
-				if (normalizedStatus === 'SUCCESS' || normalizedStatus === 'FAILED' || normalizedStatus === 'COMPLETED') {
+				if (normalizedStatus === 'SUCCESS' || normalizedStatus === 'FAILED' || normalizedStatus === 'COMPLETED' || normalizedStatus === 'COMPLETED_WITH_ERRORS' || normalizedStatus === 'STOPPED' || normalizedStatus === 'CANCELLED') {
 					this.stopPolling();
 					this.run = await this.api.getById(this.run.id);
 					this.render();
