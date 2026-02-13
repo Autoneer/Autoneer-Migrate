@@ -1,0 +1,8 @@
+{"timestamp":"2026-02-13T07:51:38.030Z","runId":274,"level":"info","phase":"run_start","dryRun":false,"batchSize":1000,"fkChecks":true,"tables":[]}
+{"timestamp":"2026-02-13T07:51:38.819Z","runId":274,"level":"info","phase":"preflight","attempt":1,"status":"ok"}
+{"timestamp":"2026-02-13T07:51:38.819Z","runId":274,"level":"debug","phase":"preflight","durationMs":789}
+{"timestamp":"2026-02-13T07:51:38.820Z","runId":274,"level":"info","phase":"preflight","action":"nullability_validation","status":"start"}
+{"timestamp":"2026-02-13T07:51:38.820Z","runId":274,"level":"info","phase":"preflight","action":"nullability_validation","status":"passed"}
+{"timestamp":"2026-02-13T07:51:38.892Z","runId":274,"level":"debug","phase":"table_loop","action":"starting","includedCount":0,"mappingTableCount":2}
+{"timestamp":"2026-02-13T07:51:38.892Z","runId":274,"level":"info","phase":"table_loop","action":"normalized_tables","sampleTables":[]}
+{"timestamp":"2026-02-13T07:51:38.897Z","runId":274,"level":"info","phase":"run_finalize","status":"success"}

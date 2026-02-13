@@ -1,0 +1,27 @@
+{"timestamp":"2026-02-13T07:51:33.165Z","runId":273,"level":"info","phase":"run_start","dryRun":false,"batchSize":1000,"fkChecks":true,"tables":[{"table":"STOCK","mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","cleanBefore":true},{"table":"SUPPLIERS","mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","cleanBefore":true},{"table":"INVOICE_ITEMS","mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","cleanBefore":true},{"table":"LABOUR_PRICING","mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","cleanBefore":true},{"table":"INVOICES_SUPPLIER","mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","cleanBefore":true},{"table":"PAYMENTS_SUPPLIERS","mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","cleanBefore":true},{"table":"CREDIT_NOTES_SUPPLIER","mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","cleanBefore":true}]}
+{"timestamp":"2026-02-13T07:51:33.231Z","runId":273,"level":"info","phase":"preflight","attempt":1,"status":"ok"}
+{"timestamp":"2026-02-13T07:51:33.232Z","runId":273,"level":"debug","phase":"preflight","durationMs":66}
+{"timestamp":"2026-02-13T07:51:33.232Z","runId":273,"level":"info","phase":"preflight","action":"nullability_validation","status":"start"}
+{"timestamp":"2026-02-13T07:51:33.237Z","runId":273,"level":"info","phase":"preflight","action":"nullability_validation","status":"passed"}
+{"timestamp":"2026-02-13T07:51:33.307Z","runId":273,"level":"debug","phase":"table_loop","action":"starting","includedCount":7,"mappingTableCount":2}
+{"timestamp":"2026-02-13T07:51:33.308Z","runId":273,"level":"info","phase":"table_loop","action":"normalized_tables","sampleTables":["STOCK","SUPPLIERS","INVOICE_ITEMS","LABOUR_PRICING","INVOICES_SUPPLIER"]}
+{"timestamp":"2026-02-13T07:51:33.309Z","runId":273,"level":"debug","phase":"table_loop","action":"processing","tableName":"STOCK","mappingTableKeys":["STOCK","PRICING"]}
+{"timestamp":"2026-02-13T07:51:33.309Z","runId":273,"level":"debug","phase":"table_loop","action":"mapping_resolved","tableName":"STOCK","hasMappingEntry":true,"mappingTarget":"STOCK"}
+{"timestamp":"2026-02-13T07:51:33.309Z","runId":273,"level":"debug","phase":"mapping_debug","tableName":"STOCK","mappedSource":"STOCK","firebirdTableCount":191,"sampleFirebirdTables":["ACCCLASS","ACCDEPARTMENT","ACCOUNTLINKS","ACCOUNTS","ACCOUNT_OPENING"]}
+{"timestamp":"2026-02-13T07:51:33.385Z","runId":273,"level":"debug","phase":"clean_decision","tableName":"STOCK","cleanBefore":true,"dryRun":false,"mode":"INSERT"}
+{"timestamp":"2026-02-13T07:51:33.386Z","runId":273,"type":"table_cleaning_started","table":"STOCK","tableRunId":364}
+{"timestamp":"2026-02-13T07:51:33.386Z","runId":273,"level":"info","phase":"clean","tableName":"STOCK","tableRunId":364,"status":"start"}
+{"timestamp":"2026-02-13T07:51:33.387Z","runId":273,"level":"debug","phase":"clean","tableName":"STOCK","tableRunId":364,"action":"fk_checks_disabled"}
+{"timestamp":"2026-02-13T07:51:33.417Z","runId":273,"level":"info","phase":"clean","tableName":"STOCK","tableRunId":364,"status":"success","method":"TRUNCATE","affectedRows":null,"postCount":0,"durationMs":31}
+{"timestamp":"2026-02-13T07:51:33.427Z","runId":273,"type":"table_cleaned","table":"STOCK","tableRunId":364,"method":"TRUNCATE","affectedRows":null,"postCount":0}
+{"timestamp":"2026-02-13T07:51:33.428Z","runId":273,"level":"debug","phase":"clean","tableName":"STOCK","tableRunId":364,"action":"fk_checks_restored"}
+{"timestamp":"2026-02-13T07:51:33.428Z","runId":273,"level":"info","phase":"table_start","tableName":"STOCK","tableRunId":364,"mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[]}
+{"timestamp":"2026-02-13T07:51:33.511Z","runId":273,"level":"info","phase":"fetch","tableName":"STOCK","tableRunId":364,"sourceRows":76}
+{"timestamp":"2026-02-13T07:51:33.599Z","runId":273,"level":"debug","phase":"write","tableName":"STOCK","tableRunId":364,"status":"start","batchSize":76}
+{"timestamp":"2026-02-13T07:51:33.607Z","runId":273,"level":"debug","phase":"write","tableName":"STOCK","tableRunId":364,"status":"end","inserted":76,"updated":0,"skipped":0,"durationMs":8}
+{"timestamp":"2026-02-13T07:51:33.621Z","runId":273,"level":"info","phase":"table_finalize","tableName":"STOCK","tableRunId":364,"status":"success","inserted":76,"updated":0,"skipped":0,"errors":0,"durationMs":187}
+{"timestamp":"2026-02-13T07:51:33.621Z","runId":273,"level":"debug","phase":"table_loop","action":"processing","tableName":"SUPPLIERS","mappingTableKeys":["STOCK","PRICING"]}
+{"timestamp":"2026-02-13T07:51:33.621Z","runId":273,"level":"debug","phase":"table_loop","action":"mapping_resolved","tableName":"SUPPLIERS","hasMappingEntry":false}
+{"timestamp":"2026-02-13T07:51:33.622Z","runId":273,"level":"debug","phase":"mapping_debug","tableName":"SUPPLIERS","firebirdTableCount":191,"sampleFirebirdTables":["ACCCLASS","ACCDEPARTMENT","ACCOUNTLINKS","ACCOUNTS","ACCOUNT_OPENING"]}
+{"timestamp":"2026-02-13T07:51:33.631Z","runId":273,"level":"error","phase":"table_finalize","tableName":"SUPPLIERS","tableRunId":null,"status":"failed","error":"No mapping found for target table SUPPLIERS.","hint":"Update your mapping to include this table."}
+{"timestamp":"2026-02-13T07:51:33.634Z","runId":273,"level":"error","phase":"run_finalize","status":"failed","error":"No mapping found for target table SUPPLIERS."}

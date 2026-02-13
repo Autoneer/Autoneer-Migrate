@@ -269,6 +269,46 @@
         "primaryKey": [],
         "uniqueIndexes": []
       },
+      "ACCOUNT_OPENING": {
+        "name": "ACCOUNT_OPENING",
+        "columns": {
+          "FY_START": {
+            "name": "FY_START",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "ACCNR": {
+            "name": "ACCNR",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "STARTBALANCE": {
+            "name": "STARTBALANCE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "SOURCE_NOTE": {
+            "name": "SOURCE_NOTE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          }
+        },
+        "primaryKey": [
+          "FY_START",
+          "ACCNR"
+        ],
+        "uniqueIndexes": []
+      },
       "ACCRANGE": {
         "name": "ACCRANGE",
         "columns": {
@@ -5440,6 +5480,12 @@
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
+          },
+          "IS_BASELINE": {
+            "name": "IS_BASELINE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
           }
         },
         "primaryKey": [],
@@ -10135,6 +10181,12 @@
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
+          },
+          "COMMISIONBASE": {
+            "name": "COMMISIONBASE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
           }
         },
         "primaryKey": [],
@@ -13688,7 +13740,7 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-01-27T13:43:47.006Z"
+    "lastUpdated": "2026-02-13T07:47:13.974Z"
   },
   "mysql": {
     "tables": {
@@ -29332,6 +29384,6 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-01-27T13:43:46.107Z"
+    "lastUpdated": "2026-02-13T07:47:13.015Z"
   }
 }
