@@ -20,8 +20,8 @@ async function createRun(pool, { run_label, source_conn_name, target_schema_name
 async function finishRun(pool, runId, status, errorMessage) {
 	// status should be one of RUNNING/SUCCESS/FAILED/CANCELLED
 	await pool.query(
-		"update migration_runs set status = ?, ended_at = now() where run_id = ?",
-		[status, runId]
+		"update migration_runs set status = ?, ended_at = now(), error_message = ? where run_id = ?",
+		[status, errorMessage || null, runId]
 	);
 
 	// also update legacy finished_at/status if present (best-effort)

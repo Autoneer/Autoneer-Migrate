@@ -11,6 +11,11 @@
 	<button id="btn-wizard-reset" class="btn btn-sm btn-danger" title="Clear all wizard progress and start over">
 		<span aria-hidden="true">🔄</span> Reset Wizard
 	</button>
+	{{!-- <button id="btn-rebuild-gl" class="btn btn-sm btn-warning"
+		title="Wipe + rebuild gl_accounts from staging accounts">
+		Rebuild GL Accounts
+	</button> --}}
+
 </div>
 
 <!-- Main wizard container -->
@@ -90,6 +95,9 @@
 
 <!-- 4. Wizard controller (auto-initializes) -->
 <script src="/public/js/wizard.js"></script>
+
+{{!-- %. Migrate ACCOUNTS --}}
+<script src="/public/js/tools/rebuild-gl.js"></script>
 
 <script>
 	// Debug: Log when scripts load

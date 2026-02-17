@@ -3,6 +3,9 @@
 	<nav class="steps">
 		<a class="step {{#if (eq currentStep 'setup')}}active{{/if}}" href="/setup">🛠 Setup</a>
 		<a class="step {{#if (eq currentStep 'wizard')}}active{{/if}}" href="/wizard">🧙 Migration Wizard</a>
+		<a id="btn-rebuild-gl" class="step" href="#" title="Wipe + rebuild gl_accounts from staging accounts">
+			🔁 Rebuild GL Accounts
+		</a>
 		<a class="step {{#if (eq currentStep 'migration')}}active{{/if}}" href="/migration/history"> 📜 Migration
 			History</a>
 	</nav>

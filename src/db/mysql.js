@@ -241,6 +241,18 @@ async function ensureMigrationTables(pool) {
 		await pool.query("alter table migration_runs add column error_message varchar(1000) null");
 	}
 
+	// Expand status column from enum to varchar to support COMPLETED_WITH_ERRORS, STOPPED, etc.
+	try {
+		const [statusCol] = await pool.query(
+			"select column_type from information_schema.columns where table_schema = database() and table_name = 'migration_runs' and column_name = 'status'"
+		);
+		if (statusCol.length > 0 && String(statusCol[0].column_type || '').toLowerCase().startsWith('enum')) {
+			await pool.query("alter table migration_runs modify column status varchar(30) not null default 'RUNNING'");
+		}
+	} catch (e) {
+		// ignore — column may already be varchar
+	}
+
 	const [rowErrorCols] = await pool.query(
 		"select column_name as name from information_schema.columns where table_schema = database() and table_name = 'migration_row_errors'"
 	);

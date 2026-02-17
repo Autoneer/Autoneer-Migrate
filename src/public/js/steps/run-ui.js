@@ -22,6 +22,9 @@ class RunUI {
 	async initialize() {
 		console.log('Initializing Execution Monitor...');
 
+		// Stop any leftover polling from a previous run
+		this.stopPolling();
+
 		// Get plan from previous step
 		this.plan = this.state.get('plan') || {};
 		const DEFAULT_PLAN_CONFIG = {
@@ -58,8 +61,19 @@ class RunUI {
 				}
 			} catch (err) {
 				console.warn('Could not load existing run:', err);
+				// Run not found in DB — clear stale reference
+				this.run = null;
 			}
+		} else {
+			// No run.id in state — clear any stale instance reference
+			// This is the key fix: after a reset/new plan, this.run must be null
+			// so render() shows the pre-execution screen instead of old results
+			this.run = null;
 		}
+
+		// Reset log tracking for fresh display
+		this._lastLogTs = null;
+		this.startTime = null;
 
 		this.render();
 	}
@@ -307,11 +321,22 @@ class RunUI {
 	 * Render failed state
 	 */
 	renderFailed() {
+		// The error message could be in several places depending on source (in-memory vs DB)
+		const errorMsg = this.run.errorMessage
+			|| this.run.error_message
+			|| this.run.lastError?.message
+			|| this.run.error
+			|| 'An error occurred during migration';
+
 		return `
       <div class="run-failed">
         <div class="error-icon">✕</div>
         <h2>Migration Failed</h2>
-        <p>${this.run.error || 'An error occurred during migration'}</p>
+        
+        <div style="background:#f8d7da;border:1px solid #f5c6cb;border-radius:4px;padding:1rem;margin:1rem 0;">
+          <h4 style="margin-top:0;">Error Details</h4>
+          <p style="white-space:pre-wrap;word-break:break-word;">${errorMsg}</p>
+        </div>
         
         <div class="failure-summary">
           <div class="stat">
@@ -319,7 +344,7 @@ class RunUI {
             <span>Tables Completed</span>
           </div>
           <div class="stat">
-            <strong>${this.run.tablesFailed || 0}</strong>
+            <strong>${this.run.tablesFailed || this.plan?.tables?.length || 0}</strong>
             <span>Tables Failed</span>
           </div>
         </div>
@@ -327,6 +352,9 @@ class RunUI {
         <div class="failure-actions">
           <button class="btn btn-secondary" onclick="window.wizard.steps[3].component.retryMigration()">
             🔄 Retry Failed Tables
+          </button>
+          <button class="btn btn-secondary" onclick="window.wizard.previousStep()">
+            ← Back to Plan
           </button>
           <button class="btn btn-primary" onclick="window.wizard.nextStep()">
             View Details →
@@ -463,7 +491,12 @@ class RunUI {
 			const resp = await this.api.retry(this.run.id);
 			if (!resp || !resp.success) {
 				this.wizard.hideLoading();
-				await Modal.alert({ title: 'Retry Failed', message: resp?.error || 'No failed tables recorded for this run.', type: 'info' });
+				const errorMsg = resp?.error || 'No failed tables recorded for this run.';
+				await Modal.alert({
+					title: 'Retry Failed',
+					message: `${errorMsg}\n\nTip: Go back to the Plan step and start a fresh migration instead.`,
+					type: 'info'
+				});
 				return;
 			}
 
@@ -472,8 +505,18 @@ class RunUI {
 			if (newRunId) {
 				this.state.set('run.id', newRunId);
 				this.state.set('run.status', 'running');
+				this.run = null; // Clear stale run reference
 				this.startTime = Date.now();
+				this._lastLogTs = null;
 				this.wizard.hideLoading();
+
+				// Reload the run from the server to get fresh state
+				try {
+					this.run = await this.api.getById(newRunId);
+				} catch (e) {
+					// Fall back to minimal run object
+					this.run = { id: newRunId, status: 'RUNNING' };
+				}
 				this.render();
 				return;
 			}
@@ -566,11 +609,12 @@ class RunUI {
 		try {
 			const runId = this.state.get('run.id');
 			if (runId) {
-				const resp = await this.api.getLogs(runId);
-				const logs = resp?.logs || [];
+				// RunAPI.getLogs() already returns the logs array directly
+				const logs = await this.api.getLogs(runId);
+				const logArray = Array.isArray(logs) ? logs : (logs?.logs || []);
 				// Filter logs newer than last seen timestamp
 				const newLogs = [];
-				for (const l of logs) {
+				for (const l of logArray) {
 					const ts = l.timestamp ? new Date(l.timestamp).getTime() : 0;
 					if (!this._lastLogTs || ts > this._lastLogTs) newLogs.push(l);
 				}

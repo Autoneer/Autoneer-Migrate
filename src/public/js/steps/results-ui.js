@@ -459,10 +459,13 @@ class ResultsUI {
 	 * Render logs
 	 */
 	renderLogs(logs) {
+		if (!Array.isArray(logs) || logs.length === 0) {
+			return '(no log entries)';
+		}
 		return logs.map(log => {
-			const timestamp = new Date(log.timestamp).toLocaleTimeString();
-			const level = log.level.toUpperCase().padEnd(7);
-			return `[${timestamp}] ${level} ${log.message}`;
+			const timestamp = log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : '--:--:--';
+			const level = String(log.level || 'info').toUpperCase().padEnd(7);
+			return `[${timestamp}] ${level} ${log.message || log.type || ''}`;
 		}).join('\n');
 	}
 
@@ -494,17 +497,19 @@ class ResultsUI {
 	 */
 	startNewMigration() {
 		(async () => {
-			// const confirmed = await Modal.confirm({
-			// 	title: 'Start New Migration',
-			// 	message: 'Start a new migration? This will reset the wizard.',
-			// 	type: 'warning',
-			// 	confirmText: 'Start New',
-			// 	cancelText: 'Cancel'
-			// });
+			// Clear our own stale data so re-entering Step 5 doesn't show old results
+			this.run = null;
+			this.summary = null;
+			this.errors = null;
 
-			// if (!confirmed) {
-			// 	return;
-			// }
+			// Also clear the RunUI instance state so Step 4 shows pre-execution
+			const runComponent = this.wizard.steps[3]?.component;
+			if (runComponent) {
+				runComponent.stopPolling();
+				runComponent.run = null;
+				runComponent._lastLogTs = null;
+				runComponent.startTime = null;
+			}
 
 			this.wizard.reset();
 		})();

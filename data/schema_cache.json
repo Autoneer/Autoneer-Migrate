@@ -6532,6 +6532,12 @@
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
+          },
+          "MESSAGE_BODY_TEXT": {
+            "name": "MESSAGE_BODY_TEXT",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
           }
         },
         "primaryKey": [],
@@ -13740,7 +13746,7 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-02-13T07:47:13.974Z"
+    "lastUpdated": "2026-02-17T05:35:23.685Z"
   },
   "mysql": {
     "tables": {
@@ -18163,6 +18169,99 @@
             "columnType": "timestamp",
             "nullable": true,
             "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "GL_CONTROL_ACCOUNTS": {
+        "name": "GL_CONTROL_ACCOUNTS",
+        "columns": {
+          "ID": {
+            "name": "ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "CONTROL_KEY": {
+            "name": "CONTROL_KEY",
+            "type": "VARCHAR",
+            "columnType": "varchar(30)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 30,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "TRANSACTION_TYPE": {
+            "name": "TRANSACTION_TYPE",
+            "type": "ENUM",
+            "columnType": "enum('GENERIC','PARTS','LABOUR','SUBLET','VEHICLE')",
+            "nullable": false,
+            "defaultValue": "GENERIC",
+            "length": 7,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "ACCNR": {
+            "name": "ACCNR",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "ACTIVE": {
+            "name": "ACTIVE",
+            "type": "TINYINT",
+            "columnType": "tinyint(1)",
+            "nullable": false,
+            "defaultValue": "1",
+            "length": null,
+            "precision": 3,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "TIMESTAMP",
+            "columnType": "timestamp",
+            "nullable": true,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "UPDATED_AT": {
+            "name": "UPDATED_AT",
+            "type": "TIMESTAMP",
+            "columnType": "timestamp",
+            "nullable": true,
+            "defaultValue": null,
             "length": null,
             "precision": null,
             "scale": null,
@@ -29384,6 +29483,6 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-02-13T07:47:13.015Z"
+    "lastUpdated": "2026-02-17T05:35:22.778Z"
   }
 }

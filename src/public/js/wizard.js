@@ -443,9 +443,12 @@ class MigrationWizard {
 			resetBtn.addEventListener('click', () => this.reset());
 		}
 
-		// Listen for state changes
+		// Listen for state changes (external triggers only — avoid re-entrancy with showStep)
 		this.state.on('step:change', (step) => {
-			this.showStep(step);
+			// Only react if the step was changed externally (not by showStep itself)
+			if (!this._isShowingStep && step !== this.currentStep) {
+				this.showStep(step);
+			}
 		});
 
 		this.state.on('ui:error', (message) => {
@@ -719,18 +722,35 @@ class MigrationWizard {
 			return;
 		}
 
-		// Clear all storage
+		// Stop RunUI polling before clearing state to prevent stale API calls
+		const runComponent = this.steps[3]?.component;
+		if (runComponent) {
+			runComponent.stopPolling();
+			runComponent.run = null;
+			runComponent._lastLogTs = null;
+			runComponent.startTime = null;
+		}
+
+		// Clear ResultsUI stale data
+		const resultsComponent = this.steps[4]?.component;
+		if (resultsComponent) {
+			resultsComponent.run = null;
+			resultsComponent.summary = null;
+			resultsComponent.errors = null;
+		}
+
+		// Clear PlanUI stale data
+		const planComponent = this.steps[2]?.component;
+		if (planComponent) {
+			planComponent.plan = null;
+			planComponent.dryRunResults = null;
+		}
+
+		// Clear all storage and state
 		this.storage.clearAll();
 		this.state.reset();
 		this.currentStep = 1;
 		await this.showStep(1);
-
-		// Show success message
-		// await Modal.alert({
-		// 	title: 'Wizard Reset',
-		// 	message: 'Wizard has been reset successfully. Starting from Step 1.',
-		// 	type: 'success'
-		// });
 	}
 
 	/**

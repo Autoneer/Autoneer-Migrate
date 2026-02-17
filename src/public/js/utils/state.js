@@ -445,6 +445,12 @@ class WizardState {
 	 * Reset state to initial (clear all data)
 	 */
 	reset() {
+		// Stop any event loops that might read stale data
+		this.state.run.id = null;
+		this.state.run.status = 'pending';
+		this.state.run.progress = 0;
+		this.state.run.tableResults = [];
+
 		this.state = {
 			currentStep: 1,
 			schema: null,

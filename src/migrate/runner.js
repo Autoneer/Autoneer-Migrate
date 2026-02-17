@@ -176,7 +176,10 @@ function formatConfigSummary(firebirdConfig) {
 	const port = firebirdConfig.port || "";
 	const database = firebirdConfig.database || "";
 	const user = firebirdConfig.user || "";
-	return `Config used: host=${host} port=${port} database=${database} user=${user}`;
+	// Also show password diagnostics (never the actual password)
+	const resolved = firebird.resolveFirebirdConfig(firebirdConfig);
+	const pwdInfo = `passwordSet=${!!resolved.password} source=${resolved.passwordSource || 'none'} useDefault=${!!firebirdConfig.useDefaultSysdbaMasterkey}`;
+	return `Config used: host=${host} port=${port} database=${database} user=${user} ${pwdInfo}`;
 }
 
 function formatDbError(err, context = {}) {
@@ -795,6 +798,24 @@ async function runMigrationInternal({
 	batchSize = Math.min(Math.max(Number(batchSize) || DEFAULT_BATCH, 1), 10000);
 
 	const preflightConnectivity = async () => {
+		// Log resolved Firebird config for diagnostics (never the actual password)
+		const resolvedFb = firebird.resolveFirebirdConfig(firebirdConfig);
+		logRun({
+			level: "info",
+			phase: "preflight",
+			action: "firebird_config_check",
+			host: resolvedFb.host,
+			port: resolvedFb.port,
+			database: resolvedFb.database,
+			user: resolvedFb.user,
+			passwordSet: !!resolvedFb.password,
+			passwordLength: resolvedFb.password ? resolvedFb.password.length : 0,
+			passwordSource: resolvedFb.passwordSource || 'none',
+			useDefaultSysdbaMasterkey: !!firebirdConfig.useDefaultSysdbaMasterkey,
+			rawPasswordSet: !!firebirdConfig.password,
+			rawPasswordLength: firebirdConfig.password ? String(firebirdConfig.password).length : 0
+		});
+
 		const checkFirebird = async () => {
 			await Promise.race([
 				firebird.query(firebirdConfig, "select 1 from rdb$database"),
@@ -2092,11 +2113,26 @@ async function runMigrationInternal({
 				} catch (finishErr) {
 					// ignore
 				}
+				markRemainingNotRun(runState.currentTable);
 			}
 			if (!runState.currentTable) {
+				// Preflight failure — no tables were started at all.
+				// Mark ALL in-memory tables as FAILED (not NOT_RUN) so the UI shows them correctly.
+				// Also create DB records for each table so the retry endpoint can find them.
 				runState.lastError = { message: errorMessage, hint, phase: "preflight" };
+				for (const table of runState.tables) {
+					table.status = "FAILED";
+					table.lastError = { message: errorMessage, hint, phase: "preflight" };
+					try {
+						// Create a table run record in the DB so retry can discover it
+						await runStore.startTableRun(pool, runId, table.name, table.mode || 'INSERT', table.keyStrategy || 'preserve');
+						await runStore.finishTableRun(pool, runId, table.name, "failed", errorMessage);
+					} catch (dbErr) {
+						// Best-effort — don't let DB errors prevent run finalization
+						logRun({ level: 'warn', phase: 'preflight_table_record', table: table.name, error: dbErr?.message });
+					}
+				}
 			}
-			markRemainingNotRun(runState.currentTable);
 			await runStore.finishRun(pool, runId, "FAILED", errorMessage);
 			emitRunState(runId, emitter);
 		}

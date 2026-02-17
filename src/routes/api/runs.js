@@ -493,8 +493,11 @@ router.get("/runs/:runId", async (req, res) => {
 			const runJson = run.toJSON();
 			// UI-friendly aliases expected by client-side RunUI
 			runJson.tablesCompleted = run.getCompletedTables().length;
+			runJson.tablesFailed = (runState.tables || []).filter(t => String(t.status || '').toUpperCase() === 'FAILED').length;
 			runJson.rowsMigrated = run.totals?.migrated ?? ((run.totals?.inserted || 0) + (run.totals?.updated || 0));
 			runJson.duration = run.finishedAt ? (new Date(run.finishedAt) - new Date(run.startedAt)) : (Date.now() - new Date(run.startedAt));
+			// Include error message from in-memory state
+			runJson.errorMessage = runState.lastError?.message || runJson.lastError?.message || null;
 
 			return res.json({
 				success: true,
@@ -520,6 +523,18 @@ router.get("/runs/:runId", async (req, res) => {
 
 		// Load table results
 		const tables = await runStore.getRunTables(pool, runId);
+
+		// Look up plan/mapping ids before closing the pool
+		let resolvedPlanId = runData.plan_id || null;
+		let resolvedMappingProfileId = null;
+		if (resolvedPlanId) {
+			try {
+				const planRow = await runStore.getPlan(pool, resolvedPlanId);
+				resolvedMappingProfileId = planRow?.mapping_profile_id || null;
+			} catch (e) {
+				resolvedMappingProfileId = null;
+			}
+		}
 
 		await pool.end();
 
@@ -551,20 +566,14 @@ router.get("/runs/:runId", async (req, res) => {
 
 		const runJson = run.toJSON();
 		runJson.tablesCompleted = run.getCompletedTables().length;
+		runJson.tablesFailed = (tables || []).filter(t => String(t.status || '').toUpperCase() === 'FAILED').length;
 		runJson.rowsMigrated = run.totals?.migrated ?? ((run.totals?.inserted || 0) + (run.totals?.updated || 0));
 		runJson.duration = run.finishedAt ? (new Date(run.finishedAt) - new Date(run.startedAt)) : (Date.now() - new Date(run.startedAt));
+		// Include the error message from the DB row so the UI can display it
+		runJson.errorMessage = runData.error_message || runJson.lastError?.message || null;
 		// Attach plan/mapping ids for metadata lookup
-		runJson.planId = runData.plan_id || null;
-		if (runData.plan_id) {
-			try {
-				const planRow = await runStore.getPlan(pool, runData.plan_id);
-				runJson.mappingProfileId = planRow?.mapping_profile_id || null;
-			} catch (e) {
-				runJson.mappingProfileId = null;
-			}
-		} else {
-			runJson.mappingProfileId = null;
-		}
+		runJson.planId = resolvedPlanId;
+		runJson.mappingProfileId = resolvedMappingProfileId;
 
 		res.json({
 			success: true,
@@ -853,7 +862,7 @@ router.get("/runs/:runId/summary", async (req, res) => {
 		summary.tablesMigrated = summary.successCount;
 		summary.rowsMigrated = summary.rows?.migrated ?? 0;
 		summary.totalRows = summary.rows?.migrated ?? 0;
-		summary.errors = summary.rows?.errors ?? summary.errorCount ?? 0;
+		// errorCount is already set above (line 814); keep errors as the array for frontend rendering
 		summary.duration = summary.durationMs;
 
 		res.json({
@@ -1143,11 +1152,27 @@ router.post("/runs/:runId/retry", async (req, res) => {
 			}
 		}
 
+		// fallback: if DB still has no table records, check in-memory run state
+		// (covers preflight failures where tables were never persisted)
+		if ((!tables || tables.length === 0)) {
+			const { getRunState: getMemState } = require("../../migrate/runner");
+			const numericRunId = Number(runId);
+			const memKey = Number.isNaN(numericRunId) ? runId : numericRunId;
+			const memState = getMemState(memKey);
+			if (memState && Array.isArray(memState.tables)) {
+				tables = memState.tables.map(t => ({
+					table_name: t.name,
+					status: t.status || 'FAILED'
+				}));
+			}
+		}
+
 		const requested = Array.isArray(req.body?.tables) ? req.body.tables.map(t => String(t).toUpperCase()) : null;
-		// consider several statuses as retryable: failed, error, cancelled
+		// consider several statuses as retryable: failed, error, cancelled, not_run, queued
+		const retryableStatuses = ['FAILED', 'ERROR', 'CANCELLED', 'NOT_RUN', 'QUEUED'];
 		const failedTables = (tables || []).filter(t => {
 			const s = String((t.status || t.state || '') || '').toUpperCase();
-			return ['FAILED', 'ERROR', 'CANCELLED'].includes(s);
+			return retryableStatuses.includes(s);
 		});
 
 		let toRetry = failedTables.map(t => t.table_name || t.table);

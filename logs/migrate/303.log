@@ -1,0 +1,9 @@
+{"timestamp":"2026-02-16T18:37:06.095Z","runId":303,"level":"info","phase":"run_start","dryRun":false,"batchSize":1000,"fkChecks":true,"tables":[]}
+{"timestamp":"2026-02-16T18:37:06.095Z","runId":303,"level":"info","phase":"preflight","action":"firebird_config_check","host":"localhost","port":3050,"database":"C:\\Autoneer\\data\\AUTONEER.FDB","user":"SYSDBA","passwordSet":true,"passwordLength":9,"passwordSource":"state","useDefaultSysdbaMasterkey":true,"rawPasswordSet":true,"rawPasswordLength":9}
+{"timestamp":"2026-02-16T18:37:06.178Z","runId":303,"level":"info","phase":"preflight","attempt":1,"status":"ok"}
+{"timestamp":"2026-02-16T18:37:06.178Z","runId":303,"level":"debug","phase":"preflight","durationMs":83}
+{"timestamp":"2026-02-16T18:37:06.179Z","runId":303,"level":"info","phase":"preflight","action":"nullability_validation","status":"start"}
+{"timestamp":"2026-02-16T18:37:06.179Z","runId":303,"level":"info","phase":"preflight","action":"nullability_validation","status":"passed"}
+{"timestamp":"2026-02-16T18:37:06.262Z","runId":303,"level":"debug","phase":"table_loop","action":"starting","includedCount":0,"mappingTableCount":8}
+{"timestamp":"2026-02-16T18:37:06.262Z","runId":303,"level":"info","phase":"table_loop","action":"normalized_tables","sampleTables":[]}
+{"timestamp":"2026-02-16T18:37:06.269Z","runId":303,"level":"info","phase":"run_finalize","status":"success"}

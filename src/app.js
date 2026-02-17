@@ -18,6 +18,7 @@ const planApiRoutes = require("./routes/api/plans");
 const runApiRoutes = require("./routes/api/runs");
 const presetsApiRoutes = require("./routes/api/presets");
 const profilesApiRoutes = require("./routes/api/profiles");
+const toolsApiRoutes = require("./routes/api/tools");
 
 const app = express();
 
@@ -72,7 +73,7 @@ app.use("/api", planApiRoutes);    // Plan management endpoints
 app.use("/api", runApiRoutes);     // Run tracking endpoints
 app.use("/api", presetsApiRoutes);
 app.use("/api", profilesApiRoutes);
-
+app.use("/api", toolsApiRoutes);   // Tools and utilities endpoints
 app.use((err, req, res, next) => {
 	const message = err?.message || "Unexpected error";
 
