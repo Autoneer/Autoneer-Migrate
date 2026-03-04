@@ -33,8 +33,8 @@ async function checkTrialBalance(pool, opts = {}) {
 		const params = [];
 		if (opts.startDate || opts.endDate) {
 			where = "JOIN gl_journal_headers jh ON jh.id = jl.header_id WHERE 1=1";
-			if (opts.startDate) { where += " AND jh.jdate >= ?"; params.push(opts.startDate); }
-			if (opts.endDate) { where += " AND jh.jdate <= ?"; params.push(opts.endDate); }
+			if (opts.startDate) { where += " AND jh.trxdate >= ?"; params.push(opts.startDate); }
+			if (opts.endDate) { where += " AND jh.trxdate <= ?"; params.push(opts.endDate); }
 		}
 
 		const sql = `
@@ -128,8 +128,8 @@ async function checkBalanceSheet(pool, opts = {}) {
 		const params = [];
 		if (opts.startDate || opts.endDate) {
 			dateJoin = "JOIN gl_journal_headers jh ON jh.id = jl.header_id";
-			if (opts.startDate) { dateJoin += ` AND jh.jdate >= '${opts.startDate}'`; }
-			if (opts.endDate) { dateJoin += ` AND jh.jdate <= '${opts.endDate}'`; }
+			if (opts.startDate) { dateJoin += ` AND jh.trxdate >= '${opts.startDate}'`; }
+			if (opts.endDate) { dateJoin += ` AND jh.trxdate <= '${opts.endDate}'`; }
 		}
 
 		const sql = `

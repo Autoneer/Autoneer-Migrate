@@ -1,0 +1,37 @@
+<section class="card">
+	<div class="page-header">
+		<h1>GL Tools</h1>
+		<p class="hint">Use these actions to rebuild GL accounts and run validation checks with full error details.</p>
+	</div>
+</section>
+
+<section class="card">
+	<h3>Rebuild GL Accounts</h3>
+	<p class="hint">
+		Recreates <code>gl_accounts</code> from staging accounts and runs GL validation checks afterwards.
+	</p>
+	<label class="inline-label">
+		<input id="gl-wipe-journals" type="checkbox" />
+		Also truncate <code>gl_journal_headers</code> and <code>gl_journal_lines</code>
+	</label>
+	<div class="actions">
+		<button id="btn-rebuild-gl-page" class="btn primary" type="button">Rebuild GL Accounts</button>
+	</div>
+</section>
+
+<section class="card">
+	<h3>GL Validate</h3>
+	<p class="hint">
+		Runs all GL validation checks only, without rebuilding.
+	</p>
+	<div class="actions">
+		<button id="btn-gl-validate" class="btn secondary" type="button">Run GL Validate</button>
+	</div>
+</section>
+
+<section class="card">
+	<h3>Result</h3>
+	<pre id="gl-tools-result">No action run yet.</pre>
+</section>
+
+<script src="/public/js/tools/gl-tools.js"></script>

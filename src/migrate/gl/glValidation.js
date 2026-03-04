@@ -101,7 +101,7 @@ async function checkPostingLineTypes(pool) {
 		JOIN gl_account_types gat ON gat.id = ga.type_id
 		LEFT JOIN gl_journal_headers jh ON jh.id = jl.header_id
 		LEFT JOIN journal j_legacy ON j_legacy.accnr = jl.accnr
-			AND j_legacy.jdate = jh.jdate
+			AND j_legacy.jdate = jh.trxdate
 			AND j_legacy.sourceid = CAST(jh.source_id AS SIGNED)
 		WHERE j_legacy.accclass IS NOT NULL
 		HAVING account_type_id != expected_type_id

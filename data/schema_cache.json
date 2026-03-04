@@ -269,6 +269,46 @@
         "primaryKey": [],
         "uniqueIndexes": []
       },
+      "ACCOUNT_OPENING": {
+        "name": "ACCOUNT_OPENING",
+        "columns": {
+          "FY_START": {
+            "name": "FY_START",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "ACCNR": {
+            "name": "ACCNR",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "STARTBALANCE": {
+            "name": "STARTBALANCE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "SOURCE_NOTE": {
+            "name": "SOURCE_NOTE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          }
+        },
+        "primaryKey": [
+          "FY_START",
+          "ACCNR"
+        ],
+        "uniqueIndexes": []
+      },
       "ACCRANGE": {
         "name": "ACCRANGE",
         "columns": {
@@ -5440,6 +5480,12 @@
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
+          },
+          "IS_BASELINE": {
+            "name": "IS_BASELINE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
           }
         },
         "primaryKey": [],
@@ -5564,6 +5610,12 @@
           },
           "SUPPID": {
             "name": "SUPPID",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "JNLDESC": {
+            "name": "JNLDESC",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -10141,6 +10193,12 @@
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
+          },
+          "COMMISIONBASE": {
+            "name": "COMMISIONBASE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
           }
         },
         "primaryKey": [],
@@ -13694,7 +13752,7 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-03-02T15:13:25.096Z"
+    "lastUpdated": "2026-03-04T08:56:26.101Z"
   },
   "mysql": {
     "tables": {
@@ -19011,8 +19069,8 @@
             "isPrimaryKey": true,
             "isUnique": false
           },
-          "JDATE": {
-            "name": "JDATE",
+          "TRXDATE": {
+            "name": "TRXDATE",
             "type": "DATE",
             "columnType": "date",
             "nullable": false,
@@ -31120,6 +31178,6 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-03-02T15:13:24.482Z"
+    "lastUpdated": "2026-03-04T08:56:24.876Z"
   }
 }

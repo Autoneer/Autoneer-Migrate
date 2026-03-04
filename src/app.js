@@ -8,6 +8,7 @@ const setupRoutes = require("./routes/setup");
 const eventsRoutes = require("./routes/events");
 const migrationRoutes = require("./routes/migration");
 const wizardRoutes = require("./routes/wizard"); // Phase 3: New wizard UI
+const toolsPageRoutes = require("./routes/tools");
 const adminPresetsRoutes = require("./routes/admin/presets");
 const { router: healthRoutes } = require("./routes/health"); // Destructure router since health.js exports object
 const schemaRoutes = require("./routes/schema"); // New refactored schema API
@@ -62,6 +63,7 @@ app.get("/", (req, res) => res.redirect("/setup"));
 app.use(setupRoutes);
 app.use(migrationRoutes);
 app.use(wizardRoutes); // Phase 3: Wizard UI route
+app.use(toolsPageRoutes);
 app.use(adminPresetsRoutes);
 app.use(eventsRoutes);
 app.use(healthRoutes);
