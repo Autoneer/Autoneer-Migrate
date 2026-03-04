@@ -6,7 +6,7 @@ async function run() {
 	const runId = process.argv[2];
 	try {
 		const [rows] = await pool.query('select * from migration_runs where id = ?', [runId]);
-		console.log('rows:', rows);
+		// console.log('rows:', rows);
 	} catch (e) {
 		console.error('query error:', e.message);
 	}

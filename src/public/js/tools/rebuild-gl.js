@@ -58,8 +58,33 @@
 			try {
 				const api = new APIClient("/api");
 				const resp = await api.post("/tools/rebuild-gl", { truncateJournals: wipeJournals });
-				await showResult("GL rebuild complete.", false);
 				console.log("Rebuild response:", resp);
+
+				// Build result message including GL validation summary
+				let msg = "GL rebuild complete.";
+				if (resp && resp.gl_account_types_valid === false) {
+					msg += "\n\n⚠ gl_account_types validation failed.";
+					if (Array.isArray(resp.gl_account_types_errors)) {
+						msg += "\n" + resp.gl_account_types_errors.join("\n");
+					}
+				}
+				if (resp && resp.gl_validation && !resp.gl_validation.allPassed) {
+					const checks = resp.gl_validation.checks || [];
+					const failed = checks.filter(function (c) { return !c.passed; });
+					if (failed.length > 0) {
+						msg += "\n\n⚠ GL Validation: " + failed.length + " check(s) failed:";
+						failed.forEach(function (c) {
+							msg += "\n  • " + c.name + ": " + (c.summary || c.error || "FAIL");
+						});
+					}
+				}
+
+				const hasWarnings = (resp && resp.gl_account_types_valid === false) ||
+					(resp && resp.gl_validation && !resp.gl_validation.allPassed);
+				await showResult(msg, false);
+				if (hasWarnings) {
+					console.warn("GL rebuild completed with validation warnings:", resp);
+				}
 			} catch (e) {
 				await showResult(e && e.message ? e.message : "Rebuild failed", true);
 			} finally {

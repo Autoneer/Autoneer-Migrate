@@ -211,8 +211,8 @@ class MappingUI {
 		if (!select) return;
 		const id = select.value;
 		if (!id) return Modal.alert({ title: 'Select', message: 'Please choose a profile to load' });
-		const ok = await Modal.confirm({ title: 'Confirm', message: 'Replace current mappings with selected profile?' });
-		if (!ok) return;
+		// const ok = await Modal.confirm({ title: 'Confirm', message: 'Replace current mappings with selected profile?' });
+		// if (!ok) return;
 		try {
 			const res = await fetch(`/api/profiles/${id}`);
 			const data = await res.json();
@@ -222,7 +222,8 @@ class MappingUI {
 			this.selectedTables = new Set(Object.keys(this.mapping.tables || {}));
 			this.state.updateMapping(this.mapping);
 			this.render();
-			Modal.alert({ title: 'Loaded', message: 'Profile applied' });
+
+			// Modal.alert({ title: 'Loaded', message: 'Profile applied' });
 		} catch (e) {
 			Modal.alert({ title: 'Error', message: e.message });
 		}

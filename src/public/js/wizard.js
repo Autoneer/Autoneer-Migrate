@@ -247,7 +247,7 @@ class MigrationWizard {
 		if (!validation.valid && validation.errors && validation.errors.length > 0) {
 			validationFeedback = `
 				<div class="nav-validation" role="status" aria-live="polite">
-					<strong>To continue to the next step, do the following:</strong>
+					
 					<ul>
 						${validation.errors.map(err => `<li>${this.escapeHtml(err)}</li>`).join('')}
 					</ul>

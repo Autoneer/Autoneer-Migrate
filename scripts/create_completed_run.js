@@ -8,7 +8,7 @@ async function run() {
 	await mysql.ensureMigrationTables(pool);
 
 	const runUuid = uuidv4();
-	console.log('Creating legacy test run id=', runUuid);
+	// console.log('Creating legacy test run id=', runUuid);
 
 	// Insert into legacy-style migration_runs (uses `id` column)
 	await pool.query(
@@ -18,7 +18,7 @@ async function run() {
 	);
 
 	// Insert a completed table run with 1000 rows migrated (use runUuid as run_id)
-	console.log('Inserting table run with 1000 rows for run=', runUuid);
+	// console.log('Inserting table run with 1000 rows for run=', runUuid);
 	await pool.query(
 		`insert into migration_table_runs (run_id, table_name, mode, key_strategy, status, started_at, finished_at, rows_source, rows_migrated, rows_skipped, rows_error, rows_skipped_duplicates)
       values (?, ?, ?, ?, 'COMPLETED', now(), now(), ?, ?, 0, 0, 0)`,
@@ -31,15 +31,15 @@ async function run() {
 	await new Promise(r => setTimeout(r, 1000));
 
 	const url = `http://localhost:3000/api/runs/${runUuid}`;
-	console.log('Fetching', url);
+	// console.log('Fetching', url);
 	http.get(url, (res) => {
 		let data = '';
 		res.on('data', (chunk) => data += chunk);
 		res.on('end', () => {
 			try {
 				const json = JSON.parse(data);
-				console.log('API response:');
-				console.log(JSON.stringify(json, null, 2));
+				// console.log('API response:');
+				// console.log(JSON.stringify(json, null, 2));
 			} catch (e) {
 				console.error('Failed to parse response', e, data);
 			}

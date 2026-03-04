@@ -7,6 +7,13 @@ const logger = require("./logger");
 const { resolveTargetTableName } = require("./utils/tableNameCanonical");
 const mappingPersistence = require("./mappingPersistence");
 const idMapTracker = require("./idMapTracker");
+const {
+	seedAccountTypes,
+	validateAccountTypes,
+	resolveTypeId,
+	ACCCLASS_TO_TYPE_ID
+} = require("./gl/glAccountTypes");
+const { runAllChecks: runGLValidationChecks } = require("./gl/glValidation");
 
 const runEmitters = new Map();
 const runStates = new Map();
@@ -960,6 +967,50 @@ async function runMigrationInternal({
 		}
 
 		logRun({ level: "info", phase: "preflight", action: "nullability_validation", status: "passed" });
+
+		// ─── GL HARD-FAIL GUARDS ────────────────────────────────────────
+		// Seed and validate gl_account_types BEFORE any table migration.
+		// This ensures the authoritative type set is always present.
+		logRun({ level: "info", phase: "preflight", action: "gl_account_types_seed", status: "start" });
+		try {
+			await seedAccountTypes(pool);
+			const gatValidation = await validateAccountTypes(pool);
+			if (!gatValidation.valid) {
+				throw new Error(
+					`GL HARD FAIL: gl_account_types validation failed after seeding:\n` +
+					gatValidation.errors.map(e => `  • ${e}`).join("\n")
+				);
+			}
+			logRun({ level: "info", phase: "preflight", action: "gl_account_types_seed", status: "passed" });
+		} catch (seedErr) {
+			if (seedErr.message.includes("GL HARD FAIL")) throw seedErr;
+			logRun({
+				level: "warn",
+				phase: "preflight",
+				action: "gl_account_types_seed",
+				status: "skipped",
+				error: seedErr.message,
+				hint: "gl_account_types table may not exist yet — will be created during migration"
+			});
+		}
+
+		// Check if any GL tables are included in this run — if so, enforce guards
+		const glTablesInPlan = includedSteps.filter(s =>
+			["gl_account_types", "gl_accounts", "gl_journal_headers", "gl_journal_lines"].includes(s.table?.toLowerCase())
+		);
+		const accountsInPlan = includedSteps.some(s => s.table?.toLowerCase() === "accounts");
+
+		if (glTablesInPlan.length > 0 && accountsInPlan) {
+			logRun({
+				level: "info",
+				phase: "preflight",
+				action: "gl_guard",
+				status: "gl_tables_detected",
+				tables: glTablesInPlan.map(s => s.table),
+				message: "GL tables detected in migration plan — ACCCLASS→type_id enforcement active"
+			});
+		}
+		// ─── END GL GUARDS ──────────────────────────────────────────────
 
 		startKeepalive();
 		checkAbort(runId);
@@ -2061,11 +2112,84 @@ async function runMigrationInternal({
 				emitRunState(runId, emitter);
 			}
 		} else {
-			runState.status = "SUCCESS";
-			runState.finishedAt = new Date().toISOString();
-			await runStore.finishRun(pool, runId, "SUCCESS");
-			logRun({ level: "info", phase: "run_finalize", status: "success" });
-			emitRunState(runId, emitter);
+			// ─── POST-MIGRATION GL VALIDATION ────────────────────────────
+			// Run GL integrity checks if any account or GL tables were migrated.
+			const glOrAccountsMigrated = includedSteps.some(s => {
+				const t = (s.table || "").toLowerCase();
+				return ["accounts", "acc_class", "gl_account_types", "gl_accounts",
+					"gl_journal_headers", "gl_journal_lines", "journal"].includes(t);
+			});
+
+			if (glOrAccountsMigrated) {
+				logRun({ level: "info", phase: "post_migration_gl_validation", status: "start" });
+				try {
+					const glResults = await runGLValidationChecks(pool);
+					for (const check of glResults.checks) {
+						logRun({
+							level: check.passed ? "info" : "warn",
+							phase: "post_migration_gl_validation",
+							check: check.check,
+							name: check.name,
+							passed: check.passed,
+							errorCount: check.count,
+							errors: check.errors.slice(0, 10) // Log first 10 errors
+						});
+					}
+
+					if (!glResults.allPassed) {
+						const failedChecks = glResults.checks.filter(c => !c.passed);
+						const summary = failedChecks.map(c =>
+							`  • [${c.check}] ${c.name}: ${c.count} error(s)`
+						).join("\n");
+
+						logRun({
+							level: "error",
+							phase: "post_migration_gl_validation",
+							status: "failed",
+							message: `GL validation failed:\n${summary}`
+						});
+
+						// HARD FAIL: GL validation errors mean data integrity is compromised
+						runState.status = "COMPLETED_WITH_ERRORS";
+						runState.finishedAt = new Date().toISOString();
+						runState.lastError = {
+							message: `Migration completed but GL validation failed:\n${summary}`,
+							phase: "post_migration_gl_validation"
+						};
+						await runStore.finishRun(pool, runId, "COMPLETED_WITH_ERRORS",
+							`GL validation failed: ${failedChecks.length} check(s) did not pass`);
+						emitRunState(runId, emitter);
+					} else {
+						logRun({ level: "info", phase: "post_migration_gl_validation", status: "passed" });
+						runState.status = "SUCCESS";
+						runState.finishedAt = new Date().toISOString();
+						await runStore.finishRun(pool, runId, "SUCCESS");
+						logRun({ level: "info", phase: "run_finalize", status: "success" });
+						emitRunState(runId, emitter);
+					}
+				} catch (glErr) {
+					// If GL validation itself errors (e.g. tables don't exist yet), log but allow success
+					logRun({
+						level: "warn",
+						phase: "post_migration_gl_validation",
+						status: "error",
+						error: glErr.message,
+						hint: "GL validation could not run — tables may not exist yet. Run 'Rebuild GL Accounts' to create them."
+					});
+					runState.status = "SUCCESS";
+					runState.finishedAt = new Date().toISOString();
+					await runStore.finishRun(pool, runId, "SUCCESS");
+					logRun({ level: "info", phase: "run_finalize", status: "success" });
+					emitRunState(runId, emitter);
+				}
+			} else {
+				runState.status = "SUCCESS";
+				runState.finishedAt = new Date().toISOString();
+				await runStore.finishRun(pool, runId, "SUCCESS");
+				logRun({ level: "info", phase: "run_finalize", status: "success" });
+				emitRunState(runId, emitter);
+			}
+			// ─── END POST-MIGRATION GL VALIDATION ────────────────────────
 		}
 	} catch (err) {
 		// Special handling for user-requested aborts
