@@ -26,6 +26,44 @@ function safeParseJson(raw, fallback = {}) {
 }
 
 /**
+ * Normalize mapping from legacy shape (targetTable/targetColumn) to canonical shape (target).
+ * Shared by the regular run handler and the retry handler.
+ */
+function normalizeMappingJson(mapping) {
+	if (!mapping || !mapping.tables) return mapping;
+	const tables = mapping.tables;
+	const needsConversion = Object.values(tables).some((config) => {
+		if (!config) return false;
+		if (config.targetTable) return true;
+		const sampleColumn = config.columns ? Object.values(config.columns)[0] : null;
+		return !!sampleColumn?.targetColumn;
+	});
+
+	if (!needsConversion) return mapping;
+
+	const converted = { ...mapping, tables: {} };
+	for (const [sourceTable, config] of Object.entries(tables)) {
+		const columns = {};
+		for (const [srcCol, field] of Object.entries(config?.columns || {})) {
+			columns[srcCol] = {
+				target: field?.targetColumn || field?.target || srcCol,
+				transform: field?.transform || null,
+				defaultValue: field?.defaultValue ?? field?.default ?? null,
+				lookup: field?.lookup || null,
+				omit: field?.omit || false
+			};
+		}
+		converted.tables[sourceTable] = {
+			target: config?.targetTable || config?.target || sourceTable,
+			columns,
+			mode: config?.mode,
+			keyStrategy: config?.keyStrategy
+		};
+	}
+	return converted;
+}
+
+/**
  * Normalize table status to UI-friendly values
  */
 function normalizeTableStatus(s) {
@@ -268,41 +306,7 @@ router.post("/runs", async (req, res) => {
 
 		const { normalizePlanSteps } = require('../../migrate/planNormalize');
 
-		const normalizeMapping = (mapping) => {
-			if (!mapping || !mapping.tables) return mapping;
-			const tables = mapping.tables;
-			const needsConversion = Object.values(tables).some((config) => {
-				if (!config) return false;
-				if (config.targetTable) return true;
-				const sampleColumn = config.columns ? Object.values(config.columns)[0] : null;
-				return !!sampleColumn?.targetColumn;
-			});
-
-			if (!needsConversion) return mapping;
-
-			const converted = { ...mapping, tables: {} };
-			for (const [sourceTable, config] of Object.entries(tables)) {
-				const columns = {};
-				for (const [srcCol, field] of Object.entries(config?.columns || {})) {
-					columns[srcCol] = {
-						target: field?.targetColumn || field?.target || srcCol,
-						transform: field?.transform || null,
-						defaultValue: field?.defaultValue ?? field?.default ?? null,
-						lookup: field?.lookup || null,
-						omit: field?.omit || false  // Preserve omit flag
-					};
-				}
-				converted.tables[sourceTable] = {
-					target: config?.targetTable || config?.target || sourceTable,
-					columns,
-					mode: config?.mode,
-					keyStrategy: config?.keyStrategy
-				};
-			}
-			return converted;
-		};
-
-		const normalizedMapping = normalizeMapping(mappingJson);
+		const normalizedMapping = normalizeMappingJson(mappingJson);
 		const normalizedPlan = normalizePlanSteps(planJson, normalizedMapping);
 
 		// console.log('[Runs] Normalized plan (first 2):', JSON.stringify(normalizedPlan.slice(0, 2), null, 2));
@@ -1226,11 +1230,23 @@ router.post("/runs/:runId/retry", async (req, res) => {
 
 		await pool.end();
 
-		// Update state with only failed tables
-		const fullPlan = JSON.parse(planData.plan_json || "[]");
+		// Normalize plan and mapping the same way as a fresh run
+		const { normalizePlanSteps } = require('../../migrate/planNormalize');
+		const rawMappingJson = safeParseJson(mappingData.mapping_json || '{}');
+		const normalizedMapping = normalizeMappingJson(rawMappingJson);
+		normalizedMapping.planId = runData.plan_id || null;
+		normalizedMapping.profileId = mappingProfileId;
+
+		// plan_json may be stored in either 'plan_json' or 'mapping_json' column
+		const rawPlanJson = safeParseJson(planData.plan_json || planData.mapping_json || '{}');
+		const normalizedFullPlan = normalizePlanSteps(rawPlanJson, normalizedMapping);
+
 		const failedTableNames = toRetry.map(t => String(t));
-		state.plan = fullPlan.filter(step => failedTableNames.map(f => f.toUpperCase()).includes(String(step.target || step.table).toUpperCase()));
-		state.mapping = JSON.parse(mappingData.mapping_json || "{}");
+		// Filter to only the retry tables and force include:true so the runner processes them
+		state.plan = normalizedFullPlan
+			.filter(step => failedTableNames.map(f => f.toUpperCase()).includes(String(step.target || step.table).toUpperCase()))
+			.map(step => ({ ...step, include: true }));
+		state.mapping = normalizedMapping;
 
 		console.log(`[API] Retry requested for run ${runId}, tables: ${failedTableNames.join(', ')}`);
 		// Start new migration run for failed tables using state.plan and state.mapping
@@ -1242,7 +1258,7 @@ router.post("/runs/:runId/retry", async (req, res) => {
 			plan: state.plan,
 			mapping: state.mapping,
 			dryRun: !!runData.dry_run,
-			batchSize: state.plan?.config?.batchSize || 1000,
+			batchSize: rawPlanJson?.config?.batchSize || 1000,
 			fkChecks: true
 		});
 

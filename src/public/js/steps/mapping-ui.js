@@ -238,6 +238,20 @@ class MappingUI {
 		// Get schema from previous step
 		this.schema = this.state.get('schema');
 		if (!this.schema) {
+			// Schema may have expired from localStorage cache — try re-fetching from the API
+			try {
+				console.log('[MappingUI] Schema missing from state, attempting to re-fetch cached schema...');
+				const cached = await window.SchemaAPI.getCached();
+				if (cached) {
+					this.state.setSchema(cached);
+					this.schema = cached;
+					console.log('[MappingUI] Recovered schema from API cache');
+				}
+			} catch (e) {
+				console.warn('[MappingUI] Failed to re-fetch schema from API:', e);
+			}
+		}
+		if (!this.schema) {
 			this.wizard.showError('Schema not available. Please go back to Step 1.');
 			return;
 		}

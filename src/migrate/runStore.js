@@ -117,8 +117,9 @@ async function getRun(pool, runId) {
 
 async function getRunTables(pool, runId) {
 	const [rows] = await pool.query(
-		"select * from migration_table_runs where run_id = ? order by id",
-		[runId]
+		// Return the latest record per table (in case retry created duplicates)
+		"select t1.* from migration_table_runs t1 inner join (select table_name, max(id) as max_id from migration_table_runs where run_id = ? group by table_name) t2 on t1.table_name = t2.table_name and t1.id = t2.max_id where t1.run_id = ? order by t1.id",
+		[runId, runId]
 	);
 	return rows;
 }

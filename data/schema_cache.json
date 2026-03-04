@@ -13752,7 +13752,7 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-03-04T08:56:26.101Z"
+    "lastUpdated": "2026-03-04T11:19:40.989Z"
   },
   "mysql": {
     "tables": {
@@ -19069,8 +19069,8 @@
             "isPrimaryKey": true,
             "isUnique": false
           },
-          "TRXDATE": {
-            "name": "TRXDATE",
+          "JDATE": {
+            "name": "JDATE",
             "type": "DATE",
             "columnType": "date",
             "nullable": false,
@@ -31178,6 +31178,6 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-03-04T08:56:24.876Z"
+    "lastUpdated": "2026-03-04T11:19:40.103Z"
   }
 }

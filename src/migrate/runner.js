@@ -2240,11 +2240,13 @@ async function runMigrationInternal({
 				markRemainingNotRun(runState.currentTable);
 			}
 			if (!runState.currentTable) {
-				// Preflight failure — no tables were started at all.
-				// Mark ALL in-memory tables as FAILED (not NOT_RUN) so the UI shows them correctly.
-				// Also create DB records for each table so the retry endpoint can find them.
+				// Error happened outside the per-table loop (preflight failure or mid-run
+				// connection drop between tables). Mark only tables that haven't completed
+				// yet as FAILED and ensure they have DB records for the retry endpoint.
+				// Tables already marked SUCCESS must NOT be overwritten.
 				runState.lastError = { message: errorMessage, hint, phase: "preflight" };
 				for (const table of runState.tables) {
+					if (table.status === 'SUCCESS') continue; // already completed — leave it
 					table.status = "FAILED";
 					table.lastError = { message: errorMessage, hint, phase: "preflight" };
 					try {
