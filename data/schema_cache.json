@@ -13752,7 +13752,7 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-03-04T11:19:40.989Z"
+    "lastUpdated": "2026-03-18T07:29:37.314Z"
   },
   "mysql": {
     "tables": {
@@ -16642,7 +16642,7 @@
           "LINE_TYPE": {
             "name": "LINE_TYPE",
             "type": "ENUM",
-            "columnType": "enum('PART','LABOUR')",
+            "columnType": "enum('PART','LABOUR','CREDIT')",
             "nullable": false,
             "defaultValue": null,
             "length": 6,
@@ -19069,8 +19069,8 @@
             "isPrimaryKey": true,
             "isUnique": false
           },
-          "JDATE": {
-            "name": "JDATE",
+          "TRXDATE": {
+            "name": "TRXDATE",
             "type": "DATE",
             "columnType": "date",
             "nullable": false,
@@ -19543,6 +19543,183 @@
         },
         "primaryKey": [
           "IID"
+        ],
+        "uniqueIndexes": []
+      },
+      "INVOICE_ADJUSTMENTS": {
+        "name": "INVOICE_ADJUSTMENTS",
+        "columns": {
+          "ID": {
+            "name": "ID",
+            "type": "INT",
+            "columnType": "int unsigned",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "INVOICE_NR": {
+            "name": "INVOICE_NR",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CID": {
+            "name": "CID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "ADJUSTMENT_TYPE": {
+            "name": "ADJUSTMENT_TYPE",
+            "type": "ENUM",
+            "columnType": "enum('CREDIT_NOTE','WRITE_OFF','DISCOUNT')",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 11,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "AMOUNT_INCVAT": {
+            "name": "AMOUNT_INCVAT",
+            "type": "DECIMAL",
+            "columnType": "decimal(12,2)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 12,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "AMOUNT_EXVAT": {
+            "name": "AMOUNT_EXVAT",
+            "type": "DECIMAL",
+            "columnType": "decimal(12,2)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 12,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "VAT_AMOUNT": {
+            "name": "VAT_AMOUNT",
+            "type": "DECIMAL",
+            "columnType": "decimal(12,2)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 12,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "ADJUSTMENT_DATE": {
+            "name": "ADJUSTMENT_DATE",
+            "type": "DATE",
+            "columnType": "date",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "NOTES": {
+            "name": "NOTES",
+            "type": "VARCHAR",
+            "columnType": "varchar(500)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 500,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "REF_INVOICE_NR": {
+            "name": "REF_INVOICE_NR",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "GL_SOURCE": {
+            "name": "GL_SOURCE",
+            "type": "VARCHAR",
+            "columnType": "varchar(50)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 50,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "GL_SOURCE_ID": {
+            "name": "GL_SOURCE_ID",
+            "type": "VARCHAR",
+            "columnType": "varchar(100)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 100,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_BY": {
+            "name": "CREATED_BY",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ID"
         ],
         "uniqueIndexes": []
       },
@@ -31178,6 +31355,6 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-03-04T11:19:40.103Z"
+    "lastUpdated": "2026-03-18T07:29:36.465Z"
   }
 }

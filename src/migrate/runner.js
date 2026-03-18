@@ -772,7 +772,7 @@ async function runMigrationInternal({
 	const emitter = getEmitter(runId) || createEmitter(runId);
 	const runState = getRunState(runId) || createRunState(runId, plan, mapping);
 	const includedSteps = (plan || []).filter((step) => step.include);
-	let tableStateMap = new Map(runState.tables.map((table) => [table.name, table]));
+	let tableStateMap = new Map(runState.tables.map((table) => [String(table.name || '').toLowerCase(), table]));
 	let runFailed = false;
 	let failureInfo = null;
 	emitRunState(runId, emitter);
@@ -930,7 +930,7 @@ async function runMigrationInternal({
 		const nullabilityViolations = [];
 
 		for (const step of includedSteps) {
-			const tableName = step.table;
+			const tableName = (step.table || '').toLowerCase();
 			const mappingEntry = resolveMappingForTarget(tableName, mapping);
 
 			if (mappingEntry && mappingEntry.columns) {
@@ -1125,7 +1125,7 @@ async function runMigrationInternal({
 					keyStrategy: step.keyStrategy
 				};
 			});
-			tableStateMap = new Map((runState.tables || []).map((table) => [table.name, table]));
+			tableStateMap = new Map((runState.tables || []).map((table) => [String(table.name || '').toLowerCase(), table]));
 		} catch (e) {
 			// best-effort: if rebuilding fails, leave existing runState.tables as-is
 			// console.warn('[Runner] Failed to rebuild runState.tables after normalization:', e.message);
@@ -1138,7 +1138,7 @@ async function runMigrationInternal({
 
 		for (const step of includedSteps) {
 			checkAbort(runId);
-			const tableName = step.table;
+			const tableName = (step.table || '').toLowerCase();
 			logRun({ level: 'debug', phase: 'table_loop', action: 'processing', tableName, mappingTableKeys: Object.keys(mapping?.tables || {}).slice(0, 5) });
 			const mappingEntry = resolveMappingForTarget(tableName, mapping);
 			logRun({ level: 'debug', phase: 'table_loop', action: 'mapping_resolved', tableName, hasMappingEntry: !!mappingEntry, mappingTarget: mappingEntry?.target });

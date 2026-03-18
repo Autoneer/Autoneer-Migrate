@@ -53,7 +53,7 @@ async function listTables(pool) {
 
 async function listColumns(pool, tableName) {
 	const [rows] = await pool.query(
-		"select column_name as name, data_type as dataType, column_key as columnKey from information_schema.columns where table_schema = database() and table_name = ? order by ordinal_position",
+		"select column_name as name, data_type as dataType, column_key as columnKey from information_schema.columns where table_schema = database() and LOWER(table_name) = LOWER(?) order by ordinal_position",
 		[tableName]
 	);
 	return rows;
@@ -61,7 +61,7 @@ async function listColumns(pool, tableName) {
 
 async function getPrimaryKeys(pool, tableName) {
 	const [rows] = await pool.query(
-		"select column_name as name from information_schema.columns where table_schema = database() and table_name = ? and column_key = 'PRI' order by ordinal_position",
+		"select column_name as name from information_schema.columns where table_schema = database() and LOWER(table_name) = LOWER(?) and column_key = 'PRI' order by ordinal_position",
 		[tableName]
 	);
 	return rows.map((r) => r.name);
@@ -69,7 +69,7 @@ async function getPrimaryKeys(pool, tableName) {
 
 async function listUniqueIndexes(pool, tableName) {
 	const [rows] = await pool.query(
-		"select index_name as name, non_unique as nonUnique, seq_in_index as seq, column_name as columnName from information_schema.statistics where table_schema = database() and table_name = ? order by index_name, seq_in_index",
+		"select index_name as name, non_unique as nonUnique, seq_in_index as seq, column_name as columnName from information_schema.statistics where table_schema = database() and LOWER(table_name) = LOWER(?) order by index_name, seq_in_index",
 		[tableName]
 	);
 	const map = new Map();
