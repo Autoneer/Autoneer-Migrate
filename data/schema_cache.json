@@ -432,6 +432,25 @@
         "primaryKey": [],
         "uniqueIndexes": []
       },
+      "AID_MAP": {
+        "name": "AID_MAP",
+        "columns": {
+          "OLD_AID": {
+            "name": "OLD_AID",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "NEW_AID": {
+            "name": "NEW_AID",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          }
+        },
+        "primaryKey": [],
+        "uniqueIndexes": []
+      },
       "ALCTEST": {
         "name": "ALCTEST",
         "columns": {
@@ -6538,12 +6557,6 @@
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
-          },
-          "MESSAGE_BODY_TEXT": {
-            "name": "MESSAGE_BODY_TEXT",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
           }
         },
         "primaryKey": [],
@@ -11491,6 +11504,25 @@
         "primaryKey": [],
         "uniqueIndexes": []
       },
+      "TMP_ACCOUNTS_AID_MAP": {
+        "name": "TMP_ACCOUNTS_AID_MAP",
+        "columns": {
+          "DBKEY": {
+            "name": "DBKEY",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "NEW_AID": {
+            "name": "NEW_AID",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          }
+        },
+        "primaryKey": [],
+        "uniqueIndexes": []
+      },
       "TRADEIN": {
         "name": "TRADEIN",
         "columns": {
@@ -13752,7 +13784,7 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-03-18T07:29:37.314Z"
+    "lastUpdated": "2026-03-21T12:39:28.012Z"
   },
   "mysql": {
     "tables": {
@@ -14038,10 +14070,10 @@
           "STATUS": {
             "name": "STATUS",
             "type": "VARCHAR",
-            "columnType": "varchar(10)",
+            "columnType": "varchar(20)",
             "nullable": true,
             "defaultValue": null,
-            "length": 10,
+            "length": 20,
             "precision": null,
             "scale": null,
             "isPrimaryKey": false,
@@ -14230,10 +14262,10 @@
           "ACCOUNTTYPE": {
             "name": "ACCOUNTTYPE",
             "type": "VARCHAR",
-            "columnType": "varchar(10)",
+            "columnType": "varchar(20)",
             "nullable": true,
             "defaultValue": null,
-            "length": 10,
+            "length": 20,
             "precision": null,
             "scale": null,
             "isPrimaryKey": false,
@@ -14593,6 +14625,18 @@
             "isPrimaryKey": false,
             "isUnique": false
           },
+          "STATEMENT_CLOSING_BALANCE": {
+            "name": "STATEMENT_CLOSING_BALANCE",
+            "type": "DECIMAL",
+            "columnType": "decimal(15,2)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 15,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
           "STATUS": {
             "name": "STATUS",
             "type": "VARCHAR",
@@ -14650,18 +14694,6 @@
             "length": null,
             "precision": null,
             "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "STATEMENT_CLOSING_BALANCE": {
-            "name": "STATEMENT_CLOSING_BALANCE",
-            "type": "DECIMAL",
-            "columnType": "decimal(15,2)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": 15,
-            "scale": 2,
             "isPrimaryKey": false,
             "isUnique": false
           }
@@ -14875,6 +14907,18 @@
             "isPrimaryKey": false,
             "isUnique": false
           },
+          "BANKID": {
+            "name": "BANKID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
           "SOURCE": {
             "name": "SOURCE",
             "type": "VARCHAR",
@@ -14896,18 +14940,6 @@
             "length": 30,
             "precision": null,
             "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "BANKID": {
-            "name": "BANKID",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": 10,
-            "scale": 0,
             "isPrimaryKey": false,
             "isUnique": false
           }
@@ -14965,6 +14997,18 @@
             "length": 15,
             "precision": null,
             "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "GL_ACCNR": {
+            "name": "GL_ACCNR",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
             "isPrimaryKey": false,
             "isUnique": false
           },
@@ -15037,18 +15081,6 @@
             "length": 20,
             "precision": null,
             "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "GL_ACCNR": {
-            "name": "GL_ACCNR",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": 10,
-            "scale": 0,
             "isPrimaryKey": false,
             "isUnique": false
           }
@@ -15259,6 +15291,18 @@
             "isPrimaryKey": false,
             "isUnique": false
           },
+          "REGNR": {
+            "name": "REGNR",
+            "type": "VARCHAR",
+            "columnType": "varchar(20)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 20,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
           "BOOKSTART": {
             "name": "BOOKSTART",
             "type": "TIMESTAMP",
@@ -15350,18 +15394,6 @@
             "nullable": true,
             "defaultValue": null,
             "length": 120,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "REGNR": {
-            "name": "REGNR",
-            "type": "VARCHAR",
-            "columnType": "varchar(20)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 20,
             "precision": null,
             "scale": null,
             "isPrimaryKey": false,
@@ -16027,6 +16059,18 @@
             "isPrimaryKey": false,
             "isUnique": false
           },
+          "ACCOUNTING_DASHBOARD_ENABLED": {
+            "name": "ACCOUNTING_DASHBOARD_ENABLED",
+            "type": "VARCHAR",
+            "columnType": "varchar(5)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 5,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
           "SUNDRYPERCENT": {
             "name": "SUNDRYPERCENT",
             "type": "INT",
@@ -16053,18 +16097,6 @@
           },
           "STOCKLOG": {
             "name": "STOCKLOG",
-            "type": "VARCHAR",
-            "columnType": "varchar(5)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 5,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "ACCOUNTING_DASHBOARD_ENABLED": {
-            "name": "ACCOUNTING_DASHBOARD_ENABLED",
             "type": "VARCHAR",
             "columnType": "varchar(5)",
             "nullable": true,
@@ -20275,18 +20307,6 @@
             "isPrimaryKey": false,
             "isUnique": false
           },
-          "SAGEID": {
-            "name": "SAGEID",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
           "RETURNED_QTY": {
             "name": "RETURNED_QTY",
             "type": "INT",
@@ -20307,6 +20327,18 @@
             "defaultValue": "0",
             "length": null,
             "precision": 3,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "SAGEID": {
+            "name": "SAGEID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
             "scale": 0,
             "isPrimaryKey": false,
             "isUnique": false
@@ -21271,18 +21303,6 @@
             "isPrimaryKey": false,
             "isUnique": false
           },
-          "SAGEID": {
-            "name": "SAGEID",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
           "POSTED_AT": {
             "name": "POSTED_AT",
             "type": "DATETIME",
@@ -21301,6 +21321,18 @@
             "columnType": "int",
             "nullable": true,
             "defaultValue": "30",
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "SAGEID": {
+            "name": "SAGEID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
             "length": null,
             "precision": 10,
             "scale": 0,
@@ -25135,54 +25167,6 @@
             "isPrimaryKey": false,
             "isUnique": false
           },
-          "ROW_OFFSET": {
-            "name": "ROW_OFFSET",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "ERROR_MESSAGE": {
-            "name": "ERROR_MESSAGE",
-            "type": "VARCHAR",
-            "columnType": "varchar(1000)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 1000,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "ROW_JSON": {
-            "name": "ROW_JSON",
-            "type": "LONGTEXT",
-            "columnType": "longtext",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 4294967295,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "CREATED_AT": {
-            "name": "CREATED_AT",
-            "type": "TIMESTAMP",
-            "columnType": "timestamp",
-            "nullable": true,
-            "defaultValue": "CURRENT_TIMESTAMP",
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
           "SOURCE_TABLE": {
             "name": "SOURCE_TABLE",
             "type": "VARCHAR",
@@ -25207,6 +25191,18 @@
             "isPrimaryKey": false,
             "isUnique": false
           },
+          "ROW_OFFSET": {
+            "name": "ROW_OFFSET",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
           "SOURCE_PK": {
             "name": "SOURCE_PK",
             "type": "VARCHAR",
@@ -25219,6 +25215,18 @@
             "isPrimaryKey": false,
             "isUnique": false
           },
+          "ERROR_MESSAGE": {
+            "name": "ERROR_MESSAGE",
+            "type": "VARCHAR",
+            "columnType": "varchar(1000)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 1000,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
           "HINT": {
             "name": "HINT",
             "type": "VARCHAR",
@@ -25226,6 +25234,30 @@
             "nullable": true,
             "defaultValue": null,
             "length": 500,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "ROW_JSON": {
+            "name": "ROW_JSON",
+            "type": "LONGTEXT",
+            "columnType": "longtext",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 4294967295,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "TIMESTAMP",
+            "columnType": "timestamp",
+            "nullable": true,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
             "precision": null,
             "scale": null,
             "isPrimaryKey": false,
@@ -25549,10 +25581,10 @@
           "STATUS": {
             "name": "STATUS",
             "type": "ENUM",
-            "columnType": "enum('RUNNING','SUCCESS','FAILED','CANCELLED','COMPLETED_WITH_ERRORS')",
+            "columnType": "enum('RUNNING','SUCCESS','FAILED','CANCELLED')",
             "nullable": false,
             "defaultValue": "RUNNING",
-            "length": 21,
+            "length": 9,
             "precision": null,
             "scale": null,
             "isPrimaryKey": false,
@@ -25765,63 +25797,6 @@
         ],
         "uniqueIndexes": []
       },
-      "MIGRATION_SCHEMAS": {
-        "name": "MIGRATION_SCHEMAS",
-        "columns": {
-          "SCHEMA_ID": {
-            "name": "SCHEMA_ID",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": false,
-            "defaultValue": null,
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": true,
-            "isUnique": false
-          },
-          "DB_NAME": {
-            "name": "DB_NAME",
-            "type": "VARCHAR",
-            "columnType": "varchar(50)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 50,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": true
-          },
-          "SCHEMA_JSON": {
-            "name": "SCHEMA_JSON",
-            "type": "LONGTEXT",
-            "columnType": "longtext",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 4294967295,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "CACHED_AT": {
-            "name": "CACHED_AT",
-            "type": "DATETIME",
-            "columnType": "datetime",
-            "nullable": true,
-            "defaultValue": "CURRENT_TIMESTAMP",
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          }
-        },
-        "primaryKey": [
-          "SCHEMA_ID"
-        ],
-        "uniqueIndexes": []
-      },
       "MIGRATION_TABLE_RUNS": {
         "name": "MIGRATION_TABLE_RUNS",
         "columns": {
@@ -25969,6 +25944,18 @@
             "isPrimaryKey": false,
             "isUnique": false
           },
+          "ROWS_SKIPPED_DUPLICATES": {
+            "name": "ROWS_SKIPPED_DUPLICATES",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": "0",
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
           "ROWS_ERROR": {
             "name": "ROWS_ERROR",
             "type": "INT",
@@ -25993,18 +25980,6 @@
             "isPrimaryKey": false,
             "isUnique": false
           },
-          "ROWS_SKIPPED_DUPLICATES": {
-            "name": "ROWS_SKIPPED_DUPLICATES",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": true,
-            "defaultValue": "0",
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
           "CLEANED": {
             "name": "CLEANED",
             "type": "TINYINT",
@@ -26014,51 +25989,6 @@
             "length": null,
             "precision": 3,
             "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          }
-        },
-        "primaryKey": [
-          "ID"
-        ],
-        "uniqueIndexes": []
-      },
-      "MIGRATIONS": {
-        "name": "MIGRATIONS",
-        "columns": {
-          "ID": {
-            "name": "ID",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": false,
-            "defaultValue": null,
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": true,
-            "isUnique": false
-          },
-          "NAME": {
-            "name": "NAME",
-            "type": "VARCHAR",
-            "columnType": "varchar(255)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 255,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": true
-          },
-          "RUN_ON": {
-            "name": "RUN_ON",
-            "type": "TIMESTAMP",
-            "columnType": "timestamp",
-            "nullable": true,
-            "defaultValue": "CURRENT_TIMESTAMP",
-            "length": null,
-            "precision": null,
-            "scale": null,
             "isPrimaryKey": false,
             "isUnique": false
           }
@@ -26380,6 +26310,30 @@
             "isPrimaryKey": false,
             "isUnique": false
           },
+          "RECEIVED_DATE": {
+            "name": "RECEIVED_DATE",
+            "type": "DATE",
+            "columnType": "date",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "ORDER_COST": {
+            "name": "ORDER_COST",
+            "type": "DECIMAL",
+            "columnType": "decimal(12,2)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 12,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
           "COMMENTS": {
             "name": "COMMENTS",
             "type": "VARCHAR",
@@ -26425,30 +26379,6 @@
             "length": null,
             "precision": null,
             "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "RECEIVED_DATE": {
-            "name": "RECEIVED_DATE",
-            "type": "DATE",
-            "columnType": "date",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "ORDER_COST": {
-            "name": "ORDER_COST",
-            "type": "DECIMAL",
-            "columnType": "decimal(12,2)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": 12,
-            "scale": 2,
             "isPrimaryKey": false,
             "isUnique": false
           }
@@ -26911,6 +26841,18 @@
             "length": null,
             "precision": 10,
             "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "NOTES": {
+            "name": "NOTES",
+            "type": "VARCHAR",
+            "columnType": "varchar(500)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 500,
+            "precision": null,
+            "scale": null,
             "isPrimaryKey": false,
             "isUnique": false
           }
@@ -27760,6 +27702,51 @@
         },
         "primaryKey": [
           "SID"
+        ],
+        "uniqueIndexes": []
+      },
+      "SESSIONS": {
+        "name": "SESSIONS",
+        "columns": {
+          "SESSION_ID": {
+            "name": "SESSION_ID",
+            "type": "VARCHAR",
+            "columnType": "varchar(128)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 128,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "EXPIRES": {
+            "name": "EXPIRES",
+            "type": "INT",
+            "columnType": "int unsigned",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "DATA": {
+            "name": "DATA",
+            "type": "MEDIUMTEXT",
+            "columnType": "mediumtext",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 16777215,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "SESSION_ID"
         ],
         "uniqueIndexes": []
       },
@@ -31355,6 +31342,6 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-03-18T07:29:36.465Z"
+    "lastUpdated": "2026-03-21T12:39:27.276Z"
   }
 }

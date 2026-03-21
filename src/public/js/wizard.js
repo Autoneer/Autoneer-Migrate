@@ -18,7 +18,8 @@ class MigrationWizard {
 			{ number: 2, name: 'mapping', title: 'Build Mapping', component: null },
 			{ number: 3, name: 'plan', title: 'Create Plan', component: null },
 			{ number: 4, name: 'run', title: 'Execute Migration', component: null },
-			{ number: 5, name: 'results', title: 'View Results', component: null }
+			{ number: 5, name: 'accnr', title: 'Convert Acc Numbers', component: null },
+			{ number: 6, name: 'results', title: 'View Results', component: null }
 		];
 		this.initialized = false;
 		this._isShowingStep = false; // Re-entrancy guard
@@ -178,8 +179,11 @@ class MigrationWizard {
 			if (window.RunUI) {
 				this.steps[3].component = new window.RunUI(this);
 			}
+			if (window.AccnrConvertUI) {
+				this.steps[4].component = new window.AccnrConvertUI(this);
+			}
 			if (window.ResultsUI) {
-				this.steps[4].component = new window.ResultsUI(this);
+				this.steps[5].component = new window.ResultsUI(this);
 			}
 		} catch (err) {
 			console.error('Failed to load step components:', err);
@@ -710,18 +714,6 @@ class MigrationWizard {
 	 * Reset wizard to initial state
 	 */
 	async reset() {
-		const confirmed = await Modal.confirm({
-			title: 'Reset Wizard',
-			message: 'Are you sure you want to reset the wizard? All progress will be lost.',
-			type: 'warning',
-			confirmText: 'Reset',
-			cancelText: 'Cancel'
-		});
-
-		if (!confirmed) {
-			return;
-		}
-
 		// Stop RunUI polling before clearing state to prevent stale API calls
 		const runComponent = this.steps[3]?.component;
 		if (runComponent) {
@@ -732,7 +724,7 @@ class MigrationWizard {
 		}
 
 		// Clear ResultsUI stale data
-		const resultsComponent = this.steps[4]?.component;
+		const resultsComponent = this.steps[5]?.component;
 		if (resultsComponent) {
 			resultsComponent.run = null;
 			resultsComponent.summary = null;

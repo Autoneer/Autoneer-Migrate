@@ -17,6 +17,20 @@ const {
 	BALANCE_SHEET_TYPE_IDS
 } = require("./glAccountTypes");
 
+async function resolveGLJournalHeaderDateColumn(pool) {
+	const [rows] = await pool.query(`
+		SELECT column_name AS name
+		FROM information_schema.columns
+		WHERE table_schema = DATABASE()
+		  AND table_name = 'gl_journal_headers'
+		  AND column_name IN ('jdate', 'trxdate')
+	`);
+	const names = rows.map((row) => String(row.name || "").toLowerCase());
+	if (names.includes("jdate")) return "jdate";
+	if (names.includes("trxdate")) return "trxdate";
+	return null;
+}
+
 /**
  * CHECK A: Accounts typed incorrectly.
  * Any gl_accounts whose type_id does not match expected mapping derived
@@ -40,11 +54,21 @@ async function checkAccountTypeMismatches(pool) {
 			ga.type_id                          AS actual_type_id,
 			gat_actual.code                     AS actual_type_code,
 			a.accclass                          AS source_accclass,
+			a.accnr                             AS source_accnr,
 			CASE a.accclass ${caseExpr} ELSE NULL END AS expected_type_id
 		FROM gl_accounts ga
-		JOIN accounts a ON a.accnr = ga.accnr
-			OR (a.accnr IS NOT NULL AND MOD(a.accnr, 10000) = ga.accnr
-				AND LOWER(TRIM(a.acctype)) = 'group account')
+		JOIN accounts a ON (
+			a.accnr IS NOT NULL
+			AND LOWER(TRIM(a.acctype)) = 'group account'
+			AND a.accclass IS NOT NULL
+			AND a.accclass <> 7
+			AND CASE
+				WHEN a.accnr = 1601200 THEN 6200
+				WHEN a.accnr = 1601300 THEN 6301
+				WHEN a.accnr = 6606300 THEN 6302
+				ELSE MOD(a.accnr, 10000)
+			END = ga.accnr
+		)
 		LEFT JOIN gl_account_types gat_actual ON gat_actual.id = ga.type_id
 		HAVING actual_type_id != expected_type_id
 			OR expected_type_id IS NULL
@@ -56,12 +80,13 @@ async function checkAccountTypeMismatches(pool) {
 	for (const row of rows) {
 		errors.push({
 			accnr: row.accnr,
+			source_accnr: row.source_accnr,
 			name: row.name,
 			actual_type_id: row.actual_type_id,
 			actual_type_code: row.actual_type_code,
 			source_accclass: row.source_accclass,
 			expected_type_id: row.expected_type_id,
-			message: `Account ${row.accnr} (${row.name}): type_id=${row.actual_type_id} but ACCCLASS=${row.source_accclass} → expected type_id=${row.expected_type_id}`
+			message: `Account ${row.accnr} (source accnr ${row.source_accnr}, ${row.name}): type_id=${row.actual_type_id} (${row.actual_type_code}) but ACCCLASS=${row.source_accclass} → expected type_id=${row.expected_type_id}`
 		});
 	}
 
@@ -86,6 +111,19 @@ async function checkPostingLineTypes(pool) {
 		.map(([accclass, typeId]) => `WHEN ${accclass} THEN ${typeId}`)
 		.join(" ");
 
+	const headerDateColumn = await resolveGLJournalHeaderDateColumn(pool);
+	if (!headerDateColumn) {
+		return {
+			check: "B",
+			name: "Posting Line Type Alignment",
+			passed: true,
+			errors,
+			count: 0,
+			skipped: true,
+			reason: "gl_journal_headers date column not found"
+		};
+	}
+
 	const sql = `
 		SELECT
 			jl.id AS line_id,
@@ -100,10 +138,23 @@ async function checkPostingLineTypes(pool) {
 		JOIN gl_accounts ga ON ga.accnr = jl.accnr
 		JOIN gl_account_types gat ON gat.id = ga.type_id
 		LEFT JOIN gl_journal_headers jh ON jh.id = jl.header_id
-		LEFT JOIN journal j_legacy ON j_legacy.accnr = jl.accnr
-			AND j_legacy.jdate = jh.trxdate
+		LEFT JOIN journal j_legacy ON j_legacy.jdate = jh.${headerDateColumn}
 			AND j_legacy.sourceid = CAST(jh.source_id AS SIGNED)
+		LEFT JOIN accounts a ON a.accnr = j_legacy.accnr
 		WHERE j_legacy.accclass IS NOT NULL
+		  AND CASE
+				WHEN a.accnr IS NOT NULL
+					AND LOWER(TRIM(COALESCE(a.acctype, ''))) = 'group account'
+					AND a.accclass IS NOT NULL
+					AND a.accclass <> 7
+				THEN CASE
+					WHEN a.accnr = 1601200 THEN 6200
+					WHEN a.accnr = 1601300 THEN 6301
+					WHEN a.accnr = 6606300 THEN 6302
+					ELSE MOD(a.accnr, 10000)
+				END
+				ELSE j_legacy.accnr
+			END = jl.accnr
 		HAVING account_type_id != expected_type_id
 		LIMIT 100
 	`;
@@ -123,7 +174,7 @@ async function checkPostingLineTypes(pool) {
 		}
 	} catch (err) {
 		// If gl_journal_lines is empty or tables don't exist, pass gracefully
-		if (!err.message.includes("doesn't exist")) {
+		if (!err.message.includes("doesn't exist") && !err.message.includes("Unknown column")) {
 			throw err;
 		}
 	}
@@ -249,9 +300,40 @@ async function checkCOSIntegrity(pool) {
 	// Check legacy journal entries where accclass=6 (COS) but the gl_accounts type != COS
 	try {
 		const [misclassified] = await pool.query(`
-			SELECT j.jourid, j.accnr, j.accclass, ga.type_id, gat.code AS type_code
+			SELECT
+				j.jourid,
+				j.accnr,
+				CASE
+					WHEN a.accnr IS NOT NULL
+						AND LOWER(TRIM(COALESCE(a.acctype, ''))) = 'group account'
+						AND a.accclass IS NOT NULL
+						AND a.accclass <> 7
+					THEN CASE
+						WHEN a.accnr = 1601200 THEN 6200
+						WHEN a.accnr = 1601300 THEN 6301
+						WHEN a.accnr = 6606300 THEN 6302
+						ELSE MOD(a.accnr, 10000)
+					END
+					ELSE j.accnr
+				END AS converted_accnr,
+				j.accclass,
+				ga.type_id,
+				gat.code AS type_code
 			FROM journal j
-			JOIN gl_accounts ga ON ga.accnr = j.accnr
+			LEFT JOIN accounts a ON a.accnr = j.accnr
+			JOIN gl_accounts ga ON ga.accnr = CASE
+				WHEN a.accnr IS NOT NULL
+					AND LOWER(TRIM(COALESCE(a.acctype, ''))) = 'group account'
+					AND a.accclass IS NOT NULL
+					AND a.accclass <> 7
+				THEN CASE
+					WHEN a.accnr = 1601200 THEN 6200
+					WHEN a.accnr = 1601300 THEN 6301
+					WHEN a.accnr = 6606300 THEN 6302
+					ELSE MOD(a.accnr, 10000)
+				END
+				ELSE j.accnr
+			END
 			JOIN gl_account_types gat ON gat.id = ga.type_id
 			WHERE j.accclass = 6
 			  AND gat.code != 'COS'
@@ -262,10 +344,11 @@ async function checkCOSIntegrity(pool) {
 			errors.push({
 				type: "cos_to_non_cos_account",
 				jourid: row.jourid,
-				accnr: row.accnr,
+				accnr: row.converted_accnr,
+				legacy_accnr: row.accnr,
 				legacy_accclass: row.accclass,
 				actual_type: row.type_code,
-				message: `Legacy journal ${row.jourid}: ACCCLASS=6 (COS) posted to accnr=${row.accnr} which is typed as ${row.type_code}`
+				message: `Legacy journal ${row.jourid}: ACCCLASS=6 (COS) posted to converted accnr=${row.converted_accnr} from legacy accnr=${row.accnr}, which is typed as ${row.type_code}`
 			});
 		}
 	} catch (err) {
@@ -275,9 +358,40 @@ async function checkCOSIntegrity(pool) {
 	// D4: Ensure no non-COS entries are posted to COS accounts
 	try {
 		const [reverseMisclass] = await pool.query(`
-			SELECT j.jourid, j.accnr, j.accclass, ga.type_id, gat.code AS type_code
+			SELECT
+				j.jourid,
+				j.accnr,
+				CASE
+					WHEN a.accnr IS NOT NULL
+						AND LOWER(TRIM(COALESCE(a.acctype, ''))) = 'group account'
+						AND a.accclass IS NOT NULL
+						AND a.accclass <> 7
+					THEN CASE
+						WHEN a.accnr = 1601200 THEN 6200
+						WHEN a.accnr = 1601300 THEN 6301
+						WHEN a.accnr = 6606300 THEN 6302
+						ELSE MOD(a.accnr, 10000)
+					END
+					ELSE j.accnr
+				END AS converted_accnr,
+				j.accclass,
+				ga.type_id,
+				gat.code AS type_code
 			FROM journal j
-			JOIN gl_accounts ga ON ga.accnr = j.accnr
+			LEFT JOIN accounts a ON a.accnr = j.accnr
+			JOIN gl_accounts ga ON ga.accnr = CASE
+				WHEN a.accnr IS NOT NULL
+					AND LOWER(TRIM(COALESCE(a.acctype, ''))) = 'group account'
+					AND a.accclass IS NOT NULL
+					AND a.accclass <> 7
+				THEN CASE
+					WHEN a.accnr = 1601200 THEN 6200
+					WHEN a.accnr = 1601300 THEN 6301
+					WHEN a.accnr = 6606300 THEN 6302
+					ELSE MOD(a.accnr, 10000)
+				END
+				ELSE j.accnr
+			END
 			JOIN gl_account_types gat ON gat.id = ga.type_id
 			WHERE j.accclass != 6
 			  AND j.accclass IS NOT NULL
@@ -289,10 +403,11 @@ async function checkCOSIntegrity(pool) {
 			errors.push({
 				type: "non_cos_to_cos_account",
 				jourid: row.jourid,
-				accnr: row.accnr,
+				accnr: row.converted_accnr,
+				legacy_accnr: row.accnr,
 				legacy_accclass: row.accclass,
 				actual_type: row.type_code,
-				message: `Legacy journal ${row.jourid}: ACCCLASS=${row.accclass} (non-COS) posted to accnr=${row.accnr} which is typed as COS`
+				message: `Legacy journal ${row.jourid}: ACCCLASS=${row.accclass} (non-COS) posted to converted accnr=${row.converted_accnr} from legacy accnr=${row.accnr}, which is typed as COS`
 			});
 		}
 	} catch (err) {

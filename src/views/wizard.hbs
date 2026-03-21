@@ -51,8 +51,13 @@
 			<div id="run-content"></div>
 		</section>
 
-		<!-- Step 5: View Results -->
+		<!-- Step 5: Convert Account Numbers -->
 		<section id="step-5" class="wizard-step" style="display: none;">
+			<div id="accnr-convert-content"></div>
+		</section>
+
+		<!-- Step 6: View Results -->
+		<section id="step-6" class="wizard-step" style="display: none;">
 			<div id="results-content"></div>
 		</section>
 	</div>
@@ -77,6 +82,7 @@
 <script src="/public/js/utils/state.js"></script>
 <script src="/public/js/utils/validator.js"></script>
 <script src="/public/js/utils/tableNameCanonical.js"></script>
+<script src="/public/js/utils/accountingOrder.js"></script>
 
 <!-- 2. API clients -->
 <script src="/public/js/api/client.js"></script>
@@ -91,6 +97,7 @@
 <script src="/public/js/steps/mapping-ui.js"></script>
 <script src="/public/js/steps/plan-ui.js"></script>
 <script src="/public/js/steps/run-ui.js"></script>
+<script src="/public/js/steps/accnr-convert-ui.js"></script>
 <script src="/public/js/steps/results-ui.js"></script>
 
 <!-- 4. Wizard controller (auto-initializes) -->

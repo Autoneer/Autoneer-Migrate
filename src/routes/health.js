@@ -110,6 +110,7 @@ async function checkMysql(timeoutMs) {
 			ok: true,
 			status: "CONNECTED",
 			message: "Connected",
+			schemaName,
 			details: `Schema: ${schemaName}${state.mysql?.host ? ` • Host: ${state.mysql.host}` : ""}`
 		};
 		healthCache.mysql.set(cacheKey, { ts: Date.now(), data });
@@ -119,6 +120,7 @@ async function checkMysql(timeoutMs) {
 			ok: false,
 			status: "DISCONNECTED",
 			message: "Not connected",
+			schemaName,
 			details: `Schema: ${schemaName}${state.mysql?.host ? ` • Host: ${state.mysql.host}` : ""}`
 		};
 		healthCache.mysql.set(cacheKey, { ts: Date.now(), data });

@@ -128,7 +128,8 @@
 
 	const applyStatus = (data) => {
 		setBadge(firebirdBadge, "Firebird", data.firebird?.status || "");
-		setBadge(mysqlBadge, "MySQL", data.mysql?.status || "");
+		const mysqlLabel = data.mysql?.schemaName ? `MySQL (${data.mysql.schemaName})` : "MySQL";
+		setBadge(mysqlBadge, mysqlLabel, data.mysql?.status || "");
 		updateModal(data, data.ts ? new Date(data.ts).toLocaleString() : null);
 
 		if (isRunActive()) {

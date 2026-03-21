@@ -14,6 +14,10 @@ const {
 	ACCCLASS_TO_TYPE_ID
 } = require("./gl/glAccountTypes");
 const { runAllChecks: runGLValidationChecks } = require("./gl/glValidation");
+const {
+	reorderAccountingPlanSteps,
+	validateGLExecutionPrereqs
+} = require("./gl/glMigrationOrder");
 
 const runEmitters = new Map();
 const runStates = new Map();
@@ -175,6 +179,126 @@ function resolveFirebirdSourceTable(mappedSource, firebirdTableMap) {
 	}
 
 	return null;
+}
+
+const ACCNR_COLLISION_OVERRIDES = new Map([
+	[1601200, 6200],
+	[1601300, 6301],
+	[6606300, 6302]
+]);
+
+function getRowValue(row, key) {
+	if (!row || !key) return undefined;
+	return row[key] ?? row[key.toLowerCase()] ?? row[key.toUpperCase()];
+}
+
+function convertLegacyGroupAccnr(accnr) {
+	const numeric = Number(accnr);
+	if (!Number.isFinite(numeric)) return accnr;
+	if (ACCNR_COLLISION_OVERRIDES.has(numeric)) {
+		return ACCNR_COLLISION_OVERRIDES.get(numeric);
+	}
+	return ((numeric % 10000) + 10000) % 10000;
+}
+
+function shouldConvertAccnrReference(targetTable, targetColumn) {
+	if (!targetTable || !targetColumn) return false;
+	return targetColumn.toLowerCase() === "accnr" && targetTable.toLowerCase() !== "accounts";
+}
+
+function applyAccnrReferenceConversion(value, accnrConversionMap) {
+	if (!accnrConversionMap || !accnrConversionMap.size) return value;
+	if (value === null || value === undefined || value === "") return value;
+	const numeric = Number(value);
+	if (!Number.isFinite(numeric)) return value;
+	return accnrConversionMap.get(numeric) ?? value;
+}
+
+async function loadAccnrConversionMap({
+	firebirdConfig,
+	firebirdTableMap,
+	mapping,
+	pool,
+	logRun
+}) {
+	const accnrConversionMap = new Map();
+	const registerRow = (row) => {
+		const accnr = Number(getRowValue(row, "accnr"));
+		const acctype = String(getRowValue(row, "acctype") || "").trim().toLowerCase();
+		const accclassRaw = getRowValue(row, "accclass");
+		const accclass = accclassRaw === null || accclassRaw === undefined || accclassRaw === ""
+			? null
+			: Number(accclassRaw);
+
+		if (!Number.isFinite(accnr)) return;
+		if (acctype !== "group account") return;
+		if (accclass === null || !Number.isFinite(accclass) || accclass === 7) return;
+
+		accnrConversionMap.set(accnr, convertLegacyGroupAccnr(accnr));
+	};
+
+	const accountsMapping = resolveMappingForTarget("accounts", mapping);
+	const mappedAccountsSource = accountsMapping?.sourceTable || "accounts";
+	const firebirdAccountsTable = resolveFirebirdSourceTable(mappedAccountsSource, firebirdTableMap)
+		|| firebirdTableMap.get("accounts");
+
+	if (firebirdAccountsTable) {
+		try {
+			const rows = await firebird.query(
+				firebirdConfig,
+				`SELECT ACCNR, ACCTYPE, ACCCLASS FROM ${firebirdAccountsTable}`
+			);
+			for (const row of rows) {
+				registerRow(row);
+			}
+			logRun({
+				level: "info",
+				phase: "preflight",
+				action: "accnr_conversion_map",
+				source: "firebird",
+				sourceTable: firebirdAccountsTable,
+				count: accnrConversionMap.size
+			});
+			return accnrConversionMap;
+		} catch (err) {
+			logRun({
+				level: "warn",
+				phase: "preflight",
+				action: "accnr_conversion_map",
+				source: "firebird",
+				status: "failed",
+				error: err.message
+			});
+		}
+	}
+
+	try {
+		const [rows] = await pool.query(
+			"SELECT accnr, acctype, accclass FROM accounts WHERE accnr IS NOT NULL"
+		);
+		for (const row of rows) {
+			registerRow(row);
+		}
+		logRun({
+			level: "info",
+			phase: "preflight",
+			action: "accnr_conversion_map",
+			source: "mysql",
+			sourceTable: "accounts",
+			count: accnrConversionMap.size
+		});
+	} catch (err) {
+		logRun({
+			level: "warn",
+			phase: "preflight",
+			action: "accnr_conversion_map",
+			source: "mysql",
+			status: "failed",
+			error: err.message
+		});
+	}
+
+	return accnrConversionMap;
 }
 
 function formatConfigSummary(firebirdConfig) {
@@ -713,8 +837,10 @@ async function validateDataTypeMapping(pool, firebirdConfig, sourceTable, target
 	}
 }
 
-async function mapRow(row, columnMap, lookupFn) {
+async function mapRow(row, columnMap, lookupFn, options = {}) {
 	const result = {};
+	const targetTable = String(options.targetTable || "").toLowerCase();
+	const accnrConversionMap = options.accnrConversionMap || null;
 	for (const [sourceCol, rule] of Object.entries(columnMap)) {
 		const srcKey = sourceCol.toLowerCase();
 		const value = row[srcKey];
@@ -731,6 +857,9 @@ async function mapRow(row, columnMap, lookupFn) {
 			}
 		}
 		const outKey = rule.target ?? rule.targetColumn;
+		if (shouldConvertAccnrReference(targetTable, outKey)) {
+			mappedValue = applyAccnrReferenceConversion(mappedValue, accnrConversionMap);
+		}
 		if (outKey) result[outKey] = mappedValue;
 	}
 	return result;
@@ -1018,6 +1147,13 @@ async function runMigrationInternal({
 		const firebirdTableMap = new Map(
 			firebirdTables.map((name) => [name.toLowerCase(), name])
 		);
+		const accnrConversionMap = await loadAccnrConversionMap({
+			firebirdConfig,
+			firebirdTableMap,
+			mapping,
+			pool,
+			logRun
+		});
 
 		// Auto-migrate old INVOICES column mapping to match actual schema
 		if (mapping?.tables?.INVOICES?.columns) {
@@ -1512,6 +1648,9 @@ async function runMigrationInternal({
 								throw new Error(`Missing ID mapping for foreign key ${lookupTable}.${id} in run ${runId}`);
 							}
 							return target;
+						}, {
+							targetTable: tableName,
+							accnrConversionMap
 						});
 						const values = targetColumnsForInsert.map((c) => mappedRow[c]);
 						const sourceId = sourceIdColumn ? row[sourceIdColumn.toLowerCase()] : undefined;
@@ -2081,6 +2220,11 @@ async function runMigrationInternal({
 					durationMs
 				});
 				emitRunState(runId, emitter);
+			} catch (tableErr) {
+				const errorMessage = formatDbError(tableErr, { firebirdConfig });
+				const hint = getDbErrorHint(errorMessage);
+				try { await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage); } catch (e) { /* ignore */ }
+				await failRun(errorMessage, hint, "run");
 			} finally {
 				conn.release();
 				if (tempIndexName) {
@@ -2092,7 +2236,7 @@ async function runMigrationInternal({
 				}
 			}
 
-			if (runFailed) break;
+			if (runFailed && !continueOnError) break;
 		}
 
 		if (runFailed) {
@@ -2286,61 +2430,64 @@ async function startMigration({
 	fkChecks
 }) {
 	const pool = await mysql.connectToSchema(mysqlConfig, schemaName);
-	await mysql.ensureMigrationTables(pool);
-	const run_label = mapping?.profileName || mapping?.name || `Run ${new Date().toISOString().slice(0, 10)}`;
-	const source_conn_name = firebirdConfig?.name || `${firebirdConfig?.host || 'unknown'}:${firebirdConfig?.database || ''}`;
-	const runId = await runStore.createRun(pool, {
-		plan_id: mapping?.planId || null,
-		run_label,
-		source_conn_name,
-		target_schema_name: schemaName,
-		schemaName,
-		dryRun,
-		batchSize,
-		fkChecks,
-		plan,
-		mappingProfileId: mapping?.profileId || null
-	});
-
-	// CRITICAL: Save immutable mapping snapshot for deterministic reuse
 	try {
-		const includedTables = (plan || []).filter(step => step.include).map(step => {
-			// Normalize to canonical target names
-			return resolveTargetTableName(step.table, mapping);
-		});
-		const savedCount = await mappingPersistence.saveRunMappings(pool, {
-			runId,
-			planId: mapping?.planId || null,
-			mappingProfileId: mapping?.profileId || null,
-			mapping,
-			includedTables
-		});
-		// console.log(`[Runner] Saved ${savedCount} mapping snapshots for run ${runId}`);
-	} catch (err) {
-		// console.error('[Runner] Failed to save run mappings:', err.message);
-		// Don't fail the run, but log warning
-	}
-
-	await pool.end();
-	createEmitter(runId);
-	createRunState(runId, plan, mapping);
-	emitRunState(runId, getEmitter(runId));
-
-	setImmediate(() => {
-		runMigrationInternal({
-			firebirdConfig,
-			mysqlConfig,
+		await mysql.ensureMigrationTables(pool);
+		plan = reorderAccountingPlanSteps(plan || []);
+		await validateGLExecutionPrereqs(pool, plan);
+		const run_label = mapping?.profileName || mapping?.name || `Run ${new Date().toISOString().slice(0, 10)}`;
+		const source_conn_name = firebirdConfig?.name || `${firebirdConfig?.host || 'unknown'}:${firebirdConfig?.database || ''}`;
+		const runId = await runStore.createRun(pool, {
+			plan_id: mapping?.planId || null,
+			run_label,
+			source_conn_name,
+			target_schema_name: schemaName,
 			schemaName,
-			plan,
-			mapping,
 			dryRun,
 			batchSize,
 			fkChecks,
-			runId
+			plan,
+			mappingProfileId: mapping?.profileId || null
 		});
-	});
 
-	return { runId };
+		// CRITICAL: Save immutable mapping snapshot for deterministic reuse
+		try {
+			const includedTables = (plan || []).filter(step => step.include).map(step => {
+				// Normalize to canonical target names
+				return resolveTargetTableName(step.table, mapping);
+			});
+			await mappingPersistence.saveRunMappings(pool, {
+				runId,
+				planId: mapping?.planId || null,
+				mappingProfileId: mapping?.profileId || null,
+				mapping,
+				includedTables
+			});
+		} catch (err) {
+			// Don't fail the run, but log warning
+		}
+
+		createEmitter(runId);
+		createRunState(runId, plan, mapping);
+		emitRunState(runId, getEmitter(runId));
+
+		setImmediate(() => {
+			runMigrationInternal({
+				firebirdConfig,
+				mysqlConfig,
+				schemaName,
+				plan,
+				mapping,
+				dryRun,
+				batchSize,
+				fkChecks,
+				runId
+			});
+		});
+
+		return { runId };
+	} finally {
+		await pool.end();
+	}
 }
 
 module.exports = {

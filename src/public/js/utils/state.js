@@ -8,7 +8,7 @@
 class WizardState {
 	constructor() {
 		this.state = {
-			// Current step (1-5)
+			// Current step (1-6)
 			currentStep: 1,
 
 			// Schema data from discovery
@@ -221,8 +221,8 @@ class WizardState {
 	 * @param {number} step - Step number (1-5)
 	 */
 	setCurrentStep(step) {
-		if (step < 1 || step > 5) {
-			throw new Error(`Invalid step: ${step}. Must be 1-5.`);
+		if (step < 1 || step > 6) {
+			throw new Error(`Invalid step: ${step}. Must be 1-6.`);
 		}
 
 		this.state.currentStep = step;
@@ -234,7 +234,7 @@ class WizardState {
 	 * Go to next step
 	 */
 	nextStep() {
-		if (this.state.currentStep < 5) {
+		if (this.state.currentStep < 6) {
 			this.setCurrentStep(this.state.currentStep + 1);
 		}
 	}
@@ -289,6 +289,9 @@ class WizardState {
 				if (!this.state.run.id) {
 					errors.push('Click "Start Migration" to begin the migration run');
 				}
+				break;
+
+			case 5: // Convert Acc Numbers — always allow proceeding
 				break;
 		}
 

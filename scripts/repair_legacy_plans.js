@@ -21,7 +21,7 @@ function extractTableName(entry) {
 }
 
 (async () => {
-	const pool = await mysql.connectToSchema(state.mysql, 'pwa_service');
+	const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 	try {
 		const [rows] = await pool.query("select id, started_at, plan_json from migration_runs_legacy where plan_json is not null");
 		console.log('Found', rows.length, 'legacy runs with plan_json');

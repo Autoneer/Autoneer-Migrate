@@ -109,15 +109,31 @@ async function attachWithRetry(config) {
 	} catch (err) {
 		const msg = String(err?.message || "").toLowerCase();
 		const gds = err && err.gds && Number(err.gds);
-		const shouldRetry = msg.includes('user name and password are not defined') || gds === 335544472;
-		if (shouldRetry) {
-			// small jitter
+		const isAuthError = msg.includes('user name and password are not defined') || gds === 335544472;
+		if (isAuthError) {
+			// First: retry with a small delay — this error can be transient under rapid reconnection load
 			const waitMs = 500 + Math.floor(Math.random() * 300);
 			await new Promise((r) => setTimeout(r, waitMs));
 			try {
 				return await attach(config);
 			} catch (err2) {
-				// log both attempts to console for diagnostics
+				// Second: if useDefaultSysdbaMasterkey is enabled and the password didn't come from
+				// the default already, try masterkey as a fallback (covers misconfigured state password)
+				const resolved = resolveFirebirdConfig(config);
+				const canTryMasterkey =
+					config.useDefaultSysdbaMasterkey &&
+					resolved.user.toUpperCase() === 'SYSDBA' &&
+					resolved.passwordSource !== 'default';
+				if (canTryMasterkey) {
+					console.warn('[firebird] attach retry failed, trying masterkey fallback:', err2?.message || err2);
+					// Clear state password so resolveFirebirdConfig falls through to the masterkey default
+					try {
+						return await attach({ ...config, password: '' });
+					} catch (err3) {
+						console.warn('[firebird] masterkey fallback also failed:', err3?.message || err3);
+						throw err3;
+					}
+				}
 				console.warn('[firebird] attach retry failed:', err2?.message || err2);
 				throw err2;
 			}

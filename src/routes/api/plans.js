@@ -618,15 +618,16 @@ router.post("/plans/:id/validate", async (req, res) => {
 
 		const mappingData = safeParseJson(profile.mapping_json);
 		const mapping = Mapping.fromJSON(mappingData);
+		const resolvedFirebirdConfig = firebird.resolveFirebirdConfig(state.firebird);
 
 		// Discover schemas
 		const schema = new Schema();
-		await schema.discoverFirebird(state.firebird);
-		await schema.discoverMySQL(pool, state.schemaName);
+		await schema.discoverFirebird(resolvedFirebirdConfig);
+		await schema.discoverMySQL(state.mysql, state.schemaName);
 
 		// Validate plan
 		const validation = await PlanValidator.validate(plan, mapping, schema, {
-			firebird: state.firebird,
+			firebird: resolvedFirebirdConfig,
 			mysql: pool
 		});
 
@@ -729,6 +730,7 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 
 		const mappingData = safeParseJson(profile.mapping_json);
 		const mapping = Mapping.fromJSON(mappingData);
+		const resolvedFirebirdConfig = firebird.resolveFirebirdConfig(state.firebird);
 
 		// SELF-HEAL: Normalize plan tables before dry-run
 		if (plan.tables && mappingData) {
@@ -756,12 +758,12 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 
 		// Discover schemas
 		const schema = new Schema();
-		await schema.discoverFirebird(state.firebird);
+		await schema.discoverFirebird(resolvedFirebirdConfig);
 		await schema.discoverMySQL(state.mysql, state.schemaName);
 
 		await pool.end();
 
-		const runTableDryRun = async (targetTable) => {
+		const runTableDryRun = async (targetTable, fbDb = null) => {
 			const sourceTable = mapping.getSourceTable(targetTable);
 			if (!sourceTable) {
 				return {
@@ -787,7 +789,9 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 			const columns = Array.from(fieldMaps.keys());
 			let sampleRow = null;
 			try {
-				const rows = await firebird.fetchBatch(state.firebird, sourceTable, columns, 0, 1);
+				const rows = fbDb
+					? await firebird.fetchBatchWithDb(fbDb, sourceTable, columns, 0, 1)
+					: await firebird.fetchBatch(resolvedFirebirdConfig, sourceTable, columns, 0, 1);
 				sampleRow = rows?.[0] || null;
 			} catch (err) {
 				return {
@@ -870,11 +874,11 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 		// Attach to Firebird once and reuse for all count queries
 		let fbDb = null;
 		try {
-			fbDb = await firebird.attachWithRetry(state.firebird);
+			fbDb = await firebird.attachWithRetry(resolvedFirebirdConfig);
 
 			for (const table of tables) {
 				try {
-					const result = await runTableDryRun(table);
+					const result = await runTableDryRun(table, fbDb);
 
 					// Get actual row count from Firebird
 					let estimatedRows = 0;

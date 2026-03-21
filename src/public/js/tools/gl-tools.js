@@ -45,6 +45,33 @@
 		return blocks.length ? blocks.join("\n") : "All GL validation checks passed.";
 	}
 
+	function buildSkippedLog(response) {
+		const summary = response.accounts_summary;
+		const skipped = response.skipped_accounts;
+		if (!summary) return "";
+
+		const lines = [
+			`\nAccounts Summary:`,
+			`  Total in staging : ${summary.total_staging}`,
+			`  Migrated to GL   : ${summary.migrated}`,
+			`  Skipped          : ${summary.skipped}`
+		];
+
+		if (Array.isArray(skipped) && skipped.length > 0) {
+			lines.push(`\nSkipped Accounts (not included in gl_accounts):`);
+			lines.push(`  ${"ACCNR".padEnd(12)} ${"ACCTYPE".padEnd(20)} ${"CLASS".padEnd(6)} SKIP REASON`);
+			lines.push(`  ${"-".repeat(70)}`);
+			for (const row of skipped) {
+				const accnr = String(row.accnr ?? "").padEnd(12);
+				const acctype = String(row.acctype ?? "").slice(0, 20).padEnd(20);
+				const accclass = String(row.accclass ?? "").padEnd(6);
+				lines.push(`  ${accnr} ${acctype} ${accclass} ${row.skip_reason}`);
+			}
+		}
+
+		return lines.join("\n");
+	}
+
 	async function postJson(url, payload) {
 		const response = await fetch(url, {
 			method: "POST",
@@ -65,6 +92,7 @@
 		const resultEl = document.getElementById("gl-tools-result");
 		const rebuildBtn = document.getElementById("btn-rebuild-gl-page");
 		const validateBtn = document.getElementById("btn-gl-validate");
+		const convertAccnrBtn = document.getElementById("btn-convert-transactional-accnr");
 		const wipeJournals = document.getElementById("gl-wipe-journals");
 
 		if (!resultEl) return;
@@ -92,10 +120,12 @@
 					const validation = response.gl_validation || null;
 					const summary = validation ? summarizeChecks(validation.checks) : "No GL validation returned.";
 					const details = validation ? buildValidationDetails(validation) : "";
+					const skippedLog = buildSkippedLog(response);
 					resultEl.textContent =
 						"Rebuild completed.\n\n" +
 						"Check Summary:\n" + summary + "\n\n" +
-						"Validation Details:\n" + details + "\n\n" +
+						"Validation Details:\n" + details +
+						skippedLog + "\n\n" +
 						"Full Response:\n" + stringify(response);
 				} catch (err) {
 					resultEl.textContent = "Rebuild failed.\n\n" + (err.message || String(err));
@@ -121,6 +151,39 @@
 						"Full Response:\n" + stringify(response);
 				} catch (err) {
 					resultEl.textContent = "Validation failed.\n\n" + (err.message || String(err));
+				} finally {
+					restore();
+				}
+			});
+		}
+
+		if (convertAccnrBtn) {
+			convertAccnrBtn.addEventListener("click", async function () {
+				const confirmMsg =
+					"Convert transactional account numbers now?\n\n" +
+					"This will update acc, accnr, accasset, and siid fields across all transactional " +
+					"tables to match the new GL account numbers.\n\n" +
+					"Run only after all tables have been migrated AND Rebuild GL Accounts has been run.";
+				const ok = window.Modal && typeof window.Modal.confirm === "function"
+					? await window.Modal.confirm({
+						title: "Convert Transactional Acc Numbers",
+						message: confirmMsg,
+						type: "warning",
+						confirmText: "Convert",
+						cancelText: "Cancel"
+					})
+					: window.confirm(confirmMsg);
+				if (!ok) return;
+
+				const restore = setBusy(convertAccnrBtn, "Converting...");
+				resultEl.textContent = "Running accnr conversion...";
+				try {
+					const response = await postJson("/api/tools/convert-transactional-accnr", {});
+					resultEl.textContent =
+						"Conversion completed.\n\n" +
+						"Full Response:\n" + stringify(response);
+				} catch (err) {
+					resultEl.textContent = "Conversion failed.\n\n" + (err.message || String(err));
 				} finally {
 					restore();
 				}

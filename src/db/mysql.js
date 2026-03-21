@@ -221,6 +221,22 @@ async function ensureMigrationTables(pool) {
 			index idx_profiles_from_preset (created_from_preset_code)
 		);
 
+		create table if not exists migration_run_mappings (
+			id int auto_increment primary key,
+			run_id int not null,
+			plan_id int null,
+			mapping_profile_id varchar(36) null,
+			table_name varchar(100) not null,
+			source_table varchar(100) not null,
+			target_table varchar(100) not null,
+			mapping_json longtext not null,
+			created_at datetime default current_timestamp,
+			index idx_run_id (run_id),
+			index idx_plan_id (plan_id),
+			index idx_table_name (table_name),
+			unique key uk_run_table (run_id, table_name)
+		);
+
     create table if not exists migration_id_map (
       id bigint auto_increment primary key,
       run_id varchar(36) not null,
@@ -288,6 +304,61 @@ async function ensureMigrationTables(pool) {
 	const profileNames = profileCols.map((c) => c.name.toLowerCase());
 	if (!profileNames.includes("updated_at")) {
 		await pool.query("alter table migration_mapping_profiles add column updated_at timestamp null");
+	}
+
+	const [runMappingCols] = await pool.query(
+		"select column_name as name from information_schema.columns where table_schema = database() and table_name = 'migration_run_mappings'"
+	);
+	const runMappingNames = runMappingCols.map((c) => c.name.toLowerCase());
+	if (runMappingCols.length > 0) {
+		if (!runMappingNames.includes("plan_id")) {
+			await pool.query("alter table migration_run_mappings add column plan_id int null");
+		}
+		if (!runMappingNames.includes("mapping_profile_id")) {
+			await pool.query("alter table migration_run_mappings add column mapping_profile_id varchar(36) null");
+		}
+		if (!runMappingNames.includes("source_table")) {
+			await pool.query("alter table migration_run_mappings add column source_table varchar(100) null");
+		}
+		if (!runMappingNames.includes("target_table")) {
+			await pool.query("alter table migration_run_mappings add column target_table varchar(100) null");
+		}
+		if (!runMappingNames.includes("created_at")) {
+			await pool.query("alter table migration_run_mappings add column created_at datetime default current_timestamp");
+		}
+	}
+
+	const [runMappingIndexes] = await pool.query(
+		"select index_name as name, non_unique as nonUnique from information_schema.statistics where table_schema = database() and table_name = 'migration_run_mappings'"
+	);
+	const runMappingIndexNames = runMappingIndexes.map((idx) => String(idx.name).toLowerCase());
+	if (!runMappingIndexNames.includes("idx_run_id")) {
+		try {
+			await pool.query("create index idx_run_id on migration_run_mappings (run_id)");
+		} catch (e) {
+			// ignore
+		}
+	}
+	if (!runMappingIndexNames.includes("idx_plan_id")) {
+		try {
+			await pool.query("create index idx_plan_id on migration_run_mappings (plan_id)");
+		} catch (e) {
+			// ignore
+		}
+	}
+	if (!runMappingIndexNames.includes("idx_table_name")) {
+		try {
+			await pool.query("create index idx_table_name on migration_run_mappings (table_name)");
+		} catch (e) {
+			// ignore
+		}
+	}
+	if (!runMappingIndexNames.includes("uk_run_table")) {
+		try {
+			await pool.query("create unique index uk_run_table on migration_run_mappings (run_id, table_name)");
+		} catch (e) {
+			// ignore
+		}
 	}
 
 	const [planTables] = await pool.query(

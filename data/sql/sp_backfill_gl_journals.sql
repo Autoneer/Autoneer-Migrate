@@ -83,7 +83,19 @@ INSERT INTO gl_journal_lines
 	(header_id, accnr, debit, credit, ref1, ref2, cid, suppid, line_no)
 SELECT
 	jh.id                                      AS header_id,
-	j.accnr                                    AS accnr,
+	CASE
+		WHEN a.accnr IS NOT NULL
+			AND LOWER(TRIM(COALESCE(a.acctype, ''))) = 'group account'
+			AND a.accclass IS NOT NULL
+			AND a.accclass <> 7
+		THEN CASE
+			WHEN a.accnr = 1601200 THEN 6200
+			WHEN a.accnr = 1601300 THEN 6301
+			WHEN a.accnr = 6606300 THEN 6302
+			ELSE MOD(a.accnr, 10000)
+		END
+		ELSE j.accnr
+	END                                       AS accnr,
 	COALESCE(j.debitamount, 0)                 AS debit,
 	COALESCE(j.creditamount, 0)                AS credit,
 	j.source2                                  AS ref1,
@@ -99,7 +111,20 @@ FROM journal j
 	ON jh.source = COALESCE(j.source, 'LEGACY')
 		AND jh.source_id = CAST(j.sourceid AS CHAR(50))
 		AND jh.jdate = j.jdate
-	JOIN gl_accounts ga ON ga.accnr = j.accnr
+	LEFT JOIN accounts a ON a.accnr = j.accnr
+	JOIN gl_accounts ga ON ga.accnr = CASE
+		WHEN a.accnr IS NOT NULL
+			AND LOWER(TRIM(COALESCE(a.acctype, ''))) = 'group account'
+			AND a.accclass IS NOT NULL
+			AND a.accclass <> 7
+		THEN CASE
+			WHEN a.accnr = 1601200 THEN 6200
+			WHEN a.accnr = 1601300 THEN 6301
+			WHEN a.accnr = 6606300 THEN 6302
+			ELSE MOD(a.accnr, 10000)
+		END
+		ELSE j.accnr
+	END
 WHERE j.jdate IS NOT NULL
 	AND j.sourceid IS NOT NULL
 	AND j.accnr IS NOT NULL;
@@ -111,6 +136,19 @@ SELECT
 	j.jourid,
 	j.jdate,
 	j.accnr,
+	CASE
+		WHEN a.accnr IS NOT NULL
+			AND LOWER(TRIM(COALESCE(a.acctype, ''))) = 'group account'
+			AND a.accclass IS NOT NULL
+			AND a.accclass <> 7
+		THEN CASE
+			WHEN a.accnr = 1601200 THEN 6200
+			WHEN a.accnr = 1601300 THEN 6301
+			WHEN a.accnr = 6606300 THEN 6302
+			ELSE MOD(a.accnr, 10000)
+		END
+		ELSE j.accnr
+	END AS converted_accnr,
 	j.accclass,
 	j.debitamount,
 	j.creditamount,
@@ -118,7 +156,20 @@ SELECT
 	j.description,
 	'ORPHAN: accnr not found in gl_accounts' AS reason
 FROM journal j
-	LEFT JOIN gl_accounts ga ON ga.accnr = j.accnr
+	LEFT JOIN accounts a ON a.accnr = j.accnr
+	LEFT JOIN gl_accounts ga ON ga.accnr = CASE
+		WHEN a.accnr IS NOT NULL
+			AND LOWER(TRIM(COALESCE(a.acctype, ''))) = 'group account'
+			AND a.accclass IS NOT NULL
+			AND a.accclass <> 7
+		THEN CASE
+			WHEN a.accnr = 1601200 THEN 6200
+			WHEN a.accnr = 1601300 THEN 6301
+			WHEN a.accnr = 6606300 THEN 6302
+			ELSE MOD(a.accnr, 10000)
+		END
+		ELSE j.accnr
+	END
 WHERE ga.id IS NULL
 	AND j.accnr IS NOT NULL;
 

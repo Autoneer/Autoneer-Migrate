@@ -2,8 +2,8 @@ const mysql = require('../src/db/mysql');
 const { state } = require('../src/config/state');
 (async () => {
 	try {
-		const pool = await mysql.connectToSchema(state.mysql, 'pwa_service');
-		console.log('Connected to pwa_service');
+		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
+		console.log('Connected to', state.schemaName);
 		try {
 			await pool.query("ALTER TABLE migration_runs DROP PRIMARY KEY");
 			console.log('Dropped primary key on migration_runs');

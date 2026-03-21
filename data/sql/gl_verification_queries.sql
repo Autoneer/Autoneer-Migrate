@@ -51,8 +51,18 @@ SELECT 'CHECK C: Account type mismatch vs ACCCLASS' AS check_name,
            WHEN 4 THEN 4 WHEN 5 THEN 5 WHEN 6 THEN 6
        END AS expected_type_id
 FROM gl_accounts ga
-JOIN accounts a ON (a.accnr = ga.accnr
-    OR (LOWER(TRIM(a.acctype)) = 'group account' AND MOD(a.accnr, 10000) = ga.accnr))
+JOIN accounts a ON (
+    a.accnr IS NOT NULL
+    AND LOWER(TRIM(a.acctype)) = 'group account'
+    AND a.accclass IS NOT NULL
+    AND a.accclass <> 7
+    AND CASE
+        WHEN a.accnr = 1601200 THEN 6200
+        WHEN a.accnr = 1601300 THEN 6301
+        WHEN a.accnr = 6606300 THEN 6302
+        ELSE MOD(a.accnr, 10000)
+    END = ga.accnr
+)
 JOIN gl_account_types gat ON gat.id = ga.type_id
 WHERE ga.type_id != CASE a.accclass
            WHEN 1 THEN 1 WHEN 2 THEN 2 WHEN 3 THEN 3
@@ -149,9 +159,40 @@ WHERE gat.code IN ('INCOME', 'EXPENSE', 'COS')
 -- CHECK J: Legacy journal entries with accnr NOT in gl_accounts
 -- ──────────────────────────────────────────────────────────────────────────
 SELECT 'CHECK J: Legacy journal orphans' AS check_name,
-       j.jourid, j.jdate, j.accnr, j.accclass, j.debitamount, j.creditamount
+       j.jourid,
+       j.jdate,
+       j.accnr AS legacy_accnr,
+       CASE
+           WHEN a.accnr IS NOT NULL
+               AND LOWER(TRIM(COALESCE(a.acctype, ''))) = 'group account'
+               AND a.accclass IS NOT NULL
+               AND a.accclass <> 7
+           THEN CASE
+               WHEN a.accnr = 1601200 THEN 6200
+               WHEN a.accnr = 1601300 THEN 6301
+               WHEN a.accnr = 6606300 THEN 6302
+               ELSE MOD(a.accnr, 10000)
+           END
+           ELSE j.accnr
+       END AS converted_accnr,
+       j.accclass,
+       j.debitamount,
+       j.creditamount
 FROM journal j
-LEFT JOIN gl_accounts ga ON ga.accnr = j.accnr
+LEFT JOIN accounts a ON a.accnr = j.accnr
+LEFT JOIN gl_accounts ga ON ga.accnr = CASE
+    WHEN a.accnr IS NOT NULL
+        AND LOWER(TRIM(COALESCE(a.acctype, ''))) = 'group account'
+        AND a.accclass IS NOT NULL
+        AND a.accclass <> 7
+    THEN CASE
+        WHEN a.accnr = 1601200 THEN 6200
+        WHEN a.accnr = 1601300 THEN 6301
+        WHEN a.accnr = 6606300 THEN 6302
+        ELSE MOD(a.accnr, 10000)
+    END
+    ELSE j.accnr
+END
 WHERE ga.id IS NULL
   AND j.accnr IS NOT NULL
 LIMIT 100;

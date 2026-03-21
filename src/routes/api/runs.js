@@ -212,7 +212,8 @@ router.get("/runs", async (req, res) => {
 			}))
 		});
 	} catch (err) {
-		res.status(500).json({
+		const statusCode = ["GL_REBUILD_REQUIRED", "GL_PERIODS_REQUIRED"].includes(err?.code) ? 400 : 500;
+		res.status(statusCode).json({
 			success: false,
 			error: err.message
 		});
@@ -346,7 +347,8 @@ router.post("/runs", async (req, res) => {
 		});
 	} catch (err) {
 		console.error('[Runs] POST /runs error:', err);
-		res.status(500).json({
+		const statusCode = ["GL_REBUILD_REQUIRED", "GL_PERIODS_REQUIRED"].includes(err?.code) ? 400 : 500;
+		res.status(statusCode).json({
 			success: false,
 			error: err.message
 		});
@@ -586,7 +588,8 @@ router.get("/runs/:runId", async (req, res) => {
 			estimatedSecondsRemaining: run.getEstimatedSecondsRemaining()
 		});
 	} catch (err) {
-		res.status(500).json({
+		const statusCode = ["GL_REBUILD_REQUIRED", "GL_PERIODS_REQUIRED"].includes(err?.code) ? 400 : 500;
+		res.status(statusCode).json({
 			success: false,
 			error: err.message
 		});

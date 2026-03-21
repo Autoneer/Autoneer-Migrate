@@ -12,6 +12,19 @@ class PlanUI {
 		this.mapping = null;
 		this.plan = null;
 		this.dryRunResults = null;
+		this.accountingOrderAdjusted = false;
+	}
+
+	applyAccountingOrder() {
+		if (!Array.isArray(this.plan?.tables) || !window.AccountingOrderUtils) return false;
+		const reordered = window.AccountingOrderUtils.reorderPlanTables(this.plan.tables);
+		const changed = JSON.stringify(reordered) !== JSON.stringify(this.plan.tables);
+		if (changed) {
+			this.plan.tables = reordered;
+			this.accountingOrderAdjusted = true;
+			this.state.setPlan(this.plan);
+		}
+		return changed;
 	}
 
 	/**
@@ -81,6 +94,8 @@ class PlanUI {
 				this.plan.tables = normalizedTables;
 			}
 		}
+
+		this.applyAccountingOrder();
 
 		if (!this.plan.name || this.plan.name.trim() === '') {
 			const baseName = this.mapping?.name ? this.mapping.name : 'Plan';
@@ -338,6 +353,7 @@ class PlanUI {
 			[this.plan.tables[index], this.plan.tables[index - 1]] =
 				[this.plan.tables[index - 1], this.plan.tables[index]];
 
+			this.applyAccountingOrder();
 			this.state.setPlan(this.plan);
 			this.render();
 		}
@@ -351,6 +367,7 @@ class PlanUI {
 			[this.plan.tables[index], this.plan.tables[index + 1]] =
 				[this.plan.tables[index + 1], this.plan.tables[index]];
 
+			this.applyAccountingOrder();
 			this.state.setPlan(this.plan);
 			this.render();
 		}
@@ -482,6 +499,7 @@ class PlanUI {
 
 		if (confirmed) {
 			this.plan.tables.splice(index, 1);
+			this.applyAccountingOrder();
 			this.state.setPlan(this.plan);
 			this.render();
 		}
@@ -571,6 +589,7 @@ class PlanUI {
 			if (planNameInput && planNameInput.value.trim() !== resolvedPlanName) {
 				planNameInput.value = resolvedPlanName;
 			}
+			this.applyAccountingOrder();
 
 			// mappingProfileId already determined above with strict precedence
 			console.log('[PlanUI] Running dry run with plan:', { name: this.plan.name, id: this.plan.id, mappingProfileId });
@@ -730,6 +749,7 @@ class PlanUI {
 		if (!summary) return;
 
 		const errors = [];
+		const warnings = [];
 		const tables = Array.isArray(this.plan?.tables) ? this.plan.tables : [];
 
 		if (!this.plan.name || this.plan.name.trim() === '') {
@@ -740,12 +760,35 @@ class PlanUI {
 			errors.push('At least one table must be selected');
 		}
 
+		if (window.AccountingOrderUtils) {
+			const orderIssues = window.AccountingOrderUtils.findOrderIssues(tables);
+			if (orderIssues.length > 0) {
+				warnings.push(`Accounting tables will be auto-reordered. ${orderIssues.join(' ')}`);
+			} else if (this.accountingOrderAdjusted) {
+				warnings.push('Accounting tables were auto-ordered so accounts and GL prerequisites run first.');
+			}
+
+			if (window.AccountingOrderUtils.requiresGlRebuild(tables)) {
+				warnings.push("GL journal tables need rebuilt GL accounts in the database. Migrate accounts, run 'Rebuild GL Accounts', then start the GL journal migration.");
+			}
+		}
+
 		if (errors.length > 0) {
 			summary.innerHTML = `
         <div class="validation-errors">
           <h4>⚠ Errors</h4>
           <ul>
             ${errors.map(err => `<li>${err}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+		} else if (warnings.length > 0) {
+			summary.innerHTML = `
+        <div class="validation-success">
+          <h4>âœ“ Plan Valid</h4>
+          <p>Migration plan is ready.</p>
+          <ul>
+            ${warnings.map(warn => `<li>${warn}</li>`).join('')}
           </ul>
         </div>
       `;
@@ -779,6 +822,8 @@ class PlanUI {
 			this.wizard.showError('Mapping profile missing. Go back to Step 2 to save the mapping, then return to Step 3.');
 			return false;
 		}
+
+		this.applyAccountingOrder();
 
 		// Create/update plan
 		try {

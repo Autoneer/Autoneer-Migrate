@@ -17,6 +17,20 @@ const { INCOME_STATEMENT_TYPE_IDS, BALANCE_SHEET_TYPE_IDS } = require("./glAccou
 
 const TOLERANCE = 0.01; // 1 cent tolerance for rounding
 
+async function resolveGLJournalHeaderDateColumn(pool) {
+	const [rows] = await pool.query(`
+		SELECT column_name AS name
+		FROM information_schema.columns
+		WHERE table_schema = DATABASE()
+		  AND table_name = 'gl_journal_headers'
+		  AND column_name IN ('jdate', 'trxdate')
+	`);
+	const names = rows.map((row) => String(row.name || "").toLowerCase());
+	if (names.includes("jdate")) return "jdate";
+	if (names.includes("trxdate")) return "trxdate";
+	return null;
+}
+
 /**
  * GAAP CHECK 1: Trial Balance — sum(debit) must equal sum(credit).
  * Tests both: (a) gl_journal_lines, and (b) legacy journal table if present.
@@ -31,35 +45,47 @@ async function checkTrialBalance(pool, opts = {}) {
 	try {
 		let where = "";
 		const params = [];
+		let skippedForMissingDateColumn = false;
 		if (opts.startDate || opts.endDate) {
-			where = "JOIN gl_journal_headers jh ON jh.id = jl.header_id WHERE 1=1";
-			if (opts.startDate) { where += " AND jh.trxdate >= ?"; params.push(opts.startDate); }
-			if (opts.endDate) { where += " AND jh.trxdate <= ?"; params.push(opts.endDate); }
+			const headerDateColumn = await resolveGLJournalHeaderDateColumn(pool);
+			if (!headerDateColumn) {
+				skippedForMissingDateColumn = true;
+				details.gl_journal_lines = {
+					skipped: true,
+					reason: "gl_journal_headers date column not found"
+				};
+			} else {
+				where = "JOIN gl_journal_headers jh ON jh.id = jl.header_id WHERE 1=1";
+				if (opts.startDate) { where += ` AND jh.${headerDateColumn} >= ?`; params.push(opts.startDate); }
+				if (opts.endDate) { where += ` AND jh.${headerDateColumn} <= ?`; params.push(opts.endDate); }
+			}
 		}
 
-		const sql = `
-			SELECT
-				COALESCE(SUM(jl.debit), 0) AS total_debit,
-				COALESCE(SUM(jl.credit), 0) AS total_credit
-			FROM gl_journal_lines jl
-			${where}
-		`;
+		if (!skippedForMissingDateColumn) {
+			const sql = `
+				SELECT
+					COALESCE(SUM(jl.debit), 0) AS total_debit,
+					COALESCE(SUM(jl.credit), 0) AS total_credit
+				FROM gl_journal_lines jl
+				${where}
+			`;
 
-		const [rows] = await pool.query(sql, params);
-		const totalDebit = Number(rows[0]?.total_debit || 0);
-		const totalCredit = Number(rows[0]?.total_credit || 0);
-		const diff = Math.abs(totalDebit - totalCredit);
+			const [rows] = await pool.query(sql, params);
+			const totalDebit = Number(rows[0]?.total_debit || 0);
+			const totalCredit = Number(rows[0]?.total_credit || 0);
+			const diff = Math.abs(totalDebit - totalCredit);
 
-		details.gl_journal_lines = { totalDebit, totalCredit, difference: diff };
+			details.gl_journal_lines = { totalDebit, totalCredit, difference: diff };
 
-		if (diff > TOLERANCE) {
-			errors.push({
-				source: "gl_journal_lines",
-				totalDebit,
-				totalCredit,
-				difference: diff,
-				message: `Trial balance imbalance in gl_journal_lines: debits=${totalDebit.toFixed(2)}, credits=${totalCredit.toFixed(2)}, diff=${diff.toFixed(2)}`
-			});
+			if (diff > TOLERANCE) {
+				errors.push({
+					source: "gl_journal_lines",
+					totalDebit,
+					totalCredit,
+					difference: diff,
+					message: `Trial balance imbalance in gl_journal_lines: debits=${totalDebit.toFixed(2)}, credits=${totalCredit.toFixed(2)}, diff=${diff.toFixed(2)}`
+				});
+			}
 		}
 	} catch (err) {
 		if (!err.message.includes("doesn't exist")) throw err;
@@ -126,65 +152,75 @@ async function checkBalanceSheet(pool, opts = {}) {
 	try {
 		let dateJoin = "";
 		const params = [];
+		let skippedForMissingDateColumn = false;
 		if (opts.startDate || opts.endDate) {
-			dateJoin = "JOIN gl_journal_headers jh ON jh.id = jl.header_id";
-			if (opts.startDate) { dateJoin += ` AND jh.trxdate >= '${opts.startDate}'`; }
-			if (opts.endDate) { dateJoin += ` AND jh.trxdate <= '${opts.endDate}'`; }
-		}
-
-		const sql = `
-			SELECT
-				gat.id AS type_id,
-				gat.code,
-				gat.statement_section,
-				COALESCE(SUM(jl.debit), 0) AS total_debit,
-				COALESCE(SUM(jl.credit), 0) AS total_credit
-			FROM gl_journal_lines jl
-			JOIN gl_accounts ga ON ga.accnr = jl.accnr
-			JOIN gl_account_types gat ON gat.id = ga.type_id
-			${dateJoin}
-			WHERE gat.statement_section = 'BalanceSheet'
-			GROUP BY gat.id, gat.code, gat.statement_section
-		`;
-
-		const [rows] = await pool.query(sql, params);
-
-		let totalAssets = 0;
-		let totalLiabilities = 0;
-		let totalEquity = 0;
-
-		for (const row of rows) {
-			const debit = Number(row.total_debit);
-			const credit = Number(row.total_credit);
-
-			if (row.code === "ASSET") {
-				// Assets have normal debit balance
-				totalAssets = debit - credit;
-			} else if (row.code === "LIABILITY") {
-				// Liabilities have normal credit balance
-				totalLiabilities = credit - debit;
-			} else if (row.code === "EQUITY") {
-				// Equity has normal credit balance
-				totalEquity = credit - debit;
+			const headerDateColumn = await resolveGLJournalHeaderDateColumn(pool);
+			if (!headerDateColumn) {
+				skippedForMissingDateColumn = true;
+				details.skipped = true;
+				details.reason = "gl_journal_headers date column not found";
+			} else {
+				dateJoin = "JOIN gl_journal_headers jh ON jh.id = jl.header_id";
+				if (opts.startDate) { dateJoin += ` AND jh.${headerDateColumn} >= ?`; params.push(opts.startDate); }
+				if (opts.endDate) { dateJoin += ` AND jh.${headerDateColumn} <= ?`; params.push(opts.endDate); }
 			}
 		}
 
-		details.assets = totalAssets;
-		details.liabilities = totalLiabilities;
-		details.equity = totalEquity;
-		details.liabilities_plus_equity = totalLiabilities + totalEquity;
+		if (!skippedForMissingDateColumn) {
+			const sql = `
+				SELECT
+					gat.id AS type_id,
+					gat.code,
+					gat.statement_section,
+					COALESCE(SUM(jl.debit), 0) AS total_debit,
+					COALESCE(SUM(jl.credit), 0) AS total_credit
+				FROM gl_journal_lines jl
+				JOIN gl_accounts ga ON ga.accnr = jl.accnr
+				JOIN gl_account_types gat ON gat.id = ga.type_id
+				${dateJoin}
+				WHERE gat.statement_section = 'BalanceSheet'
+				GROUP BY gat.id, gat.code, gat.statement_section
+			`;
 
-		const diff = Math.abs(totalAssets - (totalLiabilities + totalEquity));
-		details.difference = diff;
+			const [rows] = await pool.query(sql, params);
 
-		if (diff > TOLERANCE) {
-			errors.push({
-				assets: totalAssets,
-				liabilities: totalLiabilities,
-				equity: totalEquity,
-				difference: diff,
-				message: `Balance Sheet does not balance: Assets=${totalAssets.toFixed(2)}, Liabilities+Equity=${(totalLiabilities + totalEquity).toFixed(2)}, diff=${diff.toFixed(2)}`
-			});
+			let totalAssets = 0;
+			let totalLiabilities = 0;
+			let totalEquity = 0;
+
+			for (const row of rows) {
+				const debit = Number(row.total_debit);
+				const credit = Number(row.total_credit);
+
+				if (row.code === "ASSET") {
+					// Assets have normal debit balance
+					totalAssets = debit - credit;
+				} else if (row.code === "LIABILITY") {
+					// Liabilities have normal credit balance
+					totalLiabilities = credit - debit;
+				} else if (row.code === "EQUITY") {
+					// Equity has normal credit balance
+					totalEquity = credit - debit;
+				}
+			}
+
+			details.assets = totalAssets;
+			details.liabilities = totalLiabilities;
+			details.equity = totalEquity;
+			details.liabilities_plus_equity = totalLiabilities + totalEquity;
+
+			const diff = Math.abs(totalAssets - (totalLiabilities + totalEquity));
+			details.difference = diff;
+
+			if (diff > TOLERANCE) {
+				errors.push({
+					assets: totalAssets,
+					liabilities: totalLiabilities,
+					equity: totalEquity,
+					difference: diff,
+					message: `Balance Sheet does not balance: Assets=${totalAssets.toFixed(2)}, Liabilities+Equity=${(totalLiabilities + totalEquity).toFixed(2)}, diff=${diff.toFixed(2)}`
+				});
+			}
 		}
 	} catch (err) {
 		if (!err.message.includes("doesn't exist")) throw err;

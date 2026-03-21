@@ -16,6 +16,16 @@ class RunUI {
 		this._lastLogTs = null;
 	}
 
+	planRequiresGLRebuild() {
+		const tables = Array.isArray(this.plan?.tables) ? this.plan.tables : [];
+		return !!(window.AccountingOrderUtils && window.AccountingOrderUtils.requiresGlRebuild(tables));
+	}
+
+	isGLRebuildMarkedDone() {
+		if (!this.plan?.id) return false;
+		return this.state.get('run.glRebuildPlanId') === this.plan.id;
+	}
+
 	/**
 	 * Initialize execution monitor
 	 */
@@ -142,22 +152,35 @@ class RunUI {
 	 * Render pre-execution state
 	 */
 	renderPreExecution() {
-		const DEFAULT_PLAN_CONFIG = {
+		const config = {
 			batchSize: 1000,
 			continueOnError: false,
-			validateData: true
-		};
-		const config = {
-			...DEFAULT_PLAN_CONFIG,
+			validateData: true,
 			...(this.plan?.config || {})
 		};
 		const planName = this.plan?.name || 'Migration Plan';
 		const tableCount = Array.isArray(this.plan?.tables) ? this.plan.tables.length : 0;
+		const needsGlRebuild = this.planRequiresGLRebuild();
+		const glRebuildDone = this.isGLRebuildMarkedDone();
+
+		const glSection = needsGlRebuild ? `
+        <div class="execution-summary">
+          <h3>Accounting Prerequisite</h3>
+          <p>${glRebuildDone
+				? 'GL accounts were rebuilt for this plan. You can start the migration.'
+				: 'This plan includes GL journal posting tables. Rebuild GL accounts before starting the migration so postings use the converted account numbers.'}</p>
+          <p><strong>Rebuild Status:</strong> ${glRebuildDone ? 'Ready for this plan' : 'Required before GL posting runs'}</p>
+          <div class="execution-actions">
+            <button class="btn btn-secondary" onclick="window.wizard.steps[3].component.rebuildGLAccounts()">
+              ${glRebuildDone ? 'Rebuild GL Accounts Again' : 'Rebuild GL Accounts Now'}
+            </button>
+          </div>
+        </div>` : '';
 
 		return `
       <div class="run-pre-execution">
-       
-        <div class="execution-summary"> 
+
+        <div class="execution-summary">
           <h3>Plan Summary</h3>
           <ul>
 						<li><strong>Plan:</strong> ${planName}</li>
@@ -167,7 +190,9 @@ class RunUI {
 				<li><strong>Clean target before migrate:</strong> ${(() => { const anyClean = Object.values(this.plan.tableConfigs || {}).some(c => c && c.cleanBefore === true); return anyClean ? 'Yes' : 'No'; })()}</li>
           </ul>
         </div>
-        
+
+        ${glSection}
+
         <div class="execution-actions">
           <button class="btn btn-primary btn-large" onclick="window.wizard.steps[3].component.startMigration()">
             ▶  Start Migration
@@ -240,6 +265,7 @@ class RunUI {
 	 * Render completed state
 	 */
 	renderCompleted() {
+		setTimeout(() => this._loadAndRenderRowErrors(), 0);
 		return `
 			<div class="run-completed">
 				<div style="display:flex;align-items:center;gap:0.5rem;" class="completed-header">
@@ -265,9 +291,11 @@ class RunUI {
         
         <div class="completion-actions">
           <button class="btn btn-primary" onclick="window.wizard.nextStep()">
-            View Results →
+            Convert Account Numbers →
           </button>
         </div>
+
+        <div id="run-row-errors-container"></div>
       </div>
     `;
 	}
@@ -276,6 +304,7 @@ class RunUI {
 	 * Render completed with errors state
 	 */
 	renderCompletedWithErrors() {
+		setTimeout(() => this._loadAndRenderRowErrors(), 0);
 		return `
 			<div class="run-completed-with-errors">
 				<div style="display:flex;align-items:center;gap:0.5rem;" class="completed-header">
@@ -310,9 +339,11 @@ class RunUI {
         
         <div class="completion-actions">
           <button class="btn btn-primary" onclick="window.wizard.nextStep()">
-            View Results →
+            Convert Account Numbers →
           </button>
         </div>
+
+        <div id="run-row-errors-container"></div>
       </div>
     `;
 	}
@@ -446,6 +477,21 @@ class RunUI {
 		} catch (err) {
 			this.wizard.hideLoading();
 			this.wizard.showError(`Failed to start migration: ${err.message}`);
+		}
+	}
+
+	async rebuildGLAccounts() {
+		if (!window.RebuildGLTool || typeof window.RebuildGLTool.run !== 'function') {
+			this.wizard.showError('Rebuild GL Accounts tool is not available.');
+			return;
+		}
+
+		try {
+			await window.RebuildGLTool.run();
+			this.state.set('run.glRebuildPlanId', this.plan.id);
+			this.render();
+		} catch (err) {
+			// dialog already shown by RebuildGLTool
 		}
 	}
 
@@ -777,6 +823,69 @@ class RunUI {
 			return false;
 		}
 		return true;
+	}
+
+	/**
+	 * Fetch and render row-level errors into the #run-row-errors-container placeholder.
+	 */
+	async _loadAndRenderRowErrors() {
+		const container = document.getElementById('run-row-errors-container');
+		if (!container || !this.run?.id) return;
+
+		container.innerHTML = '<p style="color:#888;font-size:0.9em;">Loading failed records...</p>';
+
+		let errors = [];
+		try {
+			errors = await this.api.getErrors(this.run.id);
+		} catch (e) {
+			container.innerHTML = '<p style="color:#888;font-size:0.9em;">Could not load failed records.</p>';
+			return;
+		}
+
+		if (!errors || errors.length === 0) {
+			container.innerHTML = '';
+			return;
+		}
+
+		// Group errors by table
+		const byTable = {};
+		for (const err of errors) {
+			const t = err.table || 'Unknown';
+			if (!byTable[t]) byTable[t] = [];
+			byTable[t].push(err);
+		}
+
+		let html = `<div style="margin-top:1.5rem;">
+			<h4 style="margin-bottom:0.5rem;">Failed Records (${errors.length})</h4>`;
+
+		for (const [table, rows] of Object.entries(byTable)) {
+			html += `<details style="margin-bottom:0.5rem;border:1px solid #f5c6cb;border-radius:4px;padding:0.5rem 0.75rem;background:#fff8f8;">
+				<summary style="cursor:pointer;font-weight:600;color:#c0392b;">${table} — ${rows.length} error(s)</summary>
+				<table style="width:100%;border-collapse:collapse;margin-top:0.5rem;font-size:0.85em;">
+					<thead><tr style="background:#f8d7da;">
+						<th style="text-align:left;padding:4px 6px;border-bottom:1px solid #f5c6cb;">Row</th>
+						<th style="text-align:left;padding:4px 6px;border-bottom:1px solid #f5c6cb;">Column</th>
+						<th style="text-align:left;padding:4px 6px;border-bottom:1px solid #f5c6cb;">Value</th>
+						<th style="text-align:left;padding:4px 6px;border-bottom:1px solid #f5c6cb;">Error</th>
+					</tr></thead>
+					<tbody>`;
+			for (const err of rows) {
+				const row = err.row != null ? err.row : '—';
+				const col = err.column || '—';
+				const val = err.value != null ? String(err.value) : '—';
+				const msg = err.message || '—';
+				html += `<tr>
+					<td style="padding:4px 6px;border-bottom:1px solid #fde">${row}</td>
+					<td style="padding:4px 6px;border-bottom:1px solid #fde">${col}</td>
+					<td style="padding:4px 6px;border-bottom:1px solid #fde;max-width:160px;word-break:break-all;">${val}</td>
+					<td style="padding:4px 6px;border-bottom:1px solid #fde;max-width:300px;word-break:break-word;">${msg}</td>
+				</tr>`;
+			}
+			html += `</tbody></table></details>`;
+		}
+
+		html += '</div>';
+		container.innerHTML = html;
 	}
 
 	/**

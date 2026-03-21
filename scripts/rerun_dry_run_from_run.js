@@ -58,7 +58,7 @@ function normalizePlanSteps(plan) {
 
 (async () => {
 	const targetRunId = process.argv[2] || '186';
-	const pool = await mysql.connectToSchema(state.mysql, 'pwa_service');
+	const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 	try {
 		await mysql.ensureMigrationTables(pool);
 		const runData = await runStore.getRun(pool, targetRunId);
@@ -115,7 +115,7 @@ function normalizePlanSteps(plan) {
 
 		console.log('Starting dry-run for run', targetRunId);
 		const { startMigration } = runner;
-		const result = await startMigration({ firebirdConfig: state.firebird, mysqlConfig: state.mysql, schemaName: 'pwa_service', plan: normalizedPlan, mapping: normalizedMapping, dryRun: true, batchSize: 1000, fkChecks: true });
+		const result = await startMigration({ firebirdConfig: state.firebird, mysqlConfig: state.mysql, schemaName: state.schemaName, plan: normalizedPlan, mapping: normalizedMapping, dryRun: true, batchSize: 1000, fkChecks: true });
 		console.log('Dry-run started, new run id:', result.runId);
 		await pool.end();
 	} catch (e) { console.error('Error', e.message); await pool.end(); process.exit(1); }

@@ -30,6 +30,22 @@
 </section>
 
 <section class="card">
+	<h3>Convert Transactional Account Numbers</h3>
+	<p class="hint">
+		After migrating all transactional tables and running <strong>Rebuild GL Accounts</strong>, run this to
+		convert legacy Firebird <code>accnr</code> values to the new 4-digit GL account numbers across all
+		affected tables and fields (<code>acc</code>, <code>accnr</code>, <code>accasset</code>, <code>siid</code>).
+	</p>
+	<p class="hint warning">
+		This runs automatically in <strong>Step 5</strong> of the migration wizard. Use this button only to
+		re-run manually if needed. Running it again is safe (idempotent).
+	</p>
+	<div class="actions">
+		<button id="btn-convert-transactional-accnr" class="btn secondary" type="button">Convert Transactional Acc Numbers</button>
+	</div>
+</section>
+
+<section class="card">
 	<h3>Result</h3>
 	<pre id="gl-tools-result">No action run yet.</pre>
 </section>

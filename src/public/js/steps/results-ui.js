@@ -317,7 +317,7 @@ class ResultsUI {
 	 * Render results viewer UI
 	 */
 	render() {
-		const container = document.getElementById('results-modal-content') || document.getElementById('results-content');
+		const container = document.getElementById('results-content');
 		if (!container) return;
 
 		ResultsRenderer.render(container, { run: this.run, summary: this.summary, errors: this.errors }, {
@@ -325,10 +325,6 @@ class ResultsUI {
 			onViewLogs: () => this.viewLogs(),
 			onStartNew: () => this.startNewMigration()
 		});
-
-		if (document.getElementById('results-modal')) {
-			ResultsModal.open();
-		}
 
 		// Populate profile and plan meta in the modal header
 		(async () => {
@@ -496,23 +492,21 @@ class ResultsUI {
 	 * Start new migration
 	 */
 	startNewMigration() {
-		(async () => {
-			// Clear our own stale data so re-entering Step 5 doesn't show old results
-			this.run = null;
-			this.summary = null;
-			this.errors = null;
+		// Clear our own stale data so re-entering this step doesn't show old results
+		this.run = null;
+		this.summary = null;
+		this.errors = null;
 
-			// Also clear the RunUI instance state so Step 4 shows pre-execution
-			const runComponent = this.wizard.steps[3]?.component;
-			if (runComponent) {
-				runComponent.stopPolling();
-				runComponent.run = null;
-				runComponent._lastLogTs = null;
-				runComponent.startTime = null;
-			}
+		// Also clear the RunUI instance state so Step 4 shows pre-execution
+		const runComponent = this.wizard.steps[3]?.component;
+		if (runComponent) {
+			runComponent.stopPolling();
+			runComponent.run = null;
+			runComponent._lastLogTs = null;
+			runComponent.startTime = null;
+		}
 
-			this.wizard.reset();
-		})();
+		this.wizard.reset();
 	}
 
 	/**
