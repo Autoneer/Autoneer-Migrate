@@ -14,7 +14,9 @@ class Plan {
 	constructor(mappingProfileId, mappingProfileName, tableConfigs = {}, createdAt = null) {
 		this.mappingProfileId = mappingProfileId;
 		this.mappingProfileName = mappingProfileName;
+		this.name = '';
 		this.tables = tableConfigs; // Per-table migration config
+		this.config = {};
 		this.createdAt = createdAt || new Date();
 		this.isValidated = false;
 		this.validationErrors = [];
@@ -32,7 +34,7 @@ class Plan {
 			keyStrategy: config.keyStrategy || 'preserve',  // preserve, rekey
 			dedupeKeys: config.dedupeKeys || [],
 			onDuplicate: config.onDuplicate || 'SKIP',  // SKIP, ERROR, UPDATE
-			cleanBefore: config.cleanBefore || true,
+			cleanBefore: typeof config.cleanBefore === 'boolean' ? config.cleanBefore : false,
 			batchSize: config.batchSize || 500
 		};
 	}
@@ -146,8 +148,10 @@ class Plan {
 		return {
 			mappingProfileId: this.mappingProfileId,
 			mappingProfileName: this.mappingProfileName,
+			name: this.name,
 			createdAt: this.createdAt.toISOString(),
 			tables: this.tables,
+			config: this.config,
 			isValidated: this.isValidated,
 			validationErrors: this.validationErrors,
 			validationWarnings: this.validationWarnings
@@ -164,8 +168,10 @@ class Plan {
 			obj.mappingProfileId || obj.mappingId,
 			obj.mappingProfileName || obj.mappingName,
 			obj.tables,
-			new Date(obj.createdAt)
+			obj.createdAt ? new Date(obj.createdAt) : null
 		);
+		plan.name = obj.name || '';
+		plan.config = obj.config || {};
 		plan.isValidated = obj.isValidated || false;
 		plan.validationErrors = obj.validationErrors || [];
 		plan.validationWarnings = obj.validationWarnings || [];
@@ -180,6 +186,16 @@ class Plan {
 	 */
 	static fromMapping(mapping, defaultConfig = {}) {
 		const plan = new Plan(mapping.id, mapping.name);
+		plan.name = mapping.name || mapping.mappingName || '';
+		plan.config = {
+			batchSize: defaultConfig.batchSize || 500,
+			continueOnError: defaultConfig.continueOnError || false,
+			validateData: defaultConfig.validateData !== false,
+			transactionalDateFilter: {
+				enabled: false,
+				startDate: null
+			}
+		};
 
 		// Only include mapping entries that have a defined target table or mapped columns
 		const tables = mapping.tables || {};

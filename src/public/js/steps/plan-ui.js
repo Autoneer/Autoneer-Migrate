@@ -15,6 +15,19 @@ class PlanUI {
 		this.accountingOrderAdjusted = false;
 	}
 
+	getDefaultPlanConfig(config = {}) {
+		return {
+			batchSize: 1000,
+			continueOnError: false,
+			validateData: true,
+			transactionalDateFilter: {
+				enabled: config?.transactionalDateFilter?.enabled === true,
+				startDate: config?.transactionalDateFilter?.startDate || ''
+			},
+			...config
+		};
+	}
+
 	applyAccountingOrder() {
 		if (!Array.isArray(this.plan?.tables) || !window.AccountingOrderUtils) return false;
 		const reordered = window.AccountingOrderUtils.reorderPlanTables(this.plan.tables);
@@ -63,16 +76,7 @@ class PlanUI {
 
 		this.plan = planFromState;
 
-		const DEFAULT_PLAN_CONFIG = {
-			batchSize: 1000,
-			continueOnError: false,
-			validateData: true
-		};
-
-		this.plan.config = {
-			...DEFAULT_PLAN_CONFIG,
-			...(this.plan.config || {})
-		};
+		this.plan.config = this.getDefaultPlanConfig(this.plan.config || {});
 
 		if (!Array.isArray(this.plan.tables)) {
 			this.plan.tables = [];
@@ -125,17 +129,8 @@ class PlanUI {
 		const container = document.getElementById('plan-content');
 		if (!container) return;
 
-		const DEFAULT_PLAN_CONFIG = {
-			batchSize: 1000,
-			continueOnError: false,
-			validateData: true
-		};
-
 		const planName = this.plan?.name || '';
-		const config = {
-			...DEFAULT_PLAN_CONFIG,
-			...(this.plan?.config || {})
-		};
+		const config = this.getDefaultPlanConfig(this.plan?.config || {});
 		const tables = Array.isArray(this.plan?.tables) ? this.plan.tables : [];
 
 		const mappingProfileName = this.mapping?.name || 'Not set';
@@ -194,6 +189,28 @@ class PlanUI {
 							<small style="margin-top:0.4rem;">Validate data types and constraints</small>
 						</div>
 					</div> 
+
+						<div class="form-row" style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;">
+							<div class="form-group" style="flex:1;min-width:220px;display:flex;flex-direction:column;">
+								<label style="display:inline-flex;align-items:center;">
+									<input type="checkbox" id="transactional-date-filter-enabled"
+										${config.transactionalDateFilter?.enabled ? 'checked' : ''} style="margin-right:0.5rem;">
+									Only Migrate Transactional Data After Date
+								</label>
+								<small style="margin-top:0.4rem;">Filters only transactional tables such as jobs, invoices, and payments. Master data like customers, stock, and accounts is not filtered.</small>
+							</div>
+
+							<div class="form-group" style="flex:1;min-width:220px;display:flex;flex-direction:column;">
+								<div style="display:flex;align-items:center;gap:0.5rem;">
+									<label for="transactional-date-filter-start" style="margin:0;white-space:nowrap;">Start Date:</label>
+									<input type="date" id="transactional-date-filter-start" class="form-control"
+										value="${config.transactionalDateFilter?.startDate || ''}"
+										${config.transactionalDateFilter?.enabled ? '' : 'disabled'}
+										style="flex:1;min-width:160px;">
+								</div>
+								<small style="margin-top:0.4rem;">When enabled, only transactional records on or after this date are imported.</small>
+							</div>
+						</div>
         </div>
         
         <!-- Table Selection and Order -->
@@ -298,13 +315,7 @@ class PlanUI {
 	 * Attach event listeners
 	 */
 	attachEventListeners() {
-		if (!this.plan.config) {
-			this.plan.config = {
-				batchSize: 1000,
-				continueOnError: false,
-				validateData: true
-			};
-		}
+		this.plan.config = this.getDefaultPlanConfig(this.plan.config || {});
 
 		// Plan name
 		const planName = document.getElementById('plan-name');
@@ -341,6 +352,34 @@ class PlanUI {
 			validateData.addEventListener('change', (e) => {
 				this.plan.config.validateData = e.target.checked;
 				this.state.set('plan.config.validateData', e.target.checked);
+			});
+		}
+
+		const transactionalFilterEnabled = document.getElementById('transactional-date-filter-enabled');
+		const transactionalFilterStart = document.getElementById('transactional-date-filter-start');
+		if (transactionalFilterEnabled && transactionalFilterStart) {
+			transactionalFilterEnabled.addEventListener('change', (e) => {
+				const enabled = e.target.checked;
+				transactionalFilterStart.disabled = !enabled;
+				if (!this.plan.config.transactionalDateFilter) {
+					this.plan.config.transactionalDateFilter = { enabled: false, startDate: '' };
+				}
+				this.plan.config.transactionalDateFilter.enabled = enabled;
+				if (!enabled) {
+					this.plan.config.transactionalDateFilter.startDate = '';
+					transactionalFilterStart.value = '';
+				}
+				this.state.set('plan.config.transactionalDateFilter', this.plan.config.transactionalDateFilter);
+				this.updateValidation();
+			});
+
+			transactionalFilterStart.addEventListener('change', (e) => {
+				if (!this.plan.config.transactionalDateFilter) {
+					this.plan.config.transactionalDateFilter = { enabled: true, startDate: '' };
+				}
+				this.plan.config.transactionalDateFilter.startDate = e.target.value;
+				this.state.set('plan.config.transactionalDateFilter', this.plan.config.transactionalDateFilter);
+				this.updateValidation();
 			});
 		}
 	}
@@ -771,6 +810,13 @@ class PlanUI {
 			if (window.AccountingOrderUtils.requiresGlRebuild(tables)) {
 				warnings.push("GL journal tables need rebuilt GL accounts in the database. Migrate accounts, run 'Rebuild GL Accounts', then start the GL journal migration.");
 			}
+		}
+
+		const transactionalDateFilter = this.plan?.config?.transactionalDateFilter || {};
+		if (transactionalDateFilter.enabled && !transactionalDateFilter.startDate) {
+			errors.push('Select a start date when the transactional data filter is enabled');
+		} else if (transactionalDateFilter.enabled && transactionalDateFilter.startDate) {
+			warnings.push(`Transactional tables will be filtered to rows on or after ${transactionalDateFilter.startDate}. Master data remains unfiltered.`);
 		}
 
 		if (errors.length > 0) {

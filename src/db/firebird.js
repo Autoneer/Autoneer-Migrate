@@ -213,6 +213,14 @@ async function fetchBatchWithDb(db, tableName, columns, offset, limit, orderBy) 
 	return queryWithDb(db, sql);
 }
 
+async function fetchBatchWithDbWhere(db, tableName, columns, offset, limit, orderBy, whereClause = '', params = []) {
+	const cols = columns && columns.length ? columns.map(quoteIdentifier).join(', ') : '*';
+	const where = whereClause ? ` where ${whereClause}` : '';
+	const order = orderBy ? ` order by ${quoteIdentifier(orderBy)}` : '';
+	const sql = `select first ${limit} skip ${offset} ${cols} from ${quoteIdentifier(tableName)}${where}${order}`;
+	return queryWithDb(db, sql, params);
+}
+
 async function listTables(config) {
 	const sql = `
     select trim(rdb$relation_name) as name
@@ -241,6 +249,13 @@ async function countRows(config, tableName) {
 	return rows?.[0]?.cnt || 0;
 }
 
+async function countRowsWhere(config, tableName, whereClause = '', params = []) {
+	const where = whereClause ? ` where ${whereClause}` : '';
+	const sql = `select count(*) as cnt from ${quoteIdentifier(tableName)}${where}`;
+	const rows = await query(config, sql, params);
+	return rows?.[0]?.cnt || 0;
+}
+
 async function fetchBatch(config, tableName, columns, offset, limit, orderBy) {
 	const cols = columns.length ? columns.map(quoteIdentifier).join(", ") : "*";
 	const order = orderBy ? ` order by ${quoteIdentifier(orderBy)}` : "";
@@ -248,9 +263,24 @@ async function fetchBatch(config, tableName, columns, offset, limit, orderBy) {
 	return query(config, sql);
 }
 
+async function fetchBatchWhere(config, tableName, columns, offset, limit, orderBy, whereClause = '', params = []) {
+	const cols = columns.length ? columns.map(quoteIdentifier).join(", ") : "*";
+	const where = whereClause ? ` where ${whereClause}` : "";
+	const order = orderBy ? ` order by ${quoteIdentifier(orderBy)}` : "";
+	const sql = `select first ${limit} skip ${offset} ${cols} from ${quoteIdentifier(tableName)}${where}${order}`;
+	return query(config, sql, params);
+}
+
 async function countRowsWithDb(db, tableName) {
 	const sql = `select count(*) as cnt from ${quoteIdentifier(tableName)}`;
 	const rows = await queryWithDb(db, sql);
+	return rows?.[0]?.cnt || 0;
+}
+
+async function countRowsWithDbWhere(db, tableName, whereClause = '', params = []) {
+	const where = whereClause ? ` where ${whereClause}` : '';
+	const sql = `select count(*) as cnt from ${quoteIdentifier(tableName)}${where}`;
+	const rows = await queryWithDb(db, sql, params);
 	return rows?.[0]?.cnt || 0;
 }
 
@@ -268,7 +298,11 @@ module.exports = {
 	listTablesWithDb,
 	listColumnsWithDb,
 	countRows,
+	countRowsWhere,
 	countRowsWithDb,
+	countRowsWithDbWhere,
 	fetchBatch,
-	fetchBatchWithDb
+	fetchBatchWhere,
+	fetchBatchWithDb,
+	fetchBatchWithDbWhere
 };

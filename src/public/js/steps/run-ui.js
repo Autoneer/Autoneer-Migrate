@@ -156,6 +156,7 @@ class RunUI {
 			batchSize: 1000,
 			continueOnError: false,
 			validateData: true,
+			transactionalDateFilter: { enabled: false, startDate: '' },
 			...(this.plan?.config || {})
 		};
 		const planName = this.plan?.name || 'Migration Plan';
@@ -188,6 +189,7 @@ class RunUI {
 						<li><strong>Batch Size:</strong> ${config.batchSize} rows</li>
 						<li><strong>Continue on Error:</strong> ${config.continueOnError ? 'Yes' : 'No'}</li>
 				<li><strong>Clean target before migrate:</strong> ${(() => { const anyClean = Object.values(this.plan.tableConfigs || {}).some(c => c && c.cleanBefore === true); return anyClean ? 'Yes' : 'No'; })()}</li>
+						<li><strong>Transactional Date Filter:</strong> ${config.transactionalDateFilter?.enabled && config.transactionalDateFilter?.startDate ? `On or after ${config.transactionalDateFilter.startDate}` : 'Off'}</li>
           </ul>
         </div>
 

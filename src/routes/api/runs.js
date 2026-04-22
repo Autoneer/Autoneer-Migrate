@@ -329,6 +329,7 @@ router.post("/runs", async (req, res) => {
 			mysqlConfig: state.mysql,
 			schemaName: state.schemaName,
 			plan: normalizedPlan,
+			planConfig: planJson.config || {},
 			mapping: normalizedMapping,
 			dryRun: dryRun,
 			batchSize: planJson.config?.batchSize || 1000,

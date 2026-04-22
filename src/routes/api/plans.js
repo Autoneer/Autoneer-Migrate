@@ -11,6 +11,7 @@ const { Plan, Mapping, Schema } = require("../../migrate/models");
 const { PlanValidator } = require("../../migrate/validators");
 const runStore = require("../../migrate/runStore");
 const { normalizePlanTables, needsNormalization, resolveTargetTableName } = require("../../migrate/utils/tableNameCanonical");
+const { buildTransactionalDateFilter, normalizeTransactionalDateFilterConfig } = require("../../migrate/transactionalDateFilter");
 
 const router = express.Router();
 
@@ -290,7 +291,8 @@ router.post("/plans", async (req, res) => {
 				mappingProfileId: resolvedMappingProfileId,
 				name: plan.name,
 				createdAt: new Date(),
-				tables: plan.toJSON().tables
+				tables: plan.toJSON().tables,
+				config: plan.toJSON().config || null
 			}
 		});
 	} catch (err) {
@@ -408,7 +410,7 @@ router.get("/plans/:id", async (req, res) => {
 router.put("/plans/:id", async (req, res) => {
 	try {
 		const { id } = req.params;
-		const { name, tables } = req.body;
+		const { name, tables, config } = req.body;
 
 		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		await mysql.ensureMigrationTables(pool);
@@ -433,6 +435,7 @@ router.put("/plans/:id", async (req, res) => {
 		const rawPlanJson = planRow[planJsonColumn] || '{}';
 		const planData = safeParseJson(rawPlanJson);
 		const plan = Plan.fromJSON(planData);
+		const transactionFilter = normalizeTransactionalDateFilterConfig(plan.config || {});
 
 		// Load mapping for normalization
 		const { mappingProfileId } = await resolvePlanMappingProfileId(pool, planRow, meta);
@@ -447,6 +450,17 @@ router.put("/plans/:id", async (req, res) => {
 		// Update name if provided
 		if (name) {
 			plan.name = name;
+		}
+
+		if (config) {
+			plan.config = {
+				...(plan.config || {}),
+				...config,
+				transactionalDateFilter: {
+					enabled: config?.transactionalDateFilter?.enabled === true,
+					startDate: config?.transactionalDateFilter?.startDate || null
+				}
+			};
 		}
 
 		// Update table configurations if provided with normalization
@@ -512,7 +526,8 @@ router.put("/plans/:id", async (req, res) => {
 			plan: {
 				id: id,
 				name: plan.name,
-				isValidated: hasIsValidated ? false : false
+				isValidated: hasIsValidated ? false : false,
+				config: plan.toJSON().config || null
 			}
 		});
 	} catch (err) {
@@ -787,11 +802,21 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 			}
 
 			const columns = Array.from(fieldMaps.keys());
+			const dateFilter = buildTransactionalDateFilter(targetTable, Object.fromEntries(fieldMaps), plan.config || {});
+			if (transactionFilter.enabled && dateFilter?.enabled && !dateFilter.sourceColumn) {
+				return {
+					success: false,
+					sampleRow: null,
+					transformedRow: null,
+					errors: [`Transactional date filter is enabled, but ${targetTable} has no mapped source date column.`],
+					warnings: []
+				};
+			}
 			let sampleRow = null;
 			try {
 				const rows = fbDb
-					? await firebird.fetchBatchWithDb(fbDb, sourceTable, columns, 0, 1)
-					: await firebird.fetchBatch(resolvedFirebirdConfig, sourceTable, columns, 0, 1);
+					? await firebird.fetchBatchWithDbWhere(fbDb, sourceTable, columns, 0, 1, columns[0], dateFilter?.clause || '', dateFilter?.params || [])
+					: await firebird.fetchBatchWhere(resolvedFirebirdConfig, sourceTable, columns, 0, 1, columns[0], dateFilter?.clause || '', dateFilter?.params || []);
 				sampleRow = rows?.[0] || null;
 			} catch (err) {
 				return {
@@ -809,7 +834,7 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 					sampleRow: null,
 					transformedRow: null,
 					errors: [],
-					warnings: [`No rows found in source table ${sourceTable}`]
+					warnings: [`No rows found in source table ${sourceTable}${dateFilter?.clause ? ` on or after ${dateFilter.startDate}` : ''}`]
 				};
 			}
 
@@ -885,7 +910,14 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 					try {
 						const sourceTable = mapping.getSourceTable(table);
 						if (sourceTable) {
-							estimatedRows = await firebird.countRowsWithDb(fbDb, sourceTable);
+							const fieldMaps = mapping.getFieldMaps(sourceTable);
+							const dateFilter = buildTransactionalDateFilter(table, Object.fromEntries(fieldMaps || []), plan.config || {});
+							if (transactionFilter.enabled && dateFilter?.enabled && !dateFilter.sourceColumn) {
+								throw new Error(`Transactional date filter is enabled, but ${table} has no mapped source date column.`);
+							}
+							estimatedRows = dateFilter?.clause
+								? await firebird.countRowsWithDbWhere(fbDb, sourceTable, dateFilter.clause, dateFilter.params)
+								: await firebird.countRowsWithDb(fbDb, sourceTable);
 						}
 					} catch (countErr) {
 						console.warn(`[Dry Run] Failed to count rows for ${table}:`, countErr.message);

@@ -18,6 +18,10 @@ const {
 	reorderAccountingPlanSteps,
 	validateGLExecutionPrereqs
 } = require("./gl/glMigrationOrder");
+const {
+	buildTransactionalDateFilter,
+	normalizeTransactionalDateFilterConfig
+} = require("./transactionalDateFilter");
 
 const runEmitters = new Map();
 const runStates = new Map();
@@ -883,6 +887,7 @@ async function runMigrationInternal({
 	mysqlConfig,
 	schemaName,
 	plan,
+	planConfig,
 	mapping,
 	dryRun,
 	batchSize,
@@ -910,6 +915,7 @@ async function runMigrationInternal({
 		rows_total_error: 0,
 		rows_total_skipped_duplicates: 0
 	};
+	const transactionalDateFilter = normalizeTransactionalDateFilterConfig(planConfig || {});
 
 	const maskConfig = (config) => {
 		if (!config) return {};
@@ -1269,7 +1275,7 @@ async function runMigrationInternal({
 		logRun({ level: 'info', phase: 'table_loop', action: 'normalized_tables', sampleTables: includedSteps.slice(0, 5).map(s => s.table) });
 
 		// Extract continueOnError from plan config
-		const continueOnError = plan && Array.isArray(plan) ? false : (plan?.config?.continueOnError || false);
+		const continueOnError = planConfig?.continueOnError === true;
 		let tableErrors = [];
 
 		for (const step of includedSteps) {
@@ -1326,6 +1332,7 @@ async function runMigrationInternal({
 			const mappedSource = mappingEntry.sourceTable;
 			const sourceTable = resolveFirebirdSourceTable(mappedSource, firebirdTableMap);
 			const columnsMap = mappingEntry.columns;
+			const dateFilter = buildTransactionalDateFilter(tableName, columnsMap, planConfig || {});
 			// Filter out omitted columns from validation
 			const firebirdColumns = Object.keys(columnsMap || {}).filter(srcCol => {
 				const colConfig = columnsMap[srcCol];
@@ -1360,6 +1367,18 @@ async function runMigrationInternal({
 				}
 				await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
 				await failRun(errorMessage, "Check that the Firebird schema contains this table and the mapping is correct.", "precheck");
+				if (!continueOnError) break;
+				continue;
+			}
+
+			if (transactionalDateFilter.enabled && dateFilter?.enabled && !dateFilter.sourceColumn) {
+				const errorMessage = `Transactional date filter is enabled, but ${tableName} has no mapped source date column.`;
+				if (!tableRun) {
+					const newId = await runStore.startTableRun(pool, runId, tableName, step.mode, step.keyStrategy);
+					tableRunId = newId;
+				}
+				await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
+				await failRun(errorMessage, "Add the table's date field to the mapping or disable the transactional date filter.", "precheck");
 				if (!continueOnError) break;
 				continue;
 			}
@@ -1575,10 +1594,19 @@ async function runMigrationInternal({
 				const tableStart = Date.now();
 				logRun({ level: "info", phase: "table_start", tableName, tableRunId, mode: step.mode, keyStrategy: step.keyStrategy, dedupeKeys });
 
-				const totalSource = await firebird.countRows(firebirdConfig, sourceTable);
+				const totalSource = dateFilter?.clause
+					? await firebird.countRowsWhere(firebirdConfig, sourceTable, dateFilter.clause, dateFilter.params)
+					: await firebird.countRows(firebirdConfig, sourceTable);
 				await runStore.updateTableProgress(pool, runId, tableName, { rows_source: totalSource });
 				tableState.total = totalSource;
-				logRun({ level: "info", phase: "fetch", tableName, tableRunId, sourceRows: totalSource });
+				logRun({
+					level: "info",
+					phase: "fetch",
+					tableName,
+					tableRunId,
+					sourceRows: totalSource,
+					dateFilter: dateFilter?.clause ? { startDate: dateFilter.startDate, sourceColumn: dateFilter.sourceColumn } : null
+				});
 				emitRunState(runId, emitter);
 
 				const ignoreDuplicatesForInsert = onDuplicate !== "ERROR";
@@ -1624,14 +1652,25 @@ async function runMigrationInternal({
 						? Math.min(Math.max(Number(step.batchSize), 1), 10000)
 						: batchSize;
 					checkAbort(runId);
-					const batch = await firebird.fetchBatch(
-						firebirdConfig,
-						sourceTable,
-						firebirdColumns,
-						offset,
-						effectiveBatch,
-						firebirdColumns[0]
-					);
+					const batch = dateFilter?.clause
+						? await firebird.fetchBatchWhere(
+							firebirdConfig,
+							sourceTable,
+							firebirdColumns,
+							offset,
+							effectiveBatch,
+							firebirdColumns[0],
+							dateFilter.clause,
+							dateFilter.params
+						)
+						: await firebird.fetchBatch(
+							firebirdConfig,
+							sourceTable,
+							firebirdColumns,
+							offset,
+							effectiveBatch,
+							firebirdColumns[0]
+						);
 
 					if (!batch.length) break;
 
@@ -2424,6 +2463,7 @@ async function startMigration({
 	mysqlConfig,
 	schemaName,
 	plan,
+	planConfig,
 	mapping,
 	dryRun,
 	batchSize,
@@ -2476,6 +2516,7 @@ async function startMigration({
 				mysqlConfig,
 				schemaName,
 				plan,
+				planConfig,
 				mapping,
 				dryRun,
 				batchSize,
