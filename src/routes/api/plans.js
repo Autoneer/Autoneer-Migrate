@@ -611,6 +611,7 @@ router.post("/plans/:id/validate", async (req, res) => {
 		const rawPlanJson = planRow[planJsonColumn] || '{}';
 		const planData = safeParseJson(rawPlanJson);
 		const plan = Plan.fromJSON(planData);
+		const transactionFilter = normalizeTransactionalDateFilterConfig(plan.config || {});
 
 		// Load mapping profile
 		const { mappingProfileId } = await resolvePlanMappingProfileId(pool, planRow, meta);
