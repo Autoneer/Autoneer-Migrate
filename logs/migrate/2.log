@@ -1,0 +1,35 @@
+{"timestamp":"2026-04-21T09:36:21.097Z","runId":2,"level":"info","phase":"run_start","dryRun":false,"batchSize":1000,"fkChecks":true,"tables":[{"table":"ACCOUNTS","mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","cleanBefore":true}]}
+{"timestamp":"2026-04-21T09:36:21.097Z","runId":2,"level":"info","phase":"preflight","action":"firebird_config_check","host":"localhost","port":3050,"database":"C:\\Autoneer\\data\\AUTONEER.FDB","user":"SYSDBA","passwordSet":true,"passwordLength":9,"passwordSource":"state","useDefaultSysdbaMasterkey":true,"rawPasswordSet":true,"rawPasswordLength":9}
+{"timestamp":"2026-04-21T09:36:21.218Z","runId":2,"level":"info","phase":"preflight","attempt":1,"status":"ok"}
+{"timestamp":"2026-04-21T09:36:21.218Z","runId":2,"level":"debug","phase":"preflight","durationMs":121}
+{"timestamp":"2026-04-21T09:36:21.218Z","runId":2,"level":"info","phase":"preflight","action":"nullability_validation","status":"start"}
+{"timestamp":"2026-04-21T09:36:21.221Z","runId":2,"level":"info","phase":"preflight","action":"nullability_validation","status":"passed"}
+{"timestamp":"2026-04-21T09:36:21.222Z","runId":2,"level":"info","phase":"preflight","action":"gl_account_types_seed","status":"start"}
+{"timestamp":"2026-04-21T09:36:21.228Z","runId":2,"level":"info","phase":"preflight","action":"gl_account_types_seed","status":"passed"}
+{"timestamp":"2026-04-21T09:36:22.332Z","runId":2,"level":"info","phase":"preflight","action":"accnr_conversion_map","source":"firebird","sourceTable":"ACCOUNTS","count":96}
+{"timestamp":"2026-04-21T09:36:22.333Z","runId":2,"level":"debug","phase":"table_loop","action":"starting","includedCount":1,"mappingTableCount":1}
+{"timestamp":"2026-04-21T09:36:22.333Z","runId":2,"level":"info","phase":"table_loop","action":"normalized_tables","sampleTables":["ACCOUNTS"]}
+{"timestamp":"2026-04-21T09:36:22.333Z","runId":2,"level":"debug","phase":"table_loop","action":"processing","tableName":"accounts","mappingTableKeys":["ACCOUNTS"]}
+{"timestamp":"2026-04-21T09:36:22.333Z","runId":2,"level":"debug","phase":"table_loop","action":"mapping_resolved","tableName":"accounts","hasMappingEntry":true,"mappingTarget":"ACCOUNTS"}
+{"timestamp":"2026-04-21T09:36:22.333Z","runId":2,"level":"debug","phase":"mapping_debug","tableName":"accounts","mappedSource":"ACCOUNTS","firebirdTableCount":187,"sampleFirebirdTables":["ACCCLASS","ACCDEPARTMENT","ACCOUNTLINKS","ACCOUNTS","ACCOUNT_OPENING"]}
+{"timestamp":"2026-04-21T09:36:22.439Z","runId":2,"level":"debug","phase":"clean_decision","tableName":"accounts","cleanBefore":true,"dryRun":false,"mode":"INSERT"}
+{"timestamp":"2026-04-21T09:36:22.439Z","runId":2,"type":"table_cleaning_started","table":"accounts","tableRunId":22}
+{"timestamp":"2026-04-21T09:36:22.440Z","runId":2,"level":"info","phase":"clean","tableName":"accounts","tableRunId":22,"status":"start"}
+{"timestamp":"2026-04-21T09:36:22.443Z","runId":2,"level":"debug","phase":"clean","tableName":"accounts","tableRunId":22,"action":"fk_checks_disabled"}
+{"timestamp":"2026-04-21T09:36:22.479Z","runId":2,"level":"info","phase":"clean","tableName":"accounts","tableRunId":22,"status":"success","method":"TRUNCATE","affectedRows":null,"postCount":0,"durationMs":39}
+{"timestamp":"2026-04-21T09:36:22.492Z","runId":2,"type":"table_cleaned","table":"accounts","tableRunId":22,"method":"TRUNCATE","affectedRows":null,"postCount":0}
+{"timestamp":"2026-04-21T09:36:22.494Z","runId":2,"level":"debug","phase":"clean","tableName":"accounts","tableRunId":22,"action":"fk_checks_restored"}
+{"timestamp":"2026-04-21T09:36:22.494Z","runId":2,"level":"info","phase":"table_start","tableName":"accounts","tableRunId":22,"mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[]}
+{"timestamp":"2026-04-21T09:36:22.604Z","runId":2,"level":"info","phase":"fetch","tableName":"accounts","tableRunId":22,"sourceRows":120}
+{"timestamp":"2026-04-21T09:36:22.712Z","runId":2,"level":"debug","phase":"write","tableName":"accounts","tableRunId":22,"status":"start","batchSize":120}
+{"timestamp":"2026-04-21T09:36:22.725Z","runId":2,"level":"debug","phase":"write","tableName":"accounts","tableRunId":22,"status":"end","inserted":94,"updated":0,"skipped":26,"durationMs":13}
+{"timestamp":"2026-04-21T09:36:22.740Z","runId":2,"level":"info","phase":"table_finalize","tableName":"accounts","tableRunId":22,"status":"success","inserted":94,"updated":0,"skipped":26,"errors":0,"durationMs":239}
+{"timestamp":"2026-04-21T09:36:22.741Z","runId":2,"level":"info","phase":"post_migration_gl_validation","status":"start"}
+{"timestamp":"2026-04-21T09:36:22.772Z","runId":2,"level":"info","phase":"post_migration_gl_validation","check":"E","name":"GL Account Types Canonical","passed":true,"errorCount":0,"errors":[]}
+{"timestamp":"2026-04-21T09:36:22.773Z","runId":2,"level":"info","phase":"post_migration_gl_validation","check":"F","name":"All Accounts Typed","passed":true,"errorCount":0,"errors":[]}
+{"timestamp":"2026-04-21T09:36:22.773Z","runId":2,"level":"info","phase":"post_migration_gl_validation","check":"A","name":"Account Type Mismatches","passed":true,"errorCount":0,"errors":[]}
+{"timestamp":"2026-04-21T09:36:22.773Z","runId":2,"level":"info","phase":"post_migration_gl_validation","check":"B","name":"Posting Line Type Alignment","passed":true,"errorCount":0,"errors":[]}
+{"timestamp":"2026-04-21T09:36:22.773Z","runId":2,"level":"info","phase":"post_migration_gl_validation","check":"C","name":"Orphan / Invalid Postings","passed":true,"errorCount":0,"errors":[]}
+{"timestamp":"2026-04-21T09:36:22.773Z","runId":2,"level":"info","phase":"post_migration_gl_validation","check":"D","name":"COS Integrity","passed":true,"errorCount":0,"errors":[]}
+{"timestamp":"2026-04-21T09:36:22.773Z","runId":2,"level":"info","phase":"post_migration_gl_validation","status":"passed"}
+{"timestamp":"2026-04-21T09:36:22.781Z","runId":2,"level":"info","phase":"run_finalize","status":"success"}

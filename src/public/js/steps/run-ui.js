@@ -171,7 +171,7 @@ class RunUI {
 				: 'This plan includes GL journal posting tables. Rebuild GL accounts before starting the migration so postings use the converted account numbers.'}</p>
           <p><strong>Rebuild Status:</strong> ${glRebuildDone ? 'Ready for this plan' : 'Required before GL posting runs'}</p>
           <div class="execution-actions">
-            <button class="btn btn-secondary" onclick="window.wizard.steps[3].component.rebuildGLAccounts()">
+            <button class="btn btn-secondary" onclick="window.wizard.steps[3].component.rebuildGLAccounts(this)">
               ${glRebuildDone ? 'Rebuild GL Accounts Again' : 'Rebuild GL Accounts Now'}
             </button>
           </div>
@@ -266,6 +266,7 @@ class RunUI {
 	 */
 	renderCompleted() {
 		setTimeout(() => this._loadAndRenderRowErrors(), 0);
+		const glRebuildDone = this.isGLRebuildMarkedDone();
 		return `
 			<div class="run-completed">
 				<div style="display:flex;align-items:center;gap:0.5rem;" class="completed-header">
@@ -290,6 +291,9 @@ class RunUI {
         </div>
         
         <div class="completion-actions">
+          <button class="btn btn-secondary" onclick="window.wizard.steps[3].component.rebuildGLAccounts(this)">
+            ${glRebuildDone ? 'Rebuild GL Accounts Again' : 'Rebuild GL Accounts'}
+          </button>
           <button class="btn btn-primary" onclick="window.wizard.nextStep()">
             Convert Account Numbers →
           </button>
@@ -305,6 +309,7 @@ class RunUI {
 	 */
 	renderCompletedWithErrors() {
 		setTimeout(() => this._loadAndRenderRowErrors(), 0);
+		const glRebuildDone = this.isGLRebuildMarkedDone();
 		return `
 			<div class="run-completed-with-errors">
 				<div style="display:flex;align-items:center;gap:0.5rem;" class="completed-header">
@@ -338,6 +343,9 @@ class RunUI {
         </div>
         
         <div class="completion-actions">
+          <button class="btn btn-secondary" onclick="window.wizard.steps[3].component.rebuildGLAccounts(this)">
+            ${glRebuildDone ? 'Rebuild GL Accounts Again' : 'Rebuild GL Accounts'}
+          </button>
           <button class="btn btn-primary" onclick="window.wizard.nextStep()">
             Convert Account Numbers →
           </button>
@@ -480,15 +488,18 @@ class RunUI {
 		}
 	}
 
-	async rebuildGLAccounts() {
+	async rebuildGLAccounts(triggerButton = null) {
 		if (!window.RebuildGLTool || typeof window.RebuildGLTool.run !== 'function') {
 			this.wizard.showError('Rebuild GL Accounts tool is not available.');
 			return;
 		}
 
 		try {
-			await window.RebuildGLTool.run();
-			this.state.set('run.glRebuildPlanId', this.plan.id);
+			const result = await window.RebuildGLTool.run(triggerButton);
+			if (result?.cancelled) return;
+			if (this.plan?.id) {
+				this.state.set('run.glRebuildPlanId', this.plan.id);
+			}
 			this.render();
 		} catch (err) {
 			// dialog already shown by RebuildGLTool
