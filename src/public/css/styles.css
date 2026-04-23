@@ -493,8 +493,57 @@ pre {
 	border-left: 4px solid var(--danger);
 }
 
-.log-generic {
+.log-warning {
+	background: #fffbf0;
+	border-left: 4px solid #f59e0b;
+}
+
+.log-success {
+	background: linear-gradient(90deg, rgba(241, 255, 247, 1), rgba(255, 255, 255, 1));
+	border-left: 4px solid #10b981;
+}
+
+.log-preflight {
+	background: #f8faff;
+	border-left: 4px solid #6366f1;
+}
+
+.log-preflight-ok {
+	background: #f8faff;
+	border-left: 4px solid #a5b4fc;
+}
+
+.log-preflight-minor {
+	background: #fafafa;
+	border-left: 4px solid #e2e8f0;
+	font-size: 12px;
 	color: var(--muted);
+	padding: 5px 12px;
+}
+
+.log-preflight-minor .log-icon {
+	font-size: 10px;
+}
+
+.log-table-start {
+	background: #f0f9ff;
+	border-left: 4px solid #0ea5e9;
+	font-weight: 500;
+}
+
+.log-info {
+	color: var(--muted);
+}
+
+.log-entry .log-ts {
+	font-size: 11px;
+	color: var(--muted);
+	margin-right: 2px;
+	flex-shrink: 0;
+}
+
+.log-entry .log-text {
+	flex: 1;
 }
 
 /* Compact layout on narrow screens */

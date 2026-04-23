@@ -130,7 +130,10 @@ class PlanAPI {
 	 * @returns {Promise<Object>} Simulation results
 	 */
 	async dryRun(id, options = {}) {
-		const response = await this.client.post(`/plans/${id}/dry-run`, options);
+		const response = await this.client.post(`/plans/${id}/dry-run`, options, {
+			timeout: 300000,
+			maxRetries: 1
+		});
 		return response.results;
 	}
 

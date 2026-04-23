@@ -4706,6 +4706,18 @@
             "nullable": true,
             "defaultValue": null
           },
+          "GRNCURRENCY": {
+            "name": "GRNCURRENCY",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "GRNNUMBER": {
+            "name": "GRNNUMBER",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
           "ACCASSET": {
             "name": "ACCASSET",
             "type": "UNKNOWN",
@@ -4726,18 +4738,6 @@
           },
           "FREIGHT": {
             "name": "FREIGHT",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "GRNCURRENCY": {
-            "name": "GRNCURRENCY",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "GRNNUMBER": {
-            "name": "GRNNUMBER",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -5210,24 +5210,6 @@
             "nullable": true,
             "defaultValue": null
           },
-          "STAFF_ID2": {
-            "name": "STAFF_ID2",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "STAFF_ID3": {
-            "name": "STAFF_ID3",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "TEMP_JOB_NO": {
-            "name": "TEMP_JOB_NO",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
           "INSPECTIONDONE": {
             "name": "INSPECTIONDONE",
             "type": "UNKNOWN",
@@ -5240,8 +5222,20 @@
             "nullable": true,
             "defaultValue": null
           },
-          "COMEBACK": {
-            "name": "COMEBACK",
+          "TEMP_JOB_NO": {
+            "name": "TEMP_JOB_NO",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "STAFF_ID2": {
+            "name": "STAFF_ID2",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "STAFF_ID3": {
+            "name": "STAFF_ID3",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -5258,14 +5252,20 @@
             "nullable": true,
             "defaultValue": null
           },
+          "ALERT_SERVICE_ADVISOR": {
+            "name": "ALERT_SERVICE_ADVISOR",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
           "LICENSEEXPIRE": {
             "name": "LICENSEEXPIRE",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
           },
-          "ALERT_SERVICE_ADVISOR": {
-            "name": "ALERT_SERVICE_ADVISOR",
+          "COMEBACK": {
+            "name": "COMEBACK",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -5415,12 +5415,6 @@
             "nullable": true,
             "defaultValue": null
           },
-          "TRANSNR": {
-            "name": "TRANSNR",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
           "FPERIOD": {
             "name": "FPERIOD",
             "type": "UNKNOWN",
@@ -5435,6 +5429,12 @@
           },
           "BATCH": {
             "name": "BATCH",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "TRANSNR": {
+            "name": "TRANSNR",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -6945,8 +6945,14 @@
             "nullable": true,
             "defaultValue": null
           },
-          "CONTROLCHECK": {
-            "name": "CONTROLCHECK",
+          "INVDATE": {
+            "name": "INVDATE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "TICKDATE": {
+            "name": "TICKDATE",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -7141,12 +7147,6 @@
             "nullable": true,
             "defaultValue": null
           },
-          "COMMENTS": {
-            "name": "COMMENTS",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
           "ONLINESTATUS": {
             "name": "ONLINESTATUS",
             "type": "UNKNOWN",
@@ -7161,6 +7161,12 @@
           },
           "ETATIME": {
             "name": "ETATIME",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "COMMENTS": {
+            "name": "COMMENTS",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -8852,12 +8858,6 @@
             "nullable": true,
             "defaultValue": null
           },
-          "VTYPE": {
-            "name": "VTYPE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
           "SERVICEDUEKM": {
             "name": "SERVICEDUEKM",
             "type": "UNKNOWN",
@@ -9680,14 +9680,14 @@
             "nullable": true,
             "defaultValue": null
           },
-          "SAGEID": {
-            "name": "SAGEID",
+          "WDID": {
+            "name": "WDID",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
           },
-          "WDID": {
-            "name": "WDID",
+          "SAGEID": {
+            "name": "SAGEID",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -10405,14 +10405,14 @@
             "nullable": true,
             "defaultValue": null
           },
-          "ACCASSET": {
-            "name": "ACCASSET",
+          "INGOREMARKUP": {
+            "name": "INGOREMARKUP",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
           },
-          "INGOREMARKUP": {
-            "name": "INGOREMARKUP",
+          "ACCASSET": {
+            "name": "ACCASSET",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -13752,7 +13752,7 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-04-22T09:36:13.130Z"
+    "lastUpdated": "2026-04-23T07:58:43.032Z"
   },
   "mysql": {
     "tables": {
@@ -32641,6 +32641,300 @@
         ],
         "uniqueIndexes": []
       },
+      "SUPPLIER_EXPENSE_INVOICE_LINES": {
+        "name": "SUPPLIER_EXPENSE_INVOICE_LINES",
+        "columns": {
+          "ID": {
+            "name": "ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "EXINVID": {
+            "name": "EXINVID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "SUPPID": {
+            "name": "SUPPID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "INVOICE_NR": {
+            "name": "INVOICE_NR",
+            "type": "VARCHAR",
+            "columnType": "varchar(100)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 100,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "LINE_NO": {
+            "name": "LINE_NO",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": "1",
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "DESCRIPTION": {
+            "name": "DESCRIPTION",
+            "type": "VARCHAR",
+            "columnType": "varchar(500)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 500,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "AMOUNT_EX_VAT": {
+            "name": "AMOUNT_EX_VAT",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": false,
+            "defaultValue": "0.00",
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "VAT": {
+            "name": "VAT",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": false,
+            "defaultValue": "0.00",
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "AMOUNT_INC_VAT": {
+            "name": "AMOUNT_INC_VAT",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": false,
+            "defaultValue": "0.00",
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "ACCNR": {
+            "name": "ACCNR",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "TIMESTAMP",
+            "columnType": "timestamp",
+            "nullable": true,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "SUPPLIER_EXPENSE_INVOICES": {
+        "name": "SUPPLIER_EXPENSE_INVOICES",
+        "columns": {
+          "EXINVID": {
+            "name": "EXINVID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "SUPPID": {
+            "name": "SUPPID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "INVOICE_NR": {
+            "name": "INVOICE_NR",
+            "type": "VARCHAR",
+            "columnType": "varchar(100)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 100,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "INV_DATE": {
+            "name": "INV_DATE",
+            "type": "DATE",
+            "columnType": "date",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "STATUS": {
+            "name": "STATUS",
+            "type": "ENUM",
+            "columnType": "enum('DRAFT','DONE')",
+            "nullable": false,
+            "defaultValue": "DONE",
+            "length": 5,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "AMOUNT": {
+            "name": "AMOUNT",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": false,
+            "defaultValue": "0.00",
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "VAT": {
+            "name": "VAT",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": false,
+            "defaultValue": "0.00",
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "PAID": {
+            "name": "PAID",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": false,
+            "defaultValue": "0.00",
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "COMMENTS": {
+            "name": "COMMENTS",
+            "type": "TEXT",
+            "columnType": "text",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 65535,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "POSTED_AT": {
+            "name": "POSTED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "TIMESTAMP",
+            "columnType": "timestamp",
+            "nullable": true,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "UPDATED_AT": {
+            "name": "UPDATED_AT",
+            "type": "TIMESTAMP",
+            "columnType": "timestamp",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "EXINVID"
+        ],
+        "uniqueIndexes": []
+      },
       "SUPPLIER_NOTES": {
         "name": "SUPPLIER_NOTES",
         "columns": {
@@ -34349,6 +34643,6 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-04-22T09:36:12.274Z"
+    "lastUpdated": "2026-04-23T07:58:43.375Z"
   }
 }

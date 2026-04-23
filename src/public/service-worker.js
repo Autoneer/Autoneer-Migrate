@@ -1,4 +1,4 @@
-const CACHE_NAME = "autoneer-migrator-shell-v1";
+const CACHE_NAME = "autoneer-migrator-shell-v2";
 const ASSETS = [
 	"/setup",
 	"/public/css/styles.css",

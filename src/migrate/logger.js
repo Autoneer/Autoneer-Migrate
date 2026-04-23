@@ -94,6 +94,22 @@ function formatProgressLine(event, state) {
 		if (event.status === "start") return `[Run ${runId}] Preflight: ${action}...`;
 		if (event.status === "passed" || event.status === "ok") return `[Run ${runId}] Preflight: ${action} passed.`;
 		if (event.status === "failed") return `[Run ${runId}] Preflight: ${action} failed (${event.error || "unknown error"}).`;
+		if (event.status === "done") {
+			const counts = event.keyCounts ? ` (${Object.entries(event.keyCounts).filter(([, v]) => v > 0).map(([k, v]) => `${k}: ${v}`).join(", ")})` : "";
+			return `[Run ${runId}] Preflight: ${action} done${counts}.`;
+		}
+		if (event.status === "collecting_seed_keys") return `[Run ${runId}] Preflight: ${action} — collecting seed keys (${event.tables || 0} tables)...`;
+		if (event.status === "seed_keys_collected") return `[Run ${runId}] Preflight: ${action} — ${event.table} seed done.`;
+		if (event.status === "link_traversal") {
+			const counts = event.keyCounts ? Object.values(event.keyCounts).reduce((a, b) => a + b, 0) : 0;
+			return `[Run ${runId}] Preflight: ${action} — link traversal pass ${event.iteration} (${counts} keys so far)...`;
+		}
+		if (event.status === "link_traversal_table") {
+			return `[Run ${runId}] Preflight: ${action} — pass ${event.iteration} querying ${event.table} (${event.plans} plan(s))...`;
+		}
+		if (event.status === "link_traversal_converged") {
+			return `[Run ${runId}] Preflight: ${action} — converged after pass ${event.iteration} (+${event.newKeys} keys, done).`;
+		}
 	}
 
 	if (event.type === "table_cleaning_started") {

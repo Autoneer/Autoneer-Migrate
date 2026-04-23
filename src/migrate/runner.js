@@ -19,8 +19,12 @@ const {
 	validateGLExecutionPrereqs
 } = require("./gl/glMigrationOrder");
 const {
-	buildTransactionalDateFilter,
-	normalizeTransactionalDateFilterConfig
+	buildTransactionalLinkContextWithDb,
+	buildTransactionalTableFilter,
+	collectMatchingKeyValuesWithDb,
+	FIREBIRD_IN_MEMBER_LIST_LIMIT,
+	normalizeTransactionalDateFilterConfig,
+	summarizeTransactionalContext
 } = require("./transactionalDateFilter");
 
 const runEmitters = new Map();
@@ -1153,6 +1157,48 @@ async function runMigrationInternal({
 		const firebirdTableMap = new Map(
 			firebirdTables.map((name) => [name.toLowerCase(), name])
 		);
+		let transactionalFilterContext = null;
+		if (transactionalDateFilter.enabled) {
+			logRun({ level: 'info', phase: 'preflight', action: 'transactional_filter_context', status: 'start', startDate: transactionalDateFilter.startDate });
+			const fbDb = await firebird.attachWithRetry(firebirdConfig);
+			try {
+				const tableConfigs = includedSteps.map((step) => {
+					const tableName = String(step?.table || '').toLowerCase();
+					const mappingEntry = resolveMappingForTarget(tableName, mapping);
+					const mappedSource = mappingEntry?.sourceTable;
+					const sourceTable = resolveFirebirdSourceTable(mappedSource, firebirdTableMap);
+					if (!mappingEntry || !sourceTable) return null;
+					return {
+						tableName,
+						sourceTable,
+						columnsMap: mappingEntry.columns
+					};
+				}).filter(Boolean);
+
+				transactionalFilterContext = await buildTransactionalLinkContextWithDb({
+					db: fbDb,
+					tableConfigs,
+					planConfig,
+					firebirdConfig,
+					onProgress: (phase, detail) => logRun({ level: 'info', phase: 'preflight', action: 'transactional_filter_context', status: phase, ...detail })
+				});
+
+				logRun({
+					level: 'info',
+					phase: 'preflight',
+					action: 'transactional_filter_context',
+					status: 'done',
+					startDate: transactionalDateFilter.startDate,
+					keyCounts: summarizeTransactionalContext(transactionalFilterContext)
+				});
+			} finally {
+				try {
+					fbDb.detach();
+				} catch (err) {
+					logRun({ level: 'warn', phase: 'preflight', action: 'transactional_filter_context_detach', error: err.message });
+				}
+			}
+		}
 		const accnrConversionMap = await loadAccnrConversionMap({
 			firebirdConfig,
 			firebirdTableMap,
@@ -1332,7 +1378,6 @@ async function runMigrationInternal({
 			const mappedSource = mappingEntry.sourceTable;
 			const sourceTable = resolveFirebirdSourceTable(mappedSource, firebirdTableMap);
 			const columnsMap = mappingEntry.columns;
-			const dateFilter = buildTransactionalDateFilter(tableName, columnsMap, planConfig || {});
 			// Filter out omitted columns from validation
 			const firebirdColumns = Object.keys(columnsMap || {}).filter(srcCol => {
 				const colConfig = columnsMap[srcCol];
@@ -1371,19 +1416,22 @@ async function runMigrationInternal({
 				continue;
 			}
 
-			if (transactionalDateFilter.enabled && dateFilter?.enabled && !dateFilter.sourceColumn) {
-				const errorMessage = `Transactional date filter is enabled, but ${tableName} has no mapped source date column.`;
+			const firebirdColumnNames = (await firebird.listColumns(firebirdConfig, sourceTable)).map((c) => c.toLowerCase());
+			const tableFilter = buildTransactionalTableFilter(tableName, columnsMap, planConfig || {}, {
+				availableSourceColumns: firebirdColumnNames,
+				context: transactionalFilterContext
+			});
+			if (transactionalDateFilter.enabled && tableFilter?.enabled && !tableFilter.hasPredicate) {
+				const errorMessage = `Transactional date filter is enabled, but ${tableName} has no usable date or link columns.`;
 				if (!tableRun) {
 					const newId = await runStore.startTableRun(pool, runId, tableName, step.mode, step.keyStrategy);
 					tableRunId = newId;
 				}
 				await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
-				await failRun(errorMessage, "Add the table's date field to the mapping or disable the transactional date filter.", "precheck");
+				await failRun(errorMessage, "Add the table's linking/date fields to the mapping or disable the transactional date filter.", "precheck");
 				if (!continueOnError) break;
 				continue;
 			}
-
-			const firebirdColumnNames = (await firebird.listColumns(firebirdConfig, sourceTable)).map((c) => c.toLowerCase());
 			const mysqlColumnNames = (await mysql.listColumns(pool, tableName)).map((c) => c.name.toLowerCase());
 			const missingSource = firebirdColumns.filter((c) => !firebirdColumnNames.includes(c.toLowerCase()));
 			const missingTarget = targetColumns.filter((c) => !mysqlColumnNames.includes(c.toLowerCase()));
@@ -1470,6 +1518,7 @@ async function runMigrationInternal({
 			const sourceIdColumn = primaryKeys.length
 				? Object.entries(columnsMap).find(([, rule]) => (rule.target ?? rule.targetColumn) === primaryKeys[0])?.[0]
 				: null;
+			const rowKeyColumn = sourceIdColumn || firebirdColumns[0];
 
 			let tempIndexName = null;
 			if (dedupeKeys.length && !dryRun) {
@@ -1487,7 +1536,19 @@ async function runMigrationInternal({
 			}
 
 			const conn = await pool.getConnection();
+			let fbDb = null;
 			try {
+				let filteredSourceKeys = null;
+				if (tableFilter?.hasLinkClause) {
+					fbDb = await firebird.attachWithRetry(firebirdConfig);
+					filteredSourceKeys = await collectMatchingKeyValuesWithDb({
+						db: fbDb,
+						sourceTable,
+						keyColumn: rowKeyColumn,
+						filter: tableFilter
+					});
+				}
+
 				const cleanBefore = shouldCleanTable(plan?.config, step);
 				// Debug: emit resolved clean decision for this table
 				logRun({ level: 'debug', phase: 'clean_decision', tableName, cleanBefore, dryRun, mode: step.mode });
@@ -1594,8 +1655,10 @@ async function runMigrationInternal({
 				const tableStart = Date.now();
 				logRun({ level: "info", phase: "table_start", tableName, tableRunId, mode: step.mode, keyStrategy: step.keyStrategy, dedupeKeys });
 
-				const totalSource = dateFilter?.clause
-					? await firebird.countRowsWhere(firebirdConfig, sourceTable, dateFilter.clause, dateFilter.params)
+				const totalSource = filteredSourceKeys
+					? filteredSourceKeys.length
+					: tableFilter?.clause
+					? await firebird.countRowsWhere(firebirdConfig, sourceTable, tableFilter.clause, tableFilter.params)
 					: await firebird.countRows(firebirdConfig, sourceTable);
 				await runStore.updateTableProgress(pool, runId, tableName, { rows_source: totalSource });
 				tableState.total = totalSource;
@@ -1605,7 +1668,11 @@ async function runMigrationInternal({
 					tableName,
 					tableRunId,
 					sourceRows: totalSource,
-					dateFilter: dateFilter?.clause ? { startDate: dateFilter.startDate, sourceColumn: dateFilter.sourceColumn } : null
+					dateFilter: tableFilter?.hasPredicate ? {
+						startDate: tableFilter.startDate,
+						sourceColumn: tableFilter.sourceColumn,
+						hasLinkClause: tableFilter.hasLinkClause
+					} : null
 				});
 				emitRunState(runId, emitter);
 
@@ -1652,25 +1719,43 @@ async function runMigrationInternal({
 						? Math.min(Math.max(Number(step.batchSize), 1), 10000)
 						: batchSize;
 					checkAbort(runId);
-					const batch = dateFilter?.clause
-						? await firebird.fetchBatchWhere(
-							firebirdConfig,
+					let batch = [];
+					if (filteredSourceKeys) {
+						const pageSize = Math.min(effectiveBatch, FIREBIRD_IN_MEMBER_LIST_LIMIT);
+						const pageKeys = filteredSourceKeys.slice(offset, offset + pageSize);
+						if (!pageKeys.length) break;
+						const keyWhere = `"${String(rowKeyColumn).replace(/"/g, '""')}" IN (${pageKeys.map(() => "?").join(", ")})`;
+						batch = await firebird.fetchBatchWithDbWhere(
+							fbDb,
 							sourceTable,
 							firebirdColumns,
-							offset,
-							effectiveBatch,
-							firebirdColumns[0],
-							dateFilter.clause,
-							dateFilter.params
-						)
-						: await firebird.fetchBatch(
-							firebirdConfig,
-							sourceTable,
-							firebirdColumns,
-							offset,
-							effectiveBatch,
-							firebirdColumns[0]
+							0,
+							pageKeys.length,
+							rowKeyColumn,
+							keyWhere,
+							pageKeys
 						);
+					} else {
+						batch = tableFilter?.clause
+							? await firebird.fetchBatchWhere(
+								firebirdConfig,
+								sourceTable,
+								firebirdColumns,
+								offset,
+								effectiveBatch,
+								firebirdColumns[0],
+								tableFilter.clause,
+								tableFilter.params
+							)
+							: await firebird.fetchBatch(
+								firebirdConfig,
+								sourceTable,
+								firebirdColumns,
+								offset,
+								effectiveBatch,
+								firebirdColumns[0]
+							);
+					}
 
 					if (!batch.length) break;
 
@@ -2265,6 +2350,13 @@ async function runMigrationInternal({
 				try { await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage); } catch (e) { /* ignore */ }
 				await failRun(errorMessage, hint, "run");
 			} finally {
+				if (fbDb) {
+					try {
+						fbDb.detach();
+					} catch (err) {
+						// ignore
+					}
+				}
 				conn.release();
 				if (tempIndexName) {
 					try {

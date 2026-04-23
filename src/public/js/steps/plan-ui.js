@@ -705,6 +705,7 @@ class PlanUI {
 		const hasErrors = results.errors && results.errors.length > 0;
 		const hasWarnings = results.warnings && results.warnings.length > 0;
 		const perTable = results.perTable || [];
+			const estimatedRowsDisplay = results.estimatedRowsDisplay || results.estimatedRows || results.totals?.estimatedRows || 0;
 
 		return `
       <div class="dry-run-results">
@@ -716,7 +717,7 @@ class PlanUI {
             <span>Tables</span>
           </div>
           <div class="stat">
-            <strong>${results.estimatedRows || results.totals?.estimatedRows || 0}</strong>
+						<strong>${estimatedRowsDisplay}</strong>
             <span>Estimated Rows</span>
           </div>
           <div class="stat">
@@ -740,7 +741,7 @@ class PlanUI {
                 ${perTable.map(t => `
                   <tr>
                     <td>${t.tableName}</td>
-                    <td>${t.estimatedRows || 0}</td>
+										<td>${t.estimatedRowsDisplay || t.estimatedRows || 0}</td>
                     <td>
                       ${t.errors.length > 0 ? '<span class="status-badge status-warning">❌ Errors</span>' : ''}
                       ${t.warnings.length > 0 ? '<span class="status-badge status-warning">⚠ Warnings</span>' : ''}

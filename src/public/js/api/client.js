@@ -27,20 +27,23 @@ class APIClient {
 	 */
 	async request(endpoint, options = {}) {
 		const url = endpoint.startsWith('http') ? endpoint : `${this.baseURL}${endpoint}`;
+		const requestTimeout = options.timeout ?? this.timeout;
+		const maxRetries = options.maxRetries ?? this.maxRetries;
+		const { timeout: _t, maxRetries: _r, ...fetchOptions } = options;
 		const config = {
 			...this.defaultOptions,
-			...options,
+			...fetchOptions,
 			headers: {
 				...this.defaultOptions.headers,
-				...(options.headers || {})
+				...(fetchOptions.headers || {})
 			}
 		};
 
 		let lastError;
 
-		for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+		for (let attempt = 1; attempt <= maxRetries; attempt++) {
 			try {
-				const response = await this._fetchWithTimeout(url, config);
+				const response = await this._fetchWithTimeout(url, config, requestTimeout);
 				return await this._handleResponse(response);
 			} catch (err) {
 				lastError = err;
@@ -51,8 +54,8 @@ class APIClient {
 				}
 
 				// Retry on network errors or 5xx errors
-				if (attempt < this.maxRetries) {
-					console.warn(`Request failed (attempt ${attempt}/${this.maxRetries}), retrying...`, err);
+				if (attempt < maxRetries) {
+					console.warn(`Request failed (attempt ${attempt}/${maxRetries}), retrying...`, err);
 					await this._delay(this.retryDelay * attempt);
 				}
 			}
@@ -65,9 +68,9 @@ class APIClient {
 	 * Fetch with timeout
 	 * @private
 	 */
-	async _fetchWithTimeout(url, options) {
+	async _fetchWithTimeout(url, options, timeout = this.timeout) {
 		const controller = new AbortController();
-		const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+		const timeoutId = setTimeout(() => controller.abort(), timeout);
 
 		try {
 			const response = await fetch(url, {
@@ -79,7 +82,7 @@ class APIClient {
 		} catch (err) {
 			clearTimeout(timeoutId);
 			if (err.name === 'AbortError') {
-				throw new Error(`Request timeout after ${this.timeout}ms`);
+				throw new Error(`Request timeout after ${timeout}ms`);
 			}
 			throw err;
 		}
@@ -143,10 +146,11 @@ class APIClient {
 	 * @param {Object} data - Request body
 	 * @returns {Promise<Object>} Response data
 	 */
-	async post(endpoint, data = {}) {
+	async post(endpoint, data = {}, options = {}) {
 		return this.request(endpoint, {
 			method: 'POST',
-			body: JSON.stringify(data)
+			body: JSON.stringify(data),
+			...options
 		});
 	}
 

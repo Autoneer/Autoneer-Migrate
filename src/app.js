@@ -3,6 +3,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const { engine } = require("express-handlebars");
 require("dotenv").config();
+const { state } = require("./config/state");
 
 const setupRoutes = require("./routes/setup");
 const eventsRoutes = require("./routes/events");

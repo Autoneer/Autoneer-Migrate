@@ -688,99 +688,108 @@ class RunUI {
 	}
 
 	/**
-	 * Append log entries to the live log container with special rendering
+	 * Format a structured log event into { icon, text, cls } for display.
+	 * Returns null for entries that should be silently skipped (debug, keepalive noise).
+	 */
+	formatLogEntry(e) {
+		const phase = e.phase || e.type || '';
+		const status = String(e.status || '').toLowerCase();
+		const level = String(e.level || '').toLowerCase();
+
+		if (level === 'debug') return null;
+		// Skip keepalive connectivity pings — they fire every 20s and pollute the log
+		if (phase === 'keepalive') return null;
+		// Skip bare connectivity-check "ok" entries that fire from the keepalive path
+		if (phase === 'preflight' && (status === 'ok') && !e.action) return null;
+
+		if (phase === 'run_start') {
+			const mode = e.dryRun ? 'Dry run' : 'Migration';
+			return { icon: '▶', text: `${mode} started: ${e.tables?.length || 0} table(s)`, cls: 'log-info' };
+		}
+
+		if (phase === 'preflight') {
+			const action = e.action ? String(e.action).replace(/_/g, ' ') : 'connectivity check';
+			if (status === 'start') return { icon: '⏳', text: `Preflight: ${action}…`, cls: 'log-preflight' };
+			if (status === 'passed' || status === 'ok') return { icon: '✓', text: `Preflight: ${action} passed`, cls: 'log-preflight-ok' };
+			if (status === 'skipped') return { icon: '–', text: `Preflight: ${action} skipped`, cls: 'log-preflight-minor' };
+			if (status === 'failed') return { icon: '❌', text: `Preflight: ${action} failed — ${e.error || 'unknown'}`, cls: 'log-error' };
+			if (status === 'done') {
+				const counts = e.keyCounts
+					? Object.entries(e.keyCounts).filter(([, v]) => v > 0).map(([k, v]) => `${k}: ${v}`).join(', ')
+					: '';
+				return { icon: '✓', text: `Preflight: ${action} done${counts ? ` (${counts})` : ''}`, cls: 'log-preflight-ok' };
+			}
+			if (status === 'collecting_seed_keys') return { icon: '🔍', text: `Preflight: ${action} — collecting seed keys (${e.tables || 0} tables)…`, cls: 'log-preflight' };
+			if (status === 'seed_keys_collected') return { icon: '·', text: `Preflight: ${action} — ${e.table} seed done`, cls: 'log-preflight-minor' };
+			if (status === 'link_traversal') {
+				const total = e.keyCounts ? Object.values(e.keyCounts).reduce((a, b) => a + b, 0) : 0;
+				return { icon: '🔗', text: `Preflight: ${action} — link traversal pass ${e.iteration} (${total} keys so far)…`, cls: 'log-preflight' };
+			}
+			if (status === 'link_traversal_table') return { icon: '·', text: `Preflight: ${action} — pass ${e.iteration}: querying ${e.table} (${e.plans} plan(s))`, cls: 'log-preflight-minor' };
+			if (status === 'link_traversal_converged') return { icon: '✓', text: `Preflight: ${action} — converged after pass ${e.iteration} (+${e.newKeys} new keys)`, cls: 'log-preflight-ok' };
+			if (status === 'link_traversal_timeout') return { icon: '⚠', text: `Preflight: ${action} — traversal timed out after ${Math.round((e.elapsedMs || 0) / 1000)}s, proceeding with collected keys`, cls: 'log-warning' };
+			return { icon: '·', text: `Preflight: ${action} — ${status}`, cls: 'log-preflight-minor' };
+		}
+
+		if (e.type === 'table_cleaning_started') return { icon: '🧹', text: `Cleaning ${e.table}…`, cls: 'log-preflight' };
+		if (e.type === 'table_cleaned') {
+			const detail = `${e.method || 'DELETE'}${typeof e.affectedRows === 'number' ? `, ${e.affectedRows} rows` : ''}`;
+			return { icon: '✓', text: `Cleaned ${e.table} (${detail})`, cls: 'log-preflight-ok' };
+		}
+
+		if (phase === 'table_start') return { icon: '▶', text: `${e.tableName}: migrating…`, cls: 'log-table-start' };
+		if (phase === 'fetch' && typeof e.sourceRows === 'number') return { icon: '·', text: `${e.tableName}: ${e.sourceRows.toLocaleString()} source row(s)`, cls: 'log-info' };
+		if (phase === 'table_finalize') {
+			if (status === 'success') return { icon: '✓', text: `${e.tableName}: done — inserted ${(e.inserted || 0).toLocaleString()}, updated ${(e.updated || 0).toLocaleString()}, skipped ${(e.skipped || 0).toLocaleString()}`, cls: 'log-success' };
+			if (status === 'failed') return { icon: '❌', text: `${e.tableName}: failed — ${e.error || 'unknown'}`, cls: 'log-error' };
+		}
+
+		if (phase === 'run_finalize') {
+			if (status === 'success') return { icon: '✓', text: 'Migration completed successfully.', cls: 'log-success' };
+			if (status === 'failed') return { icon: '❌', text: `Migration failed — ${e.error || 'unknown'}`, cls: 'log-error' };
+			if (status === 'completed_with_errors') return { icon: '⚠', text: `Migration completed with ${e.tableErrorCount || 0} table failure(s).`, cls: 'log-warning' };
+		}
+
+		if (phase === 'run_aborted') return { icon: '■', text: `Migration stopped: ${e.message || 'aborted'}`, cls: 'log-warning' };
+		if (phase === 'run_error') return { icon: '❌', text: e.error || e.message || 'Unknown run error', cls: 'log-error' };
+
+		if (level === 'error') return { icon: '❌', text: e.error || e.message || JSON.stringify(e), cls: 'log-error' };
+		if (level === 'warn') return { icon: '⚠', text: e.error || e.message || 'warning', cls: 'log-warning' };
+
+		return null;
+	}
+
+	/**
+	 * Append log entries to the live log container
 	 */
 	appendLogEntries(entries) {
 		const container = document.getElementById('log-container');
 		if (!container || !entries || !entries.length) return;
 		for (const e of entries) {
+			const formatted = this.formatLogEntry(e);
+			if (!formatted) continue;
+
 			const el = document.createElement('div');
-			el.className = 'log-entry';
+			el.className = `log-entry ${formatted.cls}`;
 
-			// icon element
-			const iconDiv = document.createElement('div');
-			iconDiv.className = 'log-icon';
+			const iconSpan = document.createElement('span');
+			iconSpan.className = 'log-icon';
+			iconSpan.textContent = formatted.icon;
 
-			// body element
-			const bodyDiv = document.createElement('div');
-			bodyDiv.className = 'log-body';
+			const textSpan = document.createElement('span');
+			textSpan.className = 'log-text';
+			textSpan.textContent = formatted.text;
 
-			if (e.type === 'table_cleaning_started') {
-				iconDiv.textContent = '🧹';
-				el.classList.add('log-cleaning-start');
-
-				const strong = document.createElement('strong');
-				strong.textContent = 'Cleaning started';
-				const sep = document.createTextNode(' — ');
-				const em = document.createElement('em');
-				em.textContent = e.table || '';
-
-				const wrapper = document.createElement('div');
-				wrapper.className = 'log-cleaning-start';
-				wrapper.appendChild(strong);
-				wrapper.appendChild(sep);
-				wrapper.appendChild(em);
-				bodyDiv.appendChild(wrapper);
-
-			} else if (e.type === 'table_cleaned') {
-				iconDiv.textContent = '✅';
-				el.classList.add('log-cleaned');
-
-				const strong = document.createElement('strong');
-				strong.textContent = 'Table cleaned';
-				const sep = document.createTextNode(' — ');
-				const em = document.createElement('em');
-				em.textContent = e.table || '';
-				const small = document.createElement('small');
-				const method = e.method || 'DELETE';
-				let smallText = `(${method}`;
-				if (typeof e.affectedRows === 'number') smallText += `, rows:${e.affectedRows}`;
-				smallText += ')';
-				small.textContent = smallText;
-
-				const wrapper = document.createElement('div');
-				wrapper.className = 'log-cleaned';
-				wrapper.appendChild(strong);
-				wrapper.appendChild(sep);
-				wrapper.appendChild(em);
-				wrapper.appendChild(small);
-				bodyDiv.appendChild(wrapper);
-
-			} else if (e.level === 'error' || e.type === 'table_failed') {
-				iconDiv.textContent = '❌';
-				el.classList.add('log-error');
-
-				const strong = document.createElement('strong');
-				strong.textContent = e.phase || e.type || 'error';
-				const sep = document.createTextNode(' — ');
-				const textNode = document.createTextNode(e.error || e.message || JSON.stringify(e));
-
-				const wrapper = document.createElement('div');
-				wrapper.className = 'log-error';
-				wrapper.appendChild(strong);
-				wrapper.appendChild(sep);
-				wrapper.appendChild(textNode);
-				bodyDiv.appendChild(wrapper);
-
-			} else {
-				// Generic log line
-				iconDiv.textContent = '•';
-				el.classList.add('log-generic');
-
-				if (e.timestamp) {
-					const smallTs = document.createElement('small');
-					smallTs.textContent = e.timestamp;
-					bodyDiv.appendChild(smallTs);
-				}
-				const msg = document.createTextNode(e.message || e.phase || e.type || JSON.stringify(e));
-				bodyDiv.appendChild(msg);
+			if (e.timestamp) {
+				const tsSpan = document.createElement('span');
+				tsSpan.className = 'log-ts';
+				tsSpan.textContent = new Date(e.timestamp).toLocaleTimeString();
+				el.appendChild(tsSpan);
 			}
-
-			el.appendChild(iconDiv);
-			el.appendChild(bodyDiv);
+			el.appendChild(iconSpan);
+			el.appendChild(textSpan);
 			container.appendChild(el);
 		}
-		// Auto-scroll
 		container.scrollTop = container.scrollHeight;
 	}
 

@@ -1,4 +1,5 @@
 const mysql = require("mysql2/promise");
+const path = require("path");
 
 async function createPool(config, database) {
 	return mysql.createPool({
@@ -221,6 +222,20 @@ async function ensureMigrationTables(pool) {
 			index idx_profiles_from_preset (created_from_preset_code)
 		);
 
+		create table if not exists migration_plans (
+			plan_id int auto_increment primary key,
+			name varchar(150) character set utf8mb4 collate utf8mb4_unicode_ci not null,
+			source_type enum('FIREBIRD') character set utf8mb4 collate utf8mb4_unicode_ci not null default 'FIREBIRD',
+			source_schema_signature varchar(64) character set utf8mb4 collate utf8mb4_unicode_ci null,
+			target_schema_signature varchar(64) character set utf8mb4 collate utf8mb4_unicode_ci null,
+			mapping_json json null,
+			created_by_staff_id int null,
+			created_at datetime default current_timestamp,
+			updated_at datetime null,
+			mapping_profile_id int null,
+			index idx_mapping_profile_id (mapping_profile_id)
+		);
+
 		create table if not exists migration_run_mappings (
 			id int auto_increment primary key,
 			run_id int not null,
@@ -248,6 +263,43 @@ async function ensureMigrationTables(pool) {
     );
   `;
 	await pool.query(ddl);
+
+	try {
+		const [existingProfile] = await pool.query(
+			"select profile_id from migration_profiles where name = 'FULL DB' limit 1"
+		);
+		if (existingProfile.length === 0) {
+			const fullDbMapping = require(path.join(__dirname, "../../data/profile-fulldb.json"));
+			await pool.query(
+				`insert into migration_profiles (
+					profile_id,
+					name,
+					description,
+					mapping_json,
+					source_schema_signature,
+					target_schema_signature,
+					created_by_staff_id,
+					created_from_preset_code,
+					created_at,
+					updated_at
+				) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				[
+					1,
+					"FULL DB",
+					"EVERYTHING",
+					JSON.stringify(fullDbMapping),
+					null,
+					null,
+					null,
+					null,
+					"2026-02-25 12:25:02",
+					"2026-04-22 15:14:40"
+				]
+			);
+		}
+	} catch (e) {
+		// best-effort seed — non-fatal
+	}
 
 	const [columns] = await pool.query(
 		"select column_name as name from information_schema.columns where table_schema = database() and table_name = 'migration_runs'"

@@ -1,0 +1,2667 @@
+{
+	"id": null,
+	"name": "FULL DB",
+	"tables": {
+		"BANKS": {
+			"columns": {
+				"EMAIL": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "EMAIL"
+				},
+				"TELNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "TELNR"
+				},
+				"VATNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "VATNR"
+				},
+				"BANKID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "BANKID"
+				},
+				"ADDRESS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "ADDRESS"
+				},
+				"CONTACT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CONTACT"
+				},
+				"BANKNAME": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "BANKNAME"
+				},
+				"ACCOUNTNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "ACCOUNTNR"
+				},
+				"BRANCHCODE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "BRANCHCODE"
+				},
+				"DEALERCODE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "DEALERCODE"
+				}
+			},
+			"targetTable": "BANKS"
+		},
+		"CNOTE": {
+			"columns": {
+				"CID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "CID"
+				},
+				"CNID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "CNID"
+				},
+				"SIID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SIID"
+				},
+				"CDATE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "1970-01-01",
+					"targetColumn": "CDATE"
+				},
+				"CTYPE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CTYPE"
+				},
+				"AMOUNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "AMOUNT"
+				},
+				"INV_NR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "INVOICE_NR"
+				},
+				"JOB_NR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "JOB_NUMBER"
+				},
+				"STATUS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "STATUS"
+				},
+				"COMMENT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "COMMENT"
+				},
+				"ITEM_ID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ITEM_ID"
+				},
+				"ITEMTYPE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "ITEMTYPE"
+				},
+				"QUANTITY": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "QUANTITY"
+				},
+				"STAFF_ID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "STAFF_ID"
+				},
+				"DESCRIPTION": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "DESCRIPTION"
+				},
+				"RETURNSTOCK": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "RETURNSTOCK"
+				},
+				"DEBITACCOUNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "DEBITACCOUNT"
+				}
+			},
+			"targetTable": "CREDIT_NOTES"
+		},
+		"STAFF": {
+			"columns": {
+				"SDL": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SDL"
+				},
+				"UIF": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "UIF"
+				},
+				"IDNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "IDNR"
+				},
+				"NAME": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "NAME"
+				},
+				"PAYE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "PAYE"
+				},
+				"RELL": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "RELL"
+				},
+				"SITE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SITE"
+				},
+				"ADDR1": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "ADDRESS_1"
+				},
+				"ADDR2": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "ADDRESS_2"
+				},
+				"ADDR3": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "ADDRESS_3"
+				},
+				"MIBCO": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "MIBCO"
+				},
+				"OTHER": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "OTHER"
+				},
+				"PFUND": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "PFUND"
+				},
+				"PINNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "PINNR"
+				},
+				"TELNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "TELNR"
+				},
+				"GROUPS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "STAFF_GROUP"
+				},
+				"MOBILE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "MOBILE"
+				},
+				"SALARY": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SALARY"
+				},
+				"STATUS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "STATUS"
+				},
+				"ABSCENT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "ABSENT"
+				},
+				"RELLTEL": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "RELLTEL"
+				},
+				"SURNAME": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "SURNAME"
+				},
+				"ADDRCODE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "ADDRESS_4"
+				},
+				"CANDORFC": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CANDORFC"
+				},
+				"CANORDER": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CANORDER"
+				},
+				"STAFF_ID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "STAFF_ID"
+				},
+				"CANDOSTOCK": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CANDOSTOCK"
+				},
+				"CANRELEASE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CANRELEASE"
+				},
+				"DATE_START": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "1970-01-01",
+					"targetColumn": "DATE_START"
+				},
+				"HOURLYRATE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "HOURLYRATE"
+				},
+				"LEAVE_LEFT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "LEAVE_LEFT"
+				},
+				"CANADDEBTOR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CANADDEBTOR"
+				},
+				"CANDOLABOUR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CANDOLABOUR"
+				},
+				"COMMPERCENT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "COMMPERCENT"
+				},
+				"CANDOREPORTS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CANDOREPORTS"
+				},
+				"CANDOFINALISE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CANDOFINALISE"
+				},
+				"CANREOPENJOBS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CANREOPENJOBS"
+				},
+				"CANSEEREPORTS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CANSEEREPORTS"
+				},
+				"LEAVE_ALLOWED": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "LEAVE_ALLOWED"
+				},
+				"CANADDCREDITOR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CANADDCREDITOR"
+				},
+				"CANADDPAYMENTS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CANADDPAYMENTS"
+				},
+				"CANREMOVESTOCK": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CANREMOVESTOCK"
+				},
+				"CANDOCREDITNOTE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CANDOCREDITNOTE"
+				},
+				"CANREMOVELABOUR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CANREMOVELABOUR"
+				}
+			},
+			"targetTable": "STAFF"
+		},
+		"STOCK": {
+			"columns": {
+				"KM": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "KM"
+				},
+				"ACC": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ACC"
+				},
+				"VAT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "VAT"
+				},
+				"SIID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SIID"
+				},
+				"BINNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "BINNR"
+				},
+				"MARKUP": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "MARKUP"
+				},
+				"PARTNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "PARTNR"
+				},
+				"SAGEID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SAGEID"
+				},
+				"STATUS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "STATUS"
+				},
+				"ADDINFO": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "ADDINFO"
+				},
+				"AUTOADD": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "AUTOADD"
+				},
+				"SETTYPE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "SETTYPE"
+				},
+				"ACCASSET": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ACCASSET"
+				},
+				"QUANTITY": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "QUANTITY"
+				},
+				"STOCK_ID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "STOCK_ID"
+				},
+				"SUPPLIER": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "SUPPLIER"
+				},
+				"INVOICENR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "INVOICE_NR"
+				},
+				"STOCKTAKE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "STOCKTAKE"
+				},
+				"STOCKTYPE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "STOCKTYPE"
+				},
+				"COST_PRICE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "COST_PRICE"
+				},
+				"ONORDERQTY": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ONORDERQTY"
+				},
+				"SALESPRICE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SALESPRICE"
+				},
+				"SELECTITEM": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "SELECTITEM"
+				},
+				"DESCRIPTION": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "DESCRIPTION"
+				},
+				"PARTNROTHER": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "PARTNROTHER"
+				},
+				"SALESPRICE2": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SALESPRICE2"
+				},
+				"SALESPRICE3": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SALESPRICE3"
+				},
+				"INGOREMARKUP": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "INGOREMARKUP"
+				},
+				"MAINCATEGORY": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "MAINCATEGORY"
+				},
+				"RECALLSTATUS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "RECALLSTATUS"
+				},
+				"REORDERLEVEL": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "REORDERLEVEL"
+				},
+				"REQUIREDSTOCK": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "REQUIREDSTOCK"
+				},
+				"THIRDCATEGORY": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "THIRDCATEGORY"
+				},
+				"FOURTHCATEGORY": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "FOURTHCATEGORY"
+				},
+				"SECONDCATEGORY": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "SECONDCATEGORY"
+				},
+				"AUTOADDQUANTITY": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "AUTOADDQUANTITY"
+				},
+				"OUTSIDESUPPLIER": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "OUTSIDESUPPLIER"
+				},
+				"COST_PRICE_EXVAT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "COST_PRICE_EXVAT"
+				},
+				"SALESPRICEINCVAT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SALESPRICEINCVAT"
+				}
+			},
+			"targetTable": "STOCK"
+		},
+		"PRICING": {
+			"columns": {
+				"ACC": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ACC"
+				},
+				"WID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "WID"
+				},
+				"SIID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SIID"
+				},
+				"AMOUNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "AMOUNT"
+				},
+				"SAGEID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SAGEID"
+				},
+				"PARTSET": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "PARTSET"
+				},
+				"SETTYPE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "SETTYPE"
+				},
+				"DESCRIPTION": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "DESCRIPTION"
+				},
+				"HOURSWORKED": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "HOURSWORKED"
+				}
+			},
+			"targetTable": "LABOUR_PRICING"
+		},
+		"ACCCLASS": {
+			"columns": {
+				"CLASSID": {
+					"defaultValue": "0",
+					"targetColumn": "CLASSID"
+				},
+				"ACCCLASS": {
+					"targetColumn": "ACCCLASS"
+				},
+				"ACCOUNTTYPE": {
+					"targetColumn": "ACCOUNTTYPE"
+				},
+				"DESCRIPTION": {
+					"targetColumn": "DESCRIPTION"
+				}
+			},
+			"targetTable": "ACC_CLASS"
+		},
+		"ACCOUNTS": {
+			"columns": {
+				"AID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "AID"
+				},
+				"MTD": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "MTD"
+				},
+				"YTD": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "YTD"
+				},
+				"ACCNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ACCNR"
+				},
+				"DEBIT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "DEBIT"
+				},
+				"BACCNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "BACCNR"
+				},
+				"CREDIT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "CREDIT"
+				},
+				"PACCNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "PACCNR"
+				},
+				"STATUS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "STATUS"
+				},
+				"ACCTYPE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "ACCTYPE"
+				},
+				"COMPANY": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "COMPANY"
+				},
+				"DORECON": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "DORECON"
+				},
+				"ACCCLASS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ACCCLASS"
+				},
+				"BACCTYPE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "BACCTYPE"
+				},
+				"BANKNAME": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "BANKNAME"
+				},
+				"BRANCHCODE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "BRANCHCODE"
+				},
+				"BRANCHNAME": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "BRANCHNAME"
+				},
+				"DEPARTMENT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "DEPARTMENT"
+				},
+				"ACCOUNTTYPE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "ACCOUNTTYPE"
+				},
+				"DESCRIPTION": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "DESCRIPTION"
+				},
+				"ACCOUNTGROUP": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "ACCOUNTGROUP"
+				},
+				"ACCOUNTTOTAL": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ACCOUNTTOTAL"
+				},
+				"STARTBALANCE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "STARTBALANCE"
+				},
+				"FINANCIALCATEGORY": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "FINANCIALCATEGORY"
+				},
+				"LASTYSTARTBALANCE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "LASTYSTARTBALANCE"
+				},
+				"CURRENTBALANCEDEBIT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "CURRENTBALANCEDEBIT"
+				},
+				"LASTYEARCURRENTBALANCE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "LASTYEARCURRENTBALANCE"
+				}
+			},
+			"targetTable": "ACCOUNTS"
+		},
+		"CUSTOMER": {
+			"columns": {
+				"ACC": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ACC"
+				},
+				"CID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "CID"
+				},
+				"IDNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "IDNR"
+				},
+				"JOBS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "JOBS"
+				},
+				"NAME": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "NAME"
+				},
+				"SIID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SIID"
+				},
+				"DBGID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "DBGID"
+				},
+				"EMAIL": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "EMAIL"
+				},
+				"TAXID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "TAXID"
+				},
+				"TITLE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "TITLE"
+				},
+				"EMAIL2": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "EMAIL2"
+				},
+				"MOBILE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "MOBILE"
+				},
+				"SAGEID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SAGEID"
+				},
+				"STATUS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "STATUS"
+				},
+				"BALANCE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "BALANCE"
+				},
+				"MOBILE2": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "MOBILE2"
+				},
+				"POSTAD1": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "POSTAD1"
+				},
+				"POSTAD2": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "POSTAD2"
+				},
+				"POSTAD3": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "POSTAD3"
+				},
+				"SURNAME": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "SURNAME"
+				},
+				"TEL_FAX": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "TEL_FAX"
+				},
+				"CONTACT2": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CONTACT2"
+				},
+				"DISCOUNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "DISCOUNT"
+				},
+				"SALESREP": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SALESREP"
+				},
+				"TEL_HOME": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "TELNR"
+				},
+				"TEL_WORK": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "TEL_WORK"
+				},
+				"VENDORNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "VENDORNR"
+				},
+				"ADDRESS_1": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "ADDRESS_1"
+				},
+				"ADDRESS_2": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "ADDRESS_2"
+				},
+				"ADDRESS_3": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "ADDRESS_3"
+				},
+				"ADDRESS_4": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "ADDRESS_4"
+				},
+				"CUSTSINCE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "1970-01-01",
+					"targetColumn": "CUSTSINCE"
+				},
+				"CHARGERATE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "CHARGERATE"
+				},
+				"CUST_LEVEL": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CUST_LEVEL"
+				},
+				"DEPARTMENT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "DEPARTMENT"
+				},
+				"MERCHANTNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "MERCHANTNR"
+				},
+				"STOCKSALES": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "STOCKSALES"
+				},
+				"ADDRESS_CODE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "ADDRESS_CODE"
+				},
+				"ACCOUNTSTATUS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "ACCOUNTSTATUS"
+				},
+				"CONTRACT_NAME": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CONTRACT_NAME"
+				},
+				"CUSTOMER_TYPE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CUSTOMER_TYPE"
+				},
+				"SIMPLYACCOUNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SIMPLYACCOUNT"
+				},
+				"CONTACT_PERSON": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CONTACT_PERSON"
+				},
+				"OPENINGBALANCE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "OPENINGBALANCE"
+				}
+			},
+			"targetTable": "CUSTOMERS"
+		},
+		"INVOICES": {
+			"columns": {
+				"ACC": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ACC"
+				},
+				"CID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "CID"
+				},
+				"COST": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "COST"
+				},
+				"PAID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "PAID"
+				},
+				"SIID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SIID"
+				},
+				"RECBY": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "RECBY"
+				},
+				"REGNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "REGNR"
+				},
+				"INV_NR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "INVOICE_NR"
+				},
+				"PROFIT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "PROFIT"
+				},
+				"SAGEID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SAGEID"
+				},
+				"STATUS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "STATUS"
+				},
+				"JOBTYPE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "JOBTYPE"
+				},
+				"QUOTENR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "QUOTENR"
+				},
+				"SPLITNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SPLITNR"
+				},
+				"TRANSNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "TRANSNR"
+				},
+				"COMMENTS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "COMMENTS"
+				},
+				"DISCOUNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "DISCOUNT"
+				},
+				"GPAMOUNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "GPAMOUNT"
+				},
+				"STAFF_ID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "STAFF_ID"
+				},
+				"PAYSTATUS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "PAYSTATUS"
+				},
+				"JOB_NUMBER": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "JOB_NUMBER"
+				},
+				"ADJUSTMENTS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ADJUSTMENTS"
+				},
+				"COSTTOPARTNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "COSTTOPARTNR"
+				},
+				"INVOICE_DATE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "1970-01-01",
+					"targetColumn": "INVOICE_DATE"
+				},
+				"INV_TOTALVAT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "INV_TOTALVAT"
+				},
+				"ROUNDINGVALUE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ROUNDINGVALUE"
+				},
+				"DISCOUNTAMOUNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "DISCOUNTAMOUNT"
+				},
+				"INV_TOTALEXLVAT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "INV_TOTALEXLVAT"
+				},
+				"INV_TOTALINCLVAT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "INV_TOTALINCLVAT"
+				}
+			},
+			"targetTable": "INVOICES"
+		},
+		"INVTOTAL": {
+			"columns": {
+				"ACC": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ACC"
+				},
+				"VAT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "VAT"
+				},
+				"PAID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "PAID"
+				},
+				"SIID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SIID"
+				},
+				"INVID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "INVID"
+				},
+				"AMOUNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "AMOUNT"
+				},
+				"JOB_NR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "JOB_NUMBER"
+				},
+				"PARTNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "PARTNR"
+				},
+				"SAGEID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SAGEID"
+				},
+				"STATUS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "STATUS"
+				},
+				"SUPPID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SUPPID"
+				},
+				"FREIGHT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "FREIGHT"
+				},
+				"PAYREFF": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "PAYREFF"
+				},
+				"ACCASSET": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ACCASSET"
+				},
+				"CLEARING": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "CLEARING"
+				},
+				"COMMENTS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "COMMENTS"
+				},
+				"DISCOUNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "DISCOUNT"
+				},
+				"INV_DATE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "1970-01-01",
+					"targetColumn": "INV_DATE"
+				},
+				"QUANTITY": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "QUANTITY"
+				},
+				"STAFF_ID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "STAFF_ID"
+				},
+				"STOCK_ID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "STOCK_ID"
+				},
+				"GRNNUMBER": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "GRNNUMBER"
+				},
+				"INVOICENR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "INVOICE_NR"
+				},
+				"ADJUSTMENT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ADJUSTMENT"
+				},
+				"AMOUNTEXVAT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "AMOUNTEXVAT"
+				},
+				"DESCRIPTION": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "DESCRIPTION"
+				},
+				"GRNCURRENCY": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "GRNCURRENCY"
+				},
+				"COSTTOPARTNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "COSTTOPARTNR"
+				},
+				"EXCHANGERATE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "EXCHANGERATE"
+				},
+				"SELLINGPRICE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SELLINGPRICE"
+				}
+			},
+			"targetTable": "INVOICE_ITEMS"
+		},
+		"LOCATION": {
+			"columns": {
+				"LOCID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "LOCID"
+				},
+				"DESCRIPTION": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "DESCRIPTION"
+				}
+			},
+			"targetTable": "LOCATION"
+		},
+		"PAYMENTS": {
+			"columns": {
+				"ACC": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ACC"
+				},
+				"CID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "CID"
+				},
+				"VAT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "VAT"
+				},
+				"CNID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "CNID"
+				},
+				"SIID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SIID"
+				},
+				"PAYID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "PAYID"
+				},
+				"AMOUNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "AMOUNT"
+				},
+				"INV_NR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "INVOICE_NR"
+				},
+				"JOB_NR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "JOB_NUMBER"
+				},
+				"SAGEID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SAGEID"
+				},
+				"PAYDATE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "1970-01-01",
+					"targetColumn": "PAYDATE"
+				},
+				"QUOTENR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "QUOTENR"
+				},
+				"TRANSNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "TRANSNR"
+				},
+				"STAFF_ID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "STAFF_ID"
+				},
+				"CHANGEDUE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "CHANGEDUE"
+				},
+				"PAYMETHOD": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "PAYMETHOD"
+				},
+				"CAPTUREDATE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "1970-01-01",
+					"targetColumn": "CAPTUREDATE"
+				},
+				"CASHRENDERED": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "CASHRENDERED"
+				}
+			},
+			"targetTable": "PAYMENTS"
+		},
+		"SUPPLIER": {
+			"columns": {
+				"ACC": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ACC"
+				},
+				"SIID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SIID"
+				},
+				"ADDR1": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "ADDRESS_1"
+				},
+				"ADDR2": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "ADDRESS_2"
+				},
+				"ADDR3": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "ADDRESS_3"
+				},
+				"EMAIL": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "EMAIL"
+				},
+				"FAXNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "FAXNR"
+				},
+				"REGNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "REGNR"
+				},
+				"TELNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "TELNR"
+				},
+				"VATNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "VATNR"
+				},
+				"EXEMPT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "EXEMPT"
+				},
+				"SAGEID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SAGEID"
+				},
+				"SUPPID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SUPPID"
+				},
+				"BALANCE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "BALANCE"
+				},
+				"UPDTYPE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "UPDTYPE"
+				},
+				"ADDRCODE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "ADDRESS_CODE"
+				},
+				"INTERNAL": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "INTERNAL"
+				},
+				"SUPPLIER": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "SUPPLIER"
+				},
+				"CAPRICORN": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CAPRICORN"
+				},
+				"CAPRICORNNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CAPRICORNNR"
+				},
+				"CONTACTPERSON": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CONTACTPERSON"
+				},
+				"SIMPLYACCOUNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SIMPLYACCOUNT"
+				},
+				"ALLOWEDDISCOUNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ALLOWEDDISCOUNT"
+				}
+			},
+			"targetTable": "SUPPLIERS"
+		},
+		"WORKDONE": {
+			"columns": {
+				"ACC": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ACC"
+				},
+				"PAID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "PAID"
+				},
+				"SIID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SIID"
+				},
+				"WDID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "WDID"
+				},
+				"FWDID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "FWDID"
+				},
+				"INVNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "INVOICE_NR"
+				},
+				"DPTMNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "DPTMNT"
+				},
+				"JOB_NR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "JOB_NUMBER"
+				},
+				"SAGEID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SAGEID"
+				},
+				"JOBTYPE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "JOBTYPE"
+				},
+				"QUOTENR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "QUOTENR"
+				},
+				"SETTYPE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "SETTYPE"
+				},
+				"STAFF_ID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "STAFF_ID"
+				},
+				"WORKCOST": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "WORKCOST"
+				},
+				"WORKDATE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "1970-01-01",
+					"targetColumn": "WORKDATE"
+				},
+				"WORKPRICE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "WORKPRICE"
+				},
+				"DESCRIPTION": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "DESCRIPTION"
+				},
+				"HOURSWORKED": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "HOURSWORKED"
+				},
+				"ACTUALWORKED": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ACTUALWORKED"
+				},
+				"DISCOUNTAMOUNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "DISCOUNTAMOUNT"
+				},
+				"DISCOUNTPERCENT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "DISCOUNTPERCENT"
+				},
+				"WORKPRICEINCVAT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "WORKPRICEINCVAT"
+				}
+			},
+			"targetTable": "WORK_DONE"
+		},
+		"CNOTESUPP": {
+			"columns": {
+				"ACC": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ACC"
+				},
+				"VAT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "VAT"
+				},
+				"AMOUNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "AMOUNT"
+				},
+				"SINVID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SINVID"
+				},
+				"STATUS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "STATUS"
+				},
+				"SUPPID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SUPPID"
+				},
+				"CNOTEID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "CNOTEID"
+				},
+				"COMMENTS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "COMMENTS"
+				},
+				"STAFF_ID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "STAFF_ID"
+				},
+				"CNOTEDATE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "1970-01-01",
+					"targetColumn": "CNOTEDATE"
+				},
+				"CNOTETYPE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CNOTETYPE"
+				},
+				"INVOICENR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "INVOICE_NR"
+				}
+			},
+			"targetTable": "CREDIT_NOTES_SUPPLIER"
+		},
+		"WIPSTATUS": {
+			"columns": {
+				"WIPID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "WIPID"
+				},
+				"REPGROUP": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "REPGROUP"
+				},
+				"WIPCOLOUR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "WIPCOLOUR"
+				},
+				"DESCRIPTION": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "DESCRIPTION"
+				}
+			},
+			"targetTable": "WIP_STATUS"
+		},
+		"SPARES_USED": {
+			"columns": {
+				"ACC": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ACC"
+				},
+				"LNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "LNR"
+				},
+				"VAT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "VAT"
+				},
+				"SIID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SIID"
+				},
+				"WDID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "WDID"
+				},
+				"INVNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "INVOICE_NR"
+				},
+				"SPARE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "SPARE"
+				},
+				"DPTMNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "DPTMNT"
+				},
+				"JOB_NR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "JOB_NUMBER"
+				},
+				"MARKUP": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "MARKUP"
+				},
+				"PARTNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "PARTNR"
+				},
+				"SAGEID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SAGEID"
+				},
+				"STATUS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "STATUS"
+				},
+				"SUPPID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SUPPID"
+				},
+				"JOBTYPE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "JOBTYPE"
+				},
+				"QUOTENR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "QUOTENR"
+				},
+				"SETTYPE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "SETTYPE"
+				},
+				"ACCASSET": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ACCASSET"
+				},
+				"QUANTITY": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "QUANTITY"
+				},
+				"STAFF_ID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "STAFF_ID"
+				},
+				"STOCK_ID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "STOCK_ID"
+				},
+				"DATE_USED": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "1970-01-01",
+					"targetColumn": "DATE_USED"
+				},
+				"SPARES_ID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SPARES_ID"
+				},
+				"STOCKTYPE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "STOCKTYPE"
+				},
+				"COST_PRICE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "COST_PRICE"
+				},
+				"PARTNROTHER": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "PARTNROTHER"
+				},
+				"SALES_PRICE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SALES_PRICE"
+				},
+				"DISCOUNTAMOUNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "DISCOUNTAMOUNT"
+				},
+				"PRINTONINVOICE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "PRINTONINVOICE"
+				},
+				"DISCOUNTPERCENT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "DISCOUNTPERCENT"
+				},
+				"OUTSIDESUPPLIER": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "OUTSIDESUPPLIER"
+				},
+				"SALES_PRICEINCVAT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SALES_PRICEINCVAT"
+				}
+			},
+			"targetTable": "SPARES_USED"
+		},
+		"PAYMENTSSUPP": {
+			"columns": {
+				"ACC": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ACC"
+				},
+				"VAT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "VAT"
+				},
+				"ACCNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ACCNR"
+				},
+				"INVID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "INVID"
+				},
+				"PAYID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "PAYID"
+				},
+				"AMOUNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "AMOUNT"
+				},
+				"SAGEID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SAGEID"
+				},
+				"STATUS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "STATUS"
+				},
+				"SUPPID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SUPPID"
+				},
+				"BATCHNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "BATCHNR"
+				},
+				"PAYDATE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "1970-01-01",
+					"targetColumn": "PAYDATE"
+				},
+				"TRANSNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "TRANSNR"
+				},
+				"CHEQUENR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "CHEQUENR"
+				},
+				"DISCOUNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "DISCOUNT"
+				},
+				"STAFF_ID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "STAFF_ID"
+				},
+				"INVOICENR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "INVOICE_NR"
+				},
+				"PAYMETHOD": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "PAYMETHOD"
+				},
+				"ADJUSTMENT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ADJUSTMENT"
+				}
+			},
+			"targetTable": "PAYMENTS_SUPPLIERS"
+		},
+		"ACCDEPARTMENT": {
+			"columns": {
+				"ACCNR": {
+					"targetColumn": "ACCNR"
+				},
+				"ACCDID": {
+					"defaultValue": "0",
+					"targetColumn": "ACCDID"
+				},
+				"DEPTNR": {
+					"targetColumn": "DEPTNR"
+				},
+				"ACCCLASS": {
+					"targetColumn": "ACCCLASS"
+				},
+				"DEPTTYPE": {
+					"targetColumn": "DEPTTYPE"
+				},
+				"DESCRIPTION": {
+					"targetColumn": "DESCRIPTION"
+				},
+				"ACCOUNTGROUP": {
+					"targetColumn": "ACCOUNTGROUP"
+				}
+			},
+			"targetTable": "ACC_DEPARTMENT"
+		},
+		"INVOICEGENERAL": {
+			"columns": {
+				"VAT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "VAT"
+				},
+				"PAID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "PAID"
+				},
+				"ACCNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ACCNR"
+				},
+				"PTYPE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "PTYPE"
+				},
+				"AMOUNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "AMOUNT"
+				},
+				"STATUS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "STATUS"
+				},
+				"SUPPID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SUPPID"
+				},
+				"PAYREFF": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "PAYREFF"
+				},
+				"COMMENTS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "COMMENTS"
+				},
+				"GENINVID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "GENINVID"
+				},
+				"STAFF_ID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "STAFF_ID"
+				},
+				"SUPPLIER": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "SUPPLIER"
+				},
+				"PAYMETHOD": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "PAYMETHOD"
+				},
+				"PURCHDATE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "1970-01-01",
+					"targetColumn": "PURCHDATE"
+				},
+				"RECEIPTNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "INVOICE_NR"
+				},
+				"AMOUNTEXVAT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "AMOUNTEXVAT"
+				}
+			},
+			"targetTable": "INVOICE_GENERAL"
+		},
+		"INVOICESUPPLIER": {
+			"columns": {
+				"ACC": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ACC"
+				},
+				"VAT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "VAT"
+				},
+				"PAID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "PAID"
+				},
+				"SIID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SIID"
+				},
+				"AMOUNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "AMOUNT"
+				},
+				"SAGEID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SAGEID"
+				},
+				"SINVID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SINVID"
+				},
+				"STATUS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "STATUS"
+				},
+				"SUPPID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "SUPPID"
+				},
+				"ORDERNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "ORDERNR"
+				},
+				"PAYABLE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "PAYABLE"
+				},
+				"PAYREFF": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "PAYREFF"
+				},
+				"TRANSNR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "TRANSNR"
+				},
+				"COMMENTS": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "COMMENTS"
+				},
+				"DISCOUNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "DISCOUNT"
+				},
+				"INV_DATE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "1970-01-01",
+					"targetColumn": "INV_DATE"
+				},
+				"STAFF_ID": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "STAFF_ID"
+				},
+				"INVOICENR": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "INVOICE_NR"
+				},
+				"AMOUNTEXVAT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "AMOUNTEXVAT"
+				},
+				"ADJUSTMENT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "ADJUSTMENT"
+				},
+				"PURCHASETYPE": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "PURCHASETYPE"
+				},
+				"RFCAMOUNT": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "RFCAMOUNT"
+				},
+				"GRNNUMBER": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "0",
+					"targetColumn": "GRNNUMBER"
+				},
+				"GRNCURRENCY": {
+					"omit": false,
+					"transform": null,
+					"defaultValue": "",
+					"targetColumn": "GRNCURRENCY"
+				}
+			},
+			"targetTable": "INVOICES_SUPPLIER"
+		}
+	},
+	"mappingProfileId": null
+}

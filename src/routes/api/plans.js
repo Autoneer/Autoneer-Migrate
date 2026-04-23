@@ -11,7 +11,11 @@ const { Plan, Mapping, Schema } = require("../../migrate/models");
 const { PlanValidator } = require("../../migrate/validators");
 const runStore = require("../../migrate/runStore");
 const { normalizePlanTables, needsNormalization, resolveTargetTableName } = require("../../migrate/utils/tableNameCanonical");
-const { buildTransactionalDateFilter, normalizeTransactionalDateFilterConfig } = require("../../migrate/transactionalDateFilter");
+const {
+	buildTransactionalTableFilter,
+	fetchFirstMatchingRowWithDb,
+	normalizeTransactionalDateFilterConfig
+} = require("../../migrate/transactionalDateFilter");
 
 const router = express.Router();
 
@@ -724,6 +728,7 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 		const rawPlanJson = planRow[planJsonColumn] || '{}';
 		const planData = safeParseJson(rawPlanJson);
 		const plan = Plan.fromJSON(planData);
+		const transactionFilter = normalizeTransactionalDateFilterConfig(plan.config || {});
 
 		// Load mapping profile
 		const { mappingProfileId } = await resolvePlanMappingProfileId(pool, planRow, meta);
@@ -779,7 +784,16 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 
 		await pool.end();
 
-		const runTableDryRun = async (targetTable, fbDb = null) => {
+		const tables = typeof plan.getIncludedTables === 'function'
+			? plan.getIncludedTables()
+			: (Array.isArray(plan.tables) ? plan.tables : Object.keys(plan.tables || {}));
+
+		// Dry-run uses date-only filtering (no link traversal) — the full link context
+		// is only needed by the actual runner and would cause multi-minute Firebird
+		// queries here for no benefit.
+		const buildDryRunTransactionalContext = async (_fbDb) => null;
+
+		const runTableDryRun = async (targetTable, fbDb = null, transactionalContext = null) => {
 			const sourceTable = mapping.getSourceTable(targetTable);
 			if (!sourceTable) {
 				return {
@@ -803,22 +817,40 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 			}
 
 			const columns = Array.from(fieldMaps.keys());
-			const dateFilter = buildTransactionalDateFilter(targetTable, Object.fromEntries(fieldMaps), plan.config || {});
-			if (transactionFilter.enabled && dateFilter?.enabled && !dateFilter.sourceColumn) {
+			const tableFilter = buildTransactionalTableFilter(targetTable, Object.fromEntries(fieldMaps), plan.config || {}, {
+				context: transactionalContext
+			});
+			if (transactionFilter.enabled && tableFilter?.enabled && !tableFilter.hasPredicate) {
 				return {
 					success: false,
 					sampleRow: null,
 					transformedRow: null,
-					errors: [`Transactional date filter is enabled, but ${targetTable} has no mapped source date column.`],
+					errors: [`Transactional date filter is enabled, but ${targetTable} has no usable date or link columns.`],
 					warnings: []
 				};
 			}
 			let sampleRow = null;
 			try {
-				const rows = fbDb
-					? await firebird.fetchBatchWithDbWhere(fbDb, sourceTable, columns, 0, 1, columns[0], dateFilter?.clause || '', dateFilter?.params || [])
-					: await firebird.fetchBatchWhere(resolvedFirebirdConfig, sourceTable, columns, 0, 1, columns[0], dateFilter?.clause || '', dateFilter?.params || []);
-				sampleRow = rows?.[0] || null;
+				if (tableFilter?.hasLinkClause) {
+					sampleRow = fbDb
+						? await fetchFirstMatchingRowWithDb({
+							db: fbDb,
+							sourceTable,
+							columns,
+							orderBy: columns[0],
+							filter: tableFilter
+						})
+						: null;
+					if (!fbDb && tableFilter?.datePlan) {
+						const rows = await firebird.fetchBatchWhere(resolvedFirebirdConfig, sourceTable, columns, 0, 1, columns[0], tableFilter.datePlan.clause, tableFilter.datePlan.params);
+						sampleRow = rows?.[0] || null;
+					}
+				} else {
+					const rows = fbDb
+						? await firebird.fetchBatchWithDbWhere(fbDb, sourceTable, columns, 0, 1, columns[0], tableFilter?.clause || '', tableFilter?.params || [])
+						: await firebird.fetchBatchWhere(resolvedFirebirdConfig, sourceTable, columns, 0, 1, columns[0], tableFilter?.clause || '', tableFilter?.params || []);
+					sampleRow = rows?.[0] || null;
+				}
 			} catch (err) {
 				return {
 					success: false,
@@ -835,7 +867,7 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 					sampleRow: null,
 					transformedRow: null,
 					errors: [],
-					warnings: [`No rows found in source table ${sourceTable}${dateFilter?.clause ? ` on or after ${dateFilter.startDate}` : ''}`]
+					warnings: [`No rows found in source table ${sourceTable}${tableFilter?.hasPredicate ? ` for the selected transactional filter` : ''}`]
 				};
 			}
 
@@ -873,66 +905,94 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 
 		// If tableName provided: run per-table dry run
 		if (tableName) {
-			const dryRunResult = await runTableDryRun(tableName);
+			let fbDb = null;
+			try {
+				fbDb = await firebird.attachWithRetry(resolvedFirebirdConfig);
+				const transactionalContext = await buildDryRunTransactionalContext(fbDb);
+				const dryRunResult = await runTableDryRun(tableName, fbDb, transactionalContext);
 
-			return res.json({
-				success: true,
-				dryRun: {
-					tableName: tableName,
-					success: dryRunResult.success,
-					sampleRow: dryRunResult.sampleRow,
-					transformedRow: dryRunResult.transformedRow,
-					errors: dryRunResult.errors,
-					warnings: dryRunResult.warnings
+				return res.json({
+					success: true,
+					dryRun: {
+						tableName: tableName,
+						success: dryRunResult.success,
+						sampleRow: dryRunResult.sampleRow,
+						transformedRow: dryRunResult.transformedRow,
+						errors: dryRunResult.errors,
+						warnings: dryRunResult.warnings
+					}
+				});
+			} finally {
+				if (fbDb) {
+					try {
+						fbDb.detach();
+					} catch (err) {
+						console.warn('[Dry Run] Error detaching Firebird:', err.message);
+					}
 				}
-			});
+			}
 		}
 
 		// Plan-level dry run across all tables
-		const tables = typeof plan.getIncludedTables === 'function'
-			? plan.getIncludedTables()
-			: (Array.isArray(plan.tables) ? plan.tables : Object.keys(plan.tables || {}));
 		const perTableResults = [];
 		let totalEstimatedRows = 0;
 		let totalWarnings = 0;
 		let totalErrors = 0;
+		let hasApproximateCounts = false;
 
 		// Attach to Firebird once and reuse for all count queries
 		let fbDb = null;
 		try {
 			fbDb = await firebird.attachWithRetry(resolvedFirebirdConfig);
+			const transactionalContext = await buildDryRunTransactionalContext(fbDb);
 
 			for (const table of tables) {
 				try {
-					const result = await runTableDryRun(table, fbDb);
+					const result = await runTableDryRun(table, fbDb, transactionalContext);
+					const tableWarnings = [...(result.warnings || [])];
 
 					// Get actual row count from Firebird
 					let estimatedRows = 0;
+					let estimatedRowsDisplay = null;
 					try {
 						const sourceTable = mapping.getSourceTable(table);
 						if (sourceTable) {
 							const fieldMaps = mapping.getFieldMaps(sourceTable);
-							const dateFilter = buildTransactionalDateFilter(table, Object.fromEntries(fieldMaps || []), plan.config || {});
-							if (transactionFilter.enabled && dateFilter?.enabled && !dateFilter.sourceColumn) {
-								throw new Error(`Transactional date filter is enabled, but ${table} has no mapped source date column.`);
+							const tableFilter = buildTransactionalTableFilter(table, Object.fromEntries(fieldMaps || []), plan.config || {}, {
+								context: transactionalContext
+							});
+							if (transactionFilter.enabled && tableFilter?.enabled && !tableFilter.hasPredicate) {
+								throw new Error(`Transactional date filter is enabled, but ${table} has no usable date or link columns.`);
 							}
-							estimatedRows = dateFilter?.clause
-								? await firebird.countRowsWithDbWhere(fbDb, sourceTable, dateFilter.clause, dateFilter.params)
-								: await firebird.countRowsWithDb(fbDb, sourceTable);
+							if (tableFilter?.hasLinkClause) {
+								hasApproximateCounts = true;
+								estimatedRows = tableFilter?.datePlan
+									? await firebird.countRowsWithDbWhere(fbDb, sourceTable, tableFilter.datePlan.clause, tableFilter.datePlan.params)
+									: 0;
+								estimatedRowsDisplay = tableFilter?.datePlan ? `${estimatedRows}+` : "Linked rows";
+								tableWarnings.push("Estimated rows are a lower bound because linked transactional records outside the date filter are included during execution.");
+							} else {
+								estimatedRows = tableFilter?.clause
+									? await firebird.countRowsWithDbWhere(fbDb, sourceTable, tableFilter.clause, tableFilter.params)
+									: await firebird.countRowsWithDb(fbDb, sourceTable);
+								estimatedRowsDisplay = String(estimatedRows);
+							}
 						}
 					} catch (countErr) {
 						console.warn(`[Dry Run] Failed to count rows for ${table}:`, countErr.message);
 						estimatedRows = 0;
+						estimatedRowsDisplay = "0";
 					}
 
 					totalEstimatedRows += estimatedRows;
-					totalWarnings += (result.warnings || []).length;
+					totalWarnings += tableWarnings.length;
 					totalErrors += (result.errors || []).length;
 
 					perTableResults.push({
 						tableName: table,
 						estimatedRows,
-						warnings: result.warnings || [],
+						estimatedRowsDisplay,
+						warnings: tableWarnings,
 						errors: result.errors || []
 					});
 				} catch (err) {
@@ -961,7 +1021,9 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 			results: {
 				tableCount: tables.length,
 				estimatedRows: totalEstimatedRows,
-				estimatedTime: `${Math.ceil(totalEstimatedRows / 100)} seconds`,
+				estimatedRowsDisplay: hasApproximateCounts ? `${totalEstimatedRows}+` : String(totalEstimatedRows),
+				estimatedTime: `${Math.ceil(totalEstimatedRows / 100)}${hasApproximateCounts ? "+" : ""} seconds`,
+				hasApproximateCounts,
 				perTable: perTableResults,
 				totals: {
 					estimatedRows: totalEstimatedRows,

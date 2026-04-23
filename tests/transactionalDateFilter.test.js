@@ -2,7 +2,9 @@ const assert = require("assert");
 
 const Plan = require("../src/migrate/models/Plan");
 const {
-	buildTransactionalDateFilter,
+	buildTransactionalTableFilter,
+	createEmptyKeySets,
+	FIREBIRD_IN_MEMBER_LIST_LIMIT,
 	normalizeTransactionalDateFilterConfig,
 	isTransactionalTable
 } = require("../src/migrate/transactionalDateFilter");
@@ -27,24 +29,81 @@ function run() {
 
 	assert.strictEqual(isTransactionalTable("customers"), false);
 	assert.strictEqual(isTransactionalTable("payments"), true);
+	assert.strictEqual(isTransactionalTable("work_done"), true);
 
-	const invoicesFilter = buildTransactionalDateFilter(
+	const keySets = createEmptyKeySets();
+	keySets.customerJob.add("123");
+	keySets.customerInvoice.add("9001");
+
+	const invoicesFilter = buildTransactionalTableFilter(
 		"invoices",
 		{
 			INV_NR: { target: "invoice_nr" },
+			JOB_NUMBER: { target: "job_number" },
 			INVOICE_DATE: { target: "invoice_date" }
 		},
-		plan.config
+		plan.config,
+		{
+			context: {
+				tableConfigsByName: new Map(),
+				keySets
+			}
+		}
 	);
-	assert.deepStrictEqual(invoicesFilter, {
-		enabled: true,
-		startDate: "2026-01-01",
-		sourceColumn: "INVOICE_DATE",
-		clause: '"INVOICE_DATE" >= ?',
-		params: ["2026-01-01"]
-	});
+	assert.strictEqual(invoicesFilter.sourceColumn, "INVOICE_DATE");
+	assert.strictEqual(invoicesFilter.hasDateClause, true);
+	assert.strictEqual(invoicesFilter.hasLinkClause, true);
+	assert.strictEqual(invoicesFilter.hasPredicate, true);
+	assert.strictEqual(invoicesFilter.clause, null);
+	assert.deepStrictEqual(invoicesFilter.params, []);
+	assert.strictEqual(invoicesFilter.datePlan.clause, '"INVOICE_DATE" >= ?');
+	assert.deepStrictEqual(invoicesFilter.datePlan.params, ["2026-01-01"]);
+	assert.ok(invoicesFilter.linkPlans.some((plan) => plan.clause === '"JOB_NUMBER" IN (?)'));
+	assert.ok(invoicesFilter.linkPlans.some((plan) => plan.clause === '"INV_NR" IN (?)'));
 
-	const customersFilter = buildTransactionalDateFilter(
+	const workDoneFilter = buildTransactionalTableFilter(
+		"work_done",
+		{
+			JOB_NUMBER: { target: "job_number" }
+		},
+		plan.config,
+		{
+			availableSourceColumns: ["WORKDATE", "JOB_NUMBER", "INVOICE_NR"],
+			context: {
+				tableConfigsByName: new Map(),
+				keySets
+			}
+		}
+	);
+	assert.strictEqual(workDoneFilter.hasDateClause, true);
+	assert.strictEqual(workDoneFilter.hasLinkClause, true);
+	assert.strictEqual(workDoneFilter.datePlan.clause, '"WORKDATE" >= ?');
+	assert.ok(workDoneFilter.linkPlans.some((plan) => plan.clause === '"JOB_NUMBER" IN (?)'));
+
+	const largeKeySets = createEmptyKeySets();
+	for (let index = 0; index < FIREBIRD_IN_MEMBER_LIST_LIMIT + 5; index += 1) {
+		largeKeySets.customerJob.add(String(index + 1));
+	}
+	const largeFilter = buildTransactionalTableFilter(
+		"work_done",
+		{
+			JOB_NUMBER: { target: "job_number" }
+		},
+		plan.config,
+		{
+			availableSourceColumns: ["WORKDATE", "JOB_NUMBER"],
+			context: {
+				tableConfigsByName: new Map(),
+				keySets: largeKeySets
+			}
+		}
+	);
+	assert.strictEqual(largeFilter.clause, null);
+	assert.strictEqual(largeFilter.linkPlans.length, 2);
+	assert.strictEqual(largeFilter.linkPlans[0].params.length, FIREBIRD_IN_MEMBER_LIST_LIMIT);
+	assert.strictEqual(largeFilter.linkPlans[1].params.length, 5);
+
+	const customersFilter = buildTransactionalTableFilter(
 		"customers",
 		{
 			CID: { target: "cid" }
