@@ -1856,14 +1856,14 @@
             "nullable": true,
             "defaultValue": null
           },
-          "STRICT": {
-            "name": "STRICT",
+          "SIGNPDF": {
+            "name": "SIGNPDF",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
           },
-          "SIGNPDF": {
-            "name": "SIGNPDF",
+          "STRICT": {
+            "name": "STRICT",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -5204,6 +5204,18 @@
             "nullable": true,
             "defaultValue": null
           },
+          "STAFF_ID2": {
+            "name": "STAFF_ID2",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "STAFF_ID3": {
+            "name": "STAFF_ID3",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
           "GRAYIMPORT": {
             "name": "GRAYIMPORT",
             "type": "UNKNOWN",
@@ -5228,18 +5240,6 @@
             "nullable": true,
             "defaultValue": null
           },
-          "STAFF_ID2": {
-            "name": "STAFF_ID2",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "STAFF_ID3": {
-            "name": "STAFF_ID3",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
           "APPROVED": {
             "name": "APPROVED",
             "type": "UNKNOWN",
@@ -5252,12 +5252,6 @@
             "nullable": true,
             "defaultValue": null
           },
-          "ALERT_SERVICE_ADVISOR": {
-            "name": "ALERT_SERVICE_ADVISOR",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
           "LICENSEEXPIRE": {
             "name": "LICENSEEXPIRE",
             "type": "UNKNOWN",
@@ -5266,6 +5260,12 @@
           },
           "COMEBACK": {
             "name": "COMEBACK",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "ALERT_SERVICE_ADVISOR": {
+            "name": "ALERT_SERVICE_ADVISOR",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -6538,12 +6538,6 @@
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
-          },
-          "MESSAGE_BODY_TEXT": {
-            "name": "MESSAGE_BODY_TEXT",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
           }
         },
         "primaryKey": [],
@@ -6956,6 +6950,12 @@
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
+          },
+          "CONTROLCHECK": {
+            "name": "CONTROLCHECK",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
           }
         },
         "primaryKey": [],
@@ -7147,8 +7147,8 @@
             "nullable": true,
             "defaultValue": null
           },
-          "ONLINESTATUS": {
-            "name": "ONLINESTATUS",
+          "COMMENTS": {
+            "name": "COMMENTS",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -7159,14 +7159,14 @@
             "nullable": true,
             "defaultValue": null
           },
-          "ETATIME": {
-            "name": "ETATIME",
+          "ONLINESTATUS": {
+            "name": "ONLINESTATUS",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
           },
-          "COMMENTS": {
-            "name": "COMMENTS",
+          "ETATIME": {
+            "name": "ETATIME",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -8858,111 +8858,14 @@
             "nullable": true,
             "defaultValue": null
           },
+          "VTYPE": {
+            "name": "VTYPE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
           "SERVICEDUEKM": {
             "name": "SERVICEDUEKM",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          }
-        },
-        "primaryKey": [],
-        "uniqueIndexes": []
-      },
-      "SERVICESHISTORY": {
-        "name": "SERVICESHISTORY",
-        "columns": {
-          "SERVID": {
-            "name": "SERVID",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "FNR": {
-            "name": "FNR",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "CURRENTODO": {
-            "name": "CURRENTODO",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "ODODATE": {
-            "name": "ODODATE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "LASTODO": {
-            "name": "LASTODO",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "LASTSERVICEDATE": {
-            "name": "LASTSERVICEDATE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "LASTJOBNR": {
-            "name": "LASTJOBNR",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "DAYSSINCELASTSERVICE": {
-            "name": "DAYSSINCELASTSERVICE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "COMMENTS": {
-            "name": "COMMENTS",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "STATUS": {
-            "name": "STATUS",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "MODIFICATION": {
-            "name": "MODIFICATION",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "REGNR1": {
-            "name": "REGNR1",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "REGNR2": {
-            "name": "REGNR2",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "OWNER": {
-            "name": "OWNER",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "SERVICEDUEDATE": {
-            "name": "SERVICEDUEDATE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "SERVICEDUEDAYS": {
-            "name": "SERVICEDUEDAYS",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -9680,14 +9583,14 @@
             "nullable": true,
             "defaultValue": null
           },
-          "WDID": {
-            "name": "WDID",
+          "SAGEID": {
+            "name": "SAGEID",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
           },
-          "SAGEID": {
-            "name": "SAGEID",
+          "WDID": {
+            "name": "WDID",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -13752,7 +13655,7 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-04-23T07:58:43.032Z"
+    "lastUpdated": "2026-05-07T12:46:24.806Z"
   },
   "mysql": {
     "tables": {
@@ -16074,6 +15977,30 @@
             "scale": null,
             "isPrimaryKey": false,
             "isUnique": false
+          },
+          "DEFAULT_HOURLY_LABOUR_RATE": {
+            "name": "DEFAULT_HOURLY_LABOUR_RATE",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": true,
+            "defaultValue": "0.00",
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "AFTER_HOURS_HOURLY_LABOUR_RATE": {
+            "name": "AFTER_HOURS_HOURLY_LABOUR_RATE",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": true,
+            "defaultValue": "0.00",
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
           }
         },
         "primaryKey": [
@@ -17737,6 +17664,312 @@
         ],
         "uniqueIndexes": []
       },
+      "CUSTOMER_DISPLAY_DEVICES": {
+        "name": "CUSTOMER_DISPLAY_DEVICES",
+        "columns": {
+          "ID": {
+            "name": "ID",
+            "type": "INT",
+            "columnType": "int unsigned",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "BRANCH_ID": {
+            "name": "BRANCH_ID",
+            "type": "INT",
+            "columnType": "int unsigned",
+            "nullable": false,
+            "defaultValue": "1",
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "DEVICE_LABEL": {
+            "name": "DEVICE_LABEL",
+            "type": "VARCHAR",
+            "columnType": "varchar(100)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 100,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "PAIRING_CODE": {
+            "name": "PAIRING_CODE",
+            "type": "CHAR",
+            "columnType": "char(8)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 8,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "PAIRING_CODE_EXPIRES_AT": {
+            "name": "PAIRING_CODE_EXPIRES_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "DEVICE_TOKEN_HASH": {
+            "name": "DEVICE_TOKEN_HASH",
+            "type": "CHAR",
+            "columnType": "char(64)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 64,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "PAIRED_AT": {
+            "name": "PAIRED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "LAST_SEEN_AT": {
+            "name": "LAST_SEEN_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "REVOKED_AT": {
+            "name": "REVOKED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_BY": {
+            "name": "CREATED_BY",
+            "type": "INT",
+            "columnType": "int unsigned",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "CUSTOMER_DOCUMENT_LINKS": {
+        "name": "CUSTOMER_DOCUMENT_LINKS",
+        "columns": {
+          "ID": {
+            "name": "ID",
+            "type": "BIGINT",
+            "columnType": "bigint",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 19,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "TOKEN_HASH": {
+            "name": "TOKEN_HASH",
+            "type": "CHAR",
+            "columnType": "char(64)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 64,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": true
+          },
+          "DOCUMENT_TYPE": {
+            "name": "DOCUMENT_TYPE",
+            "type": "ENUM",
+            "columnType": "enum('QUOTE','INVOICE')",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 7,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "JOB_NUMBER": {
+            "name": "JOB_NUMBER",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CID": {
+            "name": "CID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "INVOICE_NR": {
+            "name": "INVOICE_NR",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "EXPIRES_AT": {
+            "name": "EXPIRES_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "REVOKED_AT": {
+            "name": "REVOKED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "VIEW_COUNT": {
+            "name": "VIEW_COUNT",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": "0",
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "LAST_VIEWED_AT": {
+            "name": "LAST_VIEWED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "RATING_SUBMITTED_AT": {
+            "name": "RATING_SUBMITTED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_BY_STAFF_ID": {
+            "name": "CREATED_BY_STAFF_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "TIMESTAMP",
+            "columnType": "timestamp",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ID"
+        ],
+        "uniqueIndexes": []
+      },
       "CUSTOMER_INVOICE_LINES": {
         "name": "CUSTOMER_INVOICE_LINES",
         "columns": {
@@ -19075,6 +19308,18 @@
             "length": null,
             "precision": 18,
             "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "DISPLAY_OPT_OUT": {
+            "name": "DISPLAY_OPT_OUT",
+            "type": "TINYINT",
+            "columnType": "tinyint(1)",
+            "nullable": false,
+            "defaultValue": "0",
+            "length": null,
+            "precision": 3,
+            "scale": 0,
             "isPrimaryKey": false,
             "isUnique": false
           }
@@ -20925,6 +21170,78 @@
             "scale": null,
             "isPrimaryKey": false,
             "isUnique": false
+          },
+          "REVERSED_AT": {
+            "name": "REVERSED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "REVERSED_BY": {
+            "name": "REVERSED_BY",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "REVERSAL_DATE": {
+            "name": "REVERSAL_DATE",
+            "type": "DATE",
+            "columnType": "date",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "REVERSAL_REASON": {
+            "name": "REVERSAL_REASON",
+            "type": "VARCHAR",
+            "columnType": "varchar(500)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 500,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "REVERSAL_GL_SOURCE": {
+            "name": "REVERSAL_GL_SOURCE",
+            "type": "VARCHAR",
+            "columnType": "varchar(50)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 50,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "REVERSAL_GL_SOURCE_ID": {
+            "name": "REVERSAL_GL_SOURCE_ID",
+            "type": "VARCHAR",
+            "columnType": "varchar(100)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 100,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
           }
         },
         "primaryKey": [
@@ -22632,6 +22949,90 @@
             "scale": null,
             "isPrimaryKey": false,
             "isUnique": false
+          },
+          "CUSTOMER_SIGNATURE_URL": {
+            "name": "CUSTOMER_SIGNATURE_URL",
+            "type": "TEXT",
+            "columnType": "text",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 65535,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "VEHICLE_DAMAGE_DIAGRAM_URL": {
+            "name": "VEHICLE_DAMAGE_DIAGRAM_URL",
+            "type": "TEXT",
+            "columnType": "text",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 65535,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CUSTOMER_SIGNATURE_SIGNED_AT": {
+            "name": "CUSTOMER_SIGNATURE_SIGNED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CUSTOMER_SIGNATURE_IP_ADDRESS": {
+            "name": "CUSTOMER_SIGNATURE_IP_ADDRESS",
+            "type": "VARCHAR",
+            "columnType": "varchar(45)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 45,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CUSTOMER_SIGNATURE_USER_AGENT": {
+            "name": "CUSTOMER_SIGNATURE_USER_AGENT",
+            "type": "TEXT",
+            "columnType": "text",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 65535,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CUSTOMER_SIGNATURE_CONSENT_ACCEPTED": {
+            "name": "CUSTOMER_SIGNATURE_CONSENT_ACCEPTED",
+            "type": "TINYINT",
+            "columnType": "tinyint(1)",
+            "nullable": false,
+            "defaultValue": "0",
+            "length": null,
+            "precision": 3,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CUSTOMER_SIGNATURE_CONSENT_TEXT": {
+            "name": "CUSTOMER_SIGNATURE_CONSENT_TEXT",
+            "type": "TEXT",
+            "columnType": "text",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 65535,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
           }
         },
         "primaryKey": [
@@ -23027,7 +23428,7 @@
             "name": "STAFF_ID",
             "type": "INT",
             "columnType": "int",
-            "nullable": false,
+            "nullable": true,
             "defaultValue": null,
             "length": null,
             "precision": 10,
@@ -23431,6 +23832,18 @@
             "isPrimaryKey": false,
             "isUnique": false
           },
+          "FUEL_LEVEL": {
+            "name": "FUEL_LEVEL",
+            "type": "VARCHAR",
+            "columnType": "varchar(10)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 10,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
           "LICENSEEXPIRE": {
             "name": "LICENSEEXPIRE",
             "type": "DATE",
@@ -23500,6 +23913,18 @@
             "length": null,
             "precision": null,
             "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "DISPLAY_HIDDEN": {
+            "name": "DISPLAY_HIDDEN",
+            "type": "TINYINT",
+            "columnType": "tinyint(1)",
+            "nullable": false,
+            "defaultValue": "0",
+            "length": null,
+            "precision": 3,
+            "scale": 0,
             "isPrimaryKey": false,
             "isUnique": false
           }
@@ -25926,7 +26351,7 @@
             "type": "VARCHAR",
             "columnType": "varchar(30)",
             "nullable": false,
-            "defaultValue": "QUEUED",
+            "defaultValue": "PENDING",
             "length": 30,
             "precision": null,
             "scale": null,
@@ -26244,7 +26669,7 @@
             "type": "VARCHAR",
             "columnType": "varchar(20)",
             "nullable": false,
-            "defaultValue": "RULES",
+            "defaultValue": "RULE_TREE",
             "length": 20,
             "precision": null,
             "scale": null,
@@ -31153,6 +31578,18 @@
             "isPrimaryKey": false,
             "isUnique": false
           },
+          "IS_EXCLUDED_FROM_QUOTE": {
+            "name": "IS_EXCLUDED_FROM_QUOTE",
+            "type": "TINYINT",
+            "columnType": "tinyint(1)",
+            "nullable": false,
+            "defaultValue": "0",
+            "length": null,
+            "precision": 3,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
           "PARTNROTHER": {
             "name": "PARTNROTHER",
             "type": "VARCHAR",
@@ -33757,6 +34194,51 @@
         ],
         "uniqueIndexes": []
       },
+      "TENANT_MODULES": {
+        "name": "TENANT_MODULES",
+        "columns": {
+          "MODULE_KEY": {
+            "name": "MODULE_KEY",
+            "type": "VARCHAR",
+            "columnType": "varchar(64)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 64,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "IS_ENABLED": {
+            "name": "IS_ENABLED",
+            "type": "TINYINT",
+            "columnType": "tinyint(1)",
+            "nullable": false,
+            "defaultValue": "1",
+            "length": null,
+            "precision": 3,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "UPDATED_AT": {
+            "name": "UPDATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "MODULE_KEY"
+        ],
+        "uniqueIndexes": []
+      },
       "USER_GROUPS": {
         "name": "USER_GROUPS",
         "columns": {
@@ -34168,6 +34650,18 @@
             "isPrimaryKey": false,
             "isUnique": false
           },
+          "IS_EXCLUDED_FROM_QUOTE": {
+            "name": "IS_EXCLUDED_FROM_QUOTE",
+            "type": "TINYINT",
+            "columnType": "tinyint(1)",
+            "nullable": false,
+            "defaultValue": "0",
+            "length": null,
+            "precision": 3,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
           "WORKPRICEINCVAT": {
             "name": "WORKPRICEINCVAT",
             "type": "DECIMAL",
@@ -34201,6 +34695,42 @@
             "length": 3,
             "precision": null,
             "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "TECHNICIAN_INVOICE_NR": {
+            "name": "TECHNICIAN_INVOICE_NR",
+            "type": "VARCHAR",
+            "columnType": "varchar(60)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 60,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "TECHNICIAN_PAID_DATE": {
+            "name": "TECHNICIAN_PAID_DATE",
+            "type": "DATE",
+            "columnType": "date",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "TECHNICIAN_PAID_BY": {
+            "name": "TECHNICIAN_PAID_BY",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
             "isPrimaryKey": false,
             "isUnique": false
           },
@@ -34643,6 +35173,6 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-04-23T07:58:43.375Z"
+    "lastUpdated": "2026-05-07T12:46:23.545Z"
   }
 }

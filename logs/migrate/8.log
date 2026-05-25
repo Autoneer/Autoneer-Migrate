@@ -1,0 +1,27 @@
+{"timestamp":"2026-04-23T08:48:08.293Z","runId":8,"level":"info","phase":"run_start","dryRun":false,"batchSize":1000,"fkChecks":true,"tables":[{"table":"INVOICE_GENERAL","mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","cleanBefore":true}]}
+{"timestamp":"2026-04-23T08:48:08.294Z","runId":8,"level":"info","phase":"preflight","action":"firebird_config_check","host":"localhost","port":3050,"database":"C:\\Autoneer\\data\\AUTONEER.FDB","user":"SYSDBA","passwordSet":true,"passwordLength":9,"passwordSource":"state","useDefaultSysdbaMasterkey":true,"rawPasswordSet":true,"rawPasswordLength":9}
+{"timestamp":"2026-04-23T08:48:09.176Z","runId":8,"level":"info","phase":"preflight","attempt":1,"status":"ok"}
+{"timestamp":"2026-04-23T08:48:09.177Z","runId":8,"level":"debug","phase":"preflight","durationMs":883}
+{"timestamp":"2026-04-23T08:48:09.177Z","runId":8,"level":"info","phase":"preflight","action":"nullability_validation","status":"start"}
+{"timestamp":"2026-04-23T08:48:09.180Z","runId":8,"level":"info","phase":"preflight","action":"nullability_validation","status":"passed"}
+{"timestamp":"2026-04-23T08:48:09.180Z","runId":8,"level":"info","phase":"preflight","action":"gl_account_types_seed","status":"start"}
+{"timestamp":"2026-04-23T08:48:09.188Z","runId":8,"level":"info","phase":"preflight","action":"gl_account_types_seed","status":"passed"}
+{"timestamp":"2026-04-23T08:48:09.384Z","runId":8,"level":"info","phase":"preflight","action":"accnr_conversion_map","source":"firebird","sourceTable":"ACCOUNTS","count":92}
+{"timestamp":"2026-04-23T08:48:09.384Z","runId":8,"level":"debug","phase":"table_loop","action":"starting","includedCount":1,"mappingTableCount":1}
+{"timestamp":"2026-04-23T08:48:09.384Z","runId":8,"level":"info","phase":"table_loop","action":"normalized_tables","sampleTables":["INVOICE_GENERAL"]}
+{"timestamp":"2026-04-23T08:48:09.384Z","runId":8,"level":"debug","phase":"table_loop","action":"processing","tableName":"invoice_general","mappingTableKeys":["INVOICEGENERAL"]}
+{"timestamp":"2026-04-23T08:48:09.384Z","runId":8,"level":"debug","phase":"table_loop","action":"mapping_resolved","tableName":"invoice_general","hasMappingEntry":true,"mappingTarget":"INVOICE_GENERAL"}
+{"timestamp":"2026-04-23T08:48:09.384Z","runId":8,"level":"debug","phase":"mapping_debug","tableName":"invoice_general","mappedSource":"INVOICEGENERAL","firebirdTableCount":191,"sampleFirebirdTables":["ACCCLASS","ACCDEPARTMENT","ACCOUNTLINKS","ACCOUNTS","ACCOUNT_OPENING"]}
+{"timestamp":"2026-04-23T08:48:09.473Z","runId":8,"level":"debug","phase":"clean_decision","tableName":"invoice_general","cleanBefore":true,"dryRun":false,"mode":"INSERT"}
+{"timestamp":"2026-04-23T08:48:09.473Z","runId":8,"type":"table_cleaning_started","table":"invoice_general","tableRunId":29}
+{"timestamp":"2026-04-23T08:48:09.473Z","runId":8,"level":"info","phase":"clean","tableName":"invoice_general","tableRunId":29,"status":"start"}
+{"timestamp":"2026-04-23T08:48:09.474Z","runId":8,"level":"debug","phase":"clean","tableName":"invoice_general","tableRunId":29,"action":"fk_checks_disabled"}
+{"timestamp":"2026-04-23T08:48:09.504Z","runId":8,"level":"info","phase":"clean","tableName":"invoice_general","tableRunId":29,"status":"success","method":"TRUNCATE","affectedRows":null,"postCount":0,"durationMs":31}
+{"timestamp":"2026-04-23T08:48:09.518Z","runId":8,"type":"table_cleaned","table":"invoice_general","tableRunId":29,"method":"TRUNCATE","affectedRows":null,"postCount":0}
+{"timestamp":"2026-04-23T08:48:09.519Z","runId":8,"level":"debug","phase":"clean","tableName":"invoice_general","tableRunId":29,"action":"fk_checks_restored"}
+{"timestamp":"2026-04-23T08:48:09.519Z","runId":8,"level":"info","phase":"table_start","tableName":"invoice_general","tableRunId":29,"mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[]}
+{"timestamp":"2026-04-23T08:48:09.636Z","runId":8,"level":"info","phase":"fetch","tableName":"invoice_general","tableRunId":29,"sourceRows":389,"dateFilter":null}
+{"timestamp":"2026-04-23T08:48:09.755Z","runId":8,"level":"debug","phase":"write","tableName":"invoice_general","tableRunId":29,"status":"start","batchSize":389}
+{"timestamp":"2026-04-23T08:48:14.555Z","runId":8,"level":"debug","phase":"write","tableName":"invoice_general","tableRunId":29,"status":"end","inserted":0,"updated":0,"skipped":0,"durationMs":4800}
+{"timestamp":"2026-04-23T08:48:14.572Z","runId":8,"level":"error","phase":"table_finalize","tableName":"invoice_general","tableRunId":29,"status":"failed","error":"Table invoice_general completed with 389 errors.","hint":"Fix the row errors, then run the migration again."}
+{"timestamp":"2026-04-23T08:48:14.578Z","runId":8,"level":"error","phase":"run_finalize","status":"failed","error":"Table invoice_general completed with 389 errors."}
