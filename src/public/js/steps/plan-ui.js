@@ -225,6 +225,7 @@ class PlanUI {
                 <th>Table Name</th>
                 <th>Source → Target</th>
                 <th>Fields Mapped</th>
+				<th title="Checked tables are emptied before migration">Truncate first</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -279,6 +280,7 @@ class PlanUI {
 			}
 
 			const fieldCount = Object.keys(tableConfig?.columns || {}).length;
+			const cleanBefore = this.plan.tableConfigs?.[targetTableName]?.cleanBefore === true;
 
 			return `
         <tr data-table="${targetTableName}">
@@ -286,6 +288,13 @@ class PlanUI {
           <td><strong>${targetTableName}</strong></td>
           <td>${sourceTableName} → ${targetTableName}</td>
           <td>${fieldCount} fields</td>
+		  <td style="text-align:center;">
+			<label title="Empty ${targetTableName} before migrating">
+			  <input type="checkbox"
+					 ${cleanBefore ? 'checked' : ''}
+					 onchange="window.wizard.steps[2].component.setTableCleanBefore(${index}, this.checked)">
+			</label>
+		  </td>
           <td>
             <button class="btn btn-sm btn-secondary" 
                     onclick="window.wizard.steps[2].component.moveUp(${index})"
@@ -309,6 +318,18 @@ class PlanUI {
         </tr>
       `;
 		}).join('');
+	}
+
+	/** Set the destructive clean option directly from the table row. */
+	setTableCleanBefore(index, cleanBefore) {
+		const tableName = this.plan.tables[index];
+		if (!tableName) return;
+		if (!this.plan.tableConfigs) this.plan.tableConfigs = {};
+
+		const config = this.plan.tableConfigs[tableName] || {};
+		config.cleanBefore = cleanBefore === true;
+		this.plan.tableConfigs[tableName] = config;
+		this.state.set(`plan.tableConfigs.${tableName}`, config);
 	}
 
 	/**
@@ -890,7 +911,7 @@ class PlanUI {
 					dedupeKeys: []
 				};
 				if (tableConfig.batchSize) result.batchSize = tableConfig.batchSize;
-				if (tableConfig.cleanBefore) result.cleanBefore = tableConfig.cleanBefore;
+				result.cleanBefore = tableConfig.cleanBefore === true;
 				return result;
 			});
 

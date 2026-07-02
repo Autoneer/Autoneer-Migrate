@@ -12,7 +12,7 @@ function normalizePlanSteps(plan, mappingForLookup) {
 		dedupeKeys: [],
 		onDuplicate: 'SKIP',
 		// Default MUST be false unless user explicitly checked the option
-		cleanBefore: true,
+		cleanBefore: false,
 		batchSize: defaultBatchSize
 	};
 
