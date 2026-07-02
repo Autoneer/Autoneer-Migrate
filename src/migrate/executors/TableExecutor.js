@@ -1,6 +1,7 @@
 const firebird = require('../../db/firebird');
 const mysql = require('../../db/mysql');
 const { applyTransform } = require('../mappers');
+const { applyMigrationMarker } = require('../migrationMarkers');
 
 /**
  * Table executor - migrates a single table
@@ -312,7 +313,8 @@ class TableExecutor {
 				}
 			}
 
-			transformedRow[fieldMap.targetColumn.toLowerCase()] = value;
+			const targetColumn = fieldMap.targetColumn.toLowerCase();
+			transformedRow[targetColumn] = applyMigrationMarker(this.targetTable, targetColumn, value);
 		}
 
 		return transformedRow;

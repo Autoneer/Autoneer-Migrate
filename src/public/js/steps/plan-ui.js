@@ -99,6 +99,17 @@ class PlanUI {
 			}
 		}
 
+		// A plan may have been loaded before the Step 2 selection changed.
+		// Keep only targets that are still present in the current mapping.
+		const selectedTargets = new Set(
+			Object.values(this.mapping.tables || {})
+				.map(config => String(config?.targetTable || config?.target || '').toUpperCase())
+				.filter(Boolean)
+		);
+		this.plan.tables = this.plan.tables.filter(table =>
+			selectedTargets.has(String(table || '').toUpperCase())
+		);
+
 		this.applyAccountingOrder();
 
 		if (!this.plan.name || this.plan.name.trim() === '') {
@@ -549,20 +560,10 @@ class PlanUI {
 	 * Remove table from plan
 	 */
 	async removeTable(index) {
-		const confirmed = await Modal.confirm({
-			title: 'Remove Table',
-			message: `Remove ${this.plan.tables[index]} from plan?`,
-			type: 'warning',
-			confirmText: 'Remove',
-			cancelText: 'Cancel'
-		});
-
-		if (confirmed) {
-			this.plan.tables.splice(index, 1);
-			this.applyAccountingOrder();
-			this.state.setPlan(this.plan);
-			this.render();
-		}
+		this.plan.tables.splice(index, 1);
+		this.applyAccountingOrder();
+		this.state.setPlan(this.plan);
+		this.render();
 	}
 
 	/**

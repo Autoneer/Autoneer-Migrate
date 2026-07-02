@@ -2,6 +2,7 @@ const EventEmitter = require("events");
 const firebird = require("../db/firebird");
 const mysql = require("../db/mysql");
 const { applyTransform } = require("./mappers");
+const { applyMigrationMarker } = require("./migrationMarkers");
 const runStore = require("./runStore");
 const logger = require("./logger");
 const { resolveTargetTableName } = require("./utils/tableNameCanonical");
@@ -865,6 +866,7 @@ async function mapRow(row, columnMap, lookupFn, options = {}) {
 			}
 		}
 		const outKey = rule.target ?? rule.targetColumn;
+		mappedValue = applyMigrationMarker(targetTable, outKey, mappedValue);
 		if (shouldConvertAccnrReference(targetTable, outKey)) {
 			mappedValue = applyAccnrReferenceConversion(mappedValue, accnrConversionMap);
 		}

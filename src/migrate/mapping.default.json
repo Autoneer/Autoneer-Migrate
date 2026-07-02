@@ -245,6 +245,10 @@
 				"INVTOTAL": {
 					"target": "invoice_total",
 					"transform": "toNumber"
+				},
+				"JNOTES": {
+					"target": "jnotes",
+					"transform": "trim"
 				}
 			}
 		},
@@ -274,6 +278,10 @@
 				"INV_TOTALINCLVAT": {
 					"target": "inv_totalinclvat",
 					"transform": "toNumber"
+				},
+				"COMMENTS": {
+					"target": "comments",
+					"transform": "trim"
 				}
 			}
 		},

@@ -315,15 +315,14 @@ class WizardState {
 	 * @param {Object} updates - Partial mapping updates
 	 */
 	updateMapping(updates) {
-		// Deep merge for tables property to avoid losing table data
-		if (updates.tables) {
-			this.state.mapping.tables = {
-				...(this.state.mapping.tables || {}),
-				...updates.tables
+		// A supplied tables collection is a complete selection. Replacing it is
+		// required so deleted/unchecked table keys do not survive in state.
+		if (Object.prototype.hasOwnProperty.call(updates, 'tables')) {
+			this.state.mapping = {
+				...this.state.mapping,
+				...updates,
+				tables: { ...(updates.tables || {}) }
 			};
-			// Remove tables from updates to avoid shallow overwrite
-			const { tables, ...otherUpdates } = updates;
-			this.state.mapping = { ...this.state.mapping, ...otherUpdates };
 		} else {
 			this.state.mapping = { ...this.state.mapping, ...updates };
 		}

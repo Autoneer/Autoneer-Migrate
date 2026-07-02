@@ -58,7 +58,7 @@ class MappingUI {
 							this.mapping = mapping;
 							// populate selectedTables set
 							this.selectedTables = new Set(Object.keys(this.mapping.tables || {}));
-							this.state.updateMapping(this.mapping);
+							this.state.set('mapping', this.mapping);
 							this.render();
 							console.debug('[MappingShortcut] Applied preset', p.code || p.name);
 						}
@@ -220,7 +220,7 @@ class MappingUI {
 			const mapping = typeof data.profile.mapping_json === 'string' ? JSON.parse(data.profile.mapping_json) : data.profile.mapping_json;
 			this.mapping = mapping;
 			this.selectedTables = new Set(Object.keys(this.mapping.tables || {}));
-			this.state.updateMapping(this.mapping);
+			this.state.set('mapping', this.mapping);
 			this.render();
 
 			// Modal.alert({ title: 'Loaded', message: 'Profile applied' });
@@ -612,7 +612,10 @@ class MappingUI {
 			delete this.mapping.tables[tableName];
 		}
 
-		this.state.updateMapping(this.mapping);
+		// Replace the complete mapping so tables removed from the selection are
+		// also removed from persisted wizard state. updateMapping() deliberately
+		// merges table keys and would otherwise retain unchecked profile tables.
+		this.state.set('mapping', this.mapping);
 		this.render();
 	}
 
@@ -625,7 +628,7 @@ class MappingUI {
 		}
 
 		this.mapping.tables[sourceName].targetTable = targetName;
-		this.state.updateMapping(this.mapping);
+		this.state.set('mapping', this.mapping);
 		this.updateValidation();
 
 		// Re-render to update status
