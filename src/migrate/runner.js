@@ -886,6 +886,32 @@ function buildInsertStatement(tableName, columns, mode, primaryKeys, ignoreDupli
 	return { sql, updateCols: updates };
 }
 
+function findDuplicateTargetColumns(columnsMap = {}) {
+	const seen = new Map();
+	const duplicates = [];
+
+	for (const [sourceColumn, rule] of Object.entries(columnsMap || {})) {
+		if (!rule || rule.omit) continue;
+		const targetColumn = rule.target || rule.targetColumn;
+		if (!targetColumn) continue;
+
+		const key = String(targetColumn).trim().toLowerCase();
+		if (!key) continue;
+
+		if (seen.has(key)) {
+			duplicates.push({
+				targetColumn,
+				firstSource: seen.get(key),
+				secondSource: sourceColumn
+			});
+		} else {
+			seen.set(key, sourceColumn);
+		}
+	}
+
+	return duplicates;
+}
+
 async function runMigrationInternal({
 	firebirdConfig,
 	mysqlConfig,
@@ -902,7 +928,7 @@ async function runMigrationInternal({
 	const pool = await mysql.connectToSchema(mysqlConfig, schemaName);
 	await mysql.ensureMigrationTables(pool);
 
-	const logEmitter = logger.startRunLogger(runId);
+	const logEmitter = logger.startRunLogger(runId, { truncate: true });
 	const logRun = (entry) => {
 		logger.logEvent(runId, entry);
 	};
@@ -1237,6 +1263,29 @@ async function runMigrationInternal({
 			}
 		}
 
+		// Auto-migrate old JOB_INFORMATION mappings that paired similarly named fields to the wrong targets.
+		for (const [sourceKey, entry] of Object.entries(mapping?.tables || {})) {
+			const targetName = String(entry?.target || entry?.targetTable || "").toLowerCase();
+			if (String(sourceKey).toUpperCase() !== "JOB_INFORMATION" && targetName !== "job_information") continue;
+			const cols = entry?.columns || {};
+			if (cols.INVTOTAL) {
+				const target = String(cols.INVTOTAL.target || cols.INVTOTAL.targetColumn || "").toLowerCase();
+				if (target === "job_number") {
+					cols.INVTOTAL.target = "invoice_total";
+					cols.INVTOTAL.targetColumn = "invoice_total";
+					logRun({ level: "info", phase: "mapping_migrate", table: "JOB_INFORMATION", source: "INVTOTAL", oldTarget: "job_number", newTarget: "invoice_total" });
+				}
+			}
+			if (cols.CONT_JOBNR) {
+				const target = String(cols.CONT_JOBNR.target || cols.CONT_JOBNR.targetColumn || "").toLowerCase();
+				if (target === "cont_id") {
+					cols.CONT_JOBNR.target = "cont_job_number";
+					cols.CONT_JOBNR.targetColumn = "cont_job_number";
+					logRun({ level: "info", phase: "mapping_migrate", table: "JOB_INFORMATION", source: "CONT_JOBNR", oldTarget: "cont_id", newTarget: "cont_job_number" });
+				}
+			}
+		}
+
 		// Auto-migrate old SPARES_USED column names
 		if (mapping?.tables?.SPARES_USED?.columns) {
 			const cols = mapping.tables.SPARES_USED.columns;
@@ -1386,6 +1435,7 @@ async function runMigrationInternal({
 			const targetColumns = Object.values(columnsMap || {})
 				.filter(c => !c.omit) // Exclude omitted columns
 				.map((c) => c.target || c.targetColumn);
+			const duplicateTargets = findDuplicateTargetColumns(columnsMap);
 			const dedupeKeys = Array.isArray(step.dedupeKeys)
 				? step.dedupeKeys
 				: step.dedupeKeys
@@ -1447,6 +1497,21 @@ async function runMigrationInternal({
 				}
 				await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
 				await failRun(errorMessage, "Update your mapping or target schema so columns match.", "precheck");
+				if (!continueOnError) break;
+				continue;
+			}
+
+			if (duplicateTargets.length) {
+				const details = duplicateTargets
+					.map((dup) => `${dup.targetColumn} <= ${dup.firstSource}, ${dup.secondSource}`)
+					.join("; ");
+				const errorMessage = `Duplicate target columns in mapping for ${tableName}: ${details}.`;
+				if (!tableRun) {
+					const newId = await runStore.startTableRun(pool, runId, tableName, step.mode, step.keyStrategy);
+					tableRunId = newId;
+				}
+				await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
+				await failRun(errorMessage, "Each mapped source column must target a unique MySQL column. Fix the mapping before rerunning.", "precheck");
 				if (!continueOnError) break;
 				continue;
 			}
@@ -1538,9 +1603,9 @@ async function runMigrationInternal({
 			const conn = await pool.getConnection();
 			let fbDb = null;
 			try {
+				fbDb = await firebird.attachWithRetry(firebirdConfig);
 				let filteredSourceKeys = null;
 				if (tableFilter?.hasLinkClause) {
-					fbDb = await firebird.attachWithRetry(firebirdConfig);
 					filteredSourceKeys = await collectMatchingKeyValuesWithDb({
 						db: fbDb,
 						sourceTable,
@@ -1658,8 +1723,8 @@ async function runMigrationInternal({
 				const totalSource = filteredSourceKeys
 					? filteredSourceKeys.length
 					: tableFilter?.clause
-					? await firebird.countRowsWhere(firebirdConfig, sourceTable, tableFilter.clause, tableFilter.params)
-					: await firebird.countRows(firebirdConfig, sourceTable);
+					? await firebird.countRowsWithDbWhere(fbDb, sourceTable, tableFilter.clause, tableFilter.params)
+					: await firebird.countRowsWithDb(fbDb, sourceTable);
 				await runStore.updateTableProgress(pool, runId, tableName, { rows_source: totalSource });
 				tableState.total = totalSource;
 				logRun({
@@ -1737,8 +1802,8 @@ async function runMigrationInternal({
 						);
 					} else {
 						batch = tableFilter?.clause
-							? await firebird.fetchBatchWhere(
-								firebirdConfig,
+							? await firebird.fetchBatchWithDbWhere(
+								fbDb,
 								sourceTable,
 								firebirdColumns,
 								offset,
@@ -1747,8 +1812,8 @@ async function runMigrationInternal({
 								tableFilter.clause,
 								tableFilter.params
 							)
-							: await firebird.fetchBatch(
-								firebirdConfig,
+							: await firebird.fetchBatchWithDb(
+								fbDb,
 								sourceTable,
 								firebirdColumns,
 								offset,
@@ -2471,7 +2536,7 @@ async function runMigrationInternal({
 		if (err && err.code === 'RUN_ABORTED') {
 			const msg = err.message || 'Run aborted by user';
 			logRun({ level: 'info', phase: 'run_aborted', message: msg });
-			runState.status = "STOPPED";
+			runState.status = "CANCELLED";
 			runState.finishedAt = new Date().toISOString();
 			// mark current table as cancelled
 			if (runState.currentTable) {
@@ -2489,7 +2554,7 @@ async function runMigrationInternal({
 			// mark queued/running tables as not run
 			markRemainingNotRun(runState.currentTable);
 			try {
-				await runStore.finishRun(pool, runId, "STOPPED", msg);
+				await runStore.finishRun(pool, runId, "CANCELLED", msg);
 			} catch (finishErr) {
 				// ignore
 			}

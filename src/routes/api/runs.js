@@ -928,6 +928,8 @@ router.get("/runs/:runId/errors", async (req, res) => {
 router.get("/runs/:runId/logs", async (req, res) => {
 	try {
 		const { runId } = req.params;
+		const sinceMs = req.query.since ? Number(req.query.since) : null;
+		const limit = Math.min(Math.max(Number(req.query.limit || 200), 1), 1000);
 		let logs = logger.getLogBuffer(runId) || [];
 		if (!logs.length) {
 			const logPath = logger.getLogFilePath(runId);
@@ -946,6 +948,16 @@ router.get("/runs/:runId/logs", async (req, res) => {
 			} catch (err) {
 				logs = [];
 			}
+		}
+
+		if (Number.isFinite(sinceMs) && sinceMs > 0) {
+			logs = logs.filter((entry) => {
+				const ts = entry?.timestamp ? new Date(entry.timestamp).getTime() : 0;
+				return ts > sinceMs;
+			});
+		}
+		if (logs.length > limit) {
+			logs = logs.slice(-limit);
 		}
 
 		res.json({

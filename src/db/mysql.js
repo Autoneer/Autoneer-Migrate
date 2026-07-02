@@ -115,7 +115,7 @@ async function ensureMigrationTables(pool) {
 			target_schema_name varchar(150) null,
 			started_at datetime null,
 			ended_at datetime null,
-			status enum('RUNNING','SUCCESS','FAILED','CANCELLED') not null default 'RUNNING',
+			status varchar(30) not null default 'RUNNING',
 			table_summary_json json null,
 			error_count int default 0,
 			warn_count int default 0,

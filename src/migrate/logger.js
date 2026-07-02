@@ -30,9 +30,10 @@ function getLogFilePath(runId) {
 	return path.join(logsDir, `${runId}.log`);
 }
 
-function startRunLogger(runId) {
+function startRunLogger(runId, options = {}) {
 	if (!runId) return null;
 	if (logEmitters.has(runId)) return logEmitters.get(runId);
+	const truncate = options.truncate === true;
 	ensureLogsDir();
 	const emitter = new EventEmitter();
 	logEmitters.set(runId, emitter);
@@ -44,7 +45,7 @@ function startRunLogger(runId) {
 		completedTables: 0
 	});
 	try {
-		const stream = fs.createWriteStream(getLogFilePath(runId), { flags: "a" });
+		const stream = fs.createWriteStream(getLogFilePath(runId), { flags: truncate ? "w" : "a" });
 		logStreams.set(runId, stream);
 	} catch (err) {
 		// ignore

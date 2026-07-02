@@ -1,5 +1,24 @@
 const { v4: uuidv4 } = require("uuid");
 
+function normalizeRunStatus(status) {
+	const normalized = String(status || "").toUpperCase();
+	switch (normalized) {
+		case "COMPLETED":
+			return "SUCCESS";
+		case "STOPPED":
+		case "ABORTED":
+			return "CANCELLED";
+		case "RUNNING":
+		case "SUCCESS":
+		case "FAILED":
+		case "CANCELLED":
+		case "COMPLETED_WITH_ERRORS":
+			return normalized;
+		default:
+			return "FAILED";
+	}
+}
+
 async function createRun(pool, { run_label, source_conn_name, target_schema_name, plan_id, schemaName, dryRun, batchSize, fkChecks, plan, mappingProfileId }) {
 	const [result] = await pool.query(
 		"insert into migration_runs (plan_id, run_label, source_conn_name, target_schema_name, started_at, status, table_summary_json, error_count, warn_count) values (?, ?, ?, ?, now(), 'RUNNING', ?, 0, 0)",
@@ -18,15 +37,27 @@ async function createRun(pool, { run_label, source_conn_name, target_schema_name
 }
 
 async function finishRun(pool, runId, status, errorMessage) {
-	// status should be one of RUNNING/SUCCESS/FAILED/CANCELLED
-	await pool.query(
-		"update migration_runs set status = ?, ended_at = now(), error_message = ? where run_id = ?",
-		[status, errorMessage || null, runId]
-	);
+	const finalStatus = normalizeRunStatus(status);
+	try {
+		await pool.query(
+			"update migration_runs set status = ?, ended_at = now(), error_message = ? where run_id = ?",
+			[finalStatus, errorMessage || null, runId]
+		);
+	} catch (err) {
+		const isStatusEnumMismatch =
+			finalStatus === "COMPLETED_WITH_ERRORS" &&
+			(err?.code === "WARN_DATA_TRUNCATED" || err?.errno === 1265 || String(err?.message || "").includes("Data truncated for column 'status'"));
+		if (!isStatusEnumMismatch) throw err;
+
+		await pool.query(
+			"update migration_runs set status = ?, ended_at = now(), error_message = ? where run_id = ?",
+			["FAILED", errorMessage || null, runId]
+		);
+	}
 
 	// also update legacy finished_at/status if present (best-effort)
 	try {
-		await pool.query("update migration_runs_legacy set status = ?, finished_at = now(), error_message = ? where id = (select id from migration_runs_legacy order by created_at desc limit 1)", [status === 'SUCCESS' ? 'success' : 'failed', errorMessage || null]);
+		await pool.query("update migration_runs_legacy set status = ?, finished_at = now(), error_message = ? where id = (select id from migration_runs_legacy order by created_at desc limit 1)", [finalStatus === 'SUCCESS' ? 'success' : 'failed', errorMessage || null]);
 	} catch (e) {
 		// ignore
 	}

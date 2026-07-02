@@ -234,16 +234,16 @@
 				"STAFF_ID": {
 					"target": "staff_id"
 				},
-				"JOB_DATE": {
-					"target": "job_date",
+				"DATE_RECEIVED": {
+					"target": "date_received",
 					"transform": "toDate"
 				},
 				"STATUS": {
 					"target": "status",
 					"transform": "trim"
 				},
-				"TOTAL": {
-					"target": "total",
+				"INVTOTAL": {
+					"target": "invoice_total",
 					"transform": "toNumber"
 				}
 			}

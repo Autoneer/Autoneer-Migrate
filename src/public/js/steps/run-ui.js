@@ -14,6 +14,7 @@ class RunUI {
 		this.pollInterval = null;
 		this.startTime = null;
 		this._lastLogTs = null;
+		this._logFetchInFlight = false;
 	}
 
 	planRequiresGLRebuild() {
@@ -83,6 +84,7 @@ class RunUI {
 
 		// Reset log tracking for fresh display
 		this._lastLogTs = null;
+		this._logFetchInFlight = false;
 		this.startTime = null;
 
 		this.render();
@@ -665,11 +667,18 @@ class RunUI {
 		}
 
 		// Fetch and render logs (new entries only)
+		let logFetchStarted = false;
 		try {
 			const runId = this.state.get('run.id');
 			if (runId) {
 				// RunAPI.getLogs() already returns the logs array directly
-				const logs = await this.api.getLogs(runId);
+				if (this._logFetchInFlight) return;
+				this._logFetchInFlight = true;
+				logFetchStarted = true;
+				const logs = await this.api.getLogs(runId, {
+					limit: 100,
+					...(this._lastLogTs ? { since: this._lastLogTs } : {})
+				});
 				const logArray = Array.isArray(logs) ? logs : (logs?.logs || []);
 				// Filter logs newer than last seen timestamp
 				const newLogs = [];
@@ -678,12 +687,19 @@ class RunUI {
 					if (!this._lastLogTs || ts > this._lastLogTs) newLogs.push(l);
 				}
 				if (newLogs.length) {
-					this._lastLogTs = newLogs[newLogs.length - 1].timestamp ? new Date(newLogs[newLogs.length - 1].timestamp).getTime() : this._lastLogTs;
+					this._lastLogTs = newLogs.reduce((maxTs, entry) => {
+						const ts = entry.timestamp ? new Date(entry.timestamp).getTime() : 0;
+						return ts > maxTs ? ts : maxTs;
+					}, this._lastLogTs || 0);
 					this.appendLogEntries(newLogs);
 				}
 			}
 		} catch (e) {
 			console.warn('Failed to fetch logs:', e);
+		} finally {
+			if (logFetchStarted) {
+				this._logFetchInFlight = false;
+			}
 		}
 	}
 

@@ -26,7 +26,7 @@ const handleProgressStream = (req, res) => {
 
 	const emitter = getEmitter(runId);
 	const runState = getRunState(runId);
-	const logEmitter = logger.getLogEmitter(runId) || logger.startRunLogger(runId);
+	const logEmitter = logger.getLogEmitter(runId);
 	const logBuffer = logger.getLogBuffer(runId);
 	if (!emitter && !runState) {
 		res.write(`event: message\ndata: ${JSON.stringify({ type: "not_found" })}\n\n`);
@@ -36,7 +36,9 @@ const handleProgressStream = (req, res) => {
 
 	// Root cause note: SSE disconnects previously triggered UI failure even when the runner kept inserting.
 	// We now treat SSE drop as non-fatal and rely on server-run state + reconnection.
-	logger.logEvent(runId, { level: "info", phase: "progress", status: "client_connected" });
+	if (logEmitter) {
+		logger.logEvent(runId, { level: "info", phase: "progress", status: "client_connected" });
+	}
 
 	if (runState) {
 		res.write(`event: runState\ndata: ${JSON.stringify(runState)}\n\n`);
@@ -78,7 +80,9 @@ const handleProgressStream = (req, res) => {
 		if (logEmitter) {
 			logEmitter.removeListener("log", onLog);
 		}
-		logger.logEvent(runId, { level: "warn", phase: "progress", status: "client_disconnected" });
+		if (logEmitter) {
+			logger.logEvent(runId, { level: "warn", phase: "progress", status: "client_disconnected" });
+		}
 		clearInterval(heartbeat);
 	});
 	return;
