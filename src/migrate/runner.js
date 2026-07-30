@@ -27,6 +27,17 @@ const {
 	normalizeTransactionalDateFilterConfig,
 	summarizeTransactionalContext
 } = require("./transactionalDateFilter");
+const {
+	buildInvoiceSourcePolicy,
+	buildSourceInvoiceIdentityMap,
+	combineSourceWhere,
+	filterValidInvoiceKeys,
+	getMappingDefault,
+	hasMappingDefault,
+	reconcileInvoiceIdentities,
+	resolveMappedSourceColumn,
+	resolveOnDuplicatePolicy
+} = require("./invoiceMigrationSafety");
 
 const runEmitters = new Map();
 const runStates = new Map();
@@ -412,7 +423,8 @@ async function validateColumnNullability(pool, tableName, columnMap) {
 				IS_NULLABLE,
 				COLUMN_DEFAULT,
 				DATA_TYPE,
-				COLUMN_TYPE
+				COLUMN_TYPE,
+				EXTRA
 			FROM information_schema.COLUMNS
 			WHERE TABLE_SCHEMA = DATABASE()
 			AND TABLE_NAME = ?
@@ -465,7 +477,7 @@ async function validateColumnNullability(pool, tableName, columnMap) {
 
 				if (riskyTransforms.includes(transformName)) {
 					// These transforms can return NULL on invalid input
-					if (!Object.prototype.hasOwnProperty.call(rule, 'default')) {
+					if (!hasMappingDefault(rule)) {
 						violations.push({
 							column: colName,
 							message: `Column '${colName}' is NOT NULL but uses transform '${transformName}' which can return NULL, and no default is set.`,
@@ -477,8 +489,9 @@ async function validateColumnNullability(pool, tableName, columnMap) {
 			}
 
 			// Check if only default is provided (no source column, no transform)
-			if (!rule.transform && Object.prototype.hasOwnProperty.call(rule, 'default')) {
-				if (rule.default === null || rule.default === undefined) {
+			if (!rule.transform && hasMappingDefault(rule)) {
+				const defaultValue = getMappingDefault(rule);
+				if (defaultValue === null || defaultValue === undefined) {
 					violations.push({
 						column: colName,
 						message: `Column '${colName}' is NOT NULL but default value is null/undefined.`,
@@ -860,10 +873,8 @@ async function mapRow(row, columnMap, lookupFn, options = {}) {
 		if (rule.transform) {
 			mappedValue = applyTransform(rule.transform, mappedValue);
 		}
-		if (mappedValue === undefined || mappedValue === null) {
-			if (Object.prototype.hasOwnProperty.call(rule, "default")) {
-				mappedValue = rule.default;
-			}
+		if ((mappedValue === undefined || mappedValue === null) && hasMappingDefault(rule)) {
+			mappedValue = getMappingDefault(rule);
 		}
 		const outKey = rule.target ?? rule.targetColumn;
 		mappedValue = applyMigrationMarker(targetTable, outKey, mappedValue);
@@ -886,6 +897,120 @@ function buildInsertStatement(tableName, columns, mode, primaryKeys, ignoreDupli
 		.join(", ");
 	const sql = updates.length ? `${base} on duplicate key update ${updates}` : base;
 	return { sql, updateCols: updates };
+}
+
+async function loadSourceInvoiceIdentities({
+	fbDb,
+	sourceTable,
+	columnsMap,
+	sourceWhere,
+	filteredSourceKeys,
+	rowKeyColumn,
+	totalSource
+}) {
+	const identityColumns = [
+		resolveMappedSourceColumn(columnsMap, "invoice_nr"),
+		resolveMappedSourceColumn(columnsMap, "job_number"),
+		resolveMappedSourceColumn(columnsMap, "cid")
+	].filter(Boolean);
+	const uniqueColumns = Array.from(new Set(identityColumns));
+	const rows = [];
+
+	if (filteredSourceKeys) {
+		for (let index = 0; index < filteredSourceKeys.length; index += FIREBIRD_IN_MEMBER_LIST_LIMIT) {
+			const pageKeys = filteredSourceKeys.slice(index, index + FIREBIRD_IN_MEMBER_LIST_LIMIT);
+			const keyWhere = `"${String(rowKeyColumn).replace(/"/g, '""')}" IN (${pageKeys.map(() => "?").join(", ")})`;
+			const page = await firebird.fetchBatchWithDbWhere(
+				fbDb,
+				sourceTable,
+				uniqueColumns,
+				0,
+				10000,
+				rowKeyColumn,
+				keyWhere,
+				pageKeys
+			);
+			rows.push(...page);
+		}
+	} else {
+		let offset = 0;
+		while (offset < totalSource) {
+			const page = await firebird.fetchBatchWithDbWhere(
+				fbDb,
+				sourceTable,
+				uniqueColumns,
+				offset,
+				1000,
+				uniqueColumns[0],
+				sourceWhere.clause,
+				sourceWhere.params
+			);
+			if (!page.length) break;
+			rows.push(...page);
+			offset += page.length;
+		}
+	}
+
+	const identities = buildSourceInvoiceIdentityMap(rows, columnsMap);
+	if (identities.size !== Number(totalSource)) {
+		throw new Error(
+			`Invoice migration safety check failed: selected ${totalSource} valid source rows but found ${identities.size} unique invoice numbers.`
+		);
+	}
+	return identities;
+}
+
+async function validateTargetInvoiceIdentities({
+	conn,
+	schemaName,
+	sourceIdentities,
+	logRun,
+	tableRunId
+}) {
+	const invoiceNumbers = Array.from(sourceIdentities.keys());
+	const targetRows = [];
+	for (let index = 0; index < invoiceNumbers.length; index += 1000) {
+		const page = invoiceNumbers.slice(index, index + 1000);
+		const placeholders = page.map(() => "?").join(", ");
+		const [rows] = await conn.query(
+			`select invoice_nr, job_number, cid from \`${schemaName}\`.\`invoices\` where invoice_nr in (${placeholders})`,
+			page
+		);
+		targetRows.push(...rows);
+	}
+
+	const issues = reconcileInvoiceIdentities(sourceIdentities, targetRows);
+	if (issues.length) {
+		const detail = issues.slice(0, 10).join("; ");
+		const suffix = issues.length > 10 ? `; plus ${issues.length - 10} more` : "";
+		throw new Error(`Invoice identity reconciliation failed: ${detail}${suffix}.`);
+	}
+
+	const [maximumRows] = await conn.query(
+		`select max(invoice_nr) as max_invoice_nr from \`${schemaName}\`.\`invoices\``
+	);
+	const maximumInvoiceNr = Number(maximumRows?.[0]?.max_invoice_nr || 0);
+	const [metadataRows] = await conn.query(
+		"select AUTO_INCREMENT as next_invoice_nr from information_schema.TABLES where TABLE_SCHEMA = ? and TABLE_NAME = 'invoices'",
+		[schemaName]
+	);
+	const nextInvoiceNr = Number(metadataRows?.[0]?.next_invoice_nr || 0);
+	if (maximumInvoiceNr > 0 && nextInvoiceNr > 0 && nextInvoiceNr <= maximumInvoiceNr) {
+		await conn.query(
+			`alter table \`${schemaName}\`.\`invoices\` auto_increment = ${maximumInvoiceNr + 1}`
+		);
+	}
+
+	logRun({
+		level: "info",
+		phase: "post_validation",
+		tableName: "invoices",
+		tableRunId,
+		validation: "invoice_identity",
+		status: "passed",
+		invoicesChecked: sourceIdentities.size,
+		maximumInvoiceNr
+	});
 }
 
 function findDuplicateTargetColumns(columnsMap = {}) {
@@ -1333,6 +1458,35 @@ async function runMigrationInternal({
 				// console.warn('[Runner] Normalized table name:', { original: originalName, canonical: canonicalName });
 				step.table = canonicalName;
 			}
+			if (String(step.table || "").toLowerCase() === "invoices") {
+				const requested = {
+					mode: step.mode,
+					keyStrategy: step.keyStrategy,
+					onDuplicate: step.onDuplicate
+				};
+				step.mode = "INSERT";
+				step.keyStrategy = "preserve";
+				step.onDuplicate = "ERROR";
+				step.dedupeKeys = [];
+				if (
+					requested.mode !== step.mode
+					|| requested.keyStrategy !== step.keyStrategy
+					|| requested.onDuplicate !== step.onDuplicate
+				) {
+					logRun({
+						level: "warn",
+						phase: "plan_migrate",
+						table: "invoices",
+						action: "enforce_invoice_identity",
+						requested,
+						applied: {
+							mode: step.mode,
+							keyStrategy: step.keyStrategy,
+							onDuplicate: step.onDuplicate
+						}
+					});
+				}
+			}
 		}
 		// Rebuild runState.tables to use canonical target names and preserve any existing per-table state where possible
 		try {
@@ -1443,7 +1597,7 @@ async function runMigrationInternal({
 				: step.dedupeKeys
 					? [step.dedupeKeys]
 					: [];
-			const onDuplicate = step.onDuplicate || "SKIP";
+			const onDuplicate = resolveOnDuplicatePolicy(tableName, step.onDuplicate);
 
 			const tableRun = await runStore.getTableRun(pool, runId, tableName);
 			tableRunId = tableRun?.id || null;
@@ -1473,6 +1627,7 @@ async function runMigrationInternal({
 				availableSourceColumns: firebirdColumnNames,
 				context: transactionalFilterContext
 			});
+			const sourcePolicy = buildInvoiceSourcePolicy(tableName, columnsMap);
 			if (transactionalDateFilter.enabled && tableFilter?.enabled && !tableFilter.hasPredicate) {
 				const errorMessage = `Transactional date filter is enabled, but ${tableName} has no usable date or link columns.`;
 				if (!tableRun) {
@@ -1614,6 +1769,42 @@ async function runMigrationInternal({
 						keyColumn: rowKeyColumn,
 						filter: tableFilter
 					});
+					if (sourcePolicy) {
+						filteredSourceKeys = filterValidInvoiceKeys(filteredSourceKeys);
+					}
+				}
+				const sourceWhere = combineSourceWhere(
+					tableFilter?.clause,
+					tableFilter?.params,
+					sourcePolicy
+				);
+				const totalSource = filteredSourceKeys
+					? filteredSourceKeys.length
+					: sourceWhere.clause
+						? await firebird.countRowsWithDbWhere(fbDb, sourceTable, sourceWhere.clause, sourceWhere.params)
+						: await firebird.countRowsWithDb(fbDb, sourceTable);
+				const invoiceSourceIdentities = sourcePolicy
+					? await loadSourceInvoiceIdentities({
+						fbDb,
+						sourceTable,
+						columnsMap,
+						sourceWhere,
+						filteredSourceKeys,
+						rowKeyColumn,
+						totalSource
+					})
+					: null;
+				if (sourcePolicy) {
+					logRun({
+						level: "info",
+						phase: "preflight",
+						tableName,
+						tableRunId,
+						action: "invoice_source_identity_policy",
+						sourceColumn: sourcePolicy.sourceColumn,
+						validInvoiceRows: totalSource,
+						onDuplicate
+					});
 				}
 
 				const cleanBefore = shouldCleanTable(plan?.config, step);
@@ -1722,11 +1913,6 @@ async function runMigrationInternal({
 				const tableStart = Date.now();
 				logRun({ level: "info", phase: "table_start", tableName, tableRunId, mode: step.mode, keyStrategy: step.keyStrategy, dedupeKeys });
 
-				const totalSource = filteredSourceKeys
-					? filteredSourceKeys.length
-					: tableFilter?.clause
-					? await firebird.countRowsWithDbWhere(fbDb, sourceTable, tableFilter.clause, tableFilter.params)
-					: await firebird.countRowsWithDb(fbDb, sourceTable);
 				await runStore.updateTableProgress(pool, runId, tableName, { rows_source: totalSource });
 				tableState.total = totalSource;
 				logRun({
@@ -1803,7 +1989,7 @@ async function runMigrationInternal({
 							pageKeys
 						);
 					} else {
-						batch = tableFilter?.clause
+						batch = sourceWhere.clause
 							? await firebird.fetchBatchWithDbWhere(
 								fbDb,
 								sourceTable,
@@ -1811,8 +1997,8 @@ async function runMigrationInternal({
 								offset,
 								effectiveBatch,
 								firebirdColumns[0],
-								tableFilter.clause,
-								tableFilter.params
+								sourceWhere.clause,
+								sourceWhere.params
 							)
 							: await firebird.fetchBatchWithDb(
 								fbDb,
@@ -2324,6 +2510,24 @@ async function runMigrationInternal({
 					break;
 				}
 
+				if (tableName === "invoices" && invoiceSourceIdentities && !dryRun) {
+					logRun({
+						level: "info",
+						phase: "post_validation",
+						tableName,
+						tableRunId,
+						validation: "invoice_identity",
+						status: "start"
+					});
+					await validateTargetInvoiceIdentities({
+						conn,
+						schemaName,
+						sourceIdentities: invoiceSourceIdentities,
+						logRun,
+						tableRunId
+					});
+				}
+
 				// Post-table validation for spares_used
 				if (tableName === "spares_used") {
 					logRun({ level: "info", phase: "post_validation", tableName, tableRunId, status: "start" });
@@ -2695,5 +2899,6 @@ module.exports = {
 	getEmitter,
 	getRunState,
 	requestAbort,
-	isRunActive
+	isRunActive,
+	validateColumnNullability
 };

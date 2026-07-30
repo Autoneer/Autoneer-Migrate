@@ -47,13 +47,14 @@ function buildPlan({ firebirdTables, mysqlTables, mapping }) {
 
 	const plan = Array.from(tableSet).map((table) => {
 		const isMaster = MASTER_TABLES.has(table.toLowerCase());
+		const isInvoice = table.toLowerCase() === "invoices";
 		return {
 			table,
 			include: false,
-			mode: "UPSERT",
-			keyStrategy: isMaster ? "preserve" : "rekey",
+			mode: isInvoice ? "INSERT" : "UPSERT",
+			keyStrategy: (isMaster || isInvoice) ? "preserve" : "rekey",
 			dedupeKeys: [],
-			onDuplicate: "SKIP"
+			onDuplicate: isInvoice ? "ERROR" : "SKIP"
 		};
 	});
 

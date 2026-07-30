@@ -29,11 +29,12 @@ class Plan {
 	 * @param {Object} config - { mode, keyStrategy, dedupeKeys: [], cleanBefore }
 	 */
 	addTable(tableName, config) {
+		const isInvoice = String(tableName || '').toLowerCase() === 'invoices';
 		this.tables[tableName.toUpperCase()] = {
-			mode: config.mode || 'INSERT',          // INSERT, UPSERT, TRUNCATE+INSERT
-			keyStrategy: config.keyStrategy || 'preserve',  // preserve, rekey
-			dedupeKeys: config.dedupeKeys || [],
-			onDuplicate: config.onDuplicate || 'SKIP',  // SKIP, ERROR, UPDATE
+			mode: isInvoice ? 'INSERT' : (config.mode || 'INSERT'),          // INSERT, UPSERT, TRUNCATE+INSERT
+			keyStrategy: isInvoice ? 'preserve' : (config.keyStrategy || 'preserve'),  // preserve, rekey
+			dedupeKeys: isInvoice ? [] : (config.dedupeKeys || []),
+			onDuplicate: isInvoice ? 'ERROR' : (config.onDuplicate || 'SKIP'),  // SKIP, ERROR, UPDATE
 			cleanBefore: typeof config.cleanBefore === 'boolean' ? config.cleanBefore : false,
 			batchSize: config.batchSize || 500
 		};
@@ -55,9 +56,16 @@ class Plan {
 	updateTable(tableName, updates) {
 		const upperName = tableName.toUpperCase();
 		if (this.tables[upperName]) {
+			const isInvoice = String(tableName || '').toLowerCase() === 'invoices';
 			this.tables[upperName] = {
 				...this.tables[upperName],
-				...updates
+				...updates,
+				...(isInvoice ? {
+					mode: 'INSERT',
+					keyStrategy: 'preserve',
+					dedupeKeys: [],
+					onDuplicate: 'ERROR'
+				} : {})
 			};
 		}
 	}

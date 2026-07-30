@@ -1242,7 +1242,6 @@
 				"INV_NR": {
 					"omit": false,
 					"transform": null,
-					"defaultValue": "",
 					"targetColumn": "INVOICE_NR"
 				},
 				"PROFIT": {
