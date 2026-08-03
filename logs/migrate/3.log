@@ -1,0 +1,26 @@
+{"timestamp":"2026-08-03T12:09:47.107Z","runId":3,"level":"info","phase":"run_start","dryRun":false,"batchSize":10000,"fkChecks":true,"tables":[{"table":"INVOICES","mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","cleanBefore":false}]}
+{"timestamp":"2026-08-03T12:09:47.107Z","runId":3,"level":"info","phase":"preflight","action":"firebird_config_check","host":"localhost","port":3050,"database":"C:\\Autoneer\\data\\STOCK.FDB","user":"SYSDBA","passwordSet":true,"passwordLength":9,"passwordSource":"state","useDefaultSysdbaMasterkey":true,"rawPasswordSet":true,"rawPasswordLength":9}
+{"timestamp":"2026-08-03T12:09:47.199Z","runId":3,"level":"info","phase":"preflight","attempt":1,"status":"ok"}
+{"timestamp":"2026-08-03T12:09:47.199Z","runId":3,"level":"debug","phase":"preflight","durationMs":92}
+{"timestamp":"2026-08-03T12:09:47.199Z","runId":3,"level":"info","phase":"preflight","action":"nullability_validation","status":"start"}
+{"timestamp":"2026-08-03T12:09:47.201Z","runId":3,"level":"info","phase":"preflight","action":"nullability_validation","status":"passed"}
+{"timestamp":"2026-08-03T12:09:47.202Z","runId":3,"level":"info","phase":"preflight","action":"gl_account_types_seed","status":"start"}
+{"timestamp":"2026-08-03T12:09:47.210Z","runId":3,"level":"info","phase":"preflight","action":"gl_account_types_seed","status":"passed"}
+{"timestamp":"2026-08-03T12:09:47.375Z","runId":3,"level":"info","phase":"preflight","action":"accnr_conversion_map","source":"firebird","sourceTable":"ACCOUNTS","count":91}
+{"timestamp":"2026-08-03T12:09:47.375Z","runId":3,"level":"debug","phase":"table_loop","action":"starting","includedCount":1,"mappingTableCount":21}
+{"timestamp":"2026-08-03T12:09:47.375Z","runId":3,"level":"warn","phase":"plan_migrate","table":"invoices","action":"enforce_invoice_identity","requested":{"mode":"INSERT","keyStrategy":"preserve","onDuplicate":"SKIP"},"applied":{"mode":"INSERT","keyStrategy":"preserve","onDuplicate":"ERROR"}}
+{"timestamp":"2026-08-03T12:09:47.376Z","runId":3,"level":"info","phase":"table_loop","action":"normalized_tables","sampleTables":["INVOICES"]}
+{"timestamp":"2026-08-03T12:09:47.376Z","runId":3,"level":"debug","phase":"table_loop","action":"processing","tableName":"invoices","mappingTableKeys":["BANKS","CNOTE","STAFF","STOCK","PRICING"]}
+{"timestamp":"2026-08-03T12:09:47.376Z","runId":3,"level":"debug","phase":"table_loop","action":"mapping_resolved","tableName":"invoices","hasMappingEntry":true,"mappingTarget":"INVOICES"}
+{"timestamp":"2026-08-03T12:09:47.376Z","runId":3,"level":"debug","phase":"mapping_debug","tableName":"invoices","mappedSource":"INVOICES","firebirdTableCount":189,"sampleFirebirdTables":["ACCCLASS","ACCDEPARTMENT","ACCOUNTLINKS","ACCOUNTS","ACCOUNT_OPENING"]}
+{"timestamp":"2026-08-03T12:09:47.598Z","runId":3,"level":"info","phase":"preflight","tableName":"invoices","tableRunId":11,"action":"invoice_source_identity_policy","sourceColumn":"INV_NR","validInvoiceRows":3647,"onDuplicate":"ERROR"}
+{"timestamp":"2026-08-03T12:09:47.598Z","runId":3,"level":"debug","phase":"clean_decision","tableName":"invoices","cleanBefore":false,"dryRun":false,"mode":"INSERT"}
+{"timestamp":"2026-08-03T12:09:47.598Z","runId":3,"level":"info","phase":"table_start","tableName":"invoices","tableRunId":11,"mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[]}
+{"timestamp":"2026-08-03T12:09:47.612Z","runId":3,"level":"info","phase":"fetch","tableName":"invoices","tableRunId":11,"sourceRows":3647,"dateFilter":null}
+{"timestamp":"2026-08-03T12:09:47.883Z","runId":3,"level":"debug","phase":"write","tableName":"invoices","tableRunId":11,"status":"start","batchSize":3647}
+{"timestamp":"2026-08-03T12:10:07.212Z","runId":3,"level":"info","phase":"preflight","action":"firebird_config_check","host":"localhost","port":3050,"database":"C:\\Autoneer\\data\\STOCK.FDB","user":"SYSDBA","passwordSet":true,"passwordLength":9,"passwordSource":"state","useDefaultSysdbaMasterkey":true,"rawPasswordSet":true,"rawPasswordLength":9}
+{"timestamp":"2026-08-03T12:10:07.313Z","runId":3,"level":"info","phase":"preflight","attempt":1,"status":"ok"}
+{"timestamp":"2026-08-03T12:10:07.313Z","runId":3,"level":"debug","phase":"keepalive","status":"ok"}
+{"timestamp":"2026-08-03T12:10:23.539Z","runId":3,"level":"debug","phase":"write","tableName":"invoices","tableRunId":11,"status":"end","inserted":0,"updated":0,"skipped":0,"durationMs":35656}
+{"timestamp":"2026-08-03T12:10:23.556Z","runId":3,"level":"error","phase":"table_finalize","tableName":"invoices","tableRunId":11,"status":"failed","error":"Table invoices completed with 3647 errors.","hint":"Fix the row errors, then run the migration again."}
+{"timestamp":"2026-08-03T12:10:23.562Z","runId":3,"level":"error","phase":"run_finalize","status":"failed","error":"Table invoices completed with 3647 errors."}

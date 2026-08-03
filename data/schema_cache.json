@@ -2969,48 +2969,6 @@
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
-          },
-          "D1FNR": {
-            "name": "D1FNR",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "D2FNR": {
-            "name": "D2FNR",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "D3FNR": {
-            "name": "D3FNR",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "D4FNR": {
-            "name": "D4FNR",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "D5FNR": {
-            "name": "D5FNR",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "D6FNR": {
-            "name": "D6FNR",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "D7FNR": {
-            "name": "D7FNR",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
           }
         },
         "primaryKey": [],
@@ -5204,18 +5162,6 @@
             "nullable": true,
             "defaultValue": null
           },
-          "GRAYIMPORT": {
-            "name": "GRAYIMPORT",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "INSPECTIONDONE": {
-            "name": "INSPECTIONDONE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
           "STAFF_ID2": {
             "name": "STAFF_ID2",
             "type": "UNKNOWN",
@@ -5224,6 +5170,18 @@
           },
           "STAFF_ID3": {
             "name": "STAFF_ID3",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "GRAYIMPORT": {
+            "name": "GRAYIMPORT",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "INSPECTIONDONE": {
+            "name": "INSPECTIONDONE",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -5240,12 +5198,6 @@
             "nullable": true,
             "defaultValue": null
           },
-          "COMEBACK": {
-            "name": "COMEBACK",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
           "APPROVED": {
             "name": "APPROVED",
             "type": "UNKNOWN",
@@ -5258,14 +5210,20 @@
             "nullable": true,
             "defaultValue": null
           },
-          "ALERT_SERVICE_ADVISOR": {
-            "name": "ALERT_SERVICE_ADVISOR",
+          "LICENSEEXPIRE": {
+            "name": "LICENSEEXPIRE",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
           },
-          "LICENSEEXPIRE": {
-            "name": "LICENSEEXPIRE",
+          "COMEBACK": {
+            "name": "COMEBACK",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "ALERT_SERVICE_ADVISOR": {
+            "name": "ALERT_SERVICE_ADVISOR",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -5475,14 +5433,14 @@
             "nullable": true,
             "defaultValue": null
           },
-          "IS_BASELINE": {
-            "name": "IS_BASELINE",
+          "LEDGER_STATUS": {
+            "name": "LEDGER_STATUS",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
           },
-          "LEDGER_STATUS": {
-            "name": "LEDGER_STATUS",
+          "IS_BASELINE": {
+            "name": "IS_BASELINE",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -6939,18 +6897,6 @@
             "nullable": true,
             "defaultValue": null
           },
-          "INVDATE": {
-            "name": "INVDATE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "TICKDATE": {
-            "name": "TICKDATE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
           "CONTROLCHECK": {
             "name": "CONTROLCHECK",
             "type": "UNKNOWN",
@@ -7147,6 +7093,12 @@
             "nullable": true,
             "defaultValue": null
           },
+          "COMMENTS": {
+            "name": "COMMENTS",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
           "ONLINESTATUS": {
             "name": "ONLINESTATUS",
             "type": "UNKNOWN",
@@ -7161,12 +7113,6 @@
           },
           "ETATIME": {
             "name": "ETATIME",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "COMMENTS": {
-            "name": "COMMENTS",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -7592,49 +7538,6 @@
           },
           "KILOS": {
             "name": "KILOS",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          }
-        },
-        "primaryKey": [],
-        "uniqueIndexes": []
-      },
-      "PERMITS": {
-        "name": "PERMITS",
-        "columns": {
-          "GENPMID": {
-            "name": "GENPMID",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "PERMITNR": {
-            "name": "PERMITNR",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "VID": {
-            "name": "VID",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "EXPDATE": {
-            "name": "EXPDATE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "COUNTRY": {
-            "name": "COUNTRY",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "FNR": {
-            "name": "FNR",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -8864,8 +8767,8 @@
             "nullable": true,
             "defaultValue": null
           },
-          "SERVICEDUEKM": {
-            "name": "SERVICEDUEKM",
+          "NEXTSERVICEDATE": {
+            "name": "NEXTSERVICEDATE",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -8875,28 +8778,9 @@
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
-          }
-        },
-        "primaryKey": [],
-        "uniqueIndexes": []
-      },
-      "SESSIONS": {
-        "name": "SESSIONS",
-        "columns": {
-          "SESSION_ID": {
-            "name": "SESSION_ID",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
           },
-          "EXPIRES": {
-            "name": "EXPIRES",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "DATA": {
-            "name": "DATA",
+          "SERVICEDUEKM": {
+            "name": "SERVICEDUEKM",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -9614,14 +9498,14 @@
             "nullable": true,
             "defaultValue": null
           },
-          "WDID": {
-            "name": "WDID",
+          "SAGEID": {
+            "name": "SAGEID",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
           },
-          "SAGEID": {
-            "name": "SAGEID",
+          "WDID": {
+            "name": "WDID",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -11994,75 +11878,6 @@
         "primaryKey": [],
         "uniqueIndexes": []
       },
-      "USERS": {
-        "name": "USERS",
-        "columns": {
-          "ID": {
-            "name": "ID",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "COMPANY_ID": {
-            "name": "COMPANY_ID",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "NAME": {
-            "name": "NAME",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "EMAIL": {
-            "name": "EMAIL",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "PASSWORD": {
-            "name": "PASSWORD",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "MOBILENR": {
-            "name": "MOBILENR",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "WORKSHOP": {
-            "name": "WORKSHOP",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "COMPANY_DATA": {
-            "name": "COMPANY_DATA",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "RESET_TOKEN": {
-            "name": "RESET_TOKEN",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "RESET_TOKEN_EXPIRE": {
-            "name": "RESET_TOKEN_EXPIRE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          }
-        },
-        "primaryKey": [
-          "ID"
-        ],
-        "uniqueIndexes": []
-      },
       "VATLINKS": {
         "name": "VATLINKS",
         "columns": {
@@ -12763,12 +12578,6 @@
           },
           "SERVICEDUEDATE": {
             "name": "SERVICEDUEDATE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "SETSERVICE": {
-            "name": "SETSERVICE",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -13755,7 +13564,7 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-07-30T11:51:53.148Z"
+    "lastUpdated": "2026-08-03T12:25:55.910Z"
   },
   "mysql": {
     "tables": {
@@ -33400,7 +33209,7 @@
           "STATUS": {
             "name": "STATUS",
             "type": "ENUM",
-            "columnType": "enum('REQUESTED','ORDERED','RECEIVED','COLLECTED','CANCELLED')",
+            "columnType": "enum('REQUESTED','PENDING','ORDERED','RECEIVED','COLLECTED','CANCELLED')",
             "nullable": false,
             "defaultValue": "REQUESTED",
             "length": 9,
@@ -43617,7 +43426,7 @@
             "type": "TINYINT",
             "columnType": "tinyint unsigned",
             "nullable": false,
-            "defaultValue": "2",
+            "defaultValue": "1",
             "length": null,
             "precision": 3,
             "scale": 0,
@@ -43629,7 +43438,7 @@
             "type": "TINYINT",
             "columnType": "tinyint unsigned",
             "nullable": false,
-            "defaultValue": "2",
+            "defaultValue": "1",
             "length": null,
             "precision": 3,
             "scale": 0,
@@ -45905,6 +45714,30 @@
             "nullable": true,
             "defaultValue": null,
             "length": 65535,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "DETACHED_AT": {
+            "name": "DETACHED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "DETACHED_REASON": {
+            "name": "DETACHED_REASON",
+            "type": "VARCHAR",
+            "columnType": "varchar(255)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 255,
             "precision": null,
             "scale": null,
             "isPrimaryKey": false,
@@ -50378,6 +50211,6 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-07-30T11:51:52.575Z"
+    "lastUpdated": "2026-08-03T12:25:55.435Z"
   }
 }
