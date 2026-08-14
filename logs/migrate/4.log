@@ -1,26 +1,47 @@
-{"timestamp":"2026-08-03T12:10:31.950Z","runId":4,"level":"info","phase":"run_start","dryRun":false,"batchSize":10000,"fkChecks":true,"tables":[{"table":"INVOICES","mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","cleanBefore":false}]}
-{"timestamp":"2026-08-03T12:10:31.950Z","runId":4,"level":"info","phase":"preflight","action":"firebird_config_check","host":"localhost","port":3050,"database":"C:\\Autoneer\\data\\STOCK.FDB","user":"SYSDBA","passwordSet":true,"passwordLength":9,"passwordSource":"state","useDefaultSysdbaMasterkey":true,"rawPasswordSet":true,"rawPasswordLength":9}
-{"timestamp":"2026-08-03T12:10:32.034Z","runId":4,"level":"info","phase":"preflight","attempt":1,"status":"ok"}
-{"timestamp":"2026-08-03T12:10:32.034Z","runId":4,"level":"debug","phase":"preflight","durationMs":84}
-{"timestamp":"2026-08-03T12:10:32.034Z","runId":4,"level":"info","phase":"preflight","action":"nullability_validation","status":"start"}
-{"timestamp":"2026-08-03T12:10:32.036Z","runId":4,"level":"info","phase":"preflight","action":"nullability_validation","status":"passed"}
-{"timestamp":"2026-08-03T12:10:32.036Z","runId":4,"level":"info","phase":"preflight","action":"gl_account_types_seed","status":"start"}
-{"timestamp":"2026-08-03T12:10:32.042Z","runId":4,"level":"info","phase":"preflight","action":"gl_account_types_seed","status":"passed"}
-{"timestamp":"2026-08-03T12:10:32.199Z","runId":4,"level":"info","phase":"preflight","action":"accnr_conversion_map","source":"firebird","sourceTable":"ACCOUNTS","count":91}
-{"timestamp":"2026-08-03T12:10:32.199Z","runId":4,"level":"debug","phase":"table_loop","action":"starting","includedCount":1,"mappingTableCount":21}
-{"timestamp":"2026-08-03T12:10:32.199Z","runId":4,"level":"warn","phase":"plan_migrate","table":"invoices","action":"enforce_invoice_identity","requested":{"mode":"INSERT","keyStrategy":"preserve","onDuplicate":"SKIP"},"applied":{"mode":"INSERT","keyStrategy":"preserve","onDuplicate":"ERROR"}}
-{"timestamp":"2026-08-03T12:10:32.200Z","runId":4,"level":"info","phase":"table_loop","action":"normalized_tables","sampleTables":["INVOICES"]}
-{"timestamp":"2026-08-03T12:10:32.200Z","runId":4,"level":"debug","phase":"table_loop","action":"processing","tableName":"invoices","mappingTableKeys":["BANKS","CNOTE","STAFF","STOCK","PRICING"]}
-{"timestamp":"2026-08-03T12:10:32.200Z","runId":4,"level":"debug","phase":"table_loop","action":"mapping_resolved","tableName":"invoices","hasMappingEntry":true,"mappingTarget":"INVOICES"}
-{"timestamp":"2026-08-03T12:10:32.200Z","runId":4,"level":"debug","phase":"mapping_debug","tableName":"invoices","mappedSource":"INVOICES","firebirdTableCount":189,"sampleFirebirdTables":["ACCCLASS","ACCDEPARTMENT","ACCOUNTLINKS","ACCOUNTS","ACCOUNT_OPENING"]}
-{"timestamp":"2026-08-03T12:10:32.434Z","runId":4,"level":"info","phase":"preflight","tableName":"invoices","tableRunId":12,"action":"invoice_source_identity_policy","sourceColumn":"INV_NR","validInvoiceRows":3647,"onDuplicate":"ERROR"}
-{"timestamp":"2026-08-03T12:10:32.434Z","runId":4,"level":"debug","phase":"clean_decision","tableName":"invoices","cleanBefore":false,"dryRun":false,"mode":"INSERT"}
-{"timestamp":"2026-08-03T12:10:32.434Z","runId":4,"level":"info","phase":"table_start","tableName":"invoices","tableRunId":12,"mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[]}
-{"timestamp":"2026-08-03T12:10:32.446Z","runId":4,"level":"info","phase":"fetch","tableName":"invoices","tableRunId":12,"sourceRows":3647,"dateFilter":null}
-{"timestamp":"2026-08-03T12:10:32.703Z","runId":4,"level":"debug","phase":"write","tableName":"invoices","tableRunId":12,"status":"start","batchSize":3647}
-{"timestamp":"2026-08-03T12:10:52.042Z","runId":4,"level":"info","phase":"preflight","action":"firebird_config_check","host":"localhost","port":3050,"database":"C:\\Autoneer\\data\\STOCK.FDB","user":"SYSDBA","passwordSet":true,"passwordLength":9,"passwordSource":"state","useDefaultSysdbaMasterkey":true,"rawPasswordSet":true,"rawPasswordLength":9}
-{"timestamp":"2026-08-03T12:10:52.135Z","runId":4,"level":"info","phase":"preflight","attempt":1,"status":"ok"}
-{"timestamp":"2026-08-03T12:10:52.136Z","runId":4,"level":"debug","phase":"keepalive","status":"ok"}
-{"timestamp":"2026-08-03T12:11:11.227Z","runId":4,"level":"debug","phase":"write","tableName":"invoices","tableRunId":12,"status":"end","inserted":0,"updated":0,"skipped":0,"durationMs":38524}
-{"timestamp":"2026-08-03T12:11:11.242Z","runId":4,"level":"error","phase":"table_finalize","tableName":"invoices","tableRunId":12,"status":"failed","error":"Table invoices completed with 3647 errors.","hint":"Fix the row errors, then run the migration again."}
-{"timestamp":"2026-08-03T12:11:11.248Z","runId":4,"level":"error","phase":"run_finalize","status":"failed","error":"Table invoices completed with 3647 errors."}
+{"timestamp":"2026-08-14T07:18:48.348Z","runId":4,"level":"info","phase":"run_start","dryRun":false,"batchSize":1000,"fkChecks":true,"tables":[{"table":"ACCOUNTS","mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","cleanBefore":false},{"table":"ACC_CLASS","mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","cleanBefore":false},{"table":"ACC_DEPARTMENT","mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[],"onDuplicate":"SKIP","cleanBefore":false}]}
+{"timestamp":"2026-08-14T07:18:48.349Z","runId":4,"level":"info","phase":"preflight","action":"firebird_config_check","host":"localhost","port":3050,"database":"C:\\Autoneer\\data\\AUTONEER.FDB","user":"SYSDBA","passwordSet":true,"passwordLength":9,"passwordSource":"state","useDefaultSysdbaMasterkey":true,"rawPasswordSet":true,"rawPasswordLength":9}
+{"timestamp":"2026-08-14T07:18:48.503Z","runId":4,"level":"info","phase":"preflight","attempt":1,"status":"ok"}
+{"timestamp":"2026-08-14T07:18:48.504Z","runId":4,"level":"debug","phase":"preflight","durationMs":155}
+{"timestamp":"2026-08-14T07:18:48.504Z","runId":4,"level":"info","phase":"preflight","action":"nullability_validation","status":"start"}
+{"timestamp":"2026-08-14T07:18:48.507Z","runId":4,"level":"info","phase":"preflight","action":"nullability_validation","status":"passed"}
+{"timestamp":"2026-08-14T07:18:48.507Z","runId":4,"level":"info","phase":"preflight","action":"gl_account_types_seed","status":"start"}
+{"timestamp":"2026-08-14T07:18:48.509Z","runId":4,"level":"info","phase":"preflight","action":"gl_account_types_seed","status":"passed"}
+{"timestamp":"2026-08-14T07:18:48.715Z","runId":4,"level":"info","phase":"preflight","action":"accnr_conversion_map","source":"firebird","sourceTable":"ACCOUNTS","count":96}
+{"timestamp":"2026-08-14T07:18:48.716Z","runId":4,"level":"debug","phase":"table_loop","action":"starting","includedCount":3,"mappingTableCount":3}
+{"timestamp":"2026-08-14T07:18:48.716Z","runId":4,"level":"info","phase":"table_loop","action":"normalized_tables","sampleTables":["ACCOUNTS","ACC_CLASS","ACC_DEPARTMENT"]}
+{"timestamp":"2026-08-14T07:18:48.716Z","runId":4,"level":"debug","phase":"table_loop","action":"processing","tableName":"accounts","mappingTableKeys":["ACCCLASS","ACCOUNTS","ACCDEPARTMENT"]}
+{"timestamp":"2026-08-14T07:18:48.716Z","runId":4,"level":"debug","phase":"table_loop","action":"mapping_resolved","tableName":"accounts","hasMappingEntry":true,"mappingTarget":"ACCOUNTS"}
+{"timestamp":"2026-08-14T07:18:48.716Z","runId":4,"level":"debug","phase":"mapping_debug","tableName":"accounts","mappedSource":"ACCOUNTS","firebirdTableCount":190,"sampleFirebirdTables":["ACCCLASS","ACCDEPARTMENT","ACCOUNTLINKS","ACCOUNTS","ACCOUNT_OPENING"]}
+{"timestamp":"2026-08-14T07:18:48.927Z","runId":4,"level":"debug","phase":"clean_decision","tableName":"accounts","cleanBefore":false,"dryRun":false,"mode":"INSERT"}
+{"timestamp":"2026-08-14T07:18:48.927Z","runId":4,"level":"info","phase":"table_start","tableName":"accounts","tableRunId":12,"mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[]}
+{"timestamp":"2026-08-14T07:18:48.942Z","runId":4,"level":"info","phase":"fetch","tableName":"accounts","tableRunId":12,"sourceRows":119,"dateFilter":null}
+{"timestamp":"2026-08-14T07:18:48.961Z","runId":4,"level":"debug","phase":"write","tableName":"accounts","tableRunId":12,"status":"start","batchSize":119}
+{"timestamp":"2026-08-14T07:18:48.968Z","runId":4,"level":"debug","phase":"write","tableName":"accounts","tableRunId":12,"status":"end","inserted":0,"updated":0,"skipped":119,"durationMs":7}
+{"timestamp":"2026-08-14T07:18:48.985Z","runId":4,"level":"info","phase":"table_finalize","tableName":"accounts","tableRunId":12,"status":"success","inserted":0,"updated":0,"skipped":119,"errors":0,"durationMs":49}
+{"timestamp":"2026-08-14T07:18:48.986Z","runId":4,"level":"debug","phase":"table_loop","action":"processing","tableName":"acc_class","mappingTableKeys":["ACCCLASS","ACCOUNTS","ACCDEPARTMENT"]}
+{"timestamp":"2026-08-14T07:18:48.986Z","runId":4,"level":"debug","phase":"table_loop","action":"mapping_resolved","tableName":"acc_class","hasMappingEntry":true,"mappingTarget":"ACC_CLASS"}
+{"timestamp":"2026-08-14T07:18:48.986Z","runId":4,"level":"debug","phase":"mapping_debug","tableName":"acc_class","mappedSource":"ACCCLASS","firebirdTableCount":190,"sampleFirebirdTables":["ACCCLASS","ACCDEPARTMENT","ACCOUNTLINKS","ACCOUNTS","ACCOUNT_OPENING"]}
+{"timestamp":"2026-08-14T07:18:49.200Z","runId":4,"level":"debug","phase":"clean_decision","tableName":"acc_class","cleanBefore":false,"dryRun":false,"mode":"INSERT"}
+{"timestamp":"2026-08-14T07:18:49.200Z","runId":4,"level":"info","phase":"table_start","tableName":"acc_class","tableRunId":13,"mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[]}
+{"timestamp":"2026-08-14T07:18:49.209Z","runId":4,"level":"info","phase":"fetch","tableName":"acc_class","tableRunId":13,"sourceRows":7,"dateFilter":null}
+{"timestamp":"2026-08-14T07:18:49.214Z","runId":4,"level":"debug","phase":"write","tableName":"acc_class","tableRunId":13,"status":"start","batchSize":7}
+{"timestamp":"2026-08-14T07:18:49.218Z","runId":4,"level":"debug","phase":"write","tableName":"acc_class","tableRunId":13,"status":"end","inserted":0,"updated":0,"skipped":7,"durationMs":4}
+{"timestamp":"2026-08-14T07:18:49.237Z","runId":4,"level":"info","phase":"table_finalize","tableName":"acc_class","tableRunId":13,"status":"success","inserted":0,"updated":0,"skipped":7,"errors":0,"durationMs":29}
+{"timestamp":"2026-08-14T07:18:49.238Z","runId":4,"level":"debug","phase":"table_loop","action":"processing","tableName":"acc_department","mappingTableKeys":["ACCCLASS","ACCOUNTS","ACCDEPARTMENT"]}
+{"timestamp":"2026-08-14T07:18:49.238Z","runId":4,"level":"debug","phase":"table_loop","action":"mapping_resolved","tableName":"acc_department","hasMappingEntry":true,"mappingTarget":"ACC_DEPARTMENT"}
+{"timestamp":"2026-08-14T07:18:49.238Z","runId":4,"level":"debug","phase":"mapping_debug","tableName":"acc_department","mappedSource":"ACCDEPARTMENT","firebirdTableCount":190,"sampleFirebirdTables":["ACCCLASS","ACCDEPARTMENT","ACCOUNTLINKS","ACCOUNTS","ACCOUNT_OPENING"]}
+{"timestamp":"2026-08-14T07:18:49.452Z","runId":4,"level":"debug","phase":"clean_decision","tableName":"acc_department","cleanBefore":false,"dryRun":false,"mode":"INSERT"}
+{"timestamp":"2026-08-14T07:18:49.453Z","runId":4,"level":"info","phase":"table_start","tableName":"acc_department","tableRunId":14,"mode":"INSERT","keyStrategy":"preserve","dedupeKeys":[]}
+{"timestamp":"2026-08-14T07:18:49.461Z","runId":4,"level":"info","phase":"fetch","tableName":"acc_department","tableRunId":14,"sourceRows":12,"dateFilter":null}
+{"timestamp":"2026-08-14T07:18:49.466Z","runId":4,"level":"debug","phase":"write","tableName":"acc_department","tableRunId":14,"status":"start","batchSize":12}
+{"timestamp":"2026-08-14T07:18:49.468Z","runId":4,"level":"debug","phase":"write","tableName":"acc_department","tableRunId":14,"status":"end","inserted":0,"updated":0,"skipped":12,"durationMs":2}
+{"timestamp":"2026-08-14T07:18:49.480Z","runId":4,"level":"info","phase":"table_finalize","tableName":"acc_department","tableRunId":14,"status":"success","inserted":0,"updated":0,"skipped":12,"errors":0,"durationMs":21}
+{"timestamp":"2026-08-14T07:18:49.481Z","runId":4,"level":"info","phase":"post_migration_gl_validation","status":"start"}
+{"timestamp":"2026-08-14T07:18:49.504Z","runId":4,"level":"info","phase":"post_migration_gl_validation","check":"E","name":"GL Account Types Canonical","passed":true,"errorCount":0,"errors":[]}
+{"timestamp":"2026-08-14T07:18:49.504Z","runId":4,"level":"info","phase":"post_migration_gl_validation","check":"F","name":"All Accounts Typed","passed":true,"errorCount":0,"errors":[]}
+{"timestamp":"2026-08-14T07:18:49.504Z","runId":4,"level":"info","phase":"post_migration_gl_validation","check":"A","name":"Account Type Mismatches","passed":true,"errorCount":0,"errors":[]}
+{"timestamp":"2026-08-14T07:18:49.504Z","runId":4,"level":"info","phase":"post_migration_gl_validation","check":"B","name":"Posting Line Type Alignment","passed":true,"errorCount":0,"errors":[]}
+{"timestamp":"2026-08-14T07:18:49.504Z","runId":4,"level":"info","phase":"post_migration_gl_validation","check":"C","name":"Orphan / Invalid Postings","passed":true,"errorCount":0,"errors":[]}
+{"timestamp":"2026-08-14T07:18:49.504Z","runId":4,"level":"info","phase":"post_migration_gl_validation","check":"D","name":"COS Integrity","passed":true,"errorCount":0,"errors":[]}
+{"timestamp":"2026-08-14T07:18:49.504Z","runId":4,"level":"info","phase":"post_migration_gl_validation","status":"passed"}
+{"timestamp":"2026-08-14T07:18:49.509Z","runId":4,"level":"info","phase":"run_finalize","status":"success"}

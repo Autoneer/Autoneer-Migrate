@@ -269,46 +269,6 @@
         "primaryKey": [],
         "uniqueIndexes": []
       },
-      "ACCOUNT_OPENING": {
-        "name": "ACCOUNT_OPENING",
-        "columns": {
-          "FY_START": {
-            "name": "FY_START",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "ACCNR": {
-            "name": "ACCNR",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "STARTBALANCE": {
-            "name": "STARTBALANCE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "CREATED_AT": {
-            "name": "CREATED_AT",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "SOURCE_NOTE": {
-            "name": "SOURCE_NOTE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          }
-        },
-        "primaryKey": [
-          "FY_START",
-          "ACCNR"
-        ],
-        "uniqueIndexes": []
-      },
       "ACCRANGE": {
         "name": "ACCRANGE",
         "columns": {
@@ -913,43 +873,6 @@
           },
           "PASSWORD": {
             "name": "PASSWORD",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          }
-        },
-        "primaryKey": [],
-        "uniqueIndexes": []
-      },
-      "BOOKSYNC": {
-        "name": "BOOKSYNC",
-        "columns": {
-          "BSYNCID": {
-            "name": "BSYNCID",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "SYNCDATE": {
-            "name": "SYNCDATE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "STATUS": {
-            "name": "STATUS",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "CID": {
-            "name": "CID",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "JOB_NUMBER": {
-            "name": "JOB_NUMBER",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -1870,18 +1793,6 @@
           },
           "SUNDRYPERCENT": {
             "name": "SUNDRYPERCENT",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "SUNDRYDESCRIPTIION": {
-            "name": "SUNDRYDESCRIPTIION",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "STOCKLOG": {
-            "name": "STOCKLOG",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -2966,6 +2877,48 @@
           },
           "WETIME": {
             "name": "WETIME",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "D1FNR": {
+            "name": "D1FNR",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "D2FNR": {
+            "name": "D2FNR",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "D3FNR": {
+            "name": "D3FNR",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "D4FNR": {
+            "name": "D4FNR",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "D5FNR": {
+            "name": "D5FNR",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "D6FNR": {
+            "name": "D6FNR",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "D7FNR": {
+            "name": "D7FNR",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -4664,18 +4617,6 @@
             "nullable": true,
             "defaultValue": null
           },
-          "GRNCURRENCY": {
-            "name": "GRNCURRENCY",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "GRNNUMBER": {
-            "name": "GRNNUMBER",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
           "ACCASSET": {
             "name": "ACCASSET",
             "type": "UNKNOWN",
@@ -4696,6 +4637,18 @@
           },
           "FREIGHT": {
             "name": "FREIGHT",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "GRNCURRENCY": {
+            "name": "GRNCURRENCY",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "GRNNUMBER": {
+            "name": "GRNNUMBER",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -5162,6 +5115,12 @@
             "nullable": true,
             "defaultValue": null
           },
+          "GRAYIMPORT": {
+            "name": "GRAYIMPORT",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
           "STAFF_ID2": {
             "name": "STAFF_ID2",
             "type": "UNKNOWN",
@@ -5174,8 +5133,8 @@
             "nullable": true,
             "defaultValue": null
           },
-          "GRAYIMPORT": {
-            "name": "GRAYIMPORT",
+          "TEMP_JOB_NO": {
+            "name": "TEMP_JOB_NO",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -5188,42 +5147,6 @@
           },
           "SYNCTO": {
             "name": "SYNCTO",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "TEMP_JOB_NO": {
-            "name": "TEMP_JOB_NO",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "APPROVED": {
-            "name": "APPROVED",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "FUELTYPE": {
-            "name": "FUELTYPE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "LICENSEEXPIRE": {
-            "name": "LICENSEEXPIRE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "COMEBACK": {
-            "name": "COMEBACK",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "ALERT_SERVICE_ADVISOR": {
-            "name": "ALERT_SERVICE_ADVISOR",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -5373,6 +5296,12 @@
             "nullable": true,
             "defaultValue": null
           },
+          "TRANSNR": {
+            "name": "TRANSNR",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
           "FPERIOD": {
             "name": "FPERIOD",
             "type": "UNKNOWN",
@@ -5387,12 +5316,6 @@
           },
           "BATCH": {
             "name": "BATCH",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "TRANSNR": {
-            "name": "TRANSNR",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -5429,18 +5352,6 @@
           },
           "BSID": {
             "name": "BSID",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "LEDGER_STATUS": {
-            "name": "LEDGER_STATUS",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "IS_BASELINE": {
-            "name": "IS_BASELINE",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -5568,12 +5479,6 @@
           },
           "SUPPID": {
             "name": "SUPPID",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "JNLDESC": {
-            "name": "JNLDESC",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -5909,117 +5814,6 @@
           }
         },
         "primaryKey": [],
-        "uniqueIndexes": []
-      },
-      "LEDGER": {
-        "name": "LEDGER",
-        "columns": {
-          "LEDGERID": {
-            "name": "LEDGERID",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "TRXDATE": {
-            "name": "TRXDATE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "ACCNR": {
-            "name": "ACCNR",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "ACCCLASS": {
-            "name": "ACCCLASS",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "DEBIT": {
-            "name": "DEBIT",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "CREDIT": {
-            "name": "CREDIT",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "DESCRIPTION": {
-            "name": "DESCRIPTION",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "JOUNRALID": {
-            "name": "JOUNRALID",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "SOURCE": {
-            "name": "SOURCE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "COMPANY": {
-            "name": "COMPANY",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "DEPARTMENT": {
-            "name": "DEPARTMENT",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "PERIOD": {
-            "name": "PERIOD",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "BATCH": {
-            "name": "BATCH",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "POSTEDBY": {
-            "name": "POSTEDBY",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "POSTEDON": {
-            "name": "POSTEDON",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "CID": {
-            "name": "CID",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "SUPPID": {
-            "name": "SUPPID",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          }
-        },
-        "primaryKey": [
-          "LEDGERID"
-        ],
         "uniqueIndexes": []
       },
       "LICENSEDISC": {
@@ -6897,6 +6691,18 @@
             "nullable": true,
             "defaultValue": null
           },
+          "INVDATE": {
+            "name": "INVDATE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "TICKDATE": {
+            "name": "TICKDATE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
           "CONTROLCHECK": {
             "name": "CONTROLCHECK",
             "type": "UNKNOWN",
@@ -7249,12 +7055,6 @@
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
-          },
-          "COMMENTS": {
-            "name": "COMMENTS",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
           }
         },
         "primaryKey": [],
@@ -7538,6 +7338,49 @@
           },
           "KILOS": {
             "name": "KILOS",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          }
+        },
+        "primaryKey": [],
+        "uniqueIndexes": []
+      },
+      "PERMITS": {
+        "name": "PERMITS",
+        "columns": {
+          "GENPMID": {
+            "name": "GENPMID",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "PERMITNR": {
+            "name": "PERMITNR",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "VID": {
+            "name": "VID",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "EXPDATE": {
+            "name": "EXPDATE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "COUNTRY": {
+            "name": "COUNTRY",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "FNR": {
+            "name": "FNR",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -8671,6 +8514,12 @@
       "SERVICES": {
         "name": "SERVICES",
         "columns": {
+          "NEXTSERVICEDATE": {
+            "name": "NEXTSERVICEDATE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
           "SERVID": {
             "name": "SERVID",
             "type": "UNKNOWN",
@@ -8763,12 +8612,6 @@
           },
           "SERVICEDUEDAYS": {
             "name": "SERVICEDUEDAYS",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "NEXTSERVICEDATE": {
-            "name": "NEXTSERVICEDATE",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -9774,12 +9617,6 @@
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
-          },
-          "CANSEEREPORTS": {
-            "name": "CANSEEREPORTS",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
           }
         },
         "primaryKey": [],
@@ -10005,18 +9842,6 @@
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
-          },
-          "MINMARKUP": {
-            "name": "MINMARKUP",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "COMMISIONBASE": {
-            "name": "COMMISIONBASE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
           }
         },
         "primaryKey": [],
@@ -10223,14 +10048,14 @@
             "nullable": true,
             "defaultValue": null
           },
-          "INGOREMARKUP": {
-            "name": "INGOREMARKUP",
+          "ACCASSET": {
+            "name": "ACCASSET",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
           },
-          "ACCASSET": {
-            "name": "ACCASSET",
+          "INGOREMARKUP": {
+            "name": "INGOREMARKUP",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -11280,8 +11105,32 @@
             "nullable": true,
             "defaultValue": null
           },
-          "COSTPRICE": {
-            "name": "COSTPRICE",
+          "DESCRIPTION": {
+            "name": "DESCRIPTION",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "COST_PRICE": {
+            "name": "COST_PRICE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "COST_PRICE_EXVAT": {
+            "name": "COST_PRICE_EXVAT",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "SALESPRICE": {
+            "name": "SALESPRICE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "SALESPRICEINCVAT": {
+            "name": "SALESPRICEINCVAT",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -12581,6 +12430,12 @@
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
+          },
+          "SETSERVICE": {
+            "name": "SETSERVICE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
           }
         },
         "primaryKey": [],
@@ -13489,82 +13344,9 @@
         },
         "primaryKey": [],
         "uniqueIndexes": []
-      },
-      "XERO_SETTINGS": {
-        "name": "XERO_SETTINGS",
-        "columns": {
-          "ID": {
-            "name": "ID",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "COMPANY_ID": {
-            "name": "COMPANY_ID",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "CLIENT_ID": {
-            "name": "CLIENT_ID",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "CLIENT_SECRET": {
-            "name": "CLIENT_SECRET",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "REDIRECT_URI": {
-            "name": "REDIRECT_URI",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "ACCESS_TOKEN": {
-            "name": "ACCESS_TOKEN",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "REFRESH_TOKEN": {
-            "name": "REFRESH_TOKEN",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "TOKEN_EXPIRES": {
-            "name": "TOKEN_EXPIRES",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "TENANT_ID": {
-            "name": "TENANT_ID",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "CREATED_AT": {
-            "name": "CREATED_AT",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "UPDATED_AT": {
-            "name": "UPDATED_AT",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          }
-        },
-        "primaryKey": [],
-        "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-08-03T12:25:55.910Z"
+    "lastUpdated": "2026-08-14T07:04:26.315Z"
   },
   "mysql": {
     "tables": {
@@ -16333,6 +16115,18 @@
             "scale": null,
             "isPrimaryKey": false,
             "isUnique": false
+          },
+          "PRINT_EXCLUDED_ITEMS": {
+            "name": "PRINT_EXCLUDED_ITEMS",
+            "type": "VARCHAR",
+            "columnType": "varchar(3)",
+            "nullable": true,
+            "defaultValue": "YES",
+            "length": 3,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
           }
         },
         "primaryKey": [
@@ -18521,7 +18315,7 @@
           "DOCUMENT_TYPE": {
             "name": "DOCUMENT_TYPE",
             "type": "ENUM",
-            "columnType": "enum('QUOTE','INVOICE','STATEMENT','INSPECTION','WARRANTY_EXCESS','JOB_REPORT','QC','TEST_DRIVE')",
+            "columnType": "enum('QUOTE','INVOICE','STATEMENT','INSPECTION','WARRANTY_EXCESS','JOB_REPORT','QC','TEST_DRIVE','POS_QUOTE','POS_INVOICE')",
             "nullable": false,
             "defaultValue": null,
             "length": 15,
@@ -18733,6 +18527,18 @@
           },
           "STOCK_ID": {
             "name": "STOCK_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "LISTED_UNIT_ID": {
+            "name": "LISTED_UNIT_ID",
             "type": "INT",
             "columnType": "int",
             "nullable": true,
@@ -20207,6 +20013,432 @@
         },
         "primaryKey": [
           "REFUND_ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "CUSTOMER_REQUEST_MESSAGES": {
+        "name": "CUSTOMER_REQUEST_MESSAGES",
+        "columns": {
+          "MESSAGE_ID": {
+            "name": "MESSAGE_ID",
+            "type": "BIGINT",
+            "columnType": "bigint",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 19,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "REQUEST_ID": {
+            "name": "REQUEST_ID",
+            "type": "BIGINT",
+            "columnType": "bigint",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 19,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "SENDER_TYPE": {
+            "name": "SENDER_TYPE",
+            "type": "ENUM",
+            "columnType": "enum('CUSTOMER','WORKSHOP')",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 8,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "MESSAGE": {
+            "name": "MESSAGE",
+            "type": "TEXT",
+            "columnType": "text",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 65535,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "SOURCE_SYSTEM": {
+            "name": "SOURCE_SYSTEM",
+            "type": "ENUM",
+            "columnType": "enum('BOOKINGS','AUTONEER','CUSTOMER_PORTAL')",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 15,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "EXTERNAL_MESSAGE_REF": {
+            "name": "EXTERNAL_MESSAGE_REF",
+            "type": "VARCHAR",
+            "columnType": "varchar(160)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 160,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": true
+          },
+          "ACTION_URL": {
+            "name": "ACTION_URL",
+            "type": "VARCHAR",
+            "columnType": "varchar(2048)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 2048,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "ACTION_LABEL": {
+            "name": "ACTION_LABEL",
+            "type": "VARCHAR",
+            "columnType": "varchar(120)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 120,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "STAFF_ID": {
+            "name": "STAFF_ID",
+            "type": "BIGINT",
+            "columnType": "bigint",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 19,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "MESSAGE_ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "CUSTOMER_REQUESTS": {
+        "name": "CUSTOMER_REQUESTS",
+        "columns": {
+          "REQUEST_ID": {
+            "name": "REQUEST_ID",
+            "type": "BIGINT",
+            "columnType": "bigint",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 19,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "REQUEST_SOURCE": {
+            "name": "REQUEST_SOURCE",
+            "type": "ENUM",
+            "columnType": "enum('BOOKINGS','CUSTOMER_PORTAL')",
+            "nullable": false,
+            "defaultValue": "BOOKINGS",
+            "length": 15,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "EXTERNAL_REQUEST_REF": {
+            "name": "EXTERNAL_REQUEST_REF",
+            "type": "BIGINT",
+            "columnType": "bigint",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 19,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": true
+          },
+          "BOOKINGS_CUSTOMER_ID": {
+            "name": "BOOKINGS_CUSTOMER_ID",
+            "type": "BIGINT",
+            "columnType": "bigint",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 19,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "LINKED_CID": {
+            "name": "LINKED_CID",
+            "type": "BIGINT",
+            "columnType": "bigint",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 19,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "LINKED_JOB_NUMBER": {
+            "name": "LINKED_JOB_NUMBER",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": true
+          },
+          "REGNR": {
+            "name": "REGNR",
+            "type": "VARCHAR",
+            "columnType": "varchar(50)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 50,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "VEHICLE_MAKE": {
+            "name": "VEHICLE_MAKE",
+            "type": "VARCHAR",
+            "columnType": "varchar(100)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 100,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "VEHICLE_MODEL": {
+            "name": "VEHICLE_MODEL",
+            "type": "VARCHAR",
+            "columnType": "varchar(100)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 100,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "VEHICLE_MILEAGE": {
+            "name": "VEHICLE_MILEAGE",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "VEHICLE_VINNR": {
+            "name": "VEHICLE_VINNR",
+            "type": "VARCHAR",
+            "columnType": "varchar(100)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 100,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "VEHICLE_MODELYEAR": {
+            "name": "VEHICLE_MODELYEAR",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CUSTOMER_NAME": {
+            "name": "CUSTOMER_NAME",
+            "type": "VARCHAR",
+            "columnType": "varchar(200)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 200,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CUSTOMER_EMAIL": {
+            "name": "CUSTOMER_EMAIL",
+            "type": "VARCHAR",
+            "columnType": "varchar(255)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 255,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CUSTOMER_MOBILE": {
+            "name": "CUSTOMER_MOBILE",
+            "type": "VARCHAR",
+            "columnType": "varchar(80)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 80,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "REQUEST_TYPE": {
+            "name": "REQUEST_TYPE",
+            "type": "ENUM",
+            "columnType": "enum('QUOTE','TECHNICAL_QUERY')",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 15,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "SUBJECT": {
+            "name": "SUBJECT",
+            "type": "VARCHAR",
+            "columnType": "varchar(180)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 180,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "STATUS": {
+            "name": "STATUS",
+            "type": "ENUM",
+            "columnType": "enum('NEW','IN_PROGRESS','WAITING_CUSTOMER','RESPONDED','CLOSED')",
+            "nullable": false,
+            "defaultValue": "NEW",
+            "length": 16,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "WORKSHOP_UNREAD": {
+            "name": "WORKSHOP_UNREAD",
+            "type": "TINYINT",
+            "columnType": "tinyint(1)",
+            "nullable": false,
+            "defaultValue": "1",
+            "length": null,
+            "precision": 3,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CUSTOMER_UNREAD": {
+            "name": "CUSTOMER_UNREAD",
+            "type": "TINYINT",
+            "columnType": "tinyint(1)",
+            "nullable": false,
+            "defaultValue": "0",
+            "length": null,
+            "precision": 3,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "LAST_MESSAGE_AT": {
+            "name": "LAST_MESSAGE_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "UPDATED_AT": {
+            "name": "UPDATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CLOSED_AT": {
+            "name": "CLOSED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "REQUEST_ID"
         ],
         "uniqueIndexes": []
       },
@@ -29693,6 +29925,18 @@
             "isPrimaryKey": false,
             "isUnique": false
           },
+          "VAT_EXCLUDED": {
+            "name": "VAT_EXCLUDED",
+            "type": "TINYINT",
+            "columnType": "tinyint(1)",
+            "nullable": false,
+            "defaultValue": "0",
+            "length": null,
+            "precision": 3,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
           "COMMENTS": {
             "name": "COMMENTS",
             "type": "VARCHAR",
@@ -37601,6 +37845,18 @@
             "isPrimaryKey": false,
             "isUnique": false
           },
+          "REPLY_TO_EMAIL": {
+            "name": "REPLY_TO_EMAIL",
+            "type": "VARCHAR",
+            "columnType": "varchar(255)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 255,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
           "MESSAGE_SUBJECT": {
             "name": "MESSAGE_SUBJECT",
             "type": "VARCHAR",
@@ -38057,1389 +38313,6 @@
             "length": 65535,
             "precision": null,
             "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          }
-        },
-        "primaryKey": [
-          "ID"
-        ],
-        "uniqueIndexes": []
-      },
-      "MIGRATION_ID_MAP": {
-        "name": "MIGRATION_ID_MAP",
-        "columns": {
-          "ID": {
-            "name": "ID",
-            "type": "BIGINT",
-            "columnType": "bigint",
-            "nullable": false,
-            "defaultValue": null,
-            "length": null,
-            "precision": 19,
-            "scale": 0,
-            "isPrimaryKey": true,
-            "isUnique": false
-          },
-          "RUN_ID": {
-            "name": "RUN_ID",
-            "type": "VARCHAR",
-            "columnType": "varchar(36)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 36,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "TABLE_NAME": {
-            "name": "TABLE_NAME",
-            "type": "VARCHAR",
-            "columnType": "varchar(100)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 100,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "SOURCE_ID": {
-            "name": "SOURCE_ID",
-            "type": "VARCHAR",
-            "columnType": "varchar(100)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 100,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "TARGET_ID": {
-            "name": "TARGET_ID",
-            "type": "VARCHAR",
-            "columnType": "varchar(100)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 100,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          }
-        },
-        "primaryKey": [
-          "ID"
-        ],
-        "uniqueIndexes": []
-      },
-      "MIGRATION_MAPPING_PROFILES": {
-        "name": "MIGRATION_MAPPING_PROFILES",
-        "columns": {
-          "ID": {
-            "name": "ID",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": false,
-            "defaultValue": null,
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": true,
-            "isUnique": false
-          },
-          "NAME": {
-            "name": "NAME",
-            "type": "VARCHAR",
-            "columnType": "varchar(100)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 100,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "MAPPING_JSON": {
-            "name": "MAPPING_JSON",
-            "type": "LONGTEXT",
-            "columnType": "longtext",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 4294967295,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "CREATED_AT": {
-            "name": "CREATED_AT",
-            "type": "TIMESTAMP",
-            "columnType": "timestamp",
-            "nullable": true,
-            "defaultValue": "CURRENT_TIMESTAMP",
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "UPDATED_AT": {
-            "name": "UPDATED_AT",
-            "type": "TIMESTAMP",
-            "columnType": "timestamp",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          }
-        },
-        "primaryKey": [
-          "ID"
-        ],
-        "uniqueIndexes": []
-      },
-      "MIGRATION_PLANS": {
-        "name": "MIGRATION_PLANS",
-        "columns": {
-          "PLAN_ID": {
-            "name": "PLAN_ID",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": false,
-            "defaultValue": null,
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": true,
-            "isUnique": false
-          },
-          "NAME": {
-            "name": "NAME",
-            "type": "VARCHAR",
-            "columnType": "varchar(150)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 150,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "SOURCE_TYPE": {
-            "name": "SOURCE_TYPE",
-            "type": "ENUM",
-            "columnType": "enum('FIREBIRD')",
-            "nullable": false,
-            "defaultValue": "FIREBIRD",
-            "length": 8,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "SOURCE_SCHEMA_SIGNATURE": {
-            "name": "SOURCE_SCHEMA_SIGNATURE",
-            "type": "VARCHAR",
-            "columnType": "varchar(64)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 64,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "TARGET_SCHEMA_SIGNATURE": {
-            "name": "TARGET_SCHEMA_SIGNATURE",
-            "type": "VARCHAR",
-            "columnType": "varchar(64)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 64,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "MAPPING_JSON": {
-            "name": "MAPPING_JSON",
-            "type": "JSON",
-            "columnType": "json",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "CREATED_BY_STAFF_ID": {
-            "name": "CREATED_BY_STAFF_ID",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "CREATED_AT": {
-            "name": "CREATED_AT",
-            "type": "DATETIME",
-            "columnType": "datetime",
-            "nullable": true,
-            "defaultValue": "CURRENT_TIMESTAMP",
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "UPDATED_AT": {
-            "name": "UPDATED_AT",
-            "type": "DATETIME",
-            "columnType": "datetime",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "MAPPING_PROFILE_ID": {
-            "name": "MAPPING_PROFILE_ID",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": false,
-            "defaultValue": null,
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          }
-        },
-        "primaryKey": [
-          "PLAN_ID"
-        ],
-        "uniqueIndexes": []
-      },
-      "MIGRATION_PRESETS": {
-        "name": "MIGRATION_PRESETS",
-        "columns": {
-          "PRESET_ID": {
-            "name": "PRESET_ID",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": false,
-            "defaultValue": null,
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": true,
-            "isUnique": false
-          },
-          "CODE": {
-            "name": "CODE",
-            "type": "VARCHAR",
-            "columnType": "varchar(50)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 50,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": true
-          },
-          "NAME": {
-            "name": "NAME",
-            "type": "VARCHAR",
-            "columnType": "varchar(100)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 100,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "DESCRIPTION": {
-            "name": "DESCRIPTION",
-            "type": "VARCHAR",
-            "columnType": "varchar(255)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 255,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "DEFINITION_JSON": {
-            "name": "DEFINITION_JSON",
-            "type": "JSON",
-            "columnType": "json",
-            "nullable": false,
-            "defaultValue": null,
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "IS_ACTIVE": {
-            "name": "IS_ACTIVE",
-            "type": "TINYINT",
-            "columnType": "tinyint(1)",
-            "nullable": false,
-            "defaultValue": "1",
-            "length": null,
-            "precision": 3,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "IS_SYSTEM": {
-            "name": "IS_SYSTEM",
-            "type": "TINYINT",
-            "columnType": "tinyint(1)",
-            "nullable": false,
-            "defaultValue": "0",
-            "length": null,
-            "precision": 3,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "CREATED_AT": {
-            "name": "CREATED_AT",
-            "type": "TIMESTAMP",
-            "columnType": "timestamp",
-            "nullable": true,
-            "defaultValue": "CURRENT_TIMESTAMP",
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "UPDATED_AT": {
-            "name": "UPDATED_AT",
-            "type": "TIMESTAMP",
-            "columnType": "timestamp",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          }
-        },
-        "primaryKey": [
-          "PRESET_ID"
-        ],
-        "uniqueIndexes": []
-      },
-      "MIGRATION_PROFILES": {
-        "name": "MIGRATION_PROFILES",
-        "columns": {
-          "PROFILE_ID": {
-            "name": "PROFILE_ID",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": false,
-            "defaultValue": null,
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": true,
-            "isUnique": false
-          },
-          "NAME": {
-            "name": "NAME",
-            "type": "VARCHAR",
-            "columnType": "varchar(150)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 150,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": true
-          },
-          "DESCRIPTION": {
-            "name": "DESCRIPTION",
-            "type": "VARCHAR",
-            "columnType": "varchar(255)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 255,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "MAPPING_JSON": {
-            "name": "MAPPING_JSON",
-            "type": "JSON",
-            "columnType": "json",
-            "nullable": false,
-            "defaultValue": null,
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "SOURCE_SCHEMA_SIGNATURE": {
-            "name": "SOURCE_SCHEMA_SIGNATURE",
-            "type": "VARCHAR",
-            "columnType": "varchar(255)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 255,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "TARGET_SCHEMA_SIGNATURE": {
-            "name": "TARGET_SCHEMA_SIGNATURE",
-            "type": "VARCHAR",
-            "columnType": "varchar(255)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 255,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "CREATED_BY_STAFF_ID": {
-            "name": "CREATED_BY_STAFF_ID",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "CREATED_FROM_PRESET_CODE": {
-            "name": "CREATED_FROM_PRESET_CODE",
-            "type": "VARCHAR",
-            "columnType": "varchar(50)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 50,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "CREATED_AT": {
-            "name": "CREATED_AT",
-            "type": "TIMESTAMP",
-            "columnType": "timestamp",
-            "nullable": true,
-            "defaultValue": "CURRENT_TIMESTAMP",
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "UPDATED_AT": {
-            "name": "UPDATED_AT",
-            "type": "TIMESTAMP",
-            "columnType": "timestamp",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          }
-        },
-        "primaryKey": [
-          "PROFILE_ID"
-        ],
-        "uniqueIndexes": []
-      },
-      "MIGRATION_ROW_ERRORS": {
-        "name": "MIGRATION_ROW_ERRORS",
-        "columns": {
-          "ID": {
-            "name": "ID",
-            "type": "BIGINT",
-            "columnType": "bigint",
-            "nullable": false,
-            "defaultValue": null,
-            "length": null,
-            "precision": 19,
-            "scale": 0,
-            "isPrimaryKey": true,
-            "isUnique": false
-          },
-          "RUN_ID": {
-            "name": "RUN_ID",
-            "type": "VARCHAR",
-            "columnType": "varchar(36)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 36,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "TABLE_NAME": {
-            "name": "TABLE_NAME",
-            "type": "VARCHAR",
-            "columnType": "varchar(100)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 100,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "SOURCE_TABLE": {
-            "name": "SOURCE_TABLE",
-            "type": "VARCHAR",
-            "columnType": "varchar(100)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 100,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "TARGET_TABLE": {
-            "name": "TARGET_TABLE",
-            "type": "VARCHAR",
-            "columnType": "varchar(100)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 100,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "ROW_OFFSET": {
-            "name": "ROW_OFFSET",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "SOURCE_PK": {
-            "name": "SOURCE_PK",
-            "type": "VARCHAR",
-            "columnType": "varchar(100)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 100,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "ERROR_MESSAGE": {
-            "name": "ERROR_MESSAGE",
-            "type": "VARCHAR",
-            "columnType": "varchar(1000)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 1000,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "HINT": {
-            "name": "HINT",
-            "type": "VARCHAR",
-            "columnType": "varchar(500)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 500,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "ROW_JSON": {
-            "name": "ROW_JSON",
-            "type": "LONGTEXT",
-            "columnType": "longtext",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 4294967295,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "CREATED_AT": {
-            "name": "CREATED_AT",
-            "type": "TIMESTAMP",
-            "columnType": "timestamp",
-            "nullable": true,
-            "defaultValue": "CURRENT_TIMESTAMP",
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          }
-        },
-        "primaryKey": [
-          "ID"
-        ],
-        "uniqueIndexes": []
-      },
-      "MIGRATION_RUN_ERRORS": {
-        "name": "MIGRATION_RUN_ERRORS",
-        "columns": {
-          "ID": {
-            "name": "ID",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": false,
-            "defaultValue": null,
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": true,
-            "isUnique": false
-          },
-          "RUN_ID": {
-            "name": "RUN_ID",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": false,
-            "defaultValue": null,
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "TABLE_NAME": {
-            "name": "TABLE_NAME",
-            "type": "VARCHAR",
-            "columnType": "varchar(100)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 100,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "SOURCE_PK": {
-            "name": "SOURCE_PK",
-            "type": "VARCHAR",
-            "columnType": "varchar(100)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 100,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "FIELD_NAME": {
-            "name": "FIELD_NAME",
-            "type": "VARCHAR",
-            "columnType": "varchar(100)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 100,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "ERROR_CODE": {
-            "name": "ERROR_CODE",
-            "type": "VARCHAR",
-            "columnType": "varchar(50)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 50,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "MESSAGE": {
-            "name": "MESSAGE",
-            "type": "TEXT",
-            "columnType": "text",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 65535,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "CREATED_AT": {
-            "name": "CREATED_AT",
-            "type": "DATETIME",
-            "columnType": "datetime",
-            "nullable": true,
-            "defaultValue": "CURRENT_TIMESTAMP",
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          }
-        },
-        "primaryKey": [
-          "ID"
-        ],
-        "uniqueIndexes": []
-      },
-      "MIGRATION_RUN_MAPPINGS": {
-        "name": "MIGRATION_RUN_MAPPINGS",
-        "columns": {
-          "ID": {
-            "name": "ID",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": false,
-            "defaultValue": null,
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": true,
-            "isUnique": false
-          },
-          "RUN_ID": {
-            "name": "RUN_ID",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": false,
-            "defaultValue": null,
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "PLAN_ID": {
-            "name": "PLAN_ID",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "MAPPING_PROFILE_ID": {
-            "name": "MAPPING_PROFILE_ID",
-            "type": "VARCHAR",
-            "columnType": "varchar(36)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 36,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "TABLE_NAME": {
-            "name": "TABLE_NAME",
-            "type": "VARCHAR",
-            "columnType": "varchar(100)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 100,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "SOURCE_TABLE": {
-            "name": "SOURCE_TABLE",
-            "type": "VARCHAR",
-            "columnType": "varchar(100)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 100,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "TARGET_TABLE": {
-            "name": "TARGET_TABLE",
-            "type": "VARCHAR",
-            "columnType": "varchar(100)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 100,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "MAPPING_JSON": {
-            "name": "MAPPING_JSON",
-            "type": "LONGTEXT",
-            "columnType": "longtext",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 4294967295,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "CREATED_AT": {
-            "name": "CREATED_AT",
-            "type": "DATETIME",
-            "columnType": "datetime",
-            "nullable": true,
-            "defaultValue": "CURRENT_TIMESTAMP",
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          }
-        },
-        "primaryKey": [
-          "ID"
-        ],
-        "uniqueIndexes": []
-      },
-      "MIGRATION_RUNS": {
-        "name": "MIGRATION_RUNS",
-        "columns": {
-          "RUN_ID": {
-            "name": "RUN_ID",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": false,
-            "defaultValue": null,
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": true,
-            "isUnique": false
-          },
-          "PLAN_ID": {
-            "name": "PLAN_ID",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "RUN_LABEL": {
-            "name": "RUN_LABEL",
-            "type": "VARCHAR",
-            "columnType": "varchar(150)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 150,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "SOURCE_CONN_NAME": {
-            "name": "SOURCE_CONN_NAME",
-            "type": "VARCHAR",
-            "columnType": "varchar(150)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 150,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "TARGET_SCHEMA_NAME": {
-            "name": "TARGET_SCHEMA_NAME",
-            "type": "VARCHAR",
-            "columnType": "varchar(150)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 150,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "STARTED_AT": {
-            "name": "STARTED_AT",
-            "type": "DATETIME",
-            "columnType": "datetime",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "ENDED_AT": {
-            "name": "ENDED_AT",
-            "type": "DATETIME",
-            "columnType": "datetime",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "STATUS": {
-            "name": "STATUS",
-            "type": "VARCHAR",
-            "columnType": "varchar(30)",
-            "nullable": false,
-            "defaultValue": "RUNNING",
-            "length": 30,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "TABLE_SUMMARY_JSON": {
-            "name": "TABLE_SUMMARY_JSON",
-            "type": "JSON",
-            "columnType": "json",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "ERROR_COUNT": {
-            "name": "ERROR_COUNT",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": true,
-            "defaultValue": "0",
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "WARN_COUNT": {
-            "name": "WARN_COUNT",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": true,
-            "defaultValue": "0",
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "ERROR_MESSAGE": {
-            "name": "ERROR_MESSAGE",
-            "type": "VARCHAR",
-            "columnType": "varchar(1000)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 1000,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          }
-        },
-        "primaryKey": [
-          "RUN_ID"
-        ],
-        "uniqueIndexes": []
-      },
-      "MIGRATION_RUNS_LEGACY": {
-        "name": "MIGRATION_RUNS_LEGACY",
-        "columns": {
-          "ID": {
-            "name": "ID",
-            "type": "VARCHAR",
-            "columnType": "varchar(36)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 36,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": true,
-            "isUnique": false
-          },
-          "STATUS": {
-            "name": "STATUS",
-            "type": "VARCHAR",
-            "columnType": "varchar(20)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 20,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "ERROR_MESSAGE": {
-            "name": "ERROR_MESSAGE",
-            "type": "VARCHAR",
-            "columnType": "varchar(1000)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 1000,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "CREATED_AT": {
-            "name": "CREATED_AT",
-            "type": "TIMESTAMP",
-            "columnType": "timestamp",
-            "nullable": true,
-            "defaultValue": "CURRENT_TIMESTAMP",
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "STARTED_AT": {
-            "name": "STARTED_AT",
-            "type": "TIMESTAMP",
-            "columnType": "timestamp",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "FINISHED_AT": {
-            "name": "FINISHED_AT",
-            "type": "TIMESTAMP",
-            "columnType": "timestamp",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "DRY_RUN": {
-            "name": "DRY_RUN",
-            "type": "TINYINT",
-            "columnType": "tinyint(1)",
-            "nullable": true,
-            "defaultValue": "0",
-            "length": null,
-            "precision": 3,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "BATCH_SIZE": {
-            "name": "BATCH_SIZE",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": true,
-            "defaultValue": "500",
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "FK_CHECKS": {
-            "name": "FK_CHECKS",
-            "type": "TINYINT",
-            "columnType": "tinyint(1)",
-            "nullable": true,
-            "defaultValue": "1",
-            "length": null,
-            "precision": 3,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "SCHEMA_NAME": {
-            "name": "SCHEMA_NAME",
-            "type": "VARCHAR",
-            "columnType": "varchar(100)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 100,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "PLAN_JSON": {
-            "name": "PLAN_JSON",
-            "type": "LONGTEXT",
-            "columnType": "longtext",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 4294967295,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "MAPPING_PROFILE_ID": {
-            "name": "MAPPING_PROFILE_ID",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          }
-        },
-        "primaryKey": [
-          "ID"
-        ],
-        "uniqueIndexes": []
-      },
-      "MIGRATION_TABLE_RUNS": {
-        "name": "MIGRATION_TABLE_RUNS",
-        "columns": {
-          "ID": {
-            "name": "ID",
-            "type": "BIGINT",
-            "columnType": "bigint",
-            "nullable": false,
-            "defaultValue": null,
-            "length": null,
-            "precision": 19,
-            "scale": 0,
-            "isPrimaryKey": true,
-            "isUnique": false
-          },
-          "RUN_ID": {
-            "name": "RUN_ID",
-            "type": "VARCHAR",
-            "columnType": "varchar(36)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 36,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "TABLE_NAME": {
-            "name": "TABLE_NAME",
-            "type": "VARCHAR",
-            "columnType": "varchar(100)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 100,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "MODE": {
-            "name": "MODE",
-            "type": "VARCHAR",
-            "columnType": "varchar(30)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 30,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "KEY_STRATEGY": {
-            "name": "KEY_STRATEGY",
-            "type": "VARCHAR",
-            "columnType": "varchar(30)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 30,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "STATUS": {
-            "name": "STATUS",
-            "type": "VARCHAR",
-            "columnType": "varchar(20)",
-            "nullable": false,
-            "defaultValue": null,
-            "length": 20,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "STARTED_AT": {
-            "name": "STARTED_AT",
-            "type": "TIMESTAMP",
-            "columnType": "timestamp",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "FINISHED_AT": {
-            "name": "FINISHED_AT",
-            "type": "TIMESTAMP",
-            "columnType": "timestamp",
-            "nullable": true,
-            "defaultValue": null,
-            "length": null,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "LAST_OFFSET": {
-            "name": "LAST_OFFSET",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": true,
-            "defaultValue": "0",
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "ROWS_SOURCE": {
-            "name": "ROWS_SOURCE",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": true,
-            "defaultValue": "0",
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "ROWS_MIGRATED": {
-            "name": "ROWS_MIGRATED",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": true,
-            "defaultValue": "0",
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "ROWS_SKIPPED": {
-            "name": "ROWS_SKIPPED",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": true,
-            "defaultValue": "0",
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "ROWS_SKIPPED_DUPLICATES": {
-            "name": "ROWS_SKIPPED_DUPLICATES",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": true,
-            "defaultValue": "0",
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "ROWS_ERROR": {
-            "name": "ROWS_ERROR",
-            "type": "INT",
-            "columnType": "int",
-            "nullable": true,
-            "defaultValue": "0",
-            "length": null,
-            "precision": 10,
-            "scale": 0,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "ERROR_MESSAGE": {
-            "name": "ERROR_MESSAGE",
-            "type": "VARCHAR",
-            "columnType": "varchar(500)",
-            "nullable": true,
-            "defaultValue": null,
-            "length": 500,
-            "precision": null,
-            "scale": null,
-            "isPrimaryKey": false,
-            "isUnique": false
-          },
-          "CLEANED": {
-            "name": "CLEANED",
-            "type": "TINYINT",
-            "columnType": "tinyint(1)",
-            "nullable": true,
-            "defaultValue": "0",
-            "length": null,
-            "precision": 3,
-            "scale": 0,
             "isPrimaryKey": false,
             "isUnique": false
           }
@@ -40630,6 +39503,18 @@
             "scale": 0,
             "isPrimaryKey": false,
             "isUnique": false
+          },
+          "ISDEFAULT": {
+            "name": "ISDEFAULT",
+            "type": "TINYINT",
+            "columnType": "tinyint(1)",
+            "nullable": false,
+            "defaultValue": "0",
+            "length": null,
+            "precision": 3,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
           }
         },
         "primaryKey": [
@@ -40807,6 +39692,18 @@
           },
           "USER_ID": {
             "name": "USER_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "ACCOUNT_USER_ID": {
+            "name": "ACCOUNT_USER_ID",
             "type": "INT",
             "columnType": "int",
             "nullable": true,
@@ -42092,6 +40989,18 @@
             "isPrimaryKey": false,
             "isUnique": false
           },
+          "EXCLUDED_STOCK_RETURNED": {
+            "name": "EXCLUDED_STOCK_RETURNED",
+            "type": "TINYINT",
+            "columnType": "tinyint(1)",
+            "nullable": false,
+            "defaultValue": "0",
+            "length": null,
+            "precision": 3,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
           "LISTED_UNIT_ID": {
             "name": "LISTED_UNIT_ID",
             "type": "INT",
@@ -42312,6 +41221,18 @@
             "nullable": true,
             "defaultValue": null,
             "length": 100,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "EMAIL": {
+            "name": "EMAIL",
+            "type": "VARCHAR",
+            "columnType": "varchar(255)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 255,
             "precision": null,
             "scale": null,
             "isPrimaryKey": false,
@@ -50211,6 +49132,6 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-08-03T12:25:55.435Z"
+    "lastUpdated": "2026-08-14T07:04:25.655Z"
   }
 }
