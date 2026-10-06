@@ -52,13 +52,14 @@ appears in detailed logs as `already_migrated`, and gets a SKIP mapping in the n
 run so linked rows can resolve it. Missing records continue through the import.
 Retries also reuse prior mappings for foreign keys to completed tables.
 
-Existing invoices are skipped only when their original invoice number and mapped
+Existing invoices are checked on both normal starts and explicit retries, including
+plans started again without a retry flag. They are skipped only when their original invoice number and mapped
 job/customer identities match. A header with conflicting ownership, or a different
 invoice colliding with the active-job key, remains an error. No existing invoice is
 updated, re-numbered, or reclassified by the retry. Duplicate errors arising after
 the existence check are checked again during row fallback. Dry runs report the
-same skips without writing records or mappings. Fresh runs retain their existing
-collision policy.
+same skips without writing records or mappings. The ERROR collision policy still
+applies to conflicting invoice identities and different invoices sharing a real job.
 
 ## Verification
 

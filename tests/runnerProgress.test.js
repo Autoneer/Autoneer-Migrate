@@ -177,6 +177,39 @@ test('retry skips already migrated invoices and other primary keys, logs them, a
 	assert.ok(h.idMappings.some(params => params[2] === '23421' && params[3] === '23421' && params[4] === 'SKIP'));
 });
 
+test('normal start skips the reported existing invoices without a retry flag', async () => {
+	const existingInvoices = [
+		{ invoice_nr: 23225, job_number: 21782, cid: 14848, comments: 'original', is_historical_import: 0 },
+		{ invoice_nr: 16658, job_number: 14767, cid: 9, is_historical_import: 0 },
+		{ invoice_nr: 9825, job_number: 7969, cid: 14, is_historical_import: 0 }
+	];
+	for (const dryRun of [false, true]) {
+		const h = harness({ dryRun, existingInvoices, invoiceRows: existingInvoices.map(row => ({ inv_nr: row.invoice_nr, job_card_nr: row.job_number, cid: row.cid })) });
+		await h.run();
+		assert.equal(h.state().status, 'SUCCESS', JSON.stringify(h.logs.slice(-3)));
+		assert.equal(h.state().tables[0].processed, 3);
+		assert.equal(h.state().tables[0].skippedDuplicates, 3);
+		assert.equal(h.state().tables[0].errors, 0);
+		assert.equal(h.state().tables[0].inserted, 0);
+		assert.equal(h.writes.filter(write => /`invoices`/.test(write.sql)).length, 0);
+		assert.deepEqual(h.targetInvoices, existingInvoices);
+		assert.deepEqual(h.logs.filter(log => log.reason === 'already_migrated').map(log => log.sourcePk), [23225, 16658, 9825]);
+		if (dryRun) assert.equal(h.idMappings.length, 0);
+	}
+});
+
+test('normal start checks invoice owners and still rejects a different active invoice for a real job', async () => {
+	const h = harness({ realJobConflict: true, existingInvoices: [{ invoice_nr: 1, job_number: 500, cid: 42 }],
+		invoiceRows: [{ inv_nr: 1, job_card_nr: 999, cid: 42 }, { inv_nr: 2, job_card_nr: 500, cid: 42 }] });
+	await h.run();
+	assert.equal(h.state().status, 'FAILED');
+	assert.equal(h.state().tables[0].skippedDuplicates, 0);
+	assert.equal(h.state().tables[0].errors, 2);
+	assert.match(h.rowErrors[0].errorMessage, /Existing invoice identity conflict/);
+	assert.match(h.rowErrors[1].errorMessage, /uq_invoices_active_job/);
+	assert.equal(h.targetInvoices.length, 1);
+});
+
 test('retry of a completely imported invoice table counts every invoice as skipped', async () => {
 	const h = harness({ retryOfRunId: 4, existingInvoices: [{ invoice_nr: 1 }, { invoice_nr: 2 }] });
 	await h.run();

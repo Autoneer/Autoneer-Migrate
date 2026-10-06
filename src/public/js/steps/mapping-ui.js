@@ -14,6 +14,7 @@ class MappingUI {
 		this.api = window.MappingAPI;
 		this.schema = null;
 		this.mapping = null;
+		this.savedProfileId = null;
 		this.selectedTables = new Set();
 		this.currentTable = null;
 		this.showOnlySelected = false;
@@ -55,10 +56,7 @@ class MappingUI {
 						}
 						const mapping = jr.mapping;
 						if (mapping) {
-							this.mapping = mapping;
-							// populate selectedTables set
-							this.selectedTables = new Set(Object.keys(this.mapping.tables || {}));
-							this.state.set('mapping', this.mapping);
+							this.applySavedProfile({ profile_id: jr.profileId, name: `${p.name} (temp)`, mapping_json: mapping });
 							this.render();
 							console.debug('[MappingShortcut] Applied preset', p.code || p.name);
 						}
@@ -190,7 +188,8 @@ class MappingUI {
 				Modal.alert({ title: 'Deleted', message: 'Profile deleted' });
 				this.loadProfiles();
 				// clear selection/state if the deleted profile was applied
-				if (this.mapping && String(this.mapping.id) === String(id)) {
+				if (String(this.savedProfileId) === String(id)) {
+					this.savedProfileId = null;
 					this.mapping = { id: null, mappingProfileId: null, name: `Mapping ${new Date().toLocaleDateString()}`, tables: {} };
 					this.state.updateMapping(this.mapping);
 					this.render();
@@ -217,16 +216,26 @@ class MappingUI {
 			const res = await fetch(`/api/profiles/${id}`);
 			const data = await res.json();
 			if (!data || !data.profile) return Modal.alert({ title: 'Error', message: 'Failed to load profile' });
-			const mapping = typeof data.profile.mapping_json === 'string' ? JSON.parse(data.profile.mapping_json) : data.profile.mapping_json;
-			this.mapping = mapping;
-			this.selectedTables = new Set(Object.keys(this.mapping.tables || {}));
-			this.state.set('mapping', this.mapping);
+			this.applySavedProfile(data.profile);
 			this.render();
 
 			// Modal.alert({ title: 'Loaded', message: 'Profile applied' });
 		} catch (e) {
 			Modal.alert({ title: 'Error', message: e.message });
 		}
+	}
+
+	/**
+	 * Saved profiles are snapshots, with IDs separate from /api/mappings.
+	 * Discard embedded IDs so Next creates a mapping for this configuration
+	 * instead of updating a stale or unrelated mapping from the snapshot.
+	 */
+	applySavedProfile(profile) {
+		const snapshot = typeof profile.mapping_json === 'string' ? JSON.parse(profile.mapping_json) : profile.mapping_json;
+		this.mapping = { ...snapshot, id: null, mappingProfileId: null, profileId: null, name: profile.name };
+		this.savedProfileId = profile.profile_id;
+		this.selectedTables = new Set(Object.keys(this.mapping.tables || {}));
+		this.state.updateMapping(this.mapping);
 	}
 
 	/**
@@ -1294,12 +1303,20 @@ class MappingUI {
 		try {
 			this.wizard.showLoading('Saving mapping profile...');
 
-			if (this.mapping.id) {
-				await this.api.update(this.mapping.id, this.mapping);
+			let saved;
+			const mappingId = this.mapping.mappingProfileId || this.mapping.id;
+			if (mappingId) {
+				try {
+					saved = await this.api.update(mappingId, this.mapping);
+				} catch (err) {
+					// A restored browser session may reference a deleted mapping.
+					if (err.status !== 404) throw err;
+					saved = await this.api.create(this.mapping);
+				}
 			} else {
-				const saved = await this.api.create(this.mapping);
-				this.mapping.id = saved.id;
+				saved = await this.api.create(this.mapping);
 			}
+			this.mapping.id = saved.id;
 			this.mapping.mappingProfileId = this.mapping.id;
 
 			// Store mappingProfileId in state for subsequent steps

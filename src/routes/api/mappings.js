@@ -68,6 +68,8 @@ router.get("/mappings/:id", async (req, res) => {
 		// Parse the JSON and convert to Mapping model
 		const mappingData = JSON.parse(profile.mapping_json);
 		const mapping = Mapping.fromJSON(mappingData);
+		// The database row is authoritative; older snapshots may contain UUIDs.
+		mapping.id = profile.id;
 
 		res.json({
 			success: true,
@@ -204,6 +206,7 @@ router.put("/mappings/:id", async (req, res) => {
 		// Parse and update
 		const mappingData = JSON.parse(profile.mapping_json);
 		const mapping = Mapping.fromJSON(mappingData);
+		mapping.id = profile.id;
 
 		if (name) {
 			mapping.name = name;

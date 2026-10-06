@@ -1682,6 +1682,9 @@ async function runMigrationInternal({
 					? [step.dedupeKeys]
 					: [];
 			const onDuplicate = resolveOnDuplicatePolicy(tableName, step.onDuplicate);
+			// Starting the same invoice plan again is also a partial-import rerun.
+			// Matching invoice headers must be skipped on either entry point.
+			const skipExistingRecords = Boolean(retryOfRunId) || tableName === 'invoices';
 
 			const tableRun = await runStore.getTableRun(pool, runId, tableName);
 			tableRunId = tableRun?.id || null;
@@ -2199,7 +2202,7 @@ async function runMigrationInternal({
 						});
 					};
 					const skipExistingDuplicate = async row => {
-						if (!retryOfRunId) return false;
+						if (!skipExistingRecords) return false;
 						const matches = await findExistingRetryRows({ conn, pool, previousRunId: retryOfRunId,
 							tableName, primaryKeys, keyStrategy: step.keyStrategy, dedupeKeys, rows: [row],
 							invoiceIdentities: invoiceSourceIdentities, targetColumns: mysqlColumnNames });
@@ -2208,7 +2211,7 @@ async function runMigrationInternal({
 						await recordRetrySkip(row, match);
 						return true;
 					};
-					if (retryOfRunId) {
+					if (skipExistingRecords) {
 						const matches = await findExistingRetryRows({ conn, pool, previousRunId: retryOfRunId,
 							tableName, primaryKeys, keyStrategy: step.keyStrategy, dedupeKeys, rows: rowsToInsert,
 							invoiceIdentities: invoiceSourceIdentities, targetColumns: mysqlColumnNames });

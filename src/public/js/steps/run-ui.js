@@ -351,7 +351,7 @@ class RunUI {
           </div>
         </div>
         
-        <p>Account conversion is blocked until the migration succeeds. Rows already written remain in the target; correct the cause and review partial imports before retrying.</p>
+        <p>Account conversion is blocked until the migration succeeds. Existing matching invoices are counted as skipped when you retry or start the plan again. Correct the remaining conflicts before retrying.</p>
         <div id="run-row-errors-container"></div>
         <div class="failure-actions">
           <button class="btn btn-secondary" onclick="window.wizard.steps[3].component.retryMigration()">
