@@ -2,6 +2,8 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const {
+	applyInvoiceSplitPolicy,
+	buildInvoiceSplitPolicy,
 	buildInvoiceSourcePolicy,
 	buildSourceInvoiceIdentityMap,
 	combineSourceWhere,
@@ -19,6 +21,19 @@ const invoiceColumns = {
 	JOB_CARD_NR: { target: "job_number" },
 	CID: { target: "cid" }
 };
+
+test('legacy split invoice numbers also populate the modern split flag without changing invoice identity or historical status', () => {
+	const policy = buildInvoiceSplitPolicy('INVOICES', { SPLITNR: { targetColumn: 'SPLITNR' } }, ['is_split_invoice']);
+	for (const [splitnr, expected] of [[1, 1], [2, 1], ['2', 1], [null, 0], [0, 0], [-1, 0], ['bad', 0]]) {
+		const mapped = { invoice_nr: 4903, job_number: 5617, SPLITNR: splitnr, is_historical_import: 0 };
+		applyInvoiceSplitPolicy({ splitnr }, mapped, policy);
+		assert.deepEqual(mapped, { invoice_nr: 4903, job_number: 5617, SPLITNR: splitnr, is_historical_import: 0, is_split_invoice: expected });
+	}
+	assert.equal(buildInvoiceSplitPolicy('invoices', { SPLITNR: { target: 'splitnr', omit: true } }, ['is_split_invoice']), null);
+	assert.equal(buildInvoiceSplitPolicy('invoices', { SPLITNR: { target: 'splitnr' } }, []), null);
+	assert.equal(buildInvoiceSplitPolicy('invoices', { SPLITNR: { target: 'splitnr' }, FLAG: { target: 'IS_SPLIT_INVOICE' } }, ['is_split_invoice']), null);
+	assert.equal(buildInvoiceSplitPolicy('stock', { SPLITNR: { target: 'splitnr' } }, ['is_split_invoice']), null);
+});
 
 test("invoice source policy excludes null, zero, and negative legacy invoice numbers", () => {
 	const policy = buildInvoiceSourcePolicy("invoices", invoiceColumns);

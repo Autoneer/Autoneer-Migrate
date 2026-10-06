@@ -240,6 +240,12 @@ class WizardStorage {
 		}
 	}
 
+	clearStepsFrom(stepNumber) {
+		const progress = this.getProgress() || {};
+		progress.completedSteps = (progress.completedSteps || []).filter(step => step < stepNumber);
+		this.saveProgress(progress);
+	}
+
 	/**
 	 * Check if a step is completed
 	 * @param {number} stepNumber - Step to check
@@ -260,7 +266,8 @@ class WizardStorage {
 	 */
 	saveRunId(runId) {
 		try {
-			localStorage.setItem(this.keys.RUN_ID, runId);
+			if (runId == null) localStorage.removeItem(this.keys.RUN_ID);
+			else localStorage.setItem(this.keys.RUN_ID, runId);
 
 			// Also update progress
 			const progress = this.getProgress() || {};

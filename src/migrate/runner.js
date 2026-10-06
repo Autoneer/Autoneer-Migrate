@@ -3,6 +3,7 @@ const firebird = require("../db/firebird");
 const mysql = require("../db/mysql");
 const { applyTransform } = require("./mappers");
 const { applyMigrationMarker } = require("./migrationMarkers");
+const { explainError } = require("./runDiagnostics");
 const runStore = require("./runStore");
 const logger = require("./logger");
 const { resolveTargetTableName } = require("./utils/tableNameCanonical");
@@ -28,6 +29,8 @@ const {
 	summarizeTransactionalContext
 } = require("./transactionalDateFilter");
 const {
+	applyInvoiceSplitPolicy,
+	buildInvoiceSplitPolicy,
 	buildInvoiceSourcePolicy,
 	buildSourceInvoiceIdentityMap,
 	combineSourceWhere,
@@ -362,8 +365,8 @@ function getDbErrorHint(message) {
 	if (message.includes("SQL error code = -206")) {
 		return "Verify the source column exists in Firebird and the mapping uses the correct column name.";
 	}
-	if (message.includes("ER_DUP_ENTRY")) {
-		return "Try switching to Re-key IDs for this table or clean duplicate rows in the target.";
+	if (/ER_DUP_ENTRY|Duplicate entry/i.test(message)) {
+		return explainError(message).action;
 	}
 	return "Check the server logs for details and verify the mapping and schema.";
 }
@@ -1478,6 +1481,7 @@ async function runMigrationInternal({
 						phase: "plan_migrate",
 						table: "invoices",
 						action: "enforce_invoice_identity",
+						message: "Invoices preserve original invoice numbers and reject duplicate keys to prevent lost or misidentified invoices.",
 						requested,
 						applied: {
 							mode: step.mode,
@@ -1543,10 +1547,19 @@ async function runMigrationInternal({
 				logRun({ level: 'debug', phase: 'mapping_debug', tableName, error: e.message });
 			}
 			const tableState = tableStateMap.get(tableName);
+			const tableStart = Date.now();
+			tableState.status = "RUNNING";
+			tableState.phase = "preparing";
+			tableState.startedAt = new Date(tableStart).toISOString();
+			runState.currentTable = tableName;
+			emitRunState(runId, emitter);
 			let tableRunId = null; // Initialize early to avoid ReferenceError in failRun
 
 			const failRun = async (errorMessage, hint, phase = "unknown") => {
 				if (!tableState) return;
+				tableState.phase = "failed";
+				tableState.durationMs = Date.now() - tableStart;
+				tableState.finishedAt = new Date().toISOString();
 				tableErrors.push({ tableName, errorMessage, hint, phase });
 				runFailed = true;
 				if (!continueOnError) {
@@ -1563,7 +1576,7 @@ async function runMigrationInternal({
 				}
 				tableState.status = "FAILED";
 				tableState.lastError = { message: errorMessage, hint, phase };
-				logRun({ level: "error", phase: "table_finalize", tableName, tableRunId, status: "failed", error: errorMessage, hint });
+				logRun({ level: "error", phase: "table_finalize", tableName, tableRunId, status: "failed", errors: tableState.errors || 0, error: errorMessage, hint });
 				emitRunState(runId, emitter);
 			};
 
@@ -1602,6 +1615,13 @@ async function runMigrationInternal({
 			const tableRun = await runStore.getTableRun(pool, runId, tableName);
 			tableRunId = tableRun?.id || null;
 			if (tableRun?.status === "success") {
+				Object.assign(tableState, {
+					status: "SUCCESS", phase: "completed", total: tableRun.rows_source,
+					processed: tableRun.last_offset, migrated: tableRun.rows_migrated,
+					skippedDuplicates: tableRun.rows_skipped_duplicates, errors: tableRun.rows_error,
+					startedAt: tableRun.started_at, finishedAt: tableRun.finished_at
+				});
+				emitRunState(runId, emitter);
 				emitter.emit("event", {
 					type: "table_skipped",
 					table: tableName,
@@ -1640,6 +1660,8 @@ async function runMigrationInternal({
 				continue;
 			}
 			const mysqlColumnNames = (await mysql.listColumns(pool, tableName)).map((c) => c.name.toLowerCase());
+			const invoiceSplitPolicy = buildInvoiceSplitPolicy(tableName, columnsMap, mysqlColumnNames);
+			if (invoiceSplitPolicy) targetColumns.push(invoiceSplitPolicy.targetColumn);
 			const missingSource = firebirdColumns.filter((c) => !firebirdColumnNames.includes(c.toLowerCase()));
 			const missingTarget = targetColumns.filter((c) => !mysqlColumnNames.includes(c.toLowerCase()));
 
@@ -1738,7 +1760,7 @@ async function runMigrationInternal({
 			const primaryKeys = await mysql.getPrimaryKeys(pool, tableName);
 			let targetColumnsForInsert = targetColumns;
 			const sourceIdColumn = primaryKeys.length
-				? Object.entries(columnsMap).find(([, rule]) => (rule.target ?? rule.targetColumn) === primaryKeys[0])?.[0]
+				? resolveMappedSourceColumn(columnsMap, primaryKeys[0])
 				: null;
 			const rowKeyColumn = sourceIdColumn || firebirdColumns[0];
 
@@ -1783,6 +1805,9 @@ async function runMigrationInternal({
 					: sourceWhere.clause
 						? await firebird.countRowsWithDbWhere(fbDb, sourceTable, sourceWhere.clause, sourceWhere.params)
 						: await firebird.countRowsWithDb(fbDb, sourceTable);
+				tableState.total = totalSource;
+				await runStore.updateTableProgress(pool, runId, tableName, { rows_source: totalSource });
+				emitRunState(runId, emitter);
 				const invoiceSourceIdentities = sourcePolicy
 					? await loadSourceInvoiceIdentities({
 						fbDb,
@@ -1909,12 +1934,24 @@ async function runMigrationInternal({
 				let rowsInserted = 0;
 				let rowsUpdated = 0;
 				let rowsError = tableRun?.rows_error || 0;
+				const rowErrorCauses = new Map();
 				let rowsSkippedDuplicates = tableRun?.rows_skipped_duplicates || 0;
-				const tableStart = Date.now();
+				tableState.phase = "migrating";
+				let lastProgressAt = 0;
+				const publishTableProgress = (force = false) => {
+					const now = Date.now();
+					if (!force && now - lastProgressAt < 500) return;
+					lastProgressAt = now;
+					Object.assign(tableState, {
+						processed: Math.max(offset, rowsMigrated + rowsSkippedDuplicates + rowsError),
+						migrated: rowsMigrated, inserted: rowsInserted, updated: rowsUpdated,
+						errors: rowsError, skippedDuplicates: rowsSkippedDuplicates, durationMs: now - tableStart
+					});
+					emitRunState(runId, emitter);
+				};
+				publishTableProgress(true);
 				logRun({ level: "info", phase: "table_start", tableName, tableRunId, mode: step.mode, keyStrategy: step.keyStrategy, dedupeKeys });
 
-				await runStore.updateTableProgress(pool, runId, tableName, { rows_source: totalSource });
-				tableState.total = totalSource;
 				logRun({
 					level: "info",
 					phase: "fetch",
@@ -1943,6 +1980,7 @@ async function runMigrationInternal({
 				const logRowError = async (sourceRow, rowIndex, errorMessage) => {
 					const hint = getDbErrorHint(errorMessage);
 					rowsError += 1;
+					rowErrorCauses.set(errorMessage, (rowErrorCauses.get(errorMessage) || 0) + 1);
 					totals.rows_total_error += 1;
 					let sourcePkValue = null;
 					if (sourceRow) {
@@ -1952,6 +1990,9 @@ async function runMigrationInternal({
 							const firstKey = Object.keys(sourceRow)[0];
 							sourcePkValue = firstKey ? sourceRow[firstKey] : null;
 						}
+					}
+					if (rowErrorCauses.get(errorMessage) === 1) {
+						logRun({ level: "error", phase: "row_error", tableName, sourcePk: sourcePkValue, rowOffset: offset + rowIndex, error: errorMessage, hint });
 					}
 					await runStore.logRowError(pool, {
 						runId,
@@ -1964,6 +2005,7 @@ async function runMigrationInternal({
 						hint,
 						rowJson: sourceRow ? JSON.stringify(sourceRow) : null
 					});
+					publishTableProgress();
 				};
 
 				while (offset < totalSource) {
@@ -2029,6 +2071,7 @@ async function runMigrationInternal({
 							targetTable: tableName,
 							accnrConversionMap
 						});
+						applyInvoiceSplitPolicy(row, mappedRow, invoiceSplitPolicy);
 						const values = targetColumnsForInsert.map((c) => mappedRow[c]);
 						const sourceId = sourceIdColumn ? row[sourceIdColumn.toLowerCase()] : undefined;
 						const dedupeValues = dedupeKeys.map((key) => mappedRow[key]);
@@ -2077,6 +2120,7 @@ async function runMigrationInternal({
 							const toInsert = [];
 							const toUpdate = [];
 							for (let rowIndex = 0; rowIndex < rowsToInsert.length; rowIndex += 1) {
+								publishTableProgress();
 								const row = rowsToInsert[rowIndex];
 								const sourceRow = batch[rowIndex] || null;
 								const ready = row.dedupeValues?.every((v) => v !== undefined && v !== null);
@@ -2145,6 +2189,7 @@ async function runMigrationInternal({
 									? buildUpdateStatement(tableName, updateColumns, dedupeKeys)
 									: null;
 								for (const item of toUpdate) {
+									publishTableProgress();
 									const { row, sourceRow, rowIndex } = item;
 									try {
 										if (updateSql) {
@@ -2172,6 +2217,7 @@ async function runMigrationInternal({
 							if (toInsert.length) {
 								if (step.keyStrategy === "rekey" && primaryKeys.length) {
 									for (const item of toInsert) {
+										publishTableProgress();
 										const { row, sourceRow, rowIndex } = item;
 										try {
 											await conn.beginTransaction();
@@ -2247,15 +2293,8 @@ async function runMigrationInternal({
 
 										// Record ID mappings for bulk inserts when possible (non-UPSERT)
 										try {
-											if (result.insertId && primaryKeys.length === 1 && step.mode !== 'UPSERT') {
-												const firstId = Number(result.insertId);
-												const mappings = [];
-												for (let i = 0; i < inserted; i += 1) {
-													const item = toInsert[i];
-													if (item && item.sourceId !== undefined) {
-														mappings.push({ sourcePk: item.sourceId, targetPk: String(firstId + i), operation: 'INSERT' });
-													}
-												}
+											if (step.keyStrategy !== 'rekey' && step.mode !== 'UPSERT') {
+												const mappings = idMapTracker.buildPreservedMappings(toInsert.map(item => item.row), primaryKeys, inserted);
 												if (mappings.length) {
 													await idMapTracker.recordBatch(pool, { runId, tableName, mappings });
 												}
@@ -2281,6 +2320,7 @@ async function runMigrationInternal({
 											// ignore
 										}
 										for (const item of toInsert) {
+											publishTableProgress();
 											const { row, sourceRow, rowIndex } = item;
 											try {
 												await conn.beginTransaction();
@@ -2296,6 +2336,10 @@ async function runMigrationInternal({
 												rowsInserted += 1;
 												batchInserted += 1;
 												totals.rows_total_migrated += 1;
+												if (step.mode !== 'UPSERT') {
+													await idMapTracker.recordBatch(pool, { runId, tableName,
+														mappings: idMapTracker.buildPreservedMappings([row], primaryKeys, 1) });
+												}
 											} catch (rowErr) {
 												try {
 													await conn.rollback();
@@ -2323,6 +2367,7 @@ async function runMigrationInternal({
 						} else {
 							if (step.keyStrategy === "rekey" && primaryKeys.length) {
 								for (let rowIndex = 0; rowIndex < rowsToInsert.length; rowIndex += 1) {
+									publishTableProgress();
 									const row = rowsToInsert[rowIndex];
 									const sourceRow = batch[rowIndex] || null;
 									try {
@@ -2395,15 +2440,8 @@ async function runMigrationInternal({
 
 									// Record ID mappings for bulk inserts when possible (non-UPSERT)
 									try {
-										if (result.insertId && primaryKeys.length === 1 && step.mode !== 'UPSERT') {
-											const firstId = Number(result.insertId);
-											const mappings = [];
-											for (let i = 0; i < inserted; i += 1) {
-												const item = rowsToInsert[i];
-												if (item && item.sourceId !== undefined) {
-													mappings.push({ sourcePk: item.sourceId, targetPk: String(firstId + i), operation: 'INSERT' });
-												}
-											}
+										if (step.keyStrategy !== 'rekey' && step.mode !== 'UPSERT') {
+											const mappings = idMapTracker.buildPreservedMappings(rowsToInsert, primaryKeys, inserted);
 											if (mappings.length) {
 												await idMapTracker.recordBatch(pool, { runId, tableName, mappings });
 											}
@@ -2428,6 +2466,7 @@ async function runMigrationInternal({
 										// ignore
 									}
 									for (let rowIndex = 0; rowIndex < rowsToInsert.length; rowIndex += 1) {
+										publishTableProgress();
 										const row = rowsToInsert[rowIndex];
 										const sourceRow = batch[rowIndex] || null;
 										try {
@@ -2444,6 +2483,10 @@ async function runMigrationInternal({
 											rowsInserted += 1;
 											batchInserted += 1;
 											totals.rows_total_migrated += 1;
+											if (step.mode !== 'UPSERT') {
+												await idMapTracker.recordBatch(pool, { runId, tableName,
+													mappings: idMapTracker.buildPreservedMappings([row], primaryKeys, 1) });
+											}
 										} catch (rowErr) {
 											try {
 												await conn.rollback();
@@ -2495,19 +2538,22 @@ async function runMigrationInternal({
 						rows_error: rowsError,
 						rows_skipped_duplicates: rowsSkippedDuplicates
 					});
-					tableState.migrated = rowsMigrated;
-					tableState.inserted = rowsInserted;
-					tableState.updated = rowsUpdated;
-					tableState.errors = rowsError;
-					tableState.skippedDuplicates = rowsSkippedDuplicates;
-					emitRunState(runId, emitter);
+					publishTableProgress(true);
 				}
 
+				if (offset < totalSource) {
+					throw new Error(`Source read stopped early for ${tableName}: processed ${offset} of ${totalSource} rows. Check the source data and connection before retrying.`);
+				}
+				tableState.phase = "validating";
+				publishTableProgress(true);
 				if (rowsError > 0) {
-					const errorMessage = `Table ${tableName} completed with ${rowsError} errors.`;
+					const causes = [...rowErrorCauses].sort((a, b) => b[1] - a[1]);
+					const errorMessage = `Table ${tableName} failed with ${rowsError} row errors. ${causes.slice(0, 3).map(([message, count]) => `${count} × ${message}`).join("; ")}`;
+					logRun({ level: "error", phase: "row_error_summary", tableName, errors: rowsError, causes: causes.map(([message, count]) => ({ message, count, ...explainError(message) })) });
 					await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage);
-					await failRun(errorMessage, "Fix the row errors, then run the migration again.", "validate");
-					break;
+					await failRun(errorMessage, explainError(causes[0]?.[0]).action, "validate");
+					if (!continueOnError) break;
+					continue;
 				}
 
 				if (tableName === "invoices" && invoiceSourceIdentities && !dryRun) {
@@ -2599,6 +2645,8 @@ async function runMigrationInternal({
 				const durationMs = Date.now() - tableStart;
 				await runStore.finishTableRun(pool, runId, tableName, "success");
 				tableState.status = "SUCCESS";
+				tableState.phase = "completed";
+				tableState.finishedAt = new Date().toISOString();
 				tableState.durationMs = durationMs;
 				tableState.inserted = rowsInserted;
 				tableState.updated = rowsUpdated;

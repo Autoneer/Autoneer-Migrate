@@ -1,4 +1,5 @@
 const { v4: uuidv4 } = require("uuid");
+const { normalizeRowError } = require("./runDiagnostics");
 
 function normalizeRunStatus(status) {
 	const normalized = String(status || "").toUpperCase();
@@ -22,7 +23,7 @@ function normalizeRunStatus(status) {
 async function createRun(pool, { run_label, source_conn_name, target_schema_name, plan_id, schemaName, dryRun, batchSize, fkChecks, plan, mappingProfileId }) {
 	const [result] = await pool.query(
 		"insert into migration_runs (plan_id, run_label, source_conn_name, target_schema_name, started_at, status, table_summary_json, error_count, warn_count) values (?, ?, ?, ?, now(), 'RUNNING', ?, 0, 0)",
-		[plan_id || null, run_label || null, source_conn_name || null, target_schema_name || null, JSON.stringify({})]
+		[plan_id || null, run_label || null, source_conn_name || null, target_schema_name || null, JSON.stringify(Object.fromEntries((plan || []).filter(step => step.include).map(step => [String(step.table).toLowerCase(), { status: "NOT_RUN" }])))]
 	);
 	const runId = result.insertId;
 
@@ -164,10 +165,15 @@ async function getTableRun(pool, runId, tableName) {
 }
 
 async function getRowErrors(pool, runId) {
-	const [rows] = await pool.query(
-		"select * from migration_run_errors where run_id = ? order by id",
-		[runId]
-	);
+	// This companion table preserves source rows, offsets and hints. Do not concatenate
+	// both tables: each failed record is written to both.
+	const [details] = await pool.query("select * from migration_row_errors where run_id = ? order by id", [runId]);
+	if (details.length) return details.map(error => ({
+		...error,
+		message: error.error_message,
+		source_pk: normalizeRowError(error).row
+	}));
+	const [rows] = await pool.query("select * from migration_run_errors where run_id = ? order by id", [runId]);
 	return rows;
 }
 

@@ -73,6 +73,22 @@ function resolveOnDuplicatePolicy(tableName, configuredPolicy) {
 	return configuredPolicy || "SKIP";
 }
 
+function buildInvoiceSplitPolicy(tableName, columnsMap, targetColumns = []) {
+	if (normalizeName(tableName) !== INVOICE_TABLE) return null;
+	if (!targetColumns.some(column => normalizeName(column) === 'is_split_invoice')) return null;
+	// An explicit mapping remains authoritative. Otherwise preserve the legacy
+	// SPLITNR and also populate the modern flag used by the active-job key.
+	if (resolveMappedSourceColumn(columnsMap, 'is_split_invoice')) return null;
+	const sourceColumn = resolveMappedSourceColumn(columnsMap, 'splitnr');
+	return sourceColumn ? { sourceColumn, targetColumn: 'is_split_invoice' } : null;
+}
+
+function applyInvoiceSplitPolicy(sourceRow, mappedRow, policy) {
+	if (!policy) return;
+	const splitNumber = Number(getRowValue(sourceRow, policy.sourceColumn));
+	mappedRow[policy.targetColumn] = Number.isInteger(splitNumber) && splitNumber > 0 ? 1 : 0;
+}
+
 function hasMappingDefault(rule = {}) {
 	return Object.prototype.hasOwnProperty.call(rule, "default")
 		|| Object.prototype.hasOwnProperty.call(rule, "defaultValue");
@@ -151,6 +167,8 @@ function reconcileInvoiceIdentities(sourceIdentities, targetRows = []) {
 }
 
 module.exports = {
+	applyInvoiceSplitPolicy,
+	buildInvoiceSplitPolicy,
 	buildInvoiceSourcePolicy,
 	buildSourceInvoiceIdentityMap,
 	combineSourceWhere,

@@ -175,7 +175,7 @@ class WizardState {
 
 		// Persist to localStorage if requested
 		if (persist) {
-			this.persistState(keys[0]);
+			this.persistState(keys[0] || lastKey);
 		}
 
 		// Notify listeners
@@ -201,10 +201,9 @@ class WizardState {
 				storage.savePlan(this.state.plan);
 				break;
 			case 'run':
-				if (this.state.run.id) {
-					storage.saveRunId(this.state.run.id);
-				}
+				storage.saveRunId(this.state.run.id);
 				storage.saveProgress({
+					...(storage.getProgress() || {}),
 					currentStep: this.state.currentStep,
 					status: this.state.run.status,
 					progress: this.state.run.progress
@@ -286,6 +285,9 @@ class WizardState {
 				break;
 
 			case 4: // Run
+				if (['RUNNING', 'PENDING', 'ABORTING'].includes(String(this.state.run.status || '').toUpperCase())) {
+					errors.push('Wait for the migration to finish before proceeding');
+				}
 				if (!this.state.run.id) {
 					errors.push('Click "Start Migration" to begin the migration run');
 				}

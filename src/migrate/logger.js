@@ -5,7 +5,7 @@ const EventEmitter = require("events");
 const logEmitters = new Map();
 const logStreams = new Map();
 const logBuffers = new Map();
-const consoleProgressStates = new Map();
+const tableResultBuffers = new Map();
 
 const LOG_BUFFER_SIZE = 200;
 const logsDir = path.join(__dirname, "..", "..", "logs", "migrate");
@@ -19,11 +19,11 @@ function ensureLogsDir() {
 }
 
 function getLogEmitter(runId) {
-	return logEmitters.get(runId) || null;
+	return logEmitters.get(String(runId)) || null;
 }
 
 function getLogBuffer(runId) {
-	return logBuffers.get(runId) || [];
+	return logBuffers.get(String(runId)) || [];
 }
 
 function getLogFilePath(runId) {
@@ -32,150 +32,53 @@ function getLogFilePath(runId) {
 
 function startRunLogger(runId, options = {}) {
 	if (!runId) return null;
-	if (logEmitters.has(runId)) return logEmitters.get(runId);
+	if (logEmitters.has(String(runId))) return logEmitters.get(String(runId));
 	const truncate = options.truncate === true;
 	ensureLogsDir();
 	const emitter = new EventEmitter();
-	logEmitters.set(runId, emitter);
-	logBuffers.set(runId, []);
-	consoleProgressStates.set(runId, {
-		tableOrder: [],
-		tableIndex: new Map(),
-		totalTables: 0,
-		completedTables: 0
-	});
+	logEmitters.set(String(runId), emitter);
+	logBuffers.set(String(runId), []);
+	tableResultBuffers.set(String(runId), new Map());
 	try {
 		const stream = fs.createWriteStream(getLogFilePath(runId), { flags: truncate ? "w" : "a" });
-		logStreams.set(runId, stream);
+		logStreams.set(String(runId), stream);
 	} catch (err) {
 		// ignore
 	}
 	return emitter;
 }
 
-function updateTableOrder(state, tables) {
-	const names = Array.isArray(tables) ? tables : [];
-	state.tableOrder = names
-		.map((t) => (typeof t === "string" ? t : t?.table))
-		.filter(Boolean)
-		.map((name) => String(name).toUpperCase());
-	state.tableIndex = new Map(state.tableOrder.map((name, idx) => [name, idx + 1]));
-	state.totalTables = state.tableOrder.length;
+function getTableResultBuffer(runId) {
+	const results = tableResultBuffers.get(String(runId));
+	return results ? Array.from(results.values()) : null;
 }
 
-function resolveTablePosition(state, tableName) {
-	const normalized = String(tableName || "").toUpperCase();
-	if (!normalized) {
-		return { index: 0, total: state.totalTables || 0 };
-	}
-	if (!state.tableIndex.has(normalized)) {
-		state.tableOrder.push(normalized);
-		state.tableIndex.set(normalized, state.tableOrder.length);
-		state.totalTables = Math.max(state.totalTables, state.tableOrder.length);
-	}
-	return {
-		index: state.tableIndex.get(normalized) || 0,
-		total: state.totalTables || state.tableOrder.length
-	};
+function tableResultKey(event) {
+	if (event.phase !== "table_finalize" || !["success", "failed"].includes(String(event.status).toLowerCase())) return null;
+	return String(event.tableName || event.table || "").trim().toLowerCase() || null;
 }
 
-function formatProgressLine(event, state) {
-	const runId = event.runId;
-	const level = String(event.level || "").toLowerCase();
-	if (level === "debug") return null;
-
-	if (event.phase === "run_start") {
-		updateTableOrder(state, event.tables);
-		const mode = event.dryRun ? "Dry run" : "Migration";
-		return `[Run ${runId}] ${mode} started: ${state.totalTables} table(s).`;
+function formatTableResult(event) {
+	const singleLine = value => String(value || "").replace(/\s+/g, " ").trim();
+	const prefix = `[Run ${event.runId}] ${singleLine(event.tableName || event.table)}`;
+	if (String(event.status).toLowerCase() === "success") {
+		return `${prefix}: completed — inserted ${Number(event.inserted || 0).toLocaleString()}, updated ${Number(event.updated || 0).toLocaleString()}, skipped ${Number(event.skipped || 0).toLocaleString()}`;
 	}
-
-	if (event.phase === "preflight") {
-		const action = event.action ? String(event.action).replace(/_/g, " ") : "connectivity check";
-		if (event.status === "start") return `[Run ${runId}] Preflight: ${action}...`;
-		if (event.status === "passed" || event.status === "ok") return `[Run ${runId}] Preflight: ${action} passed.`;
-		if (event.status === "failed") return `[Run ${runId}] Preflight: ${action} failed (${event.error || "unknown error"}).`;
-		if (event.status === "done") {
-			const counts = event.keyCounts ? ` (${Object.entries(event.keyCounts).filter(([, v]) => v > 0).map(([k, v]) => `${k}: ${v}`).join(", ")})` : "";
-			return `[Run ${runId}] Preflight: ${action} done${counts}.`;
-		}
-		if (event.status === "collecting_seed_keys") return `[Run ${runId}] Preflight: ${action} — collecting seed keys (${event.tables || 0} tables)...`;
-		if (event.status === "seed_keys_collected") return `[Run ${runId}] Preflight: ${action} — ${event.table} seed done.`;
-		if (event.status === "link_traversal") {
-			const counts = event.keyCounts ? Object.values(event.keyCounts).reduce((a, b) => a + b, 0) : 0;
-			return `[Run ${runId}] Preflight: ${action} — link traversal pass ${event.iteration} (${counts} keys so far)...`;
-		}
-		if (event.status === "link_traversal_table") {
-			return `[Run ${runId}] Preflight: ${action} — pass ${event.iteration} querying ${event.table} (${event.plans} plan(s))...`;
-		}
-		if (event.status === "link_traversal_converged") {
-			return `[Run ${runId}] Preflight: ${action} — converged after pass ${event.iteration} (+${event.newKeys} keys, done).`;
-		}
-	}
-
-	if (event.type === "table_cleaning_started") {
-		const pos = resolveTablePosition(state, event.table);
-		return `[Run ${runId}] Table ${pos.index}/${pos.total} ${event.table}: cleaning target...`;
-	}
-
-	if (event.type === "table_cleaned") {
-		const pos = resolveTablePosition(state, event.table);
-		return `[Run ${runId}] Table ${pos.index}/${pos.total} ${event.table}: cleaned (${event.method || "DELETE"}).`;
-	}
-
-	if (event.phase === "table_start") {
-		const pos = resolveTablePosition(state, event.tableName);
-		return `[Run ${runId}] Table ${pos.index}/${pos.total} ${event.tableName}: migrating...`;
-	}
-
-	if (event.phase === "fetch" && typeof event.sourceRows === "number") {
-		const pos = resolveTablePosition(state, event.tableName);
-		return `[Run ${runId}] Table ${pos.index}/${pos.total} ${event.tableName}: ${event.sourceRows} source row(s).`;
-	}
-
-	if (event.phase === "table_finalize") {
-		const pos = resolveTablePosition(state, event.tableName);
-		if (event.status === "success" || event.status === "failed") {
-			state.completedTables += 1;
-		}
-		if (event.status === "success") {
-			return `[Run ${runId}] Table ${pos.index}/${pos.total} ${event.tableName}: done (inserted ${event.inserted || 0}, updated ${event.updated || 0}, skipped ${event.skipped || 0}). Progress ${state.completedTables}/${state.totalTables}.`;
-		}
-		if (event.status === "failed") {
-			return `[Run ${runId}] Table ${pos.index}/${pos.total} ${event.tableName}: failed (${event.error || "unknown error"}). Progress ${state.completedTables}/${state.totalTables}.`;
-		}
-	}
-
-	if (event.phase === "run_finalize") {
-		if (event.status === "success") return `[Run ${runId}] Migration completed successfully.`;
-		if (event.status === "completed_with_errors") return `[Run ${runId}] Migration completed with errors (${event.tableErrorCount || 0} table failure(s)).`;
-		if (event.status === "failed") return `[Run ${runId}] Migration failed (${event.error || "unknown error"}).`;
-	}
-
-	if (event.phase === "run_aborted") {
-		return `[Run ${runId}] Migration stopped (${event.message || "aborted"}).`;
-	}
-
-	if (level === "error") {
-		return `[Run ${runId}] Error${event.phase ? ` (${event.phase})` : ""}: ${event.error || event.message || "unknown error"}.`;
-	}
-	if (level === "warn") {
-		return `[Run ${runId}] Warning${event.phase ? ` (${event.phase})` : ""}: ${event.error || event.message || "check details in log file"}.`;
-	}
-
-	return null;
+	const errorCount = Number(event.errors) || Number(String(event.error || "").match(/(?:failed with|completed with) ([\d,]+) (?:row )?errors?/i)?.[1]?.replaceAll(",", "")) || 0;
+	const reason = errorCount > 0 ? `${errorCount.toLocaleString()} row error${errorCount === 1 ? '' : 's'}` : singleLine(event.error || "Table migration failed").slice(0, 160);
+	return `${prefix}: failed — ${reason}. See Migration History for details.`;
 }
 
 function logEvent(runId, payload) {
 	if (!runId) return;
-	const emitter = logEmitters.get(runId) || startRunLogger(runId);
+	const emitter = logEmitters.get(String(runId)) || startRunLogger(runId);
 	const event = {
 		timestamp: new Date().toISOString(),
 		runId,
 		...payload
 	};
 	const line = `${JSON.stringify(event)}\n`;
-	const stream = logStreams.get(runId);
+	const stream = logStreams.get(String(runId));
 	if (stream) {
 		try {
 			stream.write(line);
@@ -183,41 +86,32 @@ function logEvent(runId, payload) {
 			// ignore
 		}
 	}
-	if (process.env.NODE_ENV !== "production") {
-		try {
-			const state = consoleProgressStates.get(runId) || {
-				tableOrder: [],
-				tableIndex: new Map(),
-				totalTables: 0,
-				completedTables: 0
-			};
-			consoleProgressStates.set(runId, state);
-			const progressLine = formatProgressLine(event, state);
-			if (progressLine) {
-				const writer = String(event.level || "").toLowerCase() === "error"
-					? console.error
-					: String(event.level || "").toLowerCase() === "warn"
-						? console.warn
-						: console.log;
-				writer(progressLine);
-			}
-		} catch (err) {
-			// ignore
+	const tableKey = tableResultKey(event);
+	if (tableKey) {
+		const results = tableResultBuffers.get(String(runId));
+		// Only one console line per table; retain all detailed events in the file.
+		if (results && !results.has(tableKey) && process.env.NODE_ENV !== "production") {
+			try {
+				const writer = String(event.status).toLowerCase() === "failed" ? console.error : console.log;
+				writer(formatTableResult(event));
+			} catch { /* Console output must not interrupt a migration. */ }
 		}
+		if (results) results.set(tableKey, event);
 	}
-	const buffer = logBuffers.get(runId) || [];
+
+	const buffer = logBuffers.get(String(runId)) || [];
 	buffer.push(event);
 	while (buffer.length > LOG_BUFFER_SIZE) {
 		buffer.shift();
 	}
-	logBuffers.set(runId, buffer);
+	logBuffers.set(String(runId), buffer);
 	if (emitter) {
 		emitter.emit("log", event);
 	}
 }
 
 function closeRunLogger(runId) {
-	const stream = logStreams.get(runId);
+	const stream = logStreams.get(String(runId));
 	if (stream) {
 		try {
 			stream.end();
@@ -225,10 +119,10 @@ function closeRunLogger(runId) {
 			// ignore
 		}
 	}
-	logStreams.delete(runId);
-	logEmitters.delete(runId);
-	logBuffers.delete(runId);
-	consoleProgressStates.delete(runId);
+	logStreams.delete(String(runId));
+	logEmitters.delete(String(runId));
+	logBuffers.delete(String(runId));
+	tableResultBuffers.delete(String(runId));
 }
 
 module.exports = {
@@ -237,5 +131,6 @@ module.exports = {
 	closeRunLogger,
 	getLogEmitter,
 	getLogBuffer,
+	getTableResultBuffer,
 	getLogFilePath
 };

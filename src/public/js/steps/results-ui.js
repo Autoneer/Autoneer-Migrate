@@ -1,10 +1,30 @@
 /**
- * ResultsUI - Step 5: View Results
+ * ResultsUI - Final results and the failure branch before account conversion
  * 
  * Displays migration results, statistics, errors, and provides
  * options to export reports or start new migrations.
  */
 const ResultsRenderer = {
+	escape(value) {
+		return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+	},
+	renderFailureSummary(summary) {
+		const groups = summary?.errorGroups || [];
+		if (!groups.length) return '';
+		const esc = ResultsRenderer.escape;
+		return `<section class="failure-diagnostics" aria-label="Why the migration failed">
+			<h3>Why the migration failed</h3>
+			<p>${summary.successCount || 0} of ${summary.tableCount || 0} tables succeeded · ${summary.failedCount || 0} failed · ${summary.notRunCount || 0} not started.</p>
+			${groups.map((group, index) => `<details class="failure-cause" ${index === 0 ? 'open' : ''}>
+				<summary><strong>${esc(group.table || 'Migration')} — ${group.count} ${group.count === 1 ? 'error' : 'errors'}${group.value != null ? ` · ${esc(group.column || 'value')} ${esc(group.value)}` : ''}</strong></summary>
+				<p>${esc(group.reason)}</p>
+				<p><strong>What to change:</strong> ${esc(group.action)}</p>
+				${group.sampleRows?.length ? `<p><strong>Example source ${group.table === 'invoices' ? 'invoice numbers' : 'record IDs'}:</strong> ${group.sampleRows.map(esc).join(', ')}</p>` : ''}
+				<details><summary>Technical detail</summary><code>${esc(group.message)}</code></details>
+			</details>`).join('')}
+			<p class="recovery-note">The migration does not roll back rows already written. Review partial imports before retrying, especially invoices that preserve their original numbers. Retry includes failed and unattempted tables; completed tables are kept.</p>
+		</section>`;
+	},
 	formatNumber(num) {
 		return Number(num || 0).toLocaleString();
 	},
@@ -32,10 +52,10 @@ const ResultsRenderer = {
 
 			return `
 				<tr class="table-result-${statusClass}">
-					<td><strong>${table.name}</strong></td>
+					<td><strong>${ResultsRenderer.escape(table.name)}</strong></td>
 					<td>
 						<span class="status-badge status-${statusClass}">
-							${statusIcon} ${table.status}
+							${statusIcon} ${ResultsRenderer.escape(table.status)}
 						</span>
 					</td>
 					<td>${ResultsRenderer.formatNumber(table.rowsMigrated || 0)}</td>
@@ -59,32 +79,32 @@ const ResultsRenderer = {
 						<details class="error-item">
 							<summary>
 								<span class="error-icon">✕</span>
-								<span class="error-table">${error.table || 'Unknown'}</span>
-								<span class="error-message">${error.message}</span>
+								<span class="error-table">${ResultsRenderer.escape(error.table || 'Unknown')}</span>
+								<span class="error-message">${ResultsRenderer.escape(error.message)}</span>
 							</summary>
 							<div class="error-content">
 								<div class="error-detail">
 									<strong>Time:</strong> ${error.timestamp ? new Date(error.timestamp).toLocaleString() : '—'}
 								</div>
-								${error.row ? `
+								${error.row != null ? `
 									<div class="error-detail">
-										<strong>Row:</strong> ${error.row}
+										<strong>${error.table === 'invoices' ? 'Source invoice number' : 'Source record'}:</strong> ${ResultsRenderer.escape(error.row)}
 									</div>
 								` : ''}
 								${error.column ? `
 									<div class="error-detail">
-										<strong>Column:</strong> ${error.column}
+										<strong>Column:</strong> ${ResultsRenderer.escape(error.column)}
 									</div>
 								` : ''}
-								${error.value ? `
+								${error.value != null ? `
 									<div class="error-detail">
-										<strong>Value:</strong> <code>${error.value}</code>
+										<strong>Value:</strong> <code>${ResultsRenderer.escape(error.value)}</code>
 									</div>
 								` : ''}
 								${error.stack ? `
 									<div class="error-detail">
 										<strong>Stack Trace:</strong>
-										<pre>${error.stack}</pre>
+										<pre>${ResultsRenderer.escape(error.stack)}</pre>
 									</div>
 								` : ''}
 							</div>
@@ -99,19 +119,27 @@ const ResultsRenderer = {
 		const { run, summary, errors } = payload || {};
 		const runStatus = String(run?.status || '').toUpperCase();
 		const errorCount = summary?.errorCount || 0;
+		const isFailed = ['FAILED', 'COMPLETED_WITH_ERRORS', 'STOPPED', 'CANCELLED', 'ABORTED'].includes(runStatus);
 		const isSuccess = (runStatus === 'SUCCESS' || runStatus === 'COMPLETED') && errorCount === 0;
 
 		container.innerHTML = `
 			<div class="results-viewer">
 				<!-- Status Header -->
-				<div class="results-header ${isSuccess ? 'success' : 'warning'}">
+				<div class="results-header ${isSuccess ? 'success' : isFailed ? 'error' : 'warning'}">
 					<div class="status-icon">${isSuccess ? '✓' : '⚠'}</div>
 					<div class="status-content">
-						<h2>${isSuccess ? 'Migration Completed Successfully' : 'Migration Completed with Issues'}</h2>
-						<p>${run?.completedAt ? 'Completed at ' + new Date(run.completedAt).toLocaleString() : ''}</p>
+						<h2>${isSuccess ? 'Migration Completed Successfully' : isFailed ? 'Migration Failed — Review and Retry' : 'Migration Results'}</h2>
+						<p>${summary?.completedAt ? 'Finished at ' + new Date(summary.completedAt).toLocaleString() : ''}</p>
+						${isFailed ? '<p>Resolve the failures before Step 5: Convert Account Numbers.</p>' : ''}
 					</div>
 				</div>
         
+				${isFailed && handlers.onEdit ? `<div class="recovery-actions">
+					<button class="btn btn-primary" data-results-action="edit-plan">Amend Plan</button>
+					<button class="btn btn-secondary" data-results-action="edit-mapping">Amend Mapping</button>
+					<button class="btn btn-secondary" data-results-action="retry">Retry Failed / Unattempted Tables</button>
+				</div>` : ''}
+				${ResultsRenderer.renderFailureSummary(summary)}
 				<!-- Summary Statistics -->
 				<div class="results-stats">
 					<div class="stat-card ${(summary?.tableCount || 0) === (summary?.successCount || 0) ? 'success' : 'warning'}">
@@ -142,7 +170,7 @@ const ResultsRenderer = {
 						<div class="stat-icon">${(summary?.errorCount || 0) > 0 ? '⚠' : '✓'}</div>
 						<div class="stat-content">
 							<div class="stat-value">${summary?.errorCount || 0}</div>
-							<div class="stat-label">Errors</div>
+							<div class="stat-label">${summary?.rowErrorCount ? 'Row Errors' : 'Errors'}</div>
 						</div>
 					</div>
 				</div>
@@ -190,6 +218,9 @@ const ResultsRenderer = {
 		container.querySelectorAll('[data-results-action]')?.forEach(btn => {
 			btn.addEventListener('click', (event) => {
 				const action = event.currentTarget.getAttribute('data-results-action');
+				if (action === 'edit-plan') handlers.onEdit?.(3);
+				if (action === 'edit-mapping') handlers.onEdit?.(2);
+				if (action === 'retry') handlers.onRetry?.();
 				if (action === 'download-json' && handlers.onDownload) handlers.onDownload('json');
 				if (action === 'download-csv' && handlers.onDownload) handlers.onDownload('csv');
 				if (action === 'view-logs' && handlers.onViewLogs) handlers.onViewLogs();
@@ -288,7 +319,9 @@ class ResultsUI {
 		try {
 			this.wizard.showLoading('Loading results...');
 
+			this.errors = [];
 			this.run = await this.api.getById(runId);
+			this.state.set('run.status', this.run.status);
 			this.summary = await this.api.getSummary(runId);
 
 			console.log('Results loaded:', {
@@ -323,7 +356,13 @@ class ResultsUI {
 		ResultsRenderer.render(container, { run: this.run, summary: this.summary, errors: this.errors }, {
 			onDownload: (format) => this.downloadReport(format),
 			onViewLogs: () => this.viewLogs(),
-			onStartNew: () => this.startNewMigration()
+			onStartNew: () => this.startNewMigration(),
+			onEdit: (step) => this.wizard.steps[3].component.editMigration(step),
+			onRetry: async () => {
+				const component = this.wizard.steps[3].component;
+				component.run = this.run;
+				await component.retryMigration();
+			}
 		});
 
 		// Populate profile and plan meta in the modal header
@@ -437,7 +476,7 @@ class ResultsUI {
             </select>
             <input type="text" id="log-search" placeholder="Search logs...">
           </div>
-          <pre class="log-content">${this.renderLogs(logs)}</pre>
+          <pre class="log-content">${ResultsRenderer.escape(this.renderLogs(logs))}</pre>
         </div>
       `);
 

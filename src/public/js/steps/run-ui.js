@@ -12,8 +12,10 @@ class RunUI {
 		this.plan = null;
 		this.run = null;
 		this.pollInterval = null;
+		this._pollInFlight = false;
+		this._pollGeneration = 0;
 		this.startTime = null;
-		this._lastLogTs = null;
+		this._loggedTables = new Set();
 		this._logFetchInFlight = false;
 	}
 
@@ -66,10 +68,8 @@ class RunUI {
 		if (runId) {
 			try {
 				this.run = await this.api.getById(runId);
-				if (String(this.run.status || '').toUpperCase() === 'RUNNING') {
-					// Resume monitoring
-					this.startPolling();
-				}
+				this.state.set('run.status', this.run.status);
+
 			} catch (err) {
 				console.warn('Could not load existing run:', err);
 				// Run not found in DB — clear stale reference
@@ -83,9 +83,9 @@ class RunUI {
 		}
 
 		// Reset log tracking for fresh display
-		this._lastLogTs = null;
+		this._loggedTables = new Set();
 		this._logFetchInFlight = false;
-		this.startTime = null;
+		this.startTime = this.run?.startedAt ? new Date(this.run.startedAt).getTime() : null;
 
 		this.render();
 	}
@@ -103,7 +103,7 @@ class RunUI {
 		if (!this.run) {
 			// Not started yet
 			container.innerHTML = this.renderPreExecution();
-		} else if (status === 'RUNNING') {
+		} else if (['RUNNING', 'PENDING', 'ABORTING'].includes(status)) {
 			// Currently running
 			container.innerHTML = this.renderRunning();
 			this.startPolling();
@@ -234,12 +234,14 @@ class RunUI {
 		<!-- Table Progress -->
         <div class="table-progress">
           <h3>Table Status</h3>
+          <p id="current-table-status" aria-live="polite">Preparing migration…</p>
+          <p class="progress-explanation">Tables run one at a time, in the order below. Processed rows include written, skipped, and failed records.</p>
           <table class="status-table">
             <thead>
               <tr>
                 <th>Table</th>
                 <th>Status</th>
-                <th>Rows</th>
+                <th>Rows Processed</th>
                 <th>Progress</th>
                 <th>Time</th>
               </tr>
@@ -253,6 +255,7 @@ class RunUI {
         <!-- Live Log -->
         <div class="live-log">
           <h3>Live Log</h3>
+          <p class="progress-explanation">One result per completed or failed table. Detailed row errors are available in <a href="/migration/history" target="_blank" rel="noopener">Migration History</a>.</p>
           <div id="log-container" class="log-container"></div>
         </div>
         
@@ -312,58 +315,14 @@ class RunUI {
 	 * Render completed with errors state
 	 */
 	renderCompletedWithErrors() {
-		setTimeout(() => this._loadAndRenderRowErrors(), 0);
-		const glRebuildDone = this.isGLRebuildMarkedDone();
-		return `
-			<div class="run-completed-with-errors">
-				<div style="display:flex;align-items:center;gap:0.5rem;" class="completed-header">
-					<div class="warning-icon" style="font-size:1.6rem;line-height:1;">⚠</div>
-					<h2 style="margin:0;">Migration Completed With Errors</h2>
-				</div>
-				<p style="margin-top:0.5rem;">Some tables failed but migration continued for remaining tables</p>
-        
-        <div class="completion-summary">
-          <div class="stat">
-		  <span>Tables Completed</span>
-            <strong>${this.run.tablesCompleted || 0}</strong>
-          </div>
-          <div class="stat">
-		  <span>Tables Failed</span>
-            <strong style="color:#d9534f;">${this.run.tablesFailed || 0}</strong>
-          </div>
-          <div class="stat">
-		  <span>Total Rows Migrated</span>
-            <strong>${this.run.rowsMigrated || 0}</strong>
-          </div>
-          <div class="stat">
-		  <span>Duration</span>
-            <strong>${this.formatDuration(this.run.duration)}</strong>
-          </div>
-        </div>
-
-        <div style="background:#fcf8e3;border:1px solid #faebcc;border-radius:4px;padding:1rem;margin:1rem 0;">
-          <h4 style="margin-top:0;">Error Details</h4>
-          <p>${this.run.errorMessage || 'See logs for details'}</p>
-        </div>
-        
-        <div class="completion-actions">
-          <button class="btn btn-secondary" onclick="window.wizard.steps[3].component.rebuildGLAccounts(this)">
-            ${glRebuildDone ? 'Rebuild GL Accounts Again' : 'Rebuild GL Accounts'}
-          </button>
-          <button class="btn btn-primary" onclick="window.wizard.nextStep()">
-            Convert Account Numbers →
-          </button>
-        </div>
-
-        <div id="run-row-errors-container"></div>
-      </div>
-    `;
+		return this.renderFailed();
 	}
 
 	/**
 	 * Render failed state
 	 */
 	renderFailed() {
+		setTimeout(() => this._loadAndRenderRowErrors(), 0);
 		// The error message could be in several places depending on source (in-memory vs DB)
 		const errorMsg = this.run.errorMessage
 			|| this.run.error_message
@@ -378,7 +337,7 @@ class RunUI {
         
         <div style="background:#f8d7da;border:1px solid #f5c6cb;border-radius:4px;padding:1rem;margin:1rem 0;">
           <h4 style="margin-top:0;">Error Details</h4>
-          <p style="white-space:pre-wrap;word-break:break-word;">${errorMsg}</p>
+          <p style="white-space:pre-wrap;word-break:break-word;">${this.wizard.escapeHtml(errorMsg)}</p>
         </div>
         
         <div class="failure-summary">
@@ -387,20 +346,22 @@ class RunUI {
             <span>Tables Completed</span>
           </div>
           <div class="stat">
-            <strong>${this.run.tablesFailed || this.plan?.tables?.length || 0}</strong>
+            <strong>${this.run.tablesFailed || 0}</strong>
             <span>Tables Failed</span>
           </div>
         </div>
         
+        <p>Account conversion is blocked until the migration succeeds. Rows already written remain in the target; correct the cause and review partial imports before retrying.</p>
+        <div id="run-row-errors-container"></div>
         <div class="failure-actions">
           <button class="btn btn-secondary" onclick="window.wizard.steps[3].component.retryMigration()">
-            🔄 Retry Failed Tables
+            Retry Failed / Unattempted Tables
           </button>
-          <button class="btn btn-secondary" onclick="window.wizard.previousStep()">
-            ← Back to Plan
+          <button class="btn btn-secondary" onclick="window.wizard.steps[3].component.editMigration(3)">
+            ← Amend Plan
           </button>
           <button class="btn btn-primary" onclick="window.wizard.nextStep()">
-            View Details →
+            View Failure Results →
           </button>
         </div>
       </div>
@@ -411,34 +372,34 @@ class RunUI {
 	 * Render table status rows
 	 */
 	renderTableStatus(tableResults) {
-		return this.plan.tables.map(tableName => {
-			// find result by normalized key (support .table or .name)
-			const result = (tableResults || []).find(r => {
-				const key = (r.table || r.name || '').toString().toUpperCase();
-				return key === (tableName || '').toString().toUpperCase();
-			}) || {};
-			// determine status with fallback normalization
-			const rawStatus = (result.status || result.state || 'pending');
-			const status = String(rawStatus || '').toLowerCase();
-			const icon = this.getStatusIcon(status);
-
-			const rowsProcessed = Number(result.rowsProcessed ?? result.migrated ?? result.rowsMigrated ?? result.rows_migrated ?? 0) || 0;
-			const totalRowsVal = (result.totalRows ?? result.total ?? result.totalRows === 0 ? result.totalRows : null);
-			const totalRows = (totalRowsVal === null || totalRowsVal === undefined) ? '?' : totalRowsVal;
-			const progress = Number(result.progress ?? (typeof totalRowsVal === 'number' && totalRowsVal > 0 ? Math.round((rowsProcessed / totalRowsVal) * 100) : 0)) || 0;
-			const duration = Number(result.duration ?? result.durationMs ?? 0) || 0;
-
+		// The runner can reorder dependencies; its snapshot is the execution order.
+		const rows = tableResults?.length ? tableResults : (this.plan?.tables || []).map(table => ({ table }));
+		return rows.map(result => {
+			const tableName = result.table || result.name || result.table_name || '';
+			const raw = String(result.status || result.state || 'pending').toLowerCase();
+			const normalized = ({ success: 'completed', queued: 'pending', not_run: 'pending' })[raw] || raw;
+			const status = ['completed', 'pending', 'running', 'failed', 'skipped'].includes(normalized) ? normalized : 'pending';
+			const written = Number(result.rowsMigrated ?? result.migrated ?? result.rows_migrated ?? 0);
+			const skipped = Number(result.skippedDuplicates ?? result.rows_skipped_duplicates ?? 0);
+			const errors = Number(result.errors ?? result.rows_error ?? 0);
+			const processed = Number(result.rowsProcessed ?? result.processed ?? result.last_offset ?? (written + skipped + errors));
+			const total = result.totalRows ?? result.total ?? result.rows_source ?? null;
+			const percent = Number(result.progress ?? (total > 0 ? Math.min(100, Math.round(processed / total * 100)) : status === 'completed' ? 100 : 0));
+			const statusLabel = status === 'running' && ['validating', 'preparing'].includes(result.phase) ? result.phase : status;
+			const number = value => Number(value).toLocaleString();
 			return `
         <tr class="table-status-${status}">
-          <td><strong>${tableName}</strong></td>
-          <td><span class="status-badge status-${status}">${icon} ${status}</span></td>
-          <td>${rowsProcessed} / ${totalRows}</td>
-          <td>
-            <div class="mini-progress-bar">
-              <div class="mini-progress-fill" style="width: ${progress}%"></div>
-            </div>
+          <td><strong>${this.wizard.escapeHtml(String(tableName).toUpperCase())}</strong></td>
+          <td><span class="status-badge status-${status}">${this.getStatusIcon(status)} ${statusLabel}</span></td>
+          <td>${number(processed)} / ${total == null ? '?' : number(total)}
+            <small class="row-outcomes">${number(written)} written · ${number(skipped)} skipped · ${number(errors)} failed</small>
           </td>
-          <td>${this.formatDuration(duration)}</td>
+          <td>
+            <div class="mini-progress-bar" role="progressbar" aria-label="Table rows processed" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}">
+              <div class="mini-progress-fill" style="width: ${percent}%"></div>
+            </div><small>${percent}%</small>
+          </td>
+          <td>${this.formatDuration(Number(result.duration ?? result.durationMs ?? 0))}</td>
         </tr>
       `;
 		}).join('');
@@ -478,6 +439,7 @@ class RunUI {
 
 		try {
 			this.run = await this.api.start(this.plan.id);
+			this.wizard.storage.clearStepsFrom(4);
 
 			this.state.set('run.id', this.run.id);
 			this.state.set('run.status', 'running');
@@ -542,11 +504,21 @@ class RunUI {
 		}
 	}
 
+	async editMigration(step = 3) {
+		this.stopPolling();
+		this.run = null;
+		this._loggedTables = new Set();
+		this.startTime = null;
+		this.state.set('run', { id: null, status: null, progress: 0, tableResults: [] });
+		this.wizard.storage.clearStepsFrom(4);
+		await this.wizard.showStep(step);
+	}
+
 	/**
 	 * Retry failed migration
 	 */
 	async retryMigration() {
-		this.wizard.showLoading('Retrying failed tables...');
+		this.wizard.showLoading('Retrying failed and unattempted tables...');
 
 		try {
 			const resp = await this.api.retry(this.run.id);
@@ -564,11 +536,12 @@ class RunUI {
 			// If a new run was started, navigate into it
 			const newRunId = resp.runId || resp.run?.id || null;
 			if (newRunId) {
+				this.wizard.storage.clearStepsFrom(4);
 				this.state.set('run.id', newRunId);
 				this.state.set('run.status', 'running');
 				this.run = null; // Clear stale run reference
 				this.startTime = Date.now();
-				this._lastLogTs = null;
+				this._loggedTables = new Set();
 				this.wizard.hideLoading();
 
 				// Reload the run from the server to get fresh state
@@ -578,6 +551,7 @@ class RunUI {
 					// Fall back to minimal run object
 					this.run = { id: newRunId, status: 'RUNNING' };
 				}
+				await this.wizard.showStep(4);
 				this.render();
 				return;
 			}
@@ -596,42 +570,44 @@ class RunUI {
 	 */
 	startPolling() {
 		if (this.pollInterval) return;
-
-		this.pollInterval = setInterval(async () => {
+		const generation = this._pollGeneration;
+		const runId = this.run.id;
+		const poll = async () => {
+			if (this._pollInFlight) return;
+			this._pollInFlight = true;
 			try {
-				const progress = await this.api.getProgress(this.run.id);
-				const percent = typeof progress === 'number'
-					? progress
-					: (progress?.percent ?? progress?.progress ?? 0);
-				const status = progress?.status || this.state.get('run.status') || 'RUNNING';
-				const tables = progress?.tables || progress?.tableResults || [];
-
-				// Update state
+				const progress = await this.api.getProgress(runId);
+				if (generation !== this._pollGeneration || this.run?.id !== runId) return;
+				const percent = progress?.percent ?? progress?.progress ?? 0;
+				const status = progress?.status || 'RUNNING';
+				const tables = progress?.tables || [];
 				this.state.set('run.progress', percent);
 				this.state.set('run.status', status);
 				this.state.set('run.tableResults', tables);
-
-				// Update UI (including logs)
-				await this.updateProgressDisplay({ percent, status, tables });
-
-				// Stop polling if complete (handle both uppercase from backend and lowercase for compatibility)
-				const normalizedStatus = String(status || '').toUpperCase();
-				if (normalizedStatus === 'SUCCESS' || normalizedStatus === 'FAILED' || normalizedStatus === 'COMPLETED' || normalizedStatus === 'COMPLETED_WITH_ERRORS' || normalizedStatus === 'STOPPED' || normalizedStatus === 'CANCELLED') {
+				this.state.set('run.tablesCompleted', progress.tablesCompleted || 0);
+				this.state.set('run.tablesTotal', progress.tablesTotal || tables.length);
+				await this.updateProgressDisplay({ ...progress, percent, status, tables });
+				if (generation !== this._pollGeneration || this.run?.id !== runId) return;
+				if (['SUCCESS', 'FAILED', 'COMPLETED', 'COMPLETED_WITH_ERRORS', 'STOPPED', 'CANCELLED'].includes(String(status).toUpperCase())) {
+					const run = await this.api.getById(runId);
+					if (generation !== this._pollGeneration || this.run?.id !== runId) return;
 					this.stopPolling();
-					this.run = await this.api.getById(this.run.id);
+					this.run = run;
 					this.render();
 				}
-
-			} catch (err) {
-				console.error('Progress poll error:', err);
-			}
-		}, 2000); // Poll every 2 seconds
+			} catch (error) {
+				console.error('Progress poll error:', error);
+			} finally { this._pollInFlight = false; }
+		};
+		this.pollInterval = setInterval(poll, 1000);
+		void poll();
 	}
 
 	/**
 	 * Stop polling for progress
 	 */
 	stopPolling() {
+		this._pollGeneration += 1;
 		if (this.pollInterval) {
 			clearInterval(this.pollInterval);
 			this.pollInterval = null;
@@ -642,14 +618,15 @@ class RunUI {
 	 * Update progress display
 	 */
 	async updateProgressDisplay(progress) {
+		const generation = this._pollGeneration;
 		// Update overall progress bar
-		const progressBar = document.querySelector('.progress-bar-fill');
+		const progressBar = document.querySelector('#run-content .overall-progress .progress-bar-fill');
 		if (progressBar) {
 			progressBar.style.width = `${progress.percent || 0}%`;
 		}
 
 		// Update progress text
-		const progressText = document.querySelector('.progress-header span');
+		const progressText = document.querySelector('#run-content .progress-header span');
 		if (progressText) {
 			progressText.textContent = `Overall Progress: ${progress.percent || 0}%`;
 		}
@@ -660,8 +637,16 @@ class RunUI {
 			tableList.innerHTML = this.renderTableStatus(progress.tables || []);
 		}
 
+		const current = document.getElementById('current-table-status');
+		if (current) {
+			const active = (progress.tables || []).find(table => table.status === 'running');
+			const phase = active?.phase === 'validating' ? 'Validating' : active?.phase === 'preparing' ? 'Preparing' : 'Migrating';
+			current.textContent = active ? `${phase}: ${String(active.table).toUpperCase()} · ${progress.tablesCompleted || 0} of ${progress.tablesTotal || 0} tables completed`
+				: progress.tablesTotal > 0 && progress.tablesCompleted === progress.tablesTotal ? 'Finalizing migration…' : 'Preparing the next table…';
+		}
+
 		// Update elapsed time
-		const timeDisplay = document.querySelector('.progress-header span:last-child');
+		const timeDisplay = document.querySelector('#run-content .progress-header span:last-child');
 		if (timeDisplay) {
 			timeDisplay.textContent = this.getElapsedTime();
 		}
@@ -675,24 +660,11 @@ class RunUI {
 				if (this._logFetchInFlight) return;
 				this._logFetchInFlight = true;
 				logFetchStarted = true;
-				const logs = await this.api.getLogs(runId, {
-					limit: 100,
-					...(this._lastLogTs ? { since: this._lastLogTs } : {})
-				});
+				// Fetch the small result snapshot so row-error bursts cannot hide earlier tables.
+				const logs = await this.api.getLogs(runId, { view: 'table-results', limit: 1000 });
+				if (generation !== this._pollGeneration || String(this.run?.id) !== String(runId)) return;
 				const logArray = Array.isArray(logs) ? logs : (logs?.logs || []);
-				// Filter logs newer than last seen timestamp
-				const newLogs = [];
-				for (const l of logArray) {
-					const ts = l.timestamp ? new Date(l.timestamp).getTime() : 0;
-					if (!this._lastLogTs || ts > this._lastLogTs) newLogs.push(l);
-				}
-				if (newLogs.length) {
-					this._lastLogTs = newLogs.reduce((maxTs, entry) => {
-						const ts = entry.timestamp ? new Date(entry.timestamp).getTime() : 0;
-						return ts > maxTs ? ts : maxTs;
-					}, this._lastLogTs || 0);
-					this.appendLogEntries(newLogs);
-				}
+				this.appendLogEntries(logArray);
 			}
 		} catch (e) {
 			console.warn('Failed to fetch logs:', e);
@@ -705,74 +677,21 @@ class RunUI {
 
 	/**
 	 * Format a structured log event into { icon, text, cls } for display.
-	 * Returns null for entries that should be silently skipped (debug, keepalive noise).
+	 * Only completed and failed table results appear in Step 4.
 	 */
 	formatLogEntry(e) {
-		const phase = e.phase || e.type || '';
+		if (e.phase !== 'table_finalize') return null;
 		const status = String(e.status || '').toLowerCase();
-		const level = String(e.level || '').toLowerCase();
-
-		if (level === 'debug') return null;
-		// Skip keepalive connectivity pings — they fire every 20s and pollute the log
-		if (phase === 'keepalive') return null;
-		// Skip bare connectivity-check "ok" entries that fire from the keepalive path
-		if (phase === 'preflight' && (status === 'ok') && !e.action) return null;
-
-		if (phase === 'run_start') {
-			const mode = e.dryRun ? 'Dry run' : 'Migration';
-			return { icon: '▶', text: `${mode} started: ${e.tables?.length || 0} table(s)`, cls: 'log-info' };
+		if (!['success', 'failed'].includes(status)) return null;
+		const singleLine = value => String(value || '').replace(/\s+/g, ' ').trim();
+		const table = singleLine(e.tableName || e.table);
+		if (!table) return null;
+		if (status === 'success') {
+			return { icon: '✓', text: `${table}: completed — inserted ${Number(e.inserted || 0).toLocaleString()}, updated ${Number(e.updated || 0).toLocaleString()}, skipped ${Number(e.skipped || 0).toLocaleString()}`, cls: 'log-success' };
 		}
-
-		if (phase === 'preflight') {
-			const action = e.action ? String(e.action).replace(/_/g, ' ') : 'connectivity check';
-			if (status === 'start') return { icon: '⏳', text: `Preflight: ${action}…`, cls: 'log-preflight' };
-			if (status === 'passed' || status === 'ok') return { icon: '✓', text: `Preflight: ${action} passed`, cls: 'log-preflight-ok' };
-			if (status === 'skipped') return { icon: '–', text: `Preflight: ${action} skipped`, cls: 'log-preflight-minor' };
-			if (status === 'failed') return { icon: '❌', text: `Preflight: ${action} failed — ${e.error || 'unknown'}`, cls: 'log-error' };
-			if (status === 'done') {
-				const counts = e.keyCounts
-					? Object.entries(e.keyCounts).filter(([, v]) => v > 0).map(([k, v]) => `${k}: ${v}`).join(', ')
-					: '';
-				return { icon: '✓', text: `Preflight: ${action} done${counts ? ` (${counts})` : ''}`, cls: 'log-preflight-ok' };
-			}
-			if (status === 'collecting_seed_keys') return { icon: '🔍', text: `Preflight: ${action} — collecting seed keys (${e.tables || 0} tables)…`, cls: 'log-preflight' };
-			if (status === 'seed_keys_collected') return { icon: '·', text: `Preflight: ${action} — ${e.table} seed done`, cls: 'log-preflight-minor' };
-			if (status === 'link_traversal') {
-				const total = e.keyCounts ? Object.values(e.keyCounts).reduce((a, b) => a + b, 0) : 0;
-				return { icon: '🔗', text: `Preflight: ${action} — link traversal pass ${e.iteration} (${total} keys so far)…`, cls: 'log-preflight' };
-			}
-			if (status === 'link_traversal_table') return { icon: '·', text: `Preflight: ${action} — pass ${e.iteration}: querying ${e.table} (${e.plans} plan(s))`, cls: 'log-preflight-minor' };
-			if (status === 'link_traversal_converged') return { icon: '✓', text: `Preflight: ${action} — converged after pass ${e.iteration} (+${e.newKeys} new keys)`, cls: 'log-preflight-ok' };
-			if (status === 'link_traversal_timeout') return { icon: '⚠', text: `Preflight: ${action} — traversal timed out after ${Math.round((e.elapsedMs || 0) / 1000)}s, proceeding with collected keys`, cls: 'log-warning' };
-			return { icon: '·', text: `Preflight: ${action} — ${status}`, cls: 'log-preflight-minor' };
-		}
-
-		if (e.type === 'table_cleaning_started') return { icon: '🧹', text: `Cleaning ${e.table}…`, cls: 'log-preflight' };
-		if (e.type === 'table_cleaned') {
-			const detail = `${e.method || 'DELETE'}${typeof e.affectedRows === 'number' ? `, ${e.affectedRows} rows` : ''}`;
-			return { icon: '✓', text: `Cleaned ${e.table} (${detail})`, cls: 'log-preflight-ok' };
-		}
-
-		if (phase === 'table_start') return { icon: '▶', text: `${e.tableName}: migrating…`, cls: 'log-table-start' };
-		if (phase === 'fetch' && typeof e.sourceRows === 'number') return { icon: '·', text: `${e.tableName}: ${e.sourceRows.toLocaleString()} source row(s)`, cls: 'log-info' };
-		if (phase === 'table_finalize') {
-			if (status === 'success') return { icon: '✓', text: `${e.tableName}: done — inserted ${(e.inserted || 0).toLocaleString()}, updated ${(e.updated || 0).toLocaleString()}, skipped ${(e.skipped || 0).toLocaleString()}`, cls: 'log-success' };
-			if (status === 'failed') return { icon: '❌', text: `${e.tableName}: failed — ${e.error || 'unknown'}`, cls: 'log-error' };
-		}
-
-		if (phase === 'run_finalize') {
-			if (status === 'success') return { icon: '✓', text: 'Migration completed successfully.', cls: 'log-success' };
-			if (status === 'failed') return { icon: '❌', text: `Migration failed — ${e.error || 'unknown'}`, cls: 'log-error' };
-			if (status === 'completed_with_errors') return { icon: '⚠', text: `Migration completed with ${e.tableErrorCount || 0} table failure(s).`, cls: 'log-warning' };
-		}
-
-		if (phase === 'run_aborted') return { icon: '■', text: `Migration stopped: ${e.message || 'aborted'}`, cls: 'log-warning' };
-		if (phase === 'run_error') return { icon: '❌', text: e.error || e.message || 'Unknown run error', cls: 'log-error' };
-
-		if (level === 'error') return { icon: '❌', text: e.error || e.message || JSON.stringify(e), cls: 'log-error' };
-		if (level === 'warn') return { icon: '⚠', text: e.error || e.message || 'warning', cls: 'log-warning' };
-
-		return null;
+		const errorCount = Number(e.errors) || Number(String(e.error || '').match(/(?:failed with|completed with) ([\d,]+) (?:row )?errors?/i)?.[1]?.replaceAll(',', '')) || 0;
+		const reason = errorCount > 0 ? `${errorCount.toLocaleString()} row error${errorCount === 1 ? '' : 's'}` : singleLine(e.error || 'Table migration failed').slice(0, 160);
+		return { icon: '✕', text: `${table}: failed — ${reason}. See Migration History for details.`, cls: 'log-error' };
 	}
 
 	/**
@@ -781,9 +700,17 @@ class RunUI {
 	appendLogEntries(entries) {
 		const container = document.getElementById('log-container');
 		if (!container || !entries || !entries.length) return;
+		if (this._logContainer !== container || this._logRunId !== this.run?.id) {
+			this._loggedTables.clear();
+			this._logContainer = container;
+			this._logRunId = this.run?.id;
+		}
 		for (const e of entries) {
 			const formatted = this.formatLogEntry(e);
 			if (!formatted) continue;
+			const tableKey = String(e.tableName || e.table).toLowerCase();
+			if (this._loggedTables.has(tableKey)) continue;
+			this._loggedTables.add(tableKey);
 
 			const el = document.createElement('div');
 			el.className = `log-entry ${formatted.cls}`;
@@ -844,7 +771,7 @@ class RunUI {
 			return false;
 		}
 
-		if (String(this.run.status || '').toUpperCase() === 'RUNNING') {
+		if (['RUNNING', 'PENDING', 'ABORTING'].includes(String(this.run.status || '').toUpperCase())) {
 			this.wizard.showError('Migration is still in progress. Please wait for completion.');
 			return false;
 		}
@@ -872,58 +799,12 @@ class RunUI {
 
 		container.innerHTML = '<p style="color:#888;font-size:0.9em;">Loading failed records...</p>';
 
-		let errors = [];
 		try {
-			errors = await this.api.getErrors(this.run.id);
-		} catch (e) {
-			container.innerHTML = '<p style="color:#888;font-size:0.9em;">Could not load failed records.</p>';
-			return;
+			const summary = await this.api.getSummary(this.run.id);
+			container.innerHTML = window.ResultsRenderer.renderFailureSummary(summary);
+		} catch (error) {
+			container.innerHTML = '<p>Could not load failure details. Open Failure Results to try again.</p>';
 		}
-
-		if (!errors || errors.length === 0) {
-			container.innerHTML = '';
-			return;
-		}
-
-		// Group errors by table
-		const byTable = {};
-		for (const err of errors) {
-			const t = err.table || 'Unknown';
-			if (!byTable[t]) byTable[t] = [];
-			byTable[t].push(err);
-		}
-
-		let html = `<div style="margin-top:1.5rem;">
-			<h4 style="margin-bottom:0.5rem;">Failed Records (${errors.length})</h4>`;
-
-		for (const [table, rows] of Object.entries(byTable)) {
-			html += `<details style="margin-bottom:0.5rem;border:1px solid #f5c6cb;border-radius:4px;padding:0.5rem 0.75rem;background:#fff8f8;">
-				<summary style="cursor:pointer;font-weight:600;color:#c0392b;">${table} — ${rows.length} error(s)</summary>
-				<table style="width:100%;border-collapse:collapse;margin-top:0.5rem;font-size:0.85em;">
-					<thead><tr style="background:#f8d7da;">
-						<th style="text-align:left;padding:4px 6px;border-bottom:1px solid #f5c6cb;">Row</th>
-						<th style="text-align:left;padding:4px 6px;border-bottom:1px solid #f5c6cb;">Column</th>
-						<th style="text-align:left;padding:4px 6px;border-bottom:1px solid #f5c6cb;">Value</th>
-						<th style="text-align:left;padding:4px 6px;border-bottom:1px solid #f5c6cb;">Error</th>
-					</tr></thead>
-					<tbody>`;
-			for (const err of rows) {
-				const row = err.row != null ? err.row : '—';
-				const col = err.column || '—';
-				const val = err.value != null ? String(err.value) : '—';
-				const msg = err.message || '—';
-				html += `<tr>
-					<td style="padding:4px 6px;border-bottom:1px solid #fde">${row}</td>
-					<td style="padding:4px 6px;border-bottom:1px solid #fde">${col}</td>
-					<td style="padding:4px 6px;border-bottom:1px solid #fde;max-width:160px;word-break:break-all;">${val}</td>
-					<td style="padding:4px 6px;border-bottom:1px solid #fde;max-width:300px;word-break:break-word;">${msg}</td>
-				</tr>`;
-			}
-			html += `</tbody></table></details>`;
-		}
-
-		html += '</div>';
-		container.innerHTML = html;
 	}
 
 	/**

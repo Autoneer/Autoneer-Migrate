@@ -12,6 +12,22 @@ const { Run } = require("../../migrate/models");
 const runStore = require("../../migrate/runStore");
 const { getRunState } = require("../../migrate/runner");
 const logger = require("../../migrate/logger");
+const { buildRunSummary, normalizeRowError } = require("../../migrate/runDiagnostics");
+const { buildRunProgress } = require("../../migrate/runProgress");
+
+async function getPlannedTables(runId, runData) {
+	const snapshot = safeParseJson(runData.table_summary_json);
+	// The log contains the original selection even for runs created before snapshots.
+	try {
+		const content = await fs.promises.readFile(logger.getLogFilePath(runId), "utf8");
+		const start = content.split(/\r?\n/).map(line => safeParseJson(line)).find(event => event.phase === "run_start");
+		// Run IDs can be reused across schemas or after history is cleared.
+		const sameRun = runData.started_at && start?.timestamp
+			&& Math.abs(new Date(runData.started_at) - new Date(start.timestamp)) < 2000;
+		if (sameRun && Array.isArray(start?.tables)) return start.tables.map(t => t.table);
+	} catch { /* Saved table snapshot remains available without a log file. */ }
+	return Object.keys(snapshot);
+}
 
 const router = express.Router();
 
@@ -63,59 +79,16 @@ function normalizeMappingJson(mapping) {
 	return converted;
 }
 
-/**
- * Normalize table status to UI-friendly values
- */
-function normalizeTableStatus(s) {
-	const st = String(s || '').toUpperCase();
-	switch (st) {
-		case 'QUEUED':
-		case 'PENDING':
-		case 'NOT_RUN':
-			return 'pending';
-		case 'RUNNING':
-			return 'running';
-		case 'COMPLETED':
-		case 'SUCCESS':
-			return 'completed';
-		case 'FAILED':
-			return 'failed';
-		case 'CANCELLED':
-		case 'STOPPED':
-			return 'skipped';
-		case 'SKIPPED':
-			return 'skipped';
-		default:
-			return 'pending';
-	}
-}
-
-function normalizeTables(runStateTables) {
-	if (!Array.isArray(runStateTables)) return [];
-	return runStateTables.map(t => {
-		const migrated = Number(t.migrated ?? t.rowsMigrated ?? t.rows_migrated ?? 0) || 0;
-		const total = (t.total == null ? null : Number(t.total));
-		const progress = (total ? Math.min(100, Math.round((migrated / total) * 100)) : 0);
-
-		return {
-			table: t.name || t.table || t.table_name || '',
-			status: normalizeTableStatus(t.status || t.state),
-			rowsProcessed: migrated,
-			totalRows: total,
-			progress: progress,
-			duration: Number(t.durationMs ?? t.duration_ms ?? t.duration ?? 0) || 0,
-			inserted: Number(t.inserted ?? t.rowsInserted ?? t.rows_inserted ?? 0) || 0,
-			updated: Number(t.updated ?? t.rowsUpdated ?? t.rows_updated ?? 0) || 0,
-			skippedDuplicates: Number(t.skippedDuplicates ?? t.rowsSkipped ?? t.rows_skipped_duplicates ?? 0) || 0,
-			errors: Number(t.errors ?? t.rowsError ?? t.rows_error ?? 0) || 0,
-			lastError: t.lastError ?? t.error_message ?? null
-		};
-	});
-}
 
 async function resolvePlanMappingProfileId(pool, planRow) {
 	if (planRow.mapping_profile_id) {
 		return planRow.mapping_profile_id;
+	}
+	const embeddedPlan = safeParseJson(planRow.plan_json || planRow.mapping_json);
+	const embeddedProfileId = embeddedPlan.mappingProfileId || embeddedPlan.mappingId;
+	if (embeddedProfileId) {
+		const profile = await runStore.getMappingProfile(pool, embeddedProfileId);
+		if (profile) return profile.id || profile.profile_id;
 	}
 	if (planRow.mapping_id) {
 		const profile = await runStore.getMappingProfile(pool, planRow.mapping_id);
@@ -157,6 +130,7 @@ async function resolvePlanMappingProfileId(pool, planRow) {
 
 	return null;
 }
+
 
 /**
  * GET /api/runs
@@ -477,7 +451,8 @@ router.get("/runs/:runId", async (req, res) => {
 			// Populate with current state data
 			run.status = runState.status;
 			run.startedAt = runState.startedAt ? new Date(runState.startedAt) : new Date();
-			run.completedAt = runState.completedAt ? new Date(runState.completedAt) : null;
+			run.completedAt = runState.finishedAt || runState.completedAt || null;
+			run.finishedAt = run.completedAt ? new Date(run.completedAt) : null;
 			run.dryRun = runState.dryRun || false;
 
 			// Add table results
@@ -497,12 +472,13 @@ router.get("/runs/:runId", async (req, res) => {
 				}
 			});
 
+			run.status = runState.status;
 			const runJson = run.toJSON();
 			// UI-friendly aliases expected by client-side RunUI
-			runJson.tablesCompleted = run.getCompletedTables().length;
+			runJson.tablesCompleted = (runState.tables || []).filter(t => ['SUCCESS', 'COMPLETED'].includes(String(t.status).toUpperCase())).length;
 			runJson.tablesFailed = (runState.tables || []).filter(t => String(t.status || '').toUpperCase() === 'FAILED').length;
-			runJson.rowsMigrated = run.totals?.migrated ?? ((run.totals?.inserted || 0) + (run.totals?.updated || 0));
-			runJson.duration = run.finishedAt ? (new Date(run.finishedAt) - new Date(run.startedAt)) : (Date.now() - new Date(run.startedAt));
+			runJson.rowsMigrated = (runState.tables || []).reduce((sum, table) => sum + Number(table.migrated || 0), 0);
+			runJson.duration = run.completedAt ? (new Date(run.completedAt) - new Date(run.startedAt)) : (Date.now() - new Date(run.startedAt));
 			// Include error message from in-memory state
 			runJson.errorMessage = runState.lastError?.message || runJson.lastError?.message || null;
 
@@ -550,8 +526,9 @@ router.get("/runs/:runId", async (req, res) => {
 		const plan = buildPlanAdapter(tableNames, runData.plan_id || null, null);
 		const run = new Run(runId, plan);
 		run.status = runData.status;
-		run.startedAt = runData.started_at;
-		run.completedAt = runData.completed_at;
+		run.startedAt = new Date(runData.started_at);
+		run.completedAt = runData.ended_at || runData.completed_at;
+		run.finishedAt = run.completedAt ? new Date(run.completedAt) : null;
 		run.dryRun = runData.dry_run;
 
 		// Add table results
@@ -571,11 +548,12 @@ router.get("/runs/:runId", async (req, res) => {
 			}
 		});
 
+		run.status = runData.status;
 		const runJson = run.toJSON();
-		runJson.tablesCompleted = run.getCompletedTables().length;
+		runJson.tablesCompleted = (tables || []).filter(t => ['SUCCESS', 'COMPLETED'].includes(String(t.status).toUpperCase())).length;
 		runJson.tablesFailed = (tables || []).filter(t => String(t.status || '').toUpperCase() === 'FAILED').length;
-		runJson.rowsMigrated = run.totals?.migrated ?? ((run.totals?.inserted || 0) + (run.totals?.updated || 0));
-		runJson.duration = run.finishedAt ? (new Date(run.finishedAt) - new Date(run.startedAt)) : (Date.now() - new Date(run.startedAt));
+		runJson.rowsMigrated = (tables || []).reduce((sum, table) => sum + Number(table.rows_migrated || 0), 0);
+		runJson.duration = run.completedAt ? (new Date(run.completedAt) - new Date(run.startedAt)) : (Date.now() - new Date(run.startedAt));
 		// Include the error message from the DB row so the UI can display it
 		runJson.errorMessage = runData.error_message || runJson.lastError?.message || null;
 		// Attach plan/mapping ids for metadata lookup
@@ -602,143 +580,32 @@ router.get("/runs/:runId", async (req, res) => {
  * Get real-time progress for an active run
  */
 router.get("/runs/:runId/progress", async (req, res) => {
+	let pool;
 	try {
 		const { runId } = req.params;
 		const numericRunId = Number(runId);
 		const runKey = Number.isNaN(numericRunId) ? runId : numericRunId;
-
-		// Check in-memory state first (active run)
 		const runState = getRunState(runKey);
 		if (runState) {
-			const planSteps = Array.isArray(state.plan) ? state.plan : [];
-			let includedTables = planSteps.filter(step => step?.include).map(step => step.table).filter(Boolean);
-			if (includedTables.length === 0) {
-				includedTables = (runState.tables || []).map(table => table.name).filter(Boolean);
-			}
-			const planAdapter = {
-				mappingProfileId: state.plan?.mappingProfileId || state.plan?.mappingId || null,
-				getIncludedTables: () => includedTables
-			};
-			const run = new Run(runKey, planAdapter);
-
-			run.status = runState.status;
-			run.startedAt = runState.startedAt ? new Date(runState.startedAt) : new Date();
-
-			(runState.tables || []).forEach(table => {
-				if (table.status === "COMPLETED") {
-					const stats = {
-						inserted: table.inserted || table.rowsInserted || 0,
-						updated: table.updated || table.rowsUpdated || 0,
-						skipped: table.skippedDuplicates || table.rowsSkipped || 0,
-						errors: table.rowsError || table.rows_error || 0,
-						durationMs: table.durationMs || table.duration_ms || 0
-					};
-					run.recordTableSuccess(table.name, stats);
-				}
-			});
-
-			// Normalize table rows for UI
-			const normalizedTables = normalizeTables(runState.tables || []);
-
-			// compute overall percent based on normalized tables and includedTables
-			const tablesTotal = (includedTables && includedTables.length) || normalizedTables.length || 0;
-			let fractionSum = 0;
-			let countCompleted = 0;
-			let countFailed = 0;
-			for (const t of normalizedTables) {
-				if (t.status === 'completed') {
-					fractionSum += 1;
-					countCompleted += 1;
-				} else if (t.status === 'running') {
-					if (t.totalRows && t.totalRows > 0) {
-						fractionSum += (t.rowsProcessed / t.totalRows);
-					} else {
-						fractionSum += 0;
-					}
-				} else if (t.status === 'failed') {
-					countFailed += 1;
-					// do not count failed as completed
-				} else {
-					// pending/skipped => 0
-				}
-			}
-
-			const overallPercent = tablesTotal > 0 ? Math.round((fractionSum / tablesTotal) * 100) : 0;
-
-			return res.json({
-				success: true,
-				runId: runKey,
-				status: run.status,
-				progress: overallPercent,
-				percent: overallPercent,
-				estimatedSecondsRemaining: run.getEstimatedSecondsRemaining(),
-				tables: normalizedTables,
-				tablesCompleted: countCompleted,
-				tablesTotal: tablesTotal,
-				tablesFailed: countFailed
-			});
+			// Use this run's immutable selection and actual execution order.
+			return res.json(buildRunProgress({ ...runState, runId: runKey }, runState.tables));
 		}
-
-		// Load from database
-		const pool = await mysql.connectToSchema(state.mysql, state.schemaName);
-		await mysql.ensureMigrationTables(pool);
-
+		pool = await mysql.connectToSchema(state.mysql, state.schemaName);
 		const runData = await runStore.getRun(pool, runId);
-
-		// Load table rows so UI can render details for DB-loaded runs
+		if (!runData) return res.status(404).json({ success: false, error: "Run not found" });
 		const dbTables = await runStore.getRunTables(pool, runId);
-
-		await pool.end();
-
-		if (!runData) {
-			return res.status(404).json({
-				success: false,
-				error: "Run not found"
-			});
-		}
-
-		// Normalize DB tables for UI
-		const normalizedTables = normalizeTables(dbTables || []);
-
-		// Compute overall percent similarly to in-memory path
-		const tablesTotal = (runData.tables_total && Number(runData.tables_total)) || normalizedTables.length || 0;
-		let fractionSum = 0;
-		let countCompleted = 0;
-		let countFailed = 0;
-		for (const t of normalizedTables) {
-			if (t.status === 'completed') {
-				fractionSum += 1;
-				countCompleted += 1;
-			} else if (t.status === 'running') {
-				if (t.totalRows && t.totalRows > 0) {
-					fractionSum += (t.rowsProcessed / t.totalRows);
-				} else {
-					fractionSum += 0;
-				}
-			} else if (t.status === 'failed') {
-				countFailed += 1;
-			}
-		}
-
-		const overallPercent = tablesTotal > 0 ? Math.round((fractionSum / tablesTotal) * 100) : 0;
-
-		res.json({
-			success: true,
-			runId: runKey,
-			status: runData.status,
-			progress: overallPercent,
-			percent: overallPercent,
-			estimatedSecondsRemaining: null,
-			tables: normalizedTables,
-			tablesCompleted: countCompleted || (runData.tables_completed || 0),
-			tablesTotal: tablesTotal,
-			tablesFailed: countFailed || 0
-		});
+		const plannedTables = await getPlannedTables(runId, runData);
+		const snapshot = safeParseJson(runData.table_summary_json);
+		// Attempted rows are stored in execution order. Append all unattempted tables.
+		const attempted = new Set(dbTables.map(table => table.table_name.toLowerCase()));
+		const tables = [...dbTables, ...plannedTables.filter(name => !attempted.has(name.toLowerCase())).map(name => ({
+			status: 'NOT_RUN', ...snapshot[name], table_name: name
+		}))];
+		res.json(buildRunProgress({ ...runData, runId: runKey }, tables));
 	} catch (err) {
-		res.status(500).json({
-			success: false,
-			error: err.message
-		});
+		res.status(500).json({ success: false, error: err.message });
+	} finally {
+		if (pool) await pool.end();
 	}
 });
 
@@ -805,73 +672,13 @@ router.get("/runs/:runId/summary", async (req, res) => {
 			});
 		}
 
-		const tables = await runStore.getRunTables(pool, runId);
-
-		await pool.end();
-
-		// Ensure tables is always an array
-		const tableArray = Array.isArray(tables) ? tables : [];
-
-		// Calculate summary statistics
-		const summary = {
-			runId: runId,
-			status: runData.status,
-			dryRun: runData.dry_run,
-			startedAt: runData.started_at,
-			completedAt: runData.completed_at,
-			durationMs: runData.completed_at && runData.started_at
-				? new Date(runData.completed_at) - new Date(runData.started_at)
-				: null,
-			tableCount: tableArray.length,
-			successCount: tableArray.filter(t => {
-				const s = String(t.status || '').toUpperCase();
-				return s === 'COMPLETED' || s === 'SUCCESS';
-			}).length,
-			failedCount: tableArray.filter(t => String(t.status || '').toUpperCase() === 'FAILED').length,
-			errorCount: tableArray.filter(t => t.error_message).length,
-			tables: {
-				total: tableArray.length,
-				completed: tableArray.filter(t => {
-					const s = String(t.status || '').toUpperCase();
-					return s === 'COMPLETED' || s === 'SUCCESS';
-				}).length,
-				failed: tableArray.filter(t => String(t.status || '').toUpperCase() === 'FAILED').length,
-				pending: tableArray.filter(t => String(t.status || '').toUpperCase() === 'PENDING').length
-			},
-			tableDetails: tableArray.map(t => ({
-				name: t.table_name,
-				status: t.status,
-				rowsMigrated: t.rows_migrated || 0,
-				rowsInserted: t.rows_inserted || 0,
-				rowsUpdated: t.rows_updated || 0,
-				rowsSkipped: t.rows_skipped_duplicates || 0,
-				rowsError: t.rows_error || 0,
-				duration: t.duration_ms || 0,
-				errorCount: t.rows_error || 0,
-				errorMessage: t.error_message || null
-			})),
-			rows: {
-				migrated: tableArray.reduce((sum, t) => sum + (t.rows_migrated || 0), 0),
-				inserted: tableArray.reduce((sum, t) => sum + (t.rows_inserted || 0), 0),
-				updated: tableArray.reduce((sum, t) => sum + (t.rows_updated || 0), 0),
-				skipped: tableArray.reduce((sum, t) => sum + (t.rows_skipped_duplicates || 0), 0),
-				errors: tableArray.reduce((sum, t) => sum + (t.rows_error || 0), 0)
-			},
-			errors: tableArray
-				.filter(t => t.error_message)
-				.map(t => ({
-					tableName: t.table_name,
-					message: t.error_message
-				}))
-		};
-
-		// Backwards-compatible aliases expected by frontend
-		summary.totalTables = summary.tableCount;
-		summary.tablesMigrated = summary.successCount;
-		summary.rowsMigrated = summary.rows?.migrated ?? 0;
-		summary.totalRows = summary.rows?.migrated ?? 0;
-		// errorCount is already set above (line 814); keep errors as the array for frontend rendering
-		summary.duration = summary.durationMs;
+		let summary;
+		try {
+			const tables = await runStore.getRunTables(pool, runId);
+			const errors = await runStore.getRowErrors(pool, runId);
+			const plannedTables = await getPlannedTables(runId, runData);
+			summary = buildRunSummary(runData, tables, plannedTables, errors);
+		} finally { await pool.end(); }
 
 		res.json({
 			success: true,
@@ -898,15 +705,7 @@ router.get("/runs/:runId/errors", async (req, res) => {
 		const rawErrors = await runStore.getRowErrors(pool, runId);
 		await pool.end();
 
-		const errors = (rawErrors || []).map(err => ({
-			table: err.table_name || err.table || null,
-			message: err.message || err.error_message || err.error || 'Unknown error',
-			timestamp: err.created_at || err.timestamp || null,
-			row: err.source_pk || err.row_offset || null,
-			column: err.field_name || null,
-			value: err.value || null,
-			stack: err.stack || null
-		}));
+		const errors = (rawErrors || []).map(normalizeRowError);
 
 		res.json({
 			success: true,
@@ -930,8 +729,9 @@ router.get("/runs/:runId/logs", async (req, res) => {
 		const { runId } = req.params;
 		const sinceMs = req.query.since ? Number(req.query.since) : null;
 		const limit = Math.min(Math.max(Number(req.query.limit || 200), 1), 1000);
-		let logs = logger.getLogBuffer(runId) || [];
-		if (!logs.length) {
+		const tableResultsOnly = req.query.view === 'table-results';
+		let logs = tableResultsOnly ? logger.getTableResultBuffer(runId) : logger.getLogBuffer(runId);
+		if (logs == null || (!tableResultsOnly && !logs.length)) {
 			const logPath = logger.getLogFilePath(runId);
 			try {
 				const raw = await fs.promises.readFile(logPath, "utf8");
@@ -948,6 +748,17 @@ router.get("/runs/:runId/logs", async (req, res) => {
 			} catch (err) {
 				logs = [];
 			}
+		}
+
+		if (tableResultsOnly) {
+			// Filter before applying limits: row-error bursts must not crowd out table results.
+			const results = new Map();
+			for (const event of logs) {
+				if (event.phase !== 'table_finalize' || !['success', 'failed'].includes(String(event.status).toLowerCase())) continue;
+				const key = String(event.tableName || event.table || '').trim().toLowerCase();
+				if (key) results.set(key, event);
+			}
+			logs = Array.from(results.values());
 		}
 
 		if (Number.isFinite(sinceMs) && sinceMs > 0) {
@@ -1187,9 +998,13 @@ router.post("/runs/:runId/retry", async (req, res) => {
 			}
 		}
 
+		const plannedTables = await getPlannedTables(runId, runData);
+		const attempted = new Set((tables || []).map(t => String(t.table_name).toUpperCase()));
+		tables = [...(tables || []), ...plannedTables.filter(name => !attempted.has(String(name).toUpperCase())).map(table_name => ({ table_name, status: 'NOT_RUN' }))];
+
 		const requested = Array.isArray(req.body?.tables) ? req.body.tables.map(t => String(t).toUpperCase()) : null;
 		// consider several statuses as retryable: failed, error, cancelled, not_run, queued
-		const retryableStatuses = ['FAILED', 'ERROR', 'CANCELLED', 'NOT_RUN', 'QUEUED'];
+		const retryableStatuses = ['FAILED', 'ERROR', 'CANCELLED', 'STOPPED', 'NOT_RUN', 'QUEUED', 'PENDING'];
 		const failedTables = (tables || []).filter(t => {
 			const s = String((t.status || t.state || '') || '').toUpperCase();
 			return retryableStatuses.includes(s);
@@ -1274,6 +1089,7 @@ router.post("/runs/:runId/retry", async (req, res) => {
 			plan: state.plan,
 			mapping: state.mapping,
 			dryRun: !!runData.dry_run,
+			planConfig: rawPlanJson.config || {},
 			batchSize: rawPlanJson?.config?.batchSize || 1000,
 			fkChecks: true
 		});
@@ -1282,7 +1098,7 @@ router.post("/runs/:runId/retry", async (req, res) => {
 			success: true,
 			runId: startResp.runId,
 			retriedTables: failedTableNames,
-			message: `Retrying ${failedTableNames.length} failed table(s)`
+			message: `Retrying ${failedTableNames.length} failed or unattempted table(s)`
 		});
 	} catch (err) {
 		res.status(500).json({

@@ -1,5 +1,6 @@
 const mysql = require("mysql2/promise");
 const path = require("path");
+const { ensureMigrationIdMapSchema } = require("./migrationIdMapSchema");
 
 async function createPool(config, database) {
 	return mysql.createPool({
@@ -256,13 +257,17 @@ async function ensureMigrationTables(pool) {
       id bigint auto_increment primary key,
       run_id varchar(36) not null,
       table_name varchar(100) not null,
-      source_id varchar(100) not null,
-      target_id varchar(100) not null,
+      source_pk varchar(255) not null,
+      target_pk varchar(255) not null,
+      operation enum('INSERT','SKIP','UPDATE') not null,
+      created_at datetime default current_timestamp,
       index idx_migration_id_map_run (run_id),
-      index idx_migration_id_map_table (table_name)
+      index idx_migration_id_map_table (table_name),
+      unique key uk_run_table_source (run_id, table_name, source_pk)
     );
   `;
 	await pool.query(ddl);
+	await ensureMigrationIdMapSchema(pool);
 
 	try {
 		const [existingProfile] = await pool.query(

@@ -1,12 +1,13 @@
 /**
  * MigrationWizard - Main controller for migration wizard UI
  * 
- * Orchestrates the 4-step linear wizard flow:
+ * Orchestrates the migration wizard, with failure results before conversion:
  * 1. Schema Discovery
  * 2. Mapping Builder
  * 3. Plan Creator
  * 4. Execution Monitor
- * 5. Results Viewer
+ * 5. Account Number Conversion (successful migration required)
+ * 6. Results Viewer (also used by the failure branch after Step 4)
  */
 class MigrationWizard {
 	constructor() {
@@ -190,6 +191,14 @@ class MigrationWizard {
 		}
 	}
 
+	isRunSuccessful() {
+		return ['SUCCESS', 'COMPLETED'].includes(String(this.state.get('run.status') || '').toUpperCase());
+	}
+
+	hasFailureResults() {
+		return ['FAILED', 'COMPLETED_WITH_ERRORS', 'CANCELLED', 'STOPPED', 'ABORTED'].includes(String(this.state.get('run.status') || '').toUpperCase());
+	}
+
 	/**
 	 * Render progress bar
 	 */
@@ -197,13 +206,16 @@ class MigrationWizard {
 		const progressBar = document.getElementById('wizard-progress');
 		if (!progressBar) return;
 
-		const progress = ((this.currentStep - 1) / (this.steps.length - 1)) * 100;
+		const failed = this.hasFailureResults();
+		const visibleSteps = failed ? [...this.steps.slice(0, 4), { ...this.steps[5], title: 'Failure Results' }, this.steps[4]] : this.steps;
+		const position = visibleSteps.findIndex(step => step.number === this.currentStep);
+		const progress = Math.max(0, position / (visibleSteps.length - 1)) * 100;
 
 		progressBar.innerHTML = `
       <div class="progress-steps">
-        ${this.steps.map((step, idx) => `
-          <div class="progress-step ${step.number === this.currentStep ? 'active' : ''} ${step.number < this.currentStep ? 'completed' : ''}" data-step="${step.number}">
-            <div class="step-number">${step.number}</div>
+        ${visibleSteps.map((step, idx) => `
+          <div class="progress-step ${step.number === this.currentStep ? 'active' : ''} ${(step.number < 4 ? this.storage.isStepComplete(step.number) : step.number === 4 ? this.isRunSuccessful() : step.number === 5 && this.isRunSuccessful() && this.storage.isStepComplete(5)) ? 'completed' : ''} ${failed && step.number === 4 ? 'failed' : ''} ${failed && step.number === 5 ? 'blocked' : ''}" data-step="${step.number}">
+            <div class="step-number">${failed && step.number === 6 ? '!' : step.number}</div>
             <div class="step-title">${step.title}</div>
           </div>
         `).join('')}
@@ -221,7 +233,7 @@ class MigrationWizard {
 				if (Number.isNaN(stepNum)) return;
 
 				// Enabled if first step, step is at-or-before current, or previous step completed
-				const enabled = (stepNum === 1) || (stepNum <= this.currentStep) || this.storage.isStepComplete(stepNum - 1);
+				const enabled = stepNum === 5 ? this.isRunSuccessful() : stepNum === 6 ? (failed || this.storage.isStepComplete(5)) : (stepNum === 1 || stepNum <= this.currentStep || this.storage.isStepComplete(stepNum - 1));
 				if (enabled) {
 					el.classList.add('clickable');
 					el.addEventListener('click', (e) => {
@@ -272,7 +284,7 @@ class MigrationWizard {
         </button>
         
         <div class="nav-center">
-          <span class="step-indicator">Step ${this.currentStep} of ${this.steps.length}</span>
+          <span class="step-indicator">${this.currentStep === 6 && this.hasFailureResults() ? 'Failure results · resolve before Step 5' : `Step ${this.currentStep} of ${this.steps.length}`}</span>
         </div>
         
         <button 
@@ -281,7 +293,7 @@ class MigrationWizard {
           ${!canGoNext || !validation.valid || this._isBusy ? 'disabled' : ''}
           title="${!validation.valid ? validation.errors.join(', ') : ''}"
         >
-          ${this.currentStep === this.steps.length - 1 ? 'Finish' : 'Next →'}
+          ${this.currentStep === 4 && this.hasFailureResults() ? 'View Failure Results →' : this.currentStep === this.steps.length - 1 ? 'Finish' : 'Next →'}
         </button>
       </div>
     `;
@@ -304,6 +316,16 @@ class MigrationWizard {
 	 * @param {number} stepNumber - Step to show (1-5)
 	 */
 	async showStep(stepNumber) {
+		// Refresh restored run state before allowing conversion (also covers direct links).
+		if (stepNumber === 5 && this.state.get('run.id')) {
+			try {
+				const run = await window.RunAPI.getById(this.state.get('run.id'));
+				this.state.set('run.status', run.status);
+			} catch (error) { this.showError('Could not verify migration completion: ' + error.message); return; }
+		}
+		if (stepNumber === 5 && !this.isRunSuccessful()) {
+			stepNumber = this.hasFailureResults() ? 6 : 4;
+		}
 		if (stepNumber < 1 || stepNumber > this.steps.length) {
 			console.error(`Invalid step number: ${stepNumber}`);
 			return;
@@ -356,6 +378,10 @@ class MigrationWizard {
 				}
 			}
 
+			// Components may have refreshed a persisted run's status during initialization.
+			this.renderProgressBar();
+			this.renderNavigation();
+
 			// Scroll to top
 			window.scrollTo({ top: 0, behavior: 'smooth' });
 		} finally {
@@ -389,7 +415,12 @@ class MigrationWizard {
 			}
 		}
 
-		// Mark step as complete
+		// Failed runs branch into results before account conversion.
+		if (this.currentStep === 4 && this.hasFailureResults()) {
+			await this.showStep(6);
+			return;
+		}
+		// Mark only successfully completed steps.
 		this.storage.markStepComplete(this.currentStep);
 
 		// Go to next step
@@ -417,7 +448,7 @@ class MigrationWizard {
 
 		// Go to previous step
 		if (this.currentStep > 1) {
-			await this.showStep(this.currentStep - 1);
+			await this.showStep(this.currentStep === 6 && this.hasFailureResults() ? 4 : this.currentStep - 1);
 		}
 	}
 
@@ -426,6 +457,9 @@ class MigrationWizard {
 	 * @param {number} stepNumber - Target step
 	 */
 	async goToStep(stepNumber) {
+		if (this._isBusy) return;
+		if (stepNumber === 5 && !this.isRunSuccessful()) return this.showStep(stepNumber);
+		if (stepNumber === 6 && this.hasFailureResults()) return this.showStep(6);
 		// Check if step is accessible (must have completed previous steps)
 		for (let i = 1; i < stepNumber; i++) {
 			if (!this.storage.isStepComplete(i)) {
@@ -476,6 +510,11 @@ class MigrationWizard {
 		});
 
 		this.state.on('change:run', () => {
+			this.renderProgressBar();
+			this.renderNavigation();
+		});
+		this.state.on('change:run.status', () => {
+			this.renderProgressBar();
 			this.renderNavigation();
 		});
 

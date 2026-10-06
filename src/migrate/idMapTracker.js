@@ -11,6 +11,19 @@
 
 const { canonicalUpper } = require('./utils/tableNameCanonical');
 
+// INSERT's insertId is not a range of preserved IDs: source keys can be sparse
+// or out of order. Only map a fully successful batch using its actual values.
+function buildPreservedMappings(rows, primaryKeys, inserted) {
+	if (primaryKeys.length !== 1 || inserted !== rows.length) return [];
+	const wanted = primaryKeys[0].toLowerCase();
+	return rows.flatMap(row => {
+		const key = Object.keys(row.mappedRow || {}).find(name => name.toLowerCase() === wanted);
+		const targetPk = key ? row.mappedRow[key] : undefined;
+		return row.sourceId != null && targetPk != null
+			? [{ sourcePk: row.sourceId, targetPk, operation: 'INSERT' }] : [];
+	});
+}
+
 /**
  * Record a single source → target PK mapping
  * @param {object} pool - MySQL connection pool
@@ -260,6 +273,7 @@ async function clearIdMappings(pool, runId, tableName = null) {
 }
 
 module.exports = {
+	buildPreservedMappings,
 	recordIdMapping,
 	recordBatch,
 	lookupTargetPk,

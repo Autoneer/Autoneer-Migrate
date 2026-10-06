@@ -1299,3 +1299,31 @@ table tr.selected {
 	padding: 5px 0;
 	width: 200px;
 }
+.progress-step.failed .step-number { background: #b42318; color: #fff; }
+.progress-step.blocked { opacity: 0.5; cursor: not-allowed; }
+.failure-diagnostics { margin: 1.25rem 0; padding: 1.25rem; border: 1px solid #f0b4af; border-radius: 8px; background: #fff8f7; }
+.failure-cause { padding: 1rem 0; border-bottom: 1px solid #f0d4d0; }
+.failure-cause h4 { margin: 0 0 .5rem; }
+.failure-cause p, .recovery-note { line-height: 1.5; }
+.failure-cause code { display: block; margin-top: .5rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+.recovery-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin: 1rem 0; }
+.results-viewer .results-header.error { color: #912018; }
+.results-viewer .stat-card.error { background: #fff0ef; border-color: #f0b4af; }
+.results-viewer .stat-card.warning { background: #fff8e7; border-color: #ead195; }
+.run-failed > .error-icon, .error-list .error-icon { font-size: 1.1rem; line-height: 1.2; }
+.error-list { max-height: 32rem; overflow-y: auto; }
+.status-table .row-outcomes { display: block; margin-top: .25rem; color: var(--wizard-muted); }
+.status-table .table-status-running { background: #eef6ff; }
+.status-table .status-running { color: #0755ad; border-color: #87b8ed; }
+.progress-explanation { color: var(--wizard-muted); }
+#current-table-status { font-weight: 600; }
+#run-content .progress-header { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: .5rem; }
+#run-content .progress-bar-container { height: 10px; background: #e0e0e0; border-radius: 5px; overflow: hidden; }
+#run-content .progress-bar-fill { height: 100%; background: var(--wizard-primary); transition: width .3s ease; }
+.status-table .status-completed { background: #d4edda; color: #155724; }
+.status-table .status-running { background: #d9eaff; }
+.status-table .status-failed { background: #f8d7da; color: #721c24; }
+#run-content .live-log .log-entry { padding: 6px 10px; margin-bottom: 4px; min-width: max-content; box-shadow: none; }
+#run-content .live-log .log-entry:hover { transform: none; }
+#run-content .live-log .log-icon { flex-basis: 20px; height: 20px; }
+#run-content .live-log .log-text { white-space: nowrap; }
