@@ -1,0 +1,1748 @@
+{
+  "summary": {
+    "schema": "dm_trucks",
+    "runId": 10,
+    "errors": 32,
+    "allBlockedByRedo": true,
+    "sourceRedoCount": 0,
+    "blockersStillInSource": 0,
+    "sourceJobCount": 32,
+    "targetJobCount": 0,
+    "allSourceJobsReferenceRejectedInvoice": true,
+    "allHaveOneSourceInvoice": true,
+    "allBlockingInvoicesUnpaid": false,
+    "allRejectedAreNonSplit": true,
+    "allCustomersMatch": true,
+    "rejectedPaidInvoices": 30
+  },
+  "cases": [
+    {
+      "jobNumber": 9199,
+      "rejectedInvoiceNr": 11082,
+      "rejectedSource": [
+        {
+          "inv_nr": 11082,
+          "job_number": 9199,
+          "cid": 14,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 28447.1,
+          "paid": 28447.1
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 11043,
+          "job_number": 9199,
+          "cid": 14,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "28447.10",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 9199
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 11082,
+          "job_number": 9199,
+          "cid": 14,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 28447.1,
+          "paid": 28447.1
+        }
+      ],
+      "sourceJob": {
+        "job_number": 9199,
+        "cid": 14,
+        "status": "COMPLETED",
+        "splitnr": null,
+        "invnr": 11082,
+        "invtotal": 28447.1
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 7839,
+      "rejectedInvoiceNr": 9705,
+      "rejectedSource": [
+        {
+          "inv_nr": 9705,
+          "job_number": 7839,
+          "cid": 84,
+          "status": "PRINTED",
+          "paystatus": "UNPAID",
+          "splitnr": null,
+          "inv_totalinclvat": 57.13,
+          "paid": 56.64
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 9703,
+          "job_number": 7839,
+          "cid": 84,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "56.64",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 7839
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 9705,
+          "job_number": 7839,
+          "cid": 84,
+          "status": "PRINTED",
+          "paystatus": "UNPAID",
+          "splitnr": null,
+          "inv_totalinclvat": 57.13,
+          "paid": 56.64
+        }
+      ],
+      "sourceJob": {
+        "job_number": 7839,
+        "cid": 84,
+        "status": "RELEASED",
+        "splitnr": null,
+        "invnr": 9705,
+        "invtotal": 57.13
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 9027,
+      "rejectedInvoiceNr": 10833,
+      "rejectedSource": [
+        {
+          "inv_nr": 10833,
+          "job_number": 9027,
+          "cid": 1176,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 2083.84,
+          "paid": 2083.84
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 10832,
+          "job_number": 9027,
+          "cid": 1176,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "1813.66",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 9027
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 10833,
+          "job_number": 9027,
+          "cid": 1176,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 2083.84,
+          "paid": 2083.84
+        }
+      ],
+      "sourceJob": {
+        "job_number": 9027,
+        "cid": 1176,
+        "status": "RELEASED",
+        "splitnr": null,
+        "invnr": 10833,
+        "invtotal": 2083.84
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 11242,
+      "rejectedInvoiceNr": 13031,
+      "rejectedSource": [
+        {
+          "inv_nr": 13031,
+          "job_number": 11242,
+          "cid": 1241,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 908.5,
+          "paid": 908.5
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 13030,
+          "job_number": 11242,
+          "cid": 1241,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "908.50",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 11242
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 13031,
+          "job_number": 11242,
+          "cid": 1241,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 908.5,
+          "paid": 908.5
+        }
+      ],
+      "sourceJob": {
+        "job_number": 11242,
+        "cid": 1241,
+        "status": "COMPLETED",
+        "splitnr": null,
+        "invnr": 13031,
+        "invtotal": 908.5
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 11325,
+      "rejectedInvoiceNr": 13351,
+      "rejectedSource": [
+        {
+          "inv_nr": 13351,
+          "job_number": 11325,
+          "cid": 9,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 10916.18,
+          "paid": 10916.18
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 13266,
+          "job_number": 11325,
+          "cid": 9,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "10916.18",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 11325
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 13351,
+          "job_number": 11325,
+          "cid": 9,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 10916.18,
+          "paid": 10916.18
+        }
+      ],
+      "sourceJob": {
+        "job_number": 11325,
+        "cid": 9,
+        "status": "COMPLETED",
+        "splitnr": null,
+        "invnr": 13351,
+        "invtotal": 10916.18
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 12496,
+      "rejectedInvoiceNr": 14295,
+      "rejectedSource": [
+        {
+          "inv_nr": 14295,
+          "job_number": 12496,
+          "cid": 3900,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 4378.82,
+          "paid": 4378.82
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 14288,
+          "job_number": 12496,
+          "cid": 3900,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "3570.08",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 12496
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 14295,
+          "job_number": 12496,
+          "cid": 3900,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 4378.82,
+          "paid": 4378.82
+        }
+      ],
+      "sourceJob": {
+        "job_number": 12496,
+        "cid": 3900,
+        "status": "COMPLETED",
+        "splitnr": null,
+        "invnr": 14295,
+        "invtotal": 4378.82
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 11261,
+      "rejectedInvoiceNr": 13386,
+      "rejectedSource": [
+        {
+          "inv_nr": 13386,
+          "job_number": 11261,
+          "cid": 3900,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 13540.04,
+          "paid": 13540.04
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 13385,
+          "job_number": 11261,
+          "cid": 3900,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "13438.31",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 11261
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 13386,
+          "job_number": 11261,
+          "cid": 3900,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 13540.04,
+          "paid": 13540.04
+        }
+      ],
+      "sourceJob": {
+        "job_number": 11261,
+        "cid": 3900,
+        "status": "COMPLETED",
+        "splitnr": null,
+        "invnr": 13386,
+        "invtotal": 13540.04
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 10526,
+      "rejectedInvoiceNr": 12397,
+      "rejectedSource": [
+        {
+          "inv_nr": 12397,
+          "job_number": 10526,
+          "cid": 2210,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 8944.93,
+          "paid": 8944.93
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 12394,
+          "job_number": 10526,
+          "cid": 2210,
+          "status": "REDO",
+          "paystatus": "PAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "15528.12",
+          "paid": "15528.12",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 10526
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 12397,
+          "job_number": 10526,
+          "cid": 2210,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 8944.93,
+          "paid": 8944.93
+        }
+      ],
+      "sourceJob": {
+        "job_number": 10526,
+        "cid": 2210,
+        "status": "COMPLETED",
+        "splitnr": null,
+        "invnr": 12397,
+        "invtotal": 8944.93
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 11663,
+      "rejectedInvoiceNr": 13494,
+      "rejectedSource": [
+        {
+          "inv_nr": 13494,
+          "job_number": 11663,
+          "cid": 3900,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 6339.61,
+          "paid": 6339.61
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 13484,
+          "job_number": 11663,
+          "cid": 3900,
+          "status": "REDO",
+          "paystatus": "PAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "0.00",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 11663
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 13494,
+          "job_number": 11663,
+          "cid": 3900,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 6339.61,
+          "paid": 6339.61
+        }
+      ],
+      "sourceJob": {
+        "job_number": 11663,
+        "cid": 3900,
+        "status": "COMPLETED",
+        "splitnr": null,
+        "invnr": 13494,
+        "invtotal": 6339.61
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 8480,
+      "rejectedInvoiceNr": 10288,
+      "rejectedSource": [
+        {
+          "inv_nr": 10288,
+          "job_number": 8480,
+          "cid": 14,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 8942.96,
+          "paid": 8942.96
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 10287,
+          "job_number": 8480,
+          "cid": 14,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "8942.96",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 8480
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 10288,
+          "job_number": 8480,
+          "cid": 14,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 8942.96,
+          "paid": 8942.96
+        }
+      ],
+      "sourceJob": {
+        "job_number": 8480,
+        "cid": 14,
+        "status": "COMPLETED",
+        "splitnr": null,
+        "invnr": 10288,
+        "invtotal": 8942.96
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 12218,
+      "rejectedInvoiceNr": 14125,
+      "rejectedSource": [
+        {
+          "inv_nr": 14125,
+          "job_number": 12218,
+          "cid": 9,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 3675.92,
+          "paid": 3675.92
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 14112,
+          "job_number": 12218,
+          "cid": 9,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "6457.31",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 12218
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 14125,
+          "job_number": 12218,
+          "cid": 9,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 3675.92,
+          "paid": 3675.92
+        }
+      ],
+      "sourceJob": {
+        "job_number": 12218,
+        "cid": 9,
+        "status": "COMPLETED",
+        "splitnr": null,
+        "invnr": 14125,
+        "invtotal": 3675.92
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 9257,
+      "rejectedInvoiceNr": 11048,
+      "rejectedSource": [
+        {
+          "inv_nr": 11048,
+          "job_number": 9257,
+          "cid": 1176,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 6673.26,
+          "paid": 6673.26
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 11047,
+          "job_number": 9257,
+          "cid": 1176,
+          "status": "REDO",
+          "paystatus": "PAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "6673.26",
+          "paid": "20019.78",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 9257
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 11048,
+          "job_number": 9257,
+          "cid": 1176,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 6673.26,
+          "paid": 6673.26
+        }
+      ],
+      "sourceJob": {
+        "job_number": 9257,
+        "cid": 1176,
+        "status": "RELEASED",
+        "splitnr": null,
+        "invnr": 11048,
+        "invtotal": 6673.26
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 12636,
+      "rejectedInvoiceNr": 14426,
+      "rejectedSource": [
+        {
+          "inv_nr": 14426,
+          "job_number": 12636,
+          "cid": 1117,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 9977.86,
+          "paid": 9977.86
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 14410,
+          "job_number": 12636,
+          "cid": 1117,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "11989.23",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 12636
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 14426,
+          "job_number": 12636,
+          "cid": 1117,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 9977.86,
+          "paid": 9977.86
+        }
+      ],
+      "sourceJob": {
+        "job_number": 12636,
+        "cid": 1117,
+        "status": "COMPLETED",
+        "splitnr": null,
+        "invnr": 14426,
+        "invtotal": 9977.86
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 8290,
+      "rejectedInvoiceNr": 10123,
+      "rejectedSource": [
+        {
+          "inv_nr": 10123,
+          "job_number": 8290,
+          "cid": 14,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 837.9,
+          "paid": 837.9
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 10119,
+          "job_number": 8290,
+          "cid": 14,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "837.90",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 8290
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 10123,
+          "job_number": 8290,
+          "cid": 14,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 837.9,
+          "paid": 837.9
+        }
+      ],
+      "sourceJob": {
+        "job_number": 8290,
+        "cid": 14,
+        "status": "COMPLETED",
+        "splitnr": null,
+        "invnr": 10123,
+        "invtotal": 837.9
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 10397,
+      "rejectedInvoiceNr": 12212,
+      "rejectedSource": [
+        {
+          "inv_nr": 12212,
+          "job_number": 10397,
+          "cid": 3248,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 7419.51,
+          "paid": 7419.51
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 12210,
+          "job_number": 10397,
+          "cid": 3248,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "10215.77",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 10397
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 12212,
+          "job_number": 10397,
+          "cid": 3248,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 7419.51,
+          "paid": 7419.51
+        }
+      ],
+      "sourceJob": {
+        "job_number": 10397,
+        "cid": 3248,
+        "status": "COMPLETED",
+        "splitnr": null,
+        "invnr": 12212,
+        "invtotal": 7419.51
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 9631,
+      "rejectedInvoiceNr": 11428,
+      "rejectedSource": [
+        {
+          "inv_nr": 11428,
+          "job_number": 9631,
+          "cid": 2193,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 2143.86,
+          "paid": 2143.86
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 11427,
+          "job_number": 9631,
+          "cid": 2193,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "2143.86",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 9631
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 11428,
+          "job_number": 9631,
+          "cid": 2193,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 2143.86,
+          "paid": 2143.86
+        }
+      ],
+      "sourceJob": {
+        "job_number": 9631,
+        "cid": 2193,
+        "status": "RELEASED",
+        "splitnr": null,
+        "invnr": 11428,
+        "invtotal": 2143.86
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 9073,
+      "rejectedInvoiceNr": 10858,
+      "rejectedSource": [
+        {
+          "inv_nr": 10858,
+          "job_number": 9073,
+          "cid": 74,
+          "status": "DONE",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 5329.75,
+          "paid": 5329.75
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 10857,
+          "job_number": 9073,
+          "cid": 74,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "2633.08",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 9073
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 10858,
+          "job_number": 9073,
+          "cid": 74,
+          "status": "DONE",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 5329.75,
+          "paid": 5329.75
+        }
+      ],
+      "sourceJob": {
+        "job_number": 9073,
+        "cid": 74,
+        "status": "RELEASED",
+        "splitnr": null,
+        "invnr": 10858,
+        "invtotal": 5329.75
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 8298,
+      "rejectedInvoiceNr": 10132,
+      "rejectedSource": [
+        {
+          "inv_nr": 10132,
+          "job_number": 8298,
+          "cid": 415,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 6698.71,
+          "paid": 6698.71
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 10131,
+          "job_number": 8298,
+          "cid": 415,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "6586.21",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 8298
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 10132,
+          "job_number": 8298,
+          "cid": 415,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 6698.71,
+          "paid": 6698.71
+        }
+      ],
+      "sourceJob": {
+        "job_number": 8298,
+        "cid": 415,
+        "status": "COMPLETED",
+        "splitnr": null,
+        "invnr": 10132,
+        "invtotal": 6698.71
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 7861,
+      "rejectedInvoiceNr": 9717,
+      "rejectedSource": [
+        {
+          "inv_nr": 9717,
+          "job_number": 7861,
+          "cid": 14,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 677.11,
+          "paid": 677.11
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 9715,
+          "job_number": 7861,
+          "cid": 14,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "1111.50",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 7861
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 9717,
+          "job_number": 7861,
+          "cid": 14,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 677.11,
+          "paid": 677.11
+        }
+      ],
+      "sourceJob": {
+        "job_number": 7861,
+        "cid": 14,
+        "status": "RELEASED",
+        "splitnr": null,
+        "invnr": 9717,
+        "invtotal": 677.11
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 10471,
+      "rejectedInvoiceNr": 12293,
+      "rejectedSource": [
+        {
+          "inv_nr": 12293,
+          "job_number": 10471,
+          "cid": 3303,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 6491.75,
+          "paid": 6491.75
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 12291,
+          "job_number": 10471,
+          "cid": 3303,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "6536.31",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 10471
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 12293,
+          "job_number": 10471,
+          "cid": 3303,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 6491.75,
+          "paid": 6491.75
+        }
+      ],
+      "sourceJob": {
+        "job_number": 10471,
+        "cid": 3303,
+        "status": "RELEASED",
+        "splitnr": null,
+        "invnr": 12293,
+        "invtotal": 6491.75
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 9451,
+      "rejectedInvoiceNr": 11275,
+      "rejectedSource": [
+        {
+          "inv_nr": 11275,
+          "job_number": 9451,
+          "cid": 14,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 4494.69,
+          "paid": 4494.69
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 11267,
+          "job_number": 9451,
+          "cid": 14,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "4334.17",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 9451
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 11275,
+          "job_number": 9451,
+          "cid": 14,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 4494.69,
+          "paid": 4494.69
+        }
+      ],
+      "sourceJob": {
+        "job_number": 9451,
+        "cid": 14,
+        "status": "COMPLETED",
+        "splitnr": null,
+        "invnr": 11275,
+        "invtotal": 4494.69
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 10878,
+      "rejectedInvoiceNr": 12856,
+      "rejectedSource": [
+        {
+          "inv_nr": 12856,
+          "job_number": 10878,
+          "cid": 4089,
+          "status": "PRINTED",
+          "paystatus": "UNPAID",
+          "splitnr": null,
+          "inv_totalinclvat": 5563.06,
+          "paid": 3014.88
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 12855,
+          "job_number": 10878,
+          "cid": 4089,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "5348.01",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 10878
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 12856,
+          "job_number": 10878,
+          "cid": 4089,
+          "status": "PRINTED",
+          "paystatus": "UNPAID",
+          "splitnr": null,
+          "inv_totalinclvat": 5563.06,
+          "paid": 3014.88
+        }
+      ],
+      "sourceJob": {
+        "job_number": 10878,
+        "cid": 4089,
+        "status": "COMPLETED",
+        "splitnr": null,
+        "invnr": 12856,
+        "invtotal": 5563.06
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 12970,
+      "rejectedInvoiceNr": 14782,
+      "rejectedSource": [
+        {
+          "inv_nr": 14782,
+          "job_number": 12970,
+          "cid": 3900,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 1222.22,
+          "paid": 1222.22
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 14773,
+          "job_number": 12970,
+          "cid": 3900,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "2627.83",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 12970
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 14782,
+          "job_number": 12970,
+          "cid": 3900,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 1222.22,
+          "paid": 1222.22
+        }
+      ],
+      "sourceJob": {
+        "job_number": 12970,
+        "cid": 3900,
+        "status": "COMPLETED",
+        "splitnr": null,
+        "invnr": 14782,
+        "invtotal": 1222.22
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 8932,
+      "rejectedInvoiceNr": 10775,
+      "rejectedSource": [
+        {
+          "inv_nr": 10775,
+          "job_number": 8932,
+          "cid": 14,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 604.2,
+          "paid": 604.2
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 10755,
+          "job_number": 8932,
+          "cid": 14,
+          "status": "REDO",
+          "paystatus": "PAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "0.00",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 8932
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 10775,
+          "job_number": 8932,
+          "cid": 14,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 604.2,
+          "paid": 604.2
+        }
+      ],
+      "sourceJob": {
+        "job_number": 8932,
+        "cid": 14,
+        "status": "COMPLETED",
+        "splitnr": null,
+        "invnr": 10775,
+        "invtotal": 604.2
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 11167,
+      "rejectedInvoiceNr": 13141,
+      "rejectedSource": [
+        {
+          "inv_nr": 13141,
+          "job_number": 11167,
+          "cid": 3579,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 137206.87,
+          "paid": 137206.87
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 13140,
+          "job_number": 11167,
+          "cid": 3579,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "138991.97",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 11167
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 13141,
+          "job_number": 11167,
+          "cid": 3579,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 137206.87,
+          "paid": 137206.87
+        }
+      ],
+      "sourceJob": {
+        "job_number": 11167,
+        "cid": 3579,
+        "status": "RELEASED",
+        "splitnr": null,
+        "invnr": 13141,
+        "invtotal": 137206.87
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 10326,
+      "rejectedInvoiceNr": 12232,
+      "rejectedSource": [
+        {
+          "inv_nr": 12232,
+          "job_number": 10326,
+          "cid": 14,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 2936.3,
+          "paid": 2936.3
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 12197,
+          "job_number": 10326,
+          "cid": 14,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "2936.30",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 10326
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 12232,
+          "job_number": 10326,
+          "cid": 14,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 2936.3,
+          "paid": 2936.3
+        }
+      ],
+      "sourceJob": {
+        "job_number": 10326,
+        "cid": 14,
+        "status": "COMPLETED",
+        "splitnr": null,
+        "invnr": 12232,
+        "invtotal": 2936.3
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 8137,
+      "rejectedInvoiceNr": 10085,
+      "rejectedSource": [
+        {
+          "inv_nr": 10085,
+          "job_number": 8137,
+          "cid": 9,
+          "status": null,
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 636.12,
+          "paid": 636.12
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 10064,
+          "job_number": 8137,
+          "cid": 9,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "636.12",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 8137
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 10085,
+          "job_number": 8137,
+          "cid": 9,
+          "status": null,
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 636.12,
+          "paid": 636.12
+        }
+      ],
+      "sourceJob": {
+        "job_number": 8137,
+        "cid": 9,
+        "status": "COMPLETED",
+        "splitnr": null,
+        "invnr": 10085,
+        "invtotal": 636.12
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 8200,
+      "rejectedInvoiceNr": 10029,
+      "rejectedSource": [
+        {
+          "inv_nr": 10029,
+          "job_number": 8200,
+          "cid": 476,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 2345.07,
+          "paid": 2345.07
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 10028,
+          "job_number": 8200,
+          "cid": 476,
+          "status": "REDO",
+          "paystatus": "PAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "2384.85",
+          "paid": "7154.55",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 8200
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 10029,
+          "job_number": 8200,
+          "cid": 476,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 2345.07,
+          "paid": 2345.07
+        }
+      ],
+      "sourceJob": {
+        "job_number": 8200,
+        "cid": 476,
+        "status": "RELEASED",
+        "splitnr": null,
+        "invnr": 10029,
+        "invtotal": 2345.07
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 10590,
+      "rejectedInvoiceNr": 12434,
+      "rejectedSource": [
+        {
+          "inv_nr": 12434,
+          "job_number": 10590,
+          "cid": 9,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 6274.95,
+          "paid": 6274.95
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 12433,
+          "job_number": 10590,
+          "cid": 9,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "6427.71",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 10590
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 12434,
+          "job_number": 10590,
+          "cid": 9,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 6274.95,
+          "paid": 6274.95
+        }
+      ],
+      "sourceJob": {
+        "job_number": 10590,
+        "cid": 9,
+        "status": "COMPLETED",
+        "splitnr": null,
+        "invnr": 12434,
+        "invtotal": 6274.95
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 10802,
+      "rejectedInvoiceNr": 12745,
+      "rejectedSource": [
+        {
+          "inv_nr": 12745,
+          "job_number": 10802,
+          "cid": 9,
+          "status": null,
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 6002.76,
+          "paid": 6002.76
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 12684,
+          "job_number": 10802,
+          "cid": 9,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "8140.69",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 10802
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 12745,
+          "job_number": 10802,
+          "cid": 9,
+          "status": null,
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 6002.76,
+          "paid": 6002.76
+        }
+      ],
+      "sourceJob": {
+        "job_number": 10802,
+        "cid": 9,
+        "status": "COMPLETED",
+        "splitnr": null,
+        "invnr": 12745,
+        "invtotal": 6002.76
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 9321,
+      "rejectedInvoiceNr": 11135,
+      "rejectedSource": [
+        {
+          "inv_nr": 11135,
+          "job_number": 9321,
+          "cid": 14,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 510,
+          "paid": 510
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 11134,
+          "job_number": 9321,
+          "cid": 14,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "510.00",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 9321
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 11135,
+          "job_number": 9321,
+          "cid": 14,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 510,
+          "paid": 510
+        }
+      ],
+      "sourceJob": {
+        "job_number": 9321,
+        "cid": 14,
+        "status": "COMPLETED",
+        "splitnr": null,
+        "invnr": 11135,
+        "invtotal": 510
+      },
+      "targetJob": null
+    },
+    {
+      "jobNumber": 11265,
+      "rejectedInvoiceNr": 13067,
+      "rejectedSource": [
+        {
+          "inv_nr": 13067,
+          "job_number": 11265,
+          "cid": 1969,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 4971.96,
+          "paid": 4971.96
+        }
+      ],
+      "blockingTarget": [
+        {
+          "invoice_nr": 13065,
+          "job_number": 11265,
+          "cid": 1969,
+          "status": "REDO",
+          "paystatus": "UNPAID",
+          "splitnr": 0,
+          "is_split_invoice": 0,
+          "inv_totalinclvat": "5390.56",
+          "paid": "0.00",
+          "voided_at": null,
+          "credit_for_invoice_nr": null,
+          "is_historical_import": 0,
+          "job_number_active": 11265
+        }
+      ],
+      "allSourceInvoices": [
+        {
+          "inv_nr": 13067,
+          "job_number": 11265,
+          "cid": 1969,
+          "status": "PRINTED",
+          "paystatus": "PAID",
+          "splitnr": null,
+          "inv_totalinclvat": 4971.96,
+          "paid": 4971.96
+        }
+      ],
+      "sourceJob": {
+        "job_number": 11265,
+        "cid": 1969,
+        "status": "COMPLETED",
+        "splitnr": null,
+        "invnr": 13067,
+        "invtotal": 4971.96
+      },
+      "targetJob": null
+    }
+  ]
+}

@@ -11,6 +11,7 @@ const {
 } = require("../../migrate/gl/glAccountTypes");
 const { runAllChecks: runGLValidationChecks } = require("../../migrate/gl/glValidation");
 const { runAllGAAPChecks } = require("../../migrate/gl/glReconciliation");
+const transactionalAccnrConversion = require("../../migrate/gl/transactionalAccnrConversion");
 
 function formatDuplicateGroups(rows) {
 	return rows
@@ -260,6 +261,33 @@ router.post("/tools/gl-validate", async (req, res) => {
  * Rebuild GL Accounts has been run (gl_accounts + accounts staging required).
  */
 router.post("/tools/convert-transactional-accnr", async (req, res) => {
+	// The wizard opts into a streaming response; existing JSON clients retain
+	// the stored-procedure endpoint and response they already use.
+	if (req.get('Accept')?.includes('application/x-ndjson')) {
+		res.setHeader('Content-Type', 'application/x-ndjson');
+		res.setHeader('Cache-Control', 'no-cache, no-transform');
+		res.setHeader('X-Accel-Buffering', 'no');
+		res.flushHeaders();
+		const send = event => {
+			if (!res.destroyed && !res.writableEnded) res.write(`${JSON.stringify(event)}\n`);
+		};
+		send({ type: 'preparing', message: 'Preparing account number conversion...' });
+		const heartbeat = setInterval(() => send({ type: 'heartbeat' }), 15000);
+		res.once('close', () => clearInterval(heartbeat));
+		let pool;
+		try {
+			pool = await connectToSchema(state.mysql, state.schemaName);
+			const result = await transactionalAccnrConversion.runConversion(pool, send);
+			send({ type: 'complete', ...result });
+		} catch (error) {
+			send({ type: 'error', success: false, message: error.message || 'Failed to convert transactional accnr values' });
+		} finally {
+			clearInterval(heartbeat);
+			if (pool) await pool.end().catch(error => console.warn('[convert-accnr] Pool cleanup failed:', error.message));
+			res.end();
+		}
+		return;
+	}
 	try {
 		const pool = await connectToSchema(state.mysql, state.schemaName);
 		try {

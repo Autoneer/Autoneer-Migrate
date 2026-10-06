@@ -14,9 +14,19 @@ class AccnrConvertUI {
 		this.state = window.WizardState;
 		this._converted = false;
 		this._glRebuilt = false;
+		this._busy = false;
+		this._conversionProgress = null;
+		this._tables = [
+			['customers', ['acc']], ['suppliers', ['acc']], ['invoices', ['acc']],
+			['invoices_supplier', ['acc']], ['stock', ['siid', 'acc', 'accasset']],
+			['spares_used', ['siid', 'acc', 'accasset']], ['work_done', ['siid', 'acc']],
+			['payments', ['acc']], ['payments_suppliers', ['accnr', 'acc']],
+			['invoice_items', ['siid', 'acc']], ['labour_pricing', ['siid', 'acc']]
+		];
 	}
 
 	async initialize() {
+		if (this._busy) return;
 		const plan = this.state?.get('plan') || {};
 		const rebuiltPlanId = this.state?.get('run.glRebuildPlanId');
 		this._glRebuilt = !!(plan.id && rebuiltPlanId === plan.id);
@@ -50,7 +60,7 @@ class AccnrConvertUI {
 			'conversion-running': {
 				className: 'step-status-info',
 				icon: '...',
-				message: 'Converting transactional account numbers...'
+				message: `Converting transactional account numbers...${detailText}`
 			},
 			'conversion-success': {
 				className: 'step-status-success',
@@ -76,6 +86,58 @@ class AccnrConvertUI {
 		const summary = response?.accounts_summary;
 		if (!summary) return 'You can now convert account numbers.';
 		return `${summary.migrated} account(s) migrated to gl_accounts, ${summary.skipped} skipped.`;
+	}
+
+	_setBusy(busy) {
+		this._busy = busy;
+		// Keep the stage indicators visible while disabling wizard navigation.
+		this.wizard._isBusy = busy;
+		this.wizard.renderNavigation?.();
+	}
+
+	_getConversionProgressHtml() {
+		const progress = this._conversionProgress;
+		if (!progress) return '';
+		const percent = progress.total ? Math.floor(progress.completed / progress.total * 100) : 0;
+		const active = progress.stages.find(stage => stage.status === 'running');
+		const failed = progress.stages.find(stage => stage.status === 'failed');
+		const current = failed ? `Failed: ${failed.id}` : active ? `Stage ${progress.completed + 1} of ${progress.total}: Converting ${active.id}`
+			: progress.completed === progress.total && progress.total > 0 ? 'All conversion stages completed.'
+				: progress.interrupted ? 'Progress updates interrupted. The conversion may still be running on the server.'
+					: 'Preparing account number conversion...';
+		return `<div class="accnr-progress-summary" role="status" aria-live="polite">
+			<strong>${progress.completed} of ${progress.total} field stages completed (${percent}%)</strong>
+			<progress max="100" value="${percent}" aria-label="Account conversion stages completed"></progress>
+			<p>${this._escapeHtml(current)}</p>
+		</div>`;
+	}
+
+	_getConversionRowsHtml() {
+		const stages = this._conversionProgress?.stages;
+		return this._tables.map(([table, fields]) => {
+			const tableStages = fields.map(field => stages?.find(stage => stage.id === `${table}.${field}`));
+			const completed = tableStages.filter(stage => stage?.status === 'completed').length;
+			const active = tableStages.some(stage => stage?.status === 'running');
+			const failed = tableStages.some(stage => stage?.status === 'failed');
+			const interrupted = tableStages.some(stage => stage?.status === 'interrupted');
+			const status = failed ? 'Failed' : interrupted ? 'Interrupted' : active ? 'Converting...' : completed === fields.length ? 'Completed' : stages ? 'Waiting' : 'Not started';
+			const className = failed || interrupted ? 'failed' : active ? 'running' : completed === fields.length ? 'completed' : 'pending';
+			const labels = { pending: 'Waiting', running: 'Converting', completed: 'Done', failed: 'Failed', interrupted: 'Interrupted' };
+			const fieldHtml = stages ? fields.map((field, index) => {
+				const stageStatus = tableStages[index]?.status || 'pending';
+				return `<span class="accnr-field-status accnr-field-${stageStatus}"><code>${field}</code>: ${labels[stageStatus]}</span>`;
+			}).join(' ') : fields.join(', ');
+			return `<tr class="accnr-table-${className}"><td>${table}</td><td>${fieldHtml}</td>
+				<td><span>${status}</span>${stages ? `<progress max="${fields.length}" value="${completed}" aria-label="${table} fields completed"></progress><small>${completed} / ${fields.length} fields</small>` : ''}</td></tr>`;
+		}).join('');
+	}
+
+	_updateConversionProgress(event) {
+		this._conversionProgress = { completed: event.completed, total: event.total, stages: event.stages };
+		const summary = document.getElementById('accnr-conversion-progress');
+		if (summary) summary.innerHTML = this._getConversionProgressHtml();
+		const rows = document.getElementById('accnr-conversion-rows');
+		if (rows) rows.innerHTML = this._getConversionRowsHtml();
 	}
 
 	_render(state, detail) {
@@ -130,22 +192,11 @@ class AccnrConvertUI {
 				<p class="hint">
 					Updates transactional account references after <code>gl_accounts</code> has been rebuilt.
 				</p>
-				<table class="info-table">
-					<thead><tr><th>Table</th><th>Fields converted</th></tr></thead>
-					<tbody>
-						<tr><td>customers</td><td>acc</td></tr>
-						<tr><td>suppliers</td><td>acc</td></tr>
-						<tr><td>invoices</td><td>acc</td></tr>
-						<tr><td>invoices_supplier</td><td>acc</td></tr>
-						<tr><td>stock</td><td>siid, acc, accasset</td></tr>
-						<tr><td>spares_used</td><td>siid, acc, accasset</td></tr>
-						<tr><td>work_done</td><td>siid, acc</td></tr>
-						<tr><td>payments</td><td>acc</td></tr>
-						<tr><td>payments_suppliers</td><td>accnr, acc</td></tr>
-						<tr><td>invoice_items</td><td>siid, acc</td></tr>
-						<tr><td>labour_pricing</td><td>siid, acc</td></tr>
-					</tbody>
-				</table>
+				<div id="accnr-conversion-progress">${this._getConversionProgressHtml()}</div>
+				<div class="accnr-table-scroll"><table class="info-table accnr-conversion-table">
+					<thead><tr><th>Table</th><th>Fields converted</th><th>Progress</th></tr></thead>
+					<tbody id="accnr-conversion-rows">${this._getConversionRowsHtml()}</tbody>
+				</table></div>
 			</div>
 
 			<div class="step-actions">
@@ -187,10 +238,12 @@ class AccnrConvertUI {
 	}
 
 	async _runRebuild() {
+		if (this._busy) return;
 		const wipeJournals = !!document.getElementById('accnr-rebuild-wipe-journals')?.checked;
 		const ok = await this._confirmRebuild();
-		if (!ok) return;
+		if (!ok || this._busy) return;
 
+		this._setBusy(true);
 		this._render('rebuild-running');
 
 		try {
@@ -216,41 +269,86 @@ class AccnrConvertUI {
 			this._render('rebuild-success', this._summarizeRebuild(data));
 		} catch (err) {
 			this._render('rebuild-error', err.message || String(err));
+		} finally {
+			this._setBusy(false);
 		}
 	}
 
 	async _runConversion() {
+		if (this._busy) return;
+		this._setBusy(true);
+		this._converted = false;
+		this._conversionProgress = { completed: 0, total: this._tables.reduce((sum, [, fields]) => sum + fields.length, 0), stages: [] };
 		this._render('conversion-running');
 
 		try {
 			const response = await fetch('/api/tools/convert-transactional-accnr', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: { 'Content-Type': 'application/json', 'Accept': 'application/x-ndjson' },
 				body: JSON.stringify({})
 			});
 
-			const data = await response.json().catch(() => ({}));
-
-			if (!response.ok || data.success === false) {
-				const msg = data?.message || `Request failed (${response.status})`;
-				this._render('conversion-error', msg);
-				return;
+			if (!response.ok || !response.headers.get('Content-Type')?.includes('application/x-ndjson')) {
+				const data = await response.json().catch(() => ({}));
+				if (!response.ok || data.success !== true) throw new Error(data.message || `Request failed (${response.status})`);
+				// Supports a server still returning the older JSON response during deployment.
+				this._updateConversionProgress({ completed: this._conversionProgress.total, total: this._conversionProgress.total,
+					stages: this._tables.flatMap(([table, fields]) => fields.map(field => ({ id: `${table}.${field}`, status: 'completed' }))) });
+			} else {
+				await this._readConversionStream(response);
 			}
 
 			this._converted = true;
 			this._render('conversion-success', 'All transactional account number fields have been updated.');
 		} catch (err) {
+			this._conversionProgress.interrupted = true;
+			for (const stage of this._conversionProgress.stages) {
+				if (stage.status === 'running') stage.status = 'interrupted';
+			}
 			this._render('conversion-error', err.message || String(err));
+		} finally {
+			this._setBusy(false);
+		}
+	}
+
+	async _readConversionStream(response) {
+		const reader = response.body.getReader();
+		const decoder = new TextDecoder();
+		let buffer = '';
+		let complete = false;
+		const receive = line => {
+			if (!line.trim()) return;
+			const event = JSON.parse(line);
+			if (event.type === 'progress' || event.type === 'complete') this._updateConversionProgress(event);
+			if (event.type === 'error') throw new Error(event.message || 'Account number conversion failed');
+			if (event.type === 'complete') complete = true;
+		};
+		try {
+			while (true) {
+				const { done, value } = await reader.read();
+				buffer += done ? decoder.decode() : decoder.decode(value, { stream: true });
+				let newline;
+				while ((newline = buffer.indexOf('\n')) !== -1) {
+					const line = buffer.slice(0, newline);
+					buffer = buffer.slice(newline + 1);
+					receive(line);
+				}
+				if (done) break;
+			}
+			receive(buffer);
+			if (!complete) throw new Error('Progress connection ended before completion. The conversion may still be running on the server.');
+		} finally {
+			reader.releaseLock();
 		}
 	}
 
 	async onNext() {
-		// Always allow proceeding. Conversion is recommended but not blocking.
-		return true;
+		// Conversion may be skipped when no operation is running.
+		return !this._busy;
 	}
 
 	async onPrevious() {
-		return true;
+		return !this._busy;
 	}
 }
 

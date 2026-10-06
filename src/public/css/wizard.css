@@ -1327,3 +1327,20 @@ table tr.selected {
 #run-content .live-log .log-entry:hover { transform: none; }
 #run-content .live-log .log-icon { flex-basis: 20px; height: 20px; }
 #run-content .live-log .log-text { white-space: nowrap; }
+
+/* Account conversion progress is measured by completed SQL field updates. */
+#accnr-convert-content .accnr-progress-summary { margin: 1rem 0; padding: 1rem; background: #eef6ff; border-radius: 6px; }
+#accnr-convert-content progress { display: block; width: 100%; height: 12px; margin: .5rem 0; accent-color: var(--wizard-primary); }
+#accnr-convert-content .accnr-progress-summary p { margin: .5rem 0 0; }
+#accnr-convert-content .accnr-table-scroll { overflow-x: auto; }
+#accnr-convert-content .accnr-conversion-table { min-width: 560px; }
+#accnr-convert-content .accnr-conversion-table td:last-child { min-width: 140px; }
+#accnr-convert-content .accnr-field-status { display: inline-block; padding: .2rem .45rem; margin: .15rem; border-radius: 4px; background: #f0f1f3; white-space: nowrap; }
+#accnr-convert-content .accnr-field-completed { background: #d4edda; color: #155724; }
+#accnr-convert-content .accnr-field-running { background: #d9eaff; color: #0755ad; }
+#accnr-convert-content .accnr-field-failed, #accnr-convert-content .accnr-field-interrupted { background: #f8d7da; color: #721c24; }
+#accnr-convert-content .accnr-table-running { background: #eef6ff; }
+#accnr-convert-content .accnr-table-failed { background: #fff0ef; }
+#accnr-convert-content .accnr-field-running::before { content: ''; display: inline-block; width: 10px; height: 10px; margin-right: .4rem; border: 2px solid #87b8ed; border-top-color: #0755ad; border-radius: 50%; animation: accnr-spin 1s linear infinite; }
+@keyframes accnr-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { #accnr-convert-content .accnr-field-running::before { animation: none; } }

@@ -1281,7 +1281,7 @@ async function runMigrationInternal({
 			checkAbort(runId);
 			logRun({ level: "info", ...staffCleanup, status: "start" });
 			try {
-				const [result] = await pool.query("delete from staff where staff_group <> 'MASTER'");
+				const [result] = await pool.query("delete from staff where staff_group <> 'SUPER USER'");
 				logRun({ level: "info", ...staffCleanup, status: "passed", deletedRows: result.affectedRows });
 				// const [result2] = await pool.query("delete from staff where staff_group <> 'MASTER'");
 				// logRun({ level: "info", ...staffCleanup, status: "passed", deletedRows: result2.affectedRows });
@@ -2195,26 +2195,32 @@ async function runMigrationInternal({
 						rowsSkippedDuplicates += 1;
 						batchSkipped += 1;
 						totals.rows_total_skipped_duplicates += 1;
-						logRun({ level: 'debug', phase: 'deduplication', table: tableName, action: 'row_skipped',
-							sourcePk: row.sourceId ?? null, targetPk: match.targetPk ?? null, rowOffset: row.rowOffset, reason: 'already_migrated' });
+						logRun({
+							level: 'debug', phase: 'deduplication', table: tableName, action: 'row_skipped',
+							sourcePk: row.sourceId ?? null, targetPk: match.targetPk ?? null, rowOffset: row.rowOffset, reason: 'already_migrated'
+						});
 						if (writeMapping && !dryRun && row.sourceId != null && match.targetPk != null) await idMapTracker.recordIdMapping(pool, {
 							runId, tableName, sourcePk: row.sourceId, targetPk: match.targetPk, operation: 'SKIP'
 						});
 					};
 					const skipExistingDuplicate = async row => {
 						if (!skipExistingRecords) return false;
-						const matches = await findExistingRetryRows({ conn, pool, previousRunId: retryOfRunId,
+						const matches = await findExistingRetryRows({
+							conn, pool, previousRunId: retryOfRunId,
 							tableName, primaryKeys, keyStrategy: step.keyStrategy, dedupeKeys, rows: [row],
-							invoiceIdentities: invoiceSourceIdentities, targetColumns: mysqlColumnNames });
+							invoiceIdentities: invoiceSourceIdentities, targetColumns: mysqlColumnNames
+						});
 						const match = matches.get(0);
 						if (!match || match.issue) return false;
 						await recordRetrySkip(row, match);
 						return true;
 					};
 					if (skipExistingRecords) {
-						const matches = await findExistingRetryRows({ conn, pool, previousRunId: retryOfRunId,
+						const matches = await findExistingRetryRows({
+							conn, pool, previousRunId: retryOfRunId,
 							tableName, primaryKeys, keyStrategy: step.keyStrategy, dedupeKeys, rows: rowsToInsert,
-							invoiceIdentities: invoiceSourceIdentities, targetColumns: mysqlColumnNames });
+							invoiceIdentities: invoiceSourceIdentities, targetColumns: mysqlColumnNames
+						});
 						const pending = [];
 						const mappings = [];
 						for (const [index, row] of rowsToInsert.entries()) {
