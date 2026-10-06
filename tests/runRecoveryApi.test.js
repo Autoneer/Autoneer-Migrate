@@ -116,6 +116,8 @@ test('retry starts failed and unattempted tables, keeps plan settings, and resol
 	assert.equal(status, 200, result?.error);
 	assert.deepEqual(started.plan.map(step => step.table), ['invoices', 'payments', 'customers']);
 	assert.deepEqual(started.planConfig, config);
+	assert.equal(started.retryOfRunId, 'test-recovery');
+	assert.ok(started.plan.every(step => step.cleanBefore === false));
 	assert.equal(started.mapping.profileId, 9);
 	assert.deepEqual(result.retriedTables, ['invoices', 'payments', 'customers']);
 	// An explicit selection must remain scoped to retryable tables.

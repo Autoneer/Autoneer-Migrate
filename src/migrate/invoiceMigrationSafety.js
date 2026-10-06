@@ -105,7 +105,7 @@ function normalizeIdentityValue(value) {
 	return Number.isFinite(number) ? String(number) : String(value).trim();
 }
 
-function buildSourceInvoiceIdentityMap(rows, columnsMap = {}) {
+function buildSourceInvoiceSelection(rows, columnsMap = {}) {
 	const invoiceSourceColumn = resolveMappedSourceColumn(columnsMap, "invoice_nr");
 	const jobSourceColumn = resolveMappedSourceColumn(columnsMap, "job_number");
 	const customerSourceColumn = resolveMappedSourceColumn(columnsMap, "cid");
@@ -114,22 +114,30 @@ function buildSourceInvoiceIdentityMap(rows, columnsMap = {}) {
 	}
 
 	const identities = new Map();
-	for (const row of rows || []) {
+	const selectedOffsets = new Map();
+	for (const [offset, row] of (rows || []).entries()) {
 		const invoiceNr = getRowValue(row, invoiceSourceColumn);
 		if (!isValidInvoiceNumber(invoiceNr)) {
 			throw new Error(`Cannot reconcile invoices: invalid source invoice number ${String(invoiceNr)}.`);
 		}
 		const key = String(Number(invoiceNr));
-		if (identities.has(key)) {
-			throw new Error(`Cannot migrate invoices: source invoice number ${key} occurs more than once.`);
-		}
+		const jobNumber = jobSourceColumn ? normalizeIdentityValue(getRowValue(row, jobSourceColumn)) : undefined;
+		const existing = identities.get(key);
+		// Keep the first source row, unless a later duplicate has a real job
+		// number and the current choice belongs to job zero.
+		if (existing && !(existing.jobNumber === "0" && jobNumber != null && jobNumber !== "0")) continue;
 		identities.set(key, {
 			invoiceNr: key,
-			jobNumber: jobSourceColumn ? normalizeIdentityValue(getRowValue(row, jobSourceColumn)) : undefined,
+			jobNumber,
 			cid: customerSourceColumn ? normalizeIdentityValue(getRowValue(row, customerSourceColumn)) : undefined
 		});
+		selectedOffsets.set(key, offset);
 	}
-	return identities;
+	return { identities, selectedOffsets: new Set(selectedOffsets.values()) };
+}
+
+function buildSourceInvoiceIdentityMap(rows, columnsMap = {}) {
+	return buildSourceInvoiceSelection(rows, columnsMap).identities;
 }
 
 function reconcileInvoiceIdentities(sourceIdentities, targetRows = []) {
@@ -170,6 +178,7 @@ module.exports = {
 	applyInvoiceSplitPolicy,
 	buildInvoiceSplitPolicy,
 	buildInvoiceSourcePolicy,
+	buildSourceInvoiceSelection,
 	buildSourceInvoiceIdentityMap,
 	combineSourceWhere,
 	filterValidInvoiceKeys,

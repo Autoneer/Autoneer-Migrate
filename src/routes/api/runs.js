@@ -1076,13 +1076,14 @@ router.post("/runs/:runId/retry", async (req, res) => {
 		// Filter to only the retry tables and force include:true so the runner processes them
 		state.plan = normalizedFullPlan
 			.filter(step => failedTableNames.map(f => f.toUpperCase()).includes(String(step.target || step.table).toUpperCase()))
-			.map(step => ({ ...step, include: true }));
+			.map(step => ({ ...step, include: true, cleanBefore: false }));
 		state.mapping = normalizedMapping;
 
 		console.log(`[API] Retry requested for run ${runId}, tables: ${failedTableNames.join(', ')}`);
 		// Start new migration run for failed tables using state.plan and state.mapping
 		const { startMigration } = require("../../migrate/runner");
 		const startResp = await startMigration({
+			retryOfRunId: runId,
 			firebirdConfig: state.firebird,
 			mysqlConfig: state.mysql,
 			schemaName: state.schemaName,

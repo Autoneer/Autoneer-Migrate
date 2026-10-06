@@ -1,4 +1,6 @@
 const EventEmitter = require("events");
+const { ensureInvoiceActiveJobSchema } = require('../db/invoiceActiveJobSchema');
+const { findExistingRetryRows } = require('./retryExistingRecords');
 const firebird = require("../db/firebird");
 const mysql = require("../db/mysql");
 const { applyTransform } = require("./mappers");
@@ -32,7 +34,7 @@ const {
 	applyInvoiceSplitPolicy,
 	buildInvoiceSplitPolicy,
 	buildInvoiceSourcePolicy,
-	buildSourceInvoiceIdentityMap,
+	buildSourceInvoiceSelection,
 	combineSourceWhere,
 	filterValidInvoiceKeys,
 	getMappingDefault,
@@ -902,14 +904,15 @@ function buildInsertStatement(tableName, columns, mode, primaryKeys, ignoreDupli
 	return { sql, updateCols: updates };
 }
 
-async function loadSourceInvoiceIdentities({
+async function loadSourceInvoiceSelection({
 	fbDb,
 	sourceTable,
 	columnsMap,
 	sourceWhere,
 	filteredSourceKeys,
 	rowKeyColumn,
-	totalSource
+	totalSource,
+	checkSourceAbort = () => { }
 }) {
 	const identityColumns = [
 		resolveMappedSourceColumn(columnsMap, "invoice_nr"),
@@ -918,33 +921,39 @@ async function loadSourceInvoiceIdentities({
 	].filter(Boolean);
 	const uniqueColumns = Array.from(new Set(identityColumns));
 	const rows = [];
+	// Record raw row ranges for linked-key filters: one key can select several
+	// source rows. Both scans use DB_KEY order so the selected offsets agree.
+	const partitions = [];
 
 	if (filteredSourceKeys) {
 		for (let index = 0; index < filteredSourceKeys.length; index += FIREBIRD_IN_MEMBER_LIST_LIMIT) {
 			const pageKeys = filteredSourceKeys.slice(index, index + FIREBIRD_IN_MEMBER_LIST_LIMIT);
 			const keyWhere = `"${String(rowKeyColumn).replace(/"/g, '""')}" IN (${pageKeys.map(() => "?").join(", ")})`;
-			const page = await firebird.fetchBatchWithDbWhere(
-				fbDb,
-				sourceTable,
-				uniqueColumns,
-				0,
-				10000,
-				rowKeyColumn,
-				keyWhere,
-				pageKeys
-			);
-			rows.push(...page);
+			const start = rows.length;
+			let pageOffset = 0;
+			while (true) {
+				checkSourceAbort();
+				const page = await firebird.fetchBatchWithDbWhere(
+					fbDb, sourceTable, uniqueColumns, pageOffset, 1000,
+					"RDB$DB_KEY", keyWhere, pageKeys
+				);
+				rows.push(...page);
+				pageOffset += page.length;
+				if (page.length < 1000) break;
+			}
+			partitions.push({ start, count: pageOffset, clause: keyWhere, params: pageKeys });
 		}
 	} else {
 		let offset = 0;
 		while (offset < totalSource) {
+			checkSourceAbort();
 			const page = await firebird.fetchBatchWithDbWhere(
 				fbDb,
 				sourceTable,
 				uniqueColumns,
 				offset,
 				1000,
-				uniqueColumns[0],
+				"RDB$DB_KEY",
 				sourceWhere.clause,
 				sourceWhere.params
 			);
@@ -954,13 +963,15 @@ async function loadSourceInvoiceIdentities({
 		}
 	}
 
-	const identities = buildSourceInvoiceIdentityMap(rows, columnsMap);
-	if (identities.size !== Number(totalSource)) {
+	const selection = buildSourceInvoiceSelection(rows, columnsMap);
+	const expectedCount = filteredSourceKeys ? filteredSourceKeys.length : Number(totalSource);
+	const actualCount = filteredSourceKeys ? selection.identities.size : rows.length;
+	if (actualCount !== expectedCount) {
 		throw new Error(
-			`Invoice migration safety check failed: selected ${totalSource} valid source rows but found ${identities.size} unique invoice numbers.`
+			`Invoice migration safety check failed: expected ${expectedCount} source ${filteredSourceKeys ? "invoice numbers" : "rows"} but found ${actualCount}.`
 		);
 	}
-	return identities;
+	return { ...selection, partitions, totalSource: rows.length };
 }
 
 async function validateTargetInvoiceIdentities({
@@ -1043,6 +1054,7 @@ function findDuplicateTargetColumns(columnsMap = {}) {
 }
 
 async function runMigrationInternal({
+	retryOfRunId = null,
 	firebirdConfig,
 	mysqlConfig,
 	schemaName,
@@ -1198,6 +1210,7 @@ async function runMigrationInternal({
 			level: "info",
 			phase: "run_start",
 			runId,
+			retryOfRunId,
 			dryRun,
 			batchSize,
 			fkChecks,
@@ -1215,10 +1228,68 @@ async function runMigrationInternal({
 				keyStrategy: step.keyStrategy,
 				dedupeKeys: step.dedupeKeys || [],
 				onDuplicate: step.onDuplicate || "SKIP",
-				cleanBefore: shouldCleanTable(plan?.config, step)
+				cleanBefore: !retryOfRunId && shouldCleanTable(plan?.config, step)
 			}))
 		});
 		await runTimed("preflight", preflightConnectivity);
+
+		if (includedSteps.some(step => String(resolveTargetTableName(step.table, mapping) || step.table).toLowerCase() === 'invoices')) {
+			checkAbort(runId);
+			const action = { phase: 'preflight', action: 'invoice_active_job_schema', schema: schemaName };
+			try {
+				const result = await ensureInvoiceActiveJobSchema(pool, { dryRun });
+				logRun({ level: 'info', ...action, ...result });
+			} catch (err) {
+				logRun({ level: 'error', ...action, status: 'failed', error: err.message });
+				throw new Error(`Invoice active-job schema correction failed: ${err.message}`);
+			}
+		}
+
+		// Commit source invoice cleanup before any source counts or migration reads.
+		const invoiceCleanup = { phase: "preflight", action: "firebird_invoice_cleanup" };
+		if (dryRun) {
+			logRun({ level: "info", ...invoiceCleanup, status: "skipped", reason: "dry_run" });
+		} else {
+			checkAbort(runId);
+			logRun({ level: "info", ...invoiceCleanup, status: "start" });
+			try {
+				await firebird.query(firebirdConfig, "delete from invoices where inv_nr is null");
+				await firebird.query(firebirdConfig, "delete from invoices where status = 'REDO'");
+				await firebird.query(firebirdConfig, "delete from spares_used where job_nr is null");
+				await firebird.query(firebirdConfig, "delete from workdone where job_nr is null");
+				await firebird.query(firebirdConfig, "delete from payments where inv_nr is null");
+				await firebird.query(firebirdConfig, "delete from invtotal where invoicenr is null");
+				await firebird.query(firebirdConfig, "delete from paymentssupp where invoicenr is null");
+				// await firebird.query(firebirdConfig, "delete from staff where groups <> 'MASTER'");
+
+				logRun({ level: "info", ...invoiceCleanup, status: "passed" });
+
+
+			} catch (err) {
+				logRun({ level: "error", ...invoiceCleanup, status: "failed", error: err.message });
+				throw new Error(`Firebird pre-migration invoice cleanup failed: ${err.message}`);
+			}
+		}
+
+		// The pool is connected to the selected target schema.
+		const staffCleanup = { phase: "preflight", action: "mysql_staff_cleanup", schema: schemaName };
+		if (dryRun) {
+			logRun({ level: "info", ...staffCleanup, status: "skipped", reason: "dry_run" });
+		} else if (retryOfRunId) {
+			logRun({ level: 'info', ...staffCleanup, status: 'skipped', reason: 'retry_preserves_existing_records' });
+		} else {
+			checkAbort(runId);
+			logRun({ level: "info", ...staffCleanup, status: "start" });
+			try {
+				const [result] = await pool.query("delete from staff where staff_group <> 'MASTER'");
+				logRun({ level: "info", ...staffCleanup, status: "passed", deletedRows: result.affectedRows });
+				// const [result2] = await pool.query("delete from staff where staff_group <> 'MASTER'");
+				// logRun({ level: "info", ...staffCleanup, status: "passed", deletedRows: result2.affectedRows });
+			} catch (err) {
+				logRun({ level: "error", ...staffCleanup, status: "failed", error: err.message });
+				throw new Error(`MySQL pre-migration staff cleanup failed: ${err.message}`);
+			}
+		}
 
 		// Validate NOT NULL constraints for all tables before starting migration
 		logRun({ level: "info", phase: "preflight", action: "nullability_validation", status: "start" });
@@ -1800,25 +1871,28 @@ async function runMigrationInternal({
 					tableFilter?.params,
 					sourcePolicy
 				);
-				const totalSource = filteredSourceKeys
+				let totalSource = filteredSourceKeys
 					? filteredSourceKeys.length
 					: sourceWhere.clause
 						? await firebird.countRowsWithDbWhere(fbDb, sourceTable, sourceWhere.clause, sourceWhere.params)
 						: await firebird.countRowsWithDb(fbDb, sourceTable);
-				tableState.total = totalSource;
-				await runStore.updateTableProgress(pool, runId, tableName, { rows_source: totalSource });
-				emitRunState(runId, emitter);
-				const invoiceSourceIdentities = sourcePolicy
-					? await loadSourceInvoiceIdentities({
+				const invoiceSourceSelection = sourcePolicy
+					? await loadSourceInvoiceSelection({
 						fbDb,
 						sourceTable,
 						columnsMap,
 						sourceWhere,
 						filteredSourceKeys,
 						rowKeyColumn,
-						totalSource
+						totalSource,
+						checkSourceAbort: () => checkAbort(runId)
 					})
 					: null;
+				const invoiceSourceIdentities = invoiceSourceSelection?.identities;
+				if (invoiceSourceSelection) totalSource = invoiceSourceSelection.totalSource;
+				tableState.total = totalSource;
+				await runStore.updateTableProgress(pool, runId, tableName, { rows_source: totalSource });
+				emitRunState(runId, emitter);
 				if (sourcePolicy) {
 					logRun({
 						level: "info",
@@ -1828,11 +1902,14 @@ async function runMigrationInternal({
 						action: "invoice_source_identity_policy",
 						sourceColumn: sourcePolicy.sourceColumn,
 						validInvoiceRows: totalSource,
+						uniqueInvoices: invoiceSourceIdentities.size,
+						duplicateRowsToSkip: totalSource - invoiceSourceIdentities.size,
+						duplicateSelection: "first_row_prefer_nonzero_job",
 						onDuplicate
 					});
 				}
 
-				const cleanBefore = shouldCleanTable(plan?.config, step);
+				const cleanBefore = !retryOfRunId && shouldCleanTable(plan?.config, step);
 				// Debug: emit resolved clean decision for this table
 				logRun({ level: 'debug', phase: 'clean_decision', tableName, cleanBefore, dryRun, mode: step.mode });
 				if (step.keyStrategy === "rekey" && primaryKeys.length) {
@@ -1992,14 +2069,14 @@ async function runMigrationInternal({
 						}
 					}
 					if (rowErrorCauses.get(errorMessage) === 1) {
-						logRun({ level: "error", phase: "row_error", tableName, sourcePk: sourcePkValue, rowOffset: offset + rowIndex, error: errorMessage, hint });
+						logRun({ level: "error", phase: "row_error", tableName, sourcePk: sourcePkValue, rowOffset: currentBatchOffsets[rowIndex] ?? offset + rowIndex, error: errorMessage, hint });
 					}
 					await runStore.logRowError(pool, {
 						runId,
 						tableName,
 						sourceTable,
 						targetTable: tableName,
-						rowOffset: offset + rowIndex,
+						rowOffset: currentBatchOffsets[rowIndex] ?? offset + rowIndex,
 						sourcePk: sourcePkValue,
 						errorMessage,
 						hint,
@@ -2008,6 +2085,7 @@ async function runMigrationInternal({
 					publishTableProgress();
 				};
 
+				let currentBatchOffsets = [];
 				while (offset < totalSource) {
 					// Allow per-table override but clamp to safe bounds
 					const effectiveBatch = (typeof step.batchSize === 'number' && !Number.isNaN(step.batchSize))
@@ -2015,7 +2093,15 @@ async function runMigrationInternal({
 						: batchSize;
 					checkAbort(runId);
 					let batch = [];
-					if (filteredSourceKeys) {
+					if (invoiceSourceSelection?.partitions.length) {
+						const partition = invoiceSourceSelection.partitions.find(part => offset >= part.start && offset < part.start + part.count);
+						if (!partition) break;
+						batch = await firebird.fetchBatchWithDbWhere(
+							fbDb, sourceTable, firebirdColumns, offset - partition.start,
+							Math.min(effectiveBatch, partition.start + partition.count - offset),
+							"RDB$DB_KEY", partition.clause, partition.params
+						);
+					} else if (filteredSourceKeys) {
 						const pageSize = Math.min(effectiveBatch, FIREBIRD_IN_MEMBER_LIST_LIMIT);
 						const pageKeys = filteredSourceKeys.slice(offset, offset + pageSize);
 						if (!pageKeys.length) break;
@@ -2038,7 +2124,7 @@ async function runMigrationInternal({
 								firebirdColumns,
 								offset,
 								effectiveBatch,
-								firebirdColumns[0],
+								invoiceSourceSelection ? "RDB$DB_KEY" : firebirdColumns[0],
 								sourceWhere.clause,
 								sourceWhere.params
 							)
@@ -2053,16 +2139,36 @@ async function runMigrationInternal({
 					}
 
 					if (!batch.length) break;
+					const sourceBatchLength = batch.length;
+					currentBatchOffsets = [];
+					if (invoiceSourceSelection) {
+						batch = batch.filter((_row, index) => {
+							if (!invoiceSourceSelection.selectedOffsets.has(offset + index)) return false;
+							currentBatchOffsets.push(offset + index);
+							return true;
+						});
+					}
+					const sourceDuplicatesSkipped = sourceBatchLength - batch.length;
+					rowsSkippedDuplicates += sourceDuplicatesSkipped;
+					totals.rows_total_skipped_duplicates += sourceDuplicatesSkipped;
 
-					const rowsToInsert = [];
-					for (const row of batch) {
+					let rowsToInsert = [];
+					for (const [rowIndex, row] of batch.entries()) {
 						const mappedRow = await mapRow(row, columnsMap, async (lookupTable, id) => {
 							if (id === null || id === undefined) return id;
-							const target = await idMapTracker.lookupTargetPk(pool, {
+							let target = await idMapTracker.lookupTargetPk(pool, {
 								runId,
 								parentTable: lookupTable,
 								sourcePk: id
 							});
+							if (target == null && retryOfRunId) {
+								target = await idMapTracker.lookupTargetPk(pool, {
+									runId: retryOfRunId, parentTable: lookupTable, sourcePk: id
+								});
+								if (target != null && !dryRun) await idMapTracker.recordIdMapping(pool, {
+									runId, tableName: lookupTable, sourcePk: id, targetPk: target, operation: 'SKIP'
+								});
+							}
 							if (target == null) {
 								throw new Error(`Missing ID mapping for foreign key ${lookupTable}.${id} in run ${runId}`);
 							}
@@ -2075,16 +2181,55 @@ async function runMigrationInternal({
 						const values = targetColumnsForInsert.map((c) => mappedRow[c]);
 						const sourceId = sourceIdColumn ? row[sourceIdColumn.toLowerCase()] : undefined;
 						const dedupeValues = dedupeKeys.map((key) => mappedRow[key]);
-						rowsToInsert.push({ values, sourceId, dedupeValues, mappedRow });
+						rowsToInsert.push({ values, sourceId, dedupeValues, mappedRow, sourceRow: row, rowOffset: currentBatchOffsets[rowIndex] ?? offset + rowIndex });
 					}
 
 					const batchStart = Date.now();
 					let batchInserted = 0;
 					let batchUpdated = 0;
-					let batchSkipped = 0;
+					let batchSkipped = sourceDuplicatesSkipped;
+					const recordRetrySkip = async (row, match, writeMapping = true) => {
+						rowsSkippedDuplicates += 1;
+						batchSkipped += 1;
+						totals.rows_total_skipped_duplicates += 1;
+						logRun({ level: 'debug', phase: 'deduplication', table: tableName, action: 'row_skipped',
+							sourcePk: row.sourceId ?? null, targetPk: match.targetPk ?? null, rowOffset: row.rowOffset, reason: 'already_migrated' });
+						if (writeMapping && !dryRun && row.sourceId != null && match.targetPk != null) await idMapTracker.recordIdMapping(pool, {
+							runId, tableName, sourcePk: row.sourceId, targetPk: match.targetPk, operation: 'SKIP'
+						});
+					};
+					const skipExistingDuplicate = async row => {
+						if (!retryOfRunId) return false;
+						const matches = await findExistingRetryRows({ conn, pool, previousRunId: retryOfRunId,
+							tableName, primaryKeys, keyStrategy: step.keyStrategy, dedupeKeys, rows: [row],
+							invoiceIdentities: invoiceSourceIdentities, targetColumns: mysqlColumnNames });
+						const match = matches.get(0);
+						if (!match || match.issue) return false;
+						await recordRetrySkip(row, match);
+						return true;
+					};
+					if (retryOfRunId) {
+						const matches = await findExistingRetryRows({ conn, pool, previousRunId: retryOfRunId,
+							tableName, primaryKeys, keyStrategy: step.keyStrategy, dedupeKeys, rows: rowsToInsert,
+							invoiceIdentities: invoiceSourceIdentities, targetColumns: mysqlColumnNames });
+						const pending = [];
+						const mappings = [];
+						for (const [index, row] of rowsToInsert.entries()) {
+							const match = matches.get(index);
+							if (!match) { pending.push(row); continue; }
+							if (match.issue) { await logRowError(row.sourceRow, index, match.issue); continue; }
+							await recordRetrySkip(row, match, false);
+							if (row.sourceId != null && match.targetPk != null) mappings.push({ sourcePk: row.sourceId, targetPk: match.targetPk, operation: 'SKIP' });
+						}
+						if (!dryRun) await idMapTracker.recordBatch(pool, { runId, tableName, mappings });
+						rowsToInsert = pending;
+						batch = pending.map(row => row.sourceRow);
+						currentBatchOffsets = pending.map(row => row.rowOffset);
+						publishTableProgress();
+					}
 					logRun({ level: "debug", phase: "write", tableName, tableRunId, status: "start", batchSize: rowsToInsert.length });
 
-					if (!dryRun) {
+					if (!dryRun && rowsToInsert.length) {
 						if (useDedupe) {
 							const existingMap = new Map();
 							const tuples = [];
@@ -2249,6 +2394,7 @@ async function runMigrationInternal({
 												// ignore
 											}
 											if (isDuplicateErr(err)) {
+												if (await skipExistingDuplicate(row)) continue;
 												if (onDuplicate === "ERROR") {
 													const errorMessage = formatDbError(err, { firebirdConfig });
 													await logRowError(sourceRow, rowIndex, errorMessage);
@@ -2337,8 +2483,10 @@ async function runMigrationInternal({
 												batchInserted += 1;
 												totals.rows_total_migrated += 1;
 												if (step.mode !== 'UPSERT') {
-													await idMapTracker.recordBatch(pool, { runId, tableName,
-														mappings: idMapTracker.buildPreservedMappings([row], primaryKeys, 1) });
+													await idMapTracker.recordBatch(pool, {
+														runId, tableName,
+														mappings: idMapTracker.buildPreservedMappings([row], primaryKeys, 1)
+													});
 												}
 											} catch (rowErr) {
 												try {
@@ -2347,6 +2495,7 @@ async function runMigrationInternal({
 													// ignore
 												}
 												if (isDuplicateErr(rowErr)) {
+													if (await skipExistingDuplicate(row)) continue;
 													if (onDuplicate === "ERROR") {
 														const errorMessage = formatDbError(rowErr, { firebirdConfig });
 														await logRowError(sourceRow, rowIndex, errorMessage);
@@ -2408,6 +2557,7 @@ async function runMigrationInternal({
 											// ignore
 										}
 										if (isDuplicateErr(err)) {
+											if (await skipExistingDuplicate(row)) continue;
 											if (onDuplicate === "ERROR") {
 												const errorMessage = formatDbError(err, { firebirdConfig });
 												await logRowError(sourceRow, rowIndex, errorMessage);
@@ -2484,8 +2634,10 @@ async function runMigrationInternal({
 											batchInserted += 1;
 											totals.rows_total_migrated += 1;
 											if (step.mode !== 'UPSERT') {
-												await idMapTracker.recordBatch(pool, { runId, tableName,
-													mappings: idMapTracker.buildPreservedMappings([row], primaryKeys, 1) });
+												await idMapTracker.recordBatch(pool, {
+													runId, tableName,
+													mappings: idMapTracker.buildPreservedMappings([row], primaryKeys, 1)
+												});
 											}
 										} catch (rowErr) {
 											try {
@@ -2494,6 +2646,7 @@ async function runMigrationInternal({
 												// ignore
 											}
 											if (isDuplicateErr(rowErr)) {
+												if (await skipExistingDuplicate(row)) continue;
 												if (onDuplicate === "ERROR") {
 													const errorMessage = formatDbError(rowErr, { firebirdConfig });
 													await logRowError(sourceRow, rowIndex, errorMessage);
@@ -2530,7 +2683,7 @@ async function runMigrationInternal({
 						durationMs: Date.now() - batchStart
 					});
 
-					offset += rowsToInsert.length;
+					offset += sourceBatchLength;
 
 					await runStore.updateTableProgress(pool, runId, tableName, {
 						last_offset: offset,
@@ -2870,6 +3023,7 @@ async function runMigrationInternal({
 }
 
 async function startMigration({
+	retryOfRunId = null,
 	firebirdConfig,
 	mysqlConfig,
 	schemaName,
@@ -2923,6 +3077,7 @@ async function startMigration({
 
 		setImmediate(() => {
 			runMigrationInternal({
+				retryOfRunId,
 				firebirdConfig,
 				mysqlConfig,
 				schemaName,

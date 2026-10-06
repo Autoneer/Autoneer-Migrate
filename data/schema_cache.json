@@ -3019,12 +3019,6 @@
             "nullable": true,
             "defaultValue": null
           },
-          "LICENSEEXPIRYDATE": {
-            "name": "LICENSEEXPIRYDATE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
           "DAYSTOEXPIRE": {
             "name": "DAYSTOEXPIRE",
             "type": "UNKNOWN",
@@ -3033,6 +3027,30 @@
           },
           "DLEAVE": {
             "name": "DLEAVE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "PDPTYPE": {
+            "name": "PDPTYPE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "DAYSWORKED": {
+            "name": "DAYSWORKED",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "MOBILENR": {
+            "name": "MOBILENR",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "LICENSEEXPIRYDATE": {
+            "name": "LICENSEEXPIRYDATE",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -3081,24 +3099,6 @@
           },
           "FNR": {
             "name": "FNR",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "DAYSWORKED": {
-            "name": "DAYSWORKED",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "PDPTYPE": {
-            "name": "PDPTYPE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "MOBILENR": {
-            "name": "MOBILENR",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -5114,14 +5114,14 @@
             "nullable": true,
             "defaultValue": null
           },
-          "LOCATION": {
-            "name": "LOCATION",
+          "DEPARTMENT": {
+            "name": "DEPARTMENT",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
           },
-          "DEPARTMENT": {
-            "name": "DEPARTMENT",
+          "LOCATION": {
+            "name": "LOCATION",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -5180,12 +5180,6 @@
             "nullable": true,
             "defaultValue": null
           },
-          "TEMP_JOB_NO": {
-            "name": "TEMP_JOB_NO",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
           "INSPECTIONDONE": {
             "name": "INSPECTIONDONE",
             "type": "UNKNOWN",
@@ -5198,8 +5192,8 @@
             "nullable": true,
             "defaultValue": null
           },
-          "COMEBACK": {
-            "name": "COMEBACK",
+          "TEMP_JOB_NO": {
+            "name": "TEMP_JOB_NO",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -5218,6 +5212,12 @@
           },
           "LICENSEEXPIRE": {
             "name": "LICENSEEXPIRE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "COMEBACK": {
+            "name": "COMEBACK",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -5391,6 +5391,12 @@
             "nullable": true,
             "defaultValue": null
           },
+          "TRANSNR": {
+            "name": "TRANSNR",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
           "HASVAT": {
             "name": "HASVAT",
             "type": "UNKNOWN",
@@ -5399,12 +5405,6 @@
           },
           "SERVICEADVISOR": {
             "name": "SERVICEADVISOR",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "TRANSNR": {
-            "name": "TRANSNR",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -6496,6 +6496,12 @@
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
+          },
+          "MESSAGE_BODY_TEXT": {
+            "name": "MESSAGE_BODY_TEXT",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
           }
         },
         "primaryKey": [],
@@ -6867,24 +6873,6 @@
             "nullable": true,
             "defaultValue": null
           },
-          "VID": {
-            "name": "VID",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "CAPACITY": {
-            "name": "CAPACITY",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "ALLOCATION": {
-            "name": "ALLOCATION",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
           "DRIVERNR": {
             "name": "DRIVERNR",
             "type": "UNKNOWN",
@@ -6899,6 +6887,24 @@
           },
           "CONTROLCHECK": {
             "name": "CONTROLCHECK",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "VID": {
+            "name": "VID",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "CAPACITY": {
+            "name": "CAPACITY",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "ALLOCATION": {
+            "name": "ALLOCATION",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -8671,6 +8677,18 @@
       "SERVICES": {
         "name": "SERVICES",
         "columns": {
+          "NEXTSERVICEDATE": {
+            "name": "NEXTSERVICEDATE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "VTYPE": {
+            "name": "VTYPE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
           "SERVID": {
             "name": "SERVID",
             "type": "UNKNOWN",
@@ -8763,18 +8781,6 @@
           },
           "SERVICEDUEDAYS": {
             "name": "SERVICEDUEDAYS",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "VTYPE": {
-            "name": "VTYPE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "NEXTSERVICEDATE": {
-            "name": "NEXTSERVICEDATE",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -9703,12 +9709,6 @@
             "nullable": true,
             "defaultValue": null
           },
-          "CANADDEBTOR": {
-            "name": "CANADDEBTOR",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
           "CANADDCREDITOR": {
             "name": "CANADDCREDITOR",
             "type": "UNKNOWN",
@@ -9717,6 +9717,12 @@
           },
           "CANDOLABOUR": {
             "name": "CANDOLABOUR",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "CANADDEBTOR": {
+            "name": "CANADDEBTOR",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -9806,14 +9812,14 @@
             "nullable": true,
             "defaultValue": null
           },
-          "ACCNR": {
-            "name": "ACCNR",
+          "QUANTITY": {
+            "name": "QUANTITY",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
           },
-          "QUANTITY": {
-            "name": "QUANTITY",
+          "ACCNR": {
+            "name": "ACCNR",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -12528,8 +12534,26 @@
             "nullable": true,
             "defaultValue": null
           },
-          "ADDTOWEEK": {
-            "name": "ADDTOWEEK",
+          "OWNER": {
+            "name": "OWNER",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "CURRENTODO": {
+            "name": "CURRENTODO",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "ODODATE": {
+            "name": "ODODATE",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
+          "SERVICEDUEDATE": {
+            "name": "SERVICEDUEDATE",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -12552,32 +12576,14 @@
             "nullable": true,
             "defaultValue": null
           },
+          "ADDTOWEEK": {
+            "name": "ADDTOWEEK",
+            "type": "UNKNOWN",
+            "nullable": true,
+            "defaultValue": null
+          },
           "SERVICEDUEMILAGE": {
             "name": "SERVICEDUEMILAGE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "OWNER": {
-            "name": "OWNER",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "CURRENTODO": {
-            "name": "CURRENTODO",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "ODODATE": {
-            "name": "ODODATE",
-            "type": "UNKNOWN",
-            "nullable": true,
-            "defaultValue": null
-          },
-          "SERVICEDUEDATE": {
-            "name": "SERVICEDUEDATE",
             "type": "UNKNOWN",
             "nullable": true,
             "defaultValue": null
@@ -13564,7 +13570,7 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-10-06T08:58:14.792Z"
+    "lastUpdated": "2026-10-06T13:00:05.020Z"
   },
   "mysql": {
     "tables": {
@@ -65936,6 +65942,6 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-10-06T08:58:14.677Z"
+    "lastUpdated": "2026-10-06T13:00:04.908Z"
   }
 }

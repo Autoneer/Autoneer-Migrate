@@ -5,6 +5,7 @@ const {
 	applyInvoiceSplitPolicy,
 	buildInvoiceSplitPolicy,
 	buildInvoiceSourcePolicy,
+	buildSourceInvoiceSelection,
 	buildSourceInvoiceIdentityMap,
 	combineSourceWhere,
 	filterValidInvoiceKeys,
@@ -49,7 +50,7 @@ test("invoice source policy excludes null, zero, and negative legacy invoice num
 	assert.deepEqual(combined.params, ["2024-01-01"]);
 });
 
-test("invoice number collisions are always errors", () => {
+test("target invoice constraint collisions remain errors", () => {
 	assert.equal(resolveOnDuplicatePolicy("invoices", "SKIP"), "ERROR");
 	assert.equal(resolveOnDuplicatePolicy("INVOICES", undefined), "ERROR");
 	assert.equal(resolveOnDuplicatePolicy("customers", "SKIP"), "SKIP");
@@ -118,12 +119,37 @@ test("invoice identity reconciliation catches missing and mis-owned target heade
 	);
 });
 
-test("duplicate source invoice numbers fail before target cleanup", () => {
-	assert.throws(
-		() => buildSourceInvoiceIdentityMap([
-			{ inv_nr: 4664, job_card_nr: 5001, cid: 2276 },
-			{ inv_nr: 4664, job_card_nr: 3229, cid: 2276 }
-		], invoiceColumns),
-		/source invoice number 4664 occurs more than once/
-	);
+test("duplicate source invoice numbers keep the first nonzero job in either order", () => {
+	const zero = { inv_nr: 15888, job_card_nr: ' 0 ', cid: 1 };
+	const real = { INV_NR: '15888', JOB_CARD_NR: 5001, CID: 2276 };
+	const other = { inv_nr: 15888, job_card_nr: 3229, cid: 99 };
+	for (const rows of [[zero, real, other], [real, zero, other], [real, other, zero]]) {
+		const selection = buildSourceInvoiceSelection(rows, invoiceColumns);
+		assert.equal(selection.identities.size, 1);
+		assert.deepEqual(selection.identities.get('15888'), { invoiceNr: '15888', jobNumber: '5001', cid: '2276' });
+		assert.deepEqual([...selection.selectedOffsets], [rows.indexOf(real)]);
+		assert.deepEqual(reconcileInvoiceIdentities(selection.identities, [
+			{ invoice_nr: 15888, job_number: 5001, cid: 2276 }
+		]), []);
+	}
+});
+
+test("unique job-zero invoices and one of repeated job-zero invoices are retained", () => {
+	const selection = buildSourceInvoiceSelection([
+		{ inv_nr: 1, job_card_nr: 0 },
+		{ inv_nr: 2, job_card_nr: 0 },
+		{ inv_nr: 2, job_card_nr: '0' }
+	], invoiceColumns);
+	assert.deepEqual([...selection.identities.keys()], ['1', '2']);
+	assert.deepEqual([...selection.selectedOffsets], [0, 1]);
+});
+
+test("duplicates without a job mapping keep one and invalid invoice numbers still fail", () => {
+	const columns = { INV_NR: { target: 'invoice_nr' }, JOB_CARD_NR: { target: 'job_number', omit: true } };
+	const selection = buildSourceInvoiceSelection([
+		{ inv_nr: 1, job_card_nr: 0 }, { inv_nr: 1, job_card_nr: 5 }
+	], columns);
+	assert.deepEqual([...selection.selectedOffsets], [0]);
+	assert.equal(selection.identities.get('1').jobNumber, undefined);
+	assert.throws(() => buildSourceInvoiceIdentityMap([{ inv_nr: 0 }], invoiceColumns), /invalid source invoice number/);
 });

@@ -68,6 +68,16 @@ function quoteIdentifier(name) {
 	return `"${String(name).replace(/"/g, '""')}"`;
 }
 
+function buildOrderClause(orderBy) {
+	if (!orderBy) return '';
+	// DB_KEY is a Firebird pseudo-column token. Quoting it turns it into a
+	// lookup for a physical column named RDB$DB_KEY, which does not exist.
+	const expression = String(orderBy).toUpperCase() === 'RDB$DB_KEY'
+		? 'RDB$DB_KEY'
+		: quoteIdentifier(orderBy);
+	return ` order by ${expression}`;
+}
+
 function buildOptions(config) {
 	return {
 		host: config.host,
@@ -208,7 +218,7 @@ async function listColumnsWithDb(db, tableName) {
 
 async function fetchBatchWithDb(db, tableName, columns, offset, limit, orderBy) {
 	const cols = columns && columns.length ? columns.map(quoteIdentifier).join(', ') : '*';
-	const order = orderBy ? ` order by ${quoteIdentifier(orderBy)}` : '';
+	const order = buildOrderClause(orderBy);
 	const sql = `select first ${limit} skip ${offset} ${cols} from ${quoteIdentifier(tableName)}${order}`;
 	return queryWithDb(db, sql);
 }
@@ -216,7 +226,7 @@ async function fetchBatchWithDb(db, tableName, columns, offset, limit, orderBy) 
 async function fetchBatchWithDbWhere(db, tableName, columns, offset, limit, orderBy, whereClause = '', params = []) {
 	const cols = columns && columns.length ? columns.map(quoteIdentifier).join(', ') : '*';
 	const where = whereClause ? ` where ${whereClause}` : '';
-	const order = orderBy ? ` order by ${quoteIdentifier(orderBy)}` : '';
+	const order = buildOrderClause(orderBy);
 	const sql = `select first ${limit} skip ${offset} ${cols} from ${quoteIdentifier(tableName)}${where}${order}`;
 	return queryWithDb(db, sql, params);
 }
@@ -258,7 +268,7 @@ async function countRowsWhere(config, tableName, whereClause = '', params = []) 
 
 async function fetchBatch(config, tableName, columns, offset, limit, orderBy) {
 	const cols = columns.length ? columns.map(quoteIdentifier).join(", ") : "*";
-	const order = orderBy ? ` order by ${quoteIdentifier(orderBy)}` : "";
+	const order = buildOrderClause(orderBy);
 	const sql = `select first ${limit} skip ${offset} ${cols} from ${quoteIdentifier(tableName)}${order}`;
 	return query(config, sql);
 }
@@ -266,7 +276,7 @@ async function fetchBatch(config, tableName, columns, offset, limit, orderBy) {
 async function fetchBatchWhere(config, tableName, columns, offset, limit, orderBy, whereClause = '', params = []) {
 	const cols = columns.length ? columns.map(quoteIdentifier).join(", ") : "*";
 	const where = whereClause ? ` where ${whereClause}` : "";
-	const order = orderBy ? ` order by ${quoteIdentifier(orderBy)}` : "";
+	const order = buildOrderClause(orderBy);
 	const sql = `select first ${limit} skip ${offset} ${cols} from ${quoteIdentifier(tableName)}${where}${order}`;
 	return query(config, sql, params);
 }

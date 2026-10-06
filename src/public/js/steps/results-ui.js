@@ -22,7 +22,7 @@ const ResultsRenderer = {
 				${group.sampleRows?.length ? `<p><strong>Example source ${group.table === 'invoices' ? 'invoice numbers' : 'record IDs'}:</strong> ${group.sampleRows.map(esc).join(', ')}</p>` : ''}
 				<details><summary>Technical detail</summary><code>${esc(group.message)}</code></details>
 			</details>`).join('')}
-			<p class="recovery-note">The migration does not roll back rows already written. Review partial imports before retrying, especially invoices that preserve their original numbers. Retry includes failed and unattempted tables; completed tables are kept.</p>
+			<p class="recovery-note">Retry includes failed and unattempted tables and counts existing records as skipped. Existing invoices keep their numbers, job links, and customer links; conflicting links remain errors. Completed tables are kept.</p>
 		</section>`;
 	},
 	formatNumber(num) {
