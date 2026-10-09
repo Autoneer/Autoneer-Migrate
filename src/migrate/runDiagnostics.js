@@ -95,7 +95,9 @@ function buildRunSummary(run, tables = [], plannedTables = [], rawErrors = []) {
 	const notRunCount = tableDetails.filter(t => ['NOT_RUN', 'PENDING', 'QUEUED'].includes(status(t.status))).length;
 	const rowErrorCount = Math.max(errors.length, Number(run.error_count || 0), tableDetails.reduce((sum, t) => sum + t.errorCount, 0));
 	const totalRows = tableDetails.reduce((sum, t) => sum + t.rowsMigrated, 0);
+	const warnings = parseJson(run.warnings_json, []);
 	return { runId: run.run_id || run.id, status: run.status, dryRun: run.dry_run,
+		warnings: Array.isArray(warnings) ? warnings : [], warnCount: Number(run.warn_count || 0),
 		startedAt: run.started_at, completedAt: ended, duration: duration(run.started_at, ended), durationMs: duration(run.started_at, ended),
 		tableCount: names.length, totalTables: names.length, successCount, tablesMigrated: successCount,
 		failedCount, notRunCount, rowErrorCount, errorCount: rowErrorCount || errorGroups.length,

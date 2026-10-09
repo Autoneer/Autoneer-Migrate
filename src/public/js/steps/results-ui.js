@@ -25,6 +25,15 @@ const ResultsRenderer = {
 			<p class="recovery-note">Retry includes failed and unattempted tables and counts existing records as skipped. Existing invoices keep their numbers, job links, and customer links; conflicting links remain errors. Completed tables are kept.</p>
 		</section>`;
 	},
+	renderWarnings(summary) {
+		const warnings = summary?.warnings || [];
+		if (!warnings.length) return '';
+		const esc = ResultsRenderer.escape;
+		return `<section class="failure-diagnostics" aria-label="Post-import warnings">
+			<h3>⚠ Post-import warnings (${warnings.length})</h3>
+			<ul>${warnings.map(w => `<li><strong>${esc(w.table || 'Migration')}</strong> — ${esc(w.message)}</li>`).join('')}</ul>
+		</section>`;
+	},
 	formatNumber(num) {
 		return Number(num || 0).toLocaleString();
 	},
@@ -121,14 +130,15 @@ const ResultsRenderer = {
 		const errorCount = summary?.errorCount || 0;
 		const isFailed = ['FAILED', 'COMPLETED_WITH_ERRORS', 'STOPPED', 'CANCELLED', 'ABORTED'].includes(runStatus);
 		const isSuccess = (runStatus === 'SUCCESS' || runStatus === 'COMPLETED') && errorCount === 0;
+		const hasWarnings = (summary?.warnings || []).length > 0;
 
 		container.innerHTML = `
 			<div class="results-viewer">
 				<!-- Status Header -->
-				<div class="results-header ${isSuccess ? 'success' : isFailed ? 'error' : 'warning'}">
-					<div class="status-icon">${isSuccess ? '✓' : '⚠'}</div>
+				<div class="results-header ${isSuccess && !hasWarnings ? 'success' : isFailed ? 'error' : 'warning'}">
+					<div class="status-icon">${isSuccess && !hasWarnings ? '✓' : '⚠'}</div>
 					<div class="status-content">
-						<h2>${isSuccess ? 'Migration Completed Successfully' : isFailed ? 'Migration Failed — Review and Retry' : 'Migration Results'}</h2>
+						<h2>${isSuccess ? (hasWarnings ? 'Migration Completed with Warnings' : 'Migration Completed Successfully') : isFailed ? 'Migration Failed — Review and Retry' : 'Migration Results'}</h2>
 						<p>${summary?.completedAt ? 'Finished at ' + new Date(summary.completedAt).toLocaleString() : ''}</p>
 						${isFailed ? '<p>Resolve the failures before Step 5: Convert Account Numbers.</p>' : ''}
 					</div>
@@ -140,6 +150,7 @@ const ResultsRenderer = {
 					<button class="btn btn-secondary" data-results-action="retry">Retry Failed / Unattempted Tables</button>
 				</div>` : ''}
 				${ResultsRenderer.renderFailureSummary(summary)}
+				${ResultsRenderer.renderWarnings(summary)}
 				<!-- Summary Statistics -->
 				<div class="results-stats">
 					<div class="stat-card ${(summary?.tableCount || 0) === (summary?.successCount || 0) ? 'success' : 'warning'}">

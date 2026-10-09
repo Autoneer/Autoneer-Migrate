@@ -16,6 +16,7 @@ const {
 	fetchFirstMatchingRowWithDb,
 	normalizeTransactionalDateFilterConfig
 } = require("../../migrate/transactionalDateFilter");
+const { resolveMappingDefault } = require("../../migrate/invoiceMigrationSafety");
 
 const router = express.Router();
 
@@ -889,7 +890,11 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 					}
 				}
 				if ((value === null || value === undefined) && field.defaultValue !== null && field.defaultValue !== undefined) {
-					value = field.defaultValue;
+					value = resolveMappingDefault(field, {
+						targetTable,
+						targetColumn: field.targetColumn,
+						dataType: schema.getColumn('mysql', targetTable, field.targetColumn)?.type
+					});
 				}
 				transformedRow[field.targetColumn] = value;
 			}

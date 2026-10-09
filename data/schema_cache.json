@@ -13570,7 +13570,7 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-10-06T13:00:05.020Z"
+    "lastUpdated": "2026-10-09T05:39:43.415Z"
   },
   "mysql": {
     "tables": {
@@ -47219,6 +47219,2832 @@
         ],
         "uniqueIndexes": []
       },
+      "PAYROLL_CYCLE_SETTINGS": {
+        "name": "PAYROLL_CYCLE_SETTINGS",
+        "columns": {
+          "ID": {
+            "name": "ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "MONTHLY_CUTOFF_DAY": {
+            "name": "MONTHLY_CUTOFF_DAY",
+            "type": "INT",
+            "columnType": "int unsigned",
+            "nullable": false,
+            "defaultValue": "31",
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "WEEKLY_ANCHOR": {
+            "name": "WEEKLY_ANCHOR",
+            "type": "DATE",
+            "columnType": "date",
+            "nullable": false,
+            "defaultValue": "1970-01-05",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "FORTNIGHTLY_ANCHOR": {
+            "name": "FORTNIGHTLY_ANCHOR",
+            "type": "DATE",
+            "columnType": "date",
+            "nullable": false,
+            "defaultValue": "1970-01-05",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "MONTHLY_PAY_OFFSET_DAYS": {
+            "name": "MONTHLY_PAY_OFFSET_DAYS",
+            "type": "INT",
+            "columnType": "int unsigned",
+            "nullable": false,
+            "defaultValue": "0",
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "WEEKLY_PAY_OFFSET_DAYS": {
+            "name": "WEEKLY_PAY_OFFSET_DAYS",
+            "type": "INT",
+            "columnType": "int unsigned",
+            "nullable": false,
+            "defaultValue": "0",
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "FORTNIGHTLY_PAY_OFFSET_DAYS": {
+            "name": "FORTNIGHTLY_PAY_OFFSET_DAYS",
+            "type": "INT",
+            "columnType": "int unsigned",
+            "nullable": false,
+            "defaultValue": "0",
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "PAYROLL_CYCLE_SETTINGS_DETAILS": {
+        "name": "PAYROLL_CYCLE_SETTINGS_DETAILS",
+        "columns": {
+          "SETTINGS_ID": {
+            "name": "SETTINGS_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "MONTHLY_PAY_DAY": {
+            "name": "MONTHLY_PAY_DAY",
+            "type": "INT",
+            "columnType": "int unsigned",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "SETTINGS_ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "PAYROLL_EMPLOYEE_PROFILE_DETAILS": {
+        "name": "PAYROLL_EMPLOYEE_PROFILE_DETAILS",
+        "columns": {
+          "EMPLOYEE_ID": {
+            "name": "EMPLOYEE_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "OCCUPATION": {
+            "name": "OCCUPATION",
+            "type": "VARCHAR",
+            "columnType": "varchar(100)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 100,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "PAY_BASIS": {
+            "name": "PAY_BASIS",
+            "type": "ENUM",
+            "columnType": "enum('SALARY','HOURLY')",
+            "nullable": false,
+            "defaultValue": "SALARY",
+            "length": 6,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "TAX_REFERENCE": {
+            "name": "TAX_REFERENCE",
+            "type": "VARCHAR",
+            "columnType": "varchar(32)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 32,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "UIF_APPLICABLE": {
+            "name": "UIF_APPLICABLE",
+            "type": "TINYINT",
+            "columnType": "tinyint(1)",
+            "nullable": false,
+            "defaultValue": "0",
+            "length": null,
+            "precision": 3,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "SDL_APPLICABLE": {
+            "name": "SDL_APPLICABLE",
+            "type": "TINYINT",
+            "columnType": "tinyint(1)",
+            "nullable": false,
+            "defaultValue": "0",
+            "length": null,
+            "precision": 3,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "VERSION": {
+            "name": "VERSION",
+            "type": "INT",
+            "columnType": "int unsigned",
+            "nullable": false,
+            "defaultValue": "0",
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "LEGACY_IMPORTED_AT": {
+            "name": "LEGACY_IMPORTED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "UPDATED_AT": {
+            "name": "UPDATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "EMPLOYEE_ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "PAYROLL_EMPLOYEE_RECURRING_ITEMS": {
+        "name": "PAYROLL_EMPLOYEE_RECURRING_ITEMS",
+        "columns": {
+          "ID": {
+            "name": "ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "EMPLOYEE_ID": {
+            "name": "EMPLOYEE_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CODE": {
+            "name": "CODE",
+            "type": "VARCHAR",
+            "columnType": "varchar(40)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 40,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "DESCRIPTION": {
+            "name": "DESCRIPTION",
+            "type": "VARCHAR",
+            "columnType": "varchar(255)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 255,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "ITEM_TYPE": {
+            "name": "ITEM_TYPE",
+            "type": "ENUM",
+            "columnType": "enum('EARNING','DEDUCTION','EMPLOYER_COST')",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 13,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "AMOUNT": {
+            "name": "AMOUNT",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": false,
+            "defaultValue": "0.00",
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "GL_ACCOUNT_ID": {
+            "name": "GL_ACCOUNT_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "STARTS_ON": {
+            "name": "STARTS_ON",
+            "type": "DATE",
+            "columnType": "date",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "ENDS_ON": {
+            "name": "ENDS_ON",
+            "type": "DATE",
+            "columnType": "date",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "IS_ACTIVE": {
+            "name": "IS_ACTIVE",
+            "type": "TINYINT",
+            "columnType": "tinyint(1)",
+            "nullable": false,
+            "defaultValue": "1",
+            "length": null,
+            "precision": 3,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_BY_STAFF_ID": {
+            "name": "CREATED_BY_STAFF_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "UPDATED_AT": {
+            "name": "UPDATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "PAYROLL_EMPLOYEES": {
+        "name": "PAYROLL_EMPLOYEES",
+        "columns": {
+          "ID": {
+            "name": "ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "STAFF_ID": {
+            "name": "STAFF_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": true
+          },
+          "EMPLOYEE_NUMBER": {
+            "name": "EMPLOYEE_NUMBER",
+            "type": "VARCHAR",
+            "columnType": "varchar(32)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 32,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": true
+          },
+          "STATUS": {
+            "name": "STATUS",
+            "type": "ENUM",
+            "columnType": "enum('ACTIVE','INACTIVE')",
+            "nullable": false,
+            "defaultValue": "ACTIVE",
+            "length": 8,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "PAY_FREQUENCY": {
+            "name": "PAY_FREQUENCY",
+            "type": "ENUM",
+            "columnType": "enum('MONTHLY','FORTNIGHTLY','WEEKLY')",
+            "nullable": false,
+            "defaultValue": "MONTHLY",
+            "length": 11,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "BASE_SALARY": {
+            "name": "BASE_SALARY",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": false,
+            "defaultValue": "0.00",
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "HOURLY_RATE": {
+            "name": "HOURLY_RATE",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,6)",
+            "nullable": false,
+            "defaultValue": "0.000000",
+            "length": null,
+            "precision": 18,
+            "scale": 6,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "EMPLOYMENT_START": {
+            "name": "EMPLOYMENT_START",
+            "type": "DATE",
+            "columnType": "date",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "EMPLOYMENT_END": {
+            "name": "EMPLOYMENT_END",
+            "type": "DATE",
+            "columnType": "date",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "BANK_NAME": {
+            "name": "BANK_NAME",
+            "type": "VARCHAR",
+            "columnType": "varchar(100)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 100,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "ACCOUNT_HOLDER": {
+            "name": "ACCOUNT_HOLDER",
+            "type": "VARCHAR",
+            "columnType": "varchar(100)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 100,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "ACCOUNT_NUMBER": {
+            "name": "ACCOUNT_NUMBER",
+            "type": "VARCHAR",
+            "columnType": "varchar(100)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 100,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "BRANCH_CODE": {
+            "name": "BRANCH_CODE",
+            "type": "VARCHAR",
+            "columnType": "varchar(100)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 100,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "ACCOUNT_TYPE": {
+            "name": "ACCOUNT_TYPE",
+            "type": "VARCHAR",
+            "columnType": "varchar(100)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 100,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_BY_STAFF_ID": {
+            "name": "CREATED_BY_STAFF_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "UPDATED_BY_STAFF_ID": {
+            "name": "UPDATED_BY_STAFF_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "UPDATED_AT": {
+            "name": "UPDATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "PAYROLL_EVENTS": {
+        "name": "PAYROLL_EVENTS",
+        "columns": {
+          "ID": {
+            "name": "ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "EVENT_TYPE": {
+            "name": "EVENT_TYPE",
+            "type": "VARCHAR",
+            "columnType": "varchar(64)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 64,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "RUN_ID": {
+            "name": "RUN_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "PAYSLIP_ID": {
+            "name": "PAYSLIP_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "EMPLOYEE_ID": {
+            "name": "EMPLOYEE_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "LOAN_ID": {
+            "name": "LOAN_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "PAYLOAD": {
+            "name": "PAYLOAD",
+            "type": "JSON",
+            "columnType": "json",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_BY_STAFF_ID": {
+            "name": "CREATED_BY_STAFF_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "PAYROLL_PAYSLIP_ARTIFACTS": {
+        "name": "PAYROLL_PAYSLIP_ARTIFACTS",
+        "columns": {
+          "ID": {
+            "name": "ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "PAYSLIP_ID": {
+            "name": "PAYSLIP_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "ARTIFACT_TYPE": {
+            "name": "ARTIFACT_TYPE",
+            "type": "ENUM",
+            "columnType": "enum('PDF')",
+            "nullable": false,
+            "defaultValue": "PDF",
+            "length": 3,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "REVISION_NO": {
+            "name": "REVISION_NO",
+            "type": "INT",
+            "columnType": "int unsigned",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "STORAGE_KEY": {
+            "name": "STORAGE_KEY",
+            "type": "VARCHAR",
+            "columnType": "varchar(512)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 512,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CONTENT_SHA256": {
+            "name": "CONTENT_SHA256",
+            "type": "CHAR",
+            "columnType": "char(64)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 64,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CONTENT_LENGTH": {
+            "name": "CONTENT_LENGTH",
+            "type": "BIGINT",
+            "columnType": "bigint unsigned",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 20,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "MIME_TYPE": {
+            "name": "MIME_TYPE",
+            "type": "VARCHAR",
+            "columnType": "varchar(100)",
+            "nullable": false,
+            "defaultValue": "application/pdf",
+            "length": 100,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_BY_STAFF_ID": {
+            "name": "CREATED_BY_STAFF_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "PAYROLL_PAYSLIP_DOCUMENTS": {
+        "name": "PAYROLL_PAYSLIP_DOCUMENTS",
+        "columns": {
+          "PAYSLIP_ID": {
+            "name": "PAYSLIP_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "SNAPSHOT_JSON": {
+            "name": "SNAPSHOT_JSON",
+            "type": "JSON",
+            "columnType": "json",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "SNAPSHOT_SHA256": {
+            "name": "SNAPSHOT_SHA256",
+            "type": "CHAR",
+            "columnType": "char(64)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 64,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "FROZEN_HTML": {
+            "name": "FROZEN_HTML",
+            "type": "LONGTEXT",
+            "columnType": "longtext",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 4294967295,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "HTML_SHA256": {
+            "name": "HTML_SHA256",
+            "type": "CHAR",
+            "columnType": "char(64)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 64,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "PAYSLIP_ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "PAYROLL_PAYSLIP_LINES": {
+        "name": "PAYROLL_PAYSLIP_LINES",
+        "columns": {
+          "ID": {
+            "name": "ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "PAYSLIP_ID": {
+            "name": "PAYSLIP_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "LINE_NO": {
+            "name": "LINE_NO",
+            "type": "INT",
+            "columnType": "int unsigned",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CODE": {
+            "name": "CODE",
+            "type": "VARCHAR",
+            "columnType": "varchar(40)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 40,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "DESCRIPTION": {
+            "name": "DESCRIPTION",
+            "type": "VARCHAR",
+            "columnType": "varchar(255)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 255,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "ITEM_TYPE": {
+            "name": "ITEM_TYPE",
+            "type": "ENUM",
+            "columnType": "enum('EARNING','DEDUCTION','EMPLOYER_COST')",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 13,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "QUANTITY": {
+            "name": "QUANTITY",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,6)",
+            "nullable": false,
+            "defaultValue": "1.000000",
+            "length": null,
+            "precision": 18,
+            "scale": 6,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "RATE": {
+            "name": "RATE",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,6)",
+            "nullable": false,
+            "defaultValue": "0.000000",
+            "length": null,
+            "precision": 18,
+            "scale": 6,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "AMOUNT": {
+            "name": "AMOUNT",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": false,
+            "defaultValue": "0.00",
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "GL_ACCOUNT_ID": {
+            "name": "GL_ACCOUNT_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "RECURRING_ITEM_ID": {
+            "name": "RECURRING_ITEM_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "LOAN_ID": {
+            "name": "LOAN_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_BY_STAFF_ID": {
+            "name": "CREATED_BY_STAFF_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "PAYROLL_PAYSLIP_PDF_CONTENT": {
+        "name": "PAYROLL_PAYSLIP_PDF_CONTENT",
+        "columns": {
+          "ARTIFACT_ID": {
+            "name": "ARTIFACT_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "PDF_BYTES": {
+            "name": "PDF_BYTES",
+            "type": "LONGBLOB",
+            "columnType": "longblob",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 4294967295,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ARTIFACT_ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "PAYROLL_PAYSLIPS": {
+        "name": "PAYROLL_PAYSLIPS",
+        "columns": {
+          "ID": {
+            "name": "ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "RUN_ID": {
+            "name": "RUN_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "EMPLOYEE_ID": {
+            "name": "EMPLOYEE_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "STATUS": {
+            "name": "STATUS",
+            "type": "ENUM",
+            "columnType": "enum('DRAFT','FINALISED')",
+            "nullable": false,
+            "defaultValue": "DRAFT",
+            "length": 9,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "EMPLOYEE_SNAPSHOT": {
+            "name": "EMPLOYEE_SNAPSHOT",
+            "type": "JSON",
+            "columnType": "json",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "SNAPSHOT_SHA256": {
+            "name": "SNAPSHOT_SHA256",
+            "type": "CHAR",
+            "columnType": "char(64)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 64,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "GROSS_TOTAL": {
+            "name": "GROSS_TOTAL",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": false,
+            "defaultValue": "0.00",
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "DEDUCTION_TOTAL": {
+            "name": "DEDUCTION_TOTAL",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": false,
+            "defaultValue": "0.00",
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "NET_TOTAL": {
+            "name": "NET_TOTAL",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": false,
+            "defaultValue": "0.00",
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "EMPLOYER_COST_TOTAL": {
+            "name": "EMPLOYER_COST_TOTAL",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": false,
+            "defaultValue": "0.00",
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "FINALISED_AT": {
+            "name": "FINALISED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_BY_STAFF_ID": {
+            "name": "CREATED_BY_STAFF_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "UPDATED_AT": {
+            "name": "UPDATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "PAYROLL_REPLACEMENT_ATTEMPTS": {
+        "name": "PAYROLL_REPLACEMENT_ATTEMPTS",
+        "columns": {
+          "RUN_ID": {
+            "name": "RUN_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "ORIGINAL_RUN_ID": {
+            "name": "ORIGINAL_RUN_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "RUN_ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "PAYROLL_RUN_DETAILS": {
+        "name": "PAYROLL_RUN_DETAILS",
+        "columns": {
+          "RUN_ID": {
+            "name": "RUN_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "ACCOUNTING_POSTING_DATE": {
+            "name": "ACCOUNTING_POSTING_DATE",
+            "type": "DATE",
+            "columnType": "date",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "VERSION": {
+            "name": "VERSION",
+            "type": "INT",
+            "columnType": "int unsigned",
+            "nullable": false,
+            "defaultValue": "0",
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "REQUEST_SHA256": {
+            "name": "REQUEST_SHA256",
+            "type": "CHAR",
+            "columnType": "char(64)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 64,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "RUN_ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "PAYROLL_RUNS": {
+        "name": "PAYROLL_RUNS",
+        "columns": {
+          "ID": {
+            "name": "ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "RUN_NUMBER": {
+            "name": "RUN_NUMBER",
+            "type": "VARCHAR",
+            "columnType": "varchar(32)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 32,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": true
+          },
+          "REQUEST_KEY": {
+            "name": "REQUEST_KEY",
+            "type": "VARCHAR",
+            "columnType": "varchar(64)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 64,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": true
+          },
+          "PERIOD_START": {
+            "name": "PERIOD_START",
+            "type": "DATE",
+            "columnType": "date",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "PERIOD_END": {
+            "name": "PERIOD_END",
+            "type": "DATE",
+            "columnType": "date",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "PAY_DATE": {
+            "name": "PAY_DATE",
+            "type": "DATE",
+            "columnType": "date",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "PAY_FREQUENCY": {
+            "name": "PAY_FREQUENCY",
+            "type": "ENUM",
+            "columnType": "enum('MONTHLY','FORTNIGHTLY','WEEKLY')",
+            "nullable": false,
+            "defaultValue": "MONTHLY",
+            "length": 11,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "STATUS": {
+            "name": "STATUS",
+            "type": "ENUM",
+            "columnType": "enum('DRAFT','FINALISED','REVERSED','CANCELLED')",
+            "nullable": false,
+            "defaultValue": "DRAFT",
+            "length": 9,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "GROSS_TOTAL": {
+            "name": "GROSS_TOTAL",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": false,
+            "defaultValue": "0.00",
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "DEDUCTION_TOTAL": {
+            "name": "DEDUCTION_TOTAL",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": false,
+            "defaultValue": "0.00",
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "NET_TOTAL": {
+            "name": "NET_TOTAL",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": false,
+            "defaultValue": "0.00",
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "EMPLOYER_COST_TOTAL": {
+            "name": "EMPLOYER_COST_TOTAL",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": false,
+            "defaultValue": "0.00",
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "SETTINGS_SNAPSHOT": {
+            "name": "SETTINGS_SNAPSHOT",
+            "type": "JSON",
+            "columnType": "json",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "SNAPSHOT_SHA256": {
+            "name": "SNAPSHOT_SHA256",
+            "type": "CHAR",
+            "columnType": "char(64)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 64,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "GL_JOURNAL_ID": {
+            "name": "GL_JOURNAL_ID",
+            "type": "BIGINT",
+            "columnType": "bigint",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 19,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": true
+          },
+          "REVERSAL_GL_JOURNAL_ID": {
+            "name": "REVERSAL_GL_JOURNAL_ID",
+            "type": "BIGINT",
+            "columnType": "bigint",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 19,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": true
+          },
+          "REVERSAL_OF_RUN_ID": {
+            "name": "REVERSAL_OF_RUN_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": true
+          },
+          "FINALISED_AT": {
+            "name": "FINALISED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "FINALISED_BY_STAFF_ID": {
+            "name": "FINALISED_BY_STAFF_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "REVERSED_AT": {
+            "name": "REVERSED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "REVERSED_BY_STAFF_ID": {
+            "name": "REVERSED_BY_STAFF_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "REVERSAL_REASON": {
+            "name": "REVERSAL_REASON",
+            "type": "VARCHAR",
+            "columnType": "varchar(500)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 500,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_BY_STAFF_ID": {
+            "name": "CREATED_BY_STAFF_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "UPDATED_AT": {
+            "name": "UPDATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "PAYROLL_SETTINGS": {
+        "name": "PAYROLL_SETTINGS",
+        "columns": {
+          "ID": {
+            "name": "ID",
+            "type": "TINYINT",
+            "columnType": "tinyint unsigned",
+            "nullable": false,
+            "defaultValue": "1",
+            "length": null,
+            "precision": 3,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "CURRENCY": {
+            "name": "CURRENCY",
+            "type": "CHAR",
+            "columnType": "char(3)",
+            "nullable": false,
+            "defaultValue": "ZAR",
+            "length": 3,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "SALARY_EXPENSE_ACCOUNT_ID": {
+            "name": "SALARY_EXPENSE_ACCOUNT_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "WAGES_PAYABLE_ACCOUNT_ID": {
+            "name": "WAGES_PAYABLE_ACCOUNT_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "DEDUCTIONS_PAYABLE_ACCOUNT_ID": {
+            "name": "DEDUCTIONS_PAYABLE_ACCOUNT_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "EMPLOYER_COST_ACCOUNT_ID": {
+            "name": "EMPLOYER_COST_ACCOUNT_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "STAFF_LOAN_ACCOUNT_ID": {
+            "name": "STAFF_LOAN_ACCOUNT_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "UPDATED_BY_STAFF_ID": {
+            "name": "UPDATED_BY_STAFF_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "UPDATED_AT": {
+            "name": "UPDATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "PAYROLL_STAFF_LOAN_DETAILS": {
+        "name": "PAYROLL_STAFF_LOAN_DETAILS",
+        "columns": {
+          "LOAN_ID": {
+            "name": "LOAN_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "DESCRIPTION": {
+            "name": "DESCRIPTION",
+            "type": "VARCHAR",
+            "columnType": "varchar(255)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 255,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "OPENING_BALANCE": {
+            "name": "OPENING_BALANCE",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": false,
+            "defaultValue": "0.00",
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "OPENING_GL_REPRESENTED": {
+            "name": "OPENING_GL_REPRESENTED",
+            "type": "TINYINT",
+            "columnType": "tinyint(1)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 3,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "INTEREST_NOTE": {
+            "name": "INTEREST_NOTE",
+            "type": "VARCHAR",
+            "columnType": "varchar(500)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 500,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "WRITTEN_AUTHORISATION_CONFIRMED": {
+            "name": "WRITTEN_AUTHORISATION_CONFIRMED",
+            "type": "TINYINT",
+            "columnType": "tinyint(1)",
+            "nullable": false,
+            "defaultValue": "0",
+            "length": null,
+            "precision": 3,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "AUTHORISATION_REFERENCE": {
+            "name": "AUTHORISATION_REFERENCE",
+            "type": "VARCHAR",
+            "columnType": "varchar(255)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 255,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "VERSION": {
+            "name": "VERSION",
+            "type": "INT",
+            "columnType": "int unsigned",
+            "nullable": false,
+            "defaultValue": "0",
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "LOAN_ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "PAYROLL_STAFF_LOAN_TRANSACTION_DETAILS": {
+        "name": "PAYROLL_STAFF_LOAN_TRANSACTION_DETAILS",
+        "columns": {
+          "TRANSACTION_ID": {
+            "name": "TRANSACTION_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "LOAN_ID": {
+            "name": "LOAN_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "KIND": {
+            "name": "KIND",
+            "type": "ENUM",
+            "columnType": "enum('OPENING_BALANCE','LOAN_ADVANCE','PAYROLL_REPAYMENT','MANUAL_REPAYMENT','ADJUSTMENT','REVERSAL')",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 17,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "PAYROLL_RUN_ID": {
+            "name": "PAYROLL_RUN_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "REQUEST_SHA256": {
+            "name": "REQUEST_SHA256",
+            "type": "CHAR",
+            "columnType": "char(64)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 64,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "TRANSACTION_ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "PAYROLL_STAFF_LOAN_TRANSACTIONS": {
+        "name": "PAYROLL_STAFF_LOAN_TRANSACTIONS",
+        "columns": {
+          "ID": {
+            "name": "ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "LOAN_ID": {
+            "name": "LOAN_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "TRANSACTION_DATE": {
+            "name": "TRANSACTION_DATE",
+            "type": "DATE",
+            "columnType": "date",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "TRANSACTION_TYPE": {
+            "name": "TRANSACTION_TYPE",
+            "type": "ENUM",
+            "columnType": "enum('ADVANCE','REPAYMENT','ADJUSTMENT','REVERSAL')",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 10,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "AMOUNT": {
+            "name": "AMOUNT",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "REQUEST_KEY": {
+            "name": "REQUEST_KEY",
+            "type": "VARCHAR",
+            "columnType": "varchar(64)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 64,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": true
+          },
+          "PAYSLIP_LINE_ID": {
+            "name": "PAYSLIP_LINE_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": true
+          },
+          "GL_JOURNAL_ID": {
+            "name": "GL_JOURNAL_ID",
+            "type": "BIGINT",
+            "columnType": "bigint",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 19,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "REVERSAL_OF_TRANSACTION_ID": {
+            "name": "REVERSAL_OF_TRANSACTION_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": true
+          },
+          "DESCRIPTION": {
+            "name": "DESCRIPTION",
+            "type": "VARCHAR",
+            "columnType": "varchar(500)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 500,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_BY_STAFF_ID": {
+            "name": "CREATED_BY_STAFF_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "PAYROLL_STAFF_LOANS": {
+        "name": "PAYROLL_STAFF_LOANS",
+        "columns": {
+          "ID": {
+            "name": "ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "EMPLOYEE_ID": {
+            "name": "EMPLOYEE_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "REFERENCE": {
+            "name": "REFERENCE",
+            "type": "VARCHAR",
+            "columnType": "varchar(64)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 64,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": true
+          },
+          "LOAN_DATE": {
+            "name": "LOAN_DATE",
+            "type": "DATE",
+            "columnType": "date",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "PRINCIPAL_AMOUNT": {
+            "name": "PRINCIPAL_AMOUNT",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": false,
+            "defaultValue": "0.00",
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "REPAYMENT_AMOUNT": {
+            "name": "REPAYMENT_AMOUNT",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": false,
+            "defaultValue": "0.00",
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "STATUS": {
+            "name": "STATUS",
+            "type": "ENUM",
+            "columnType": "enum('ACTIVE','SETTLED','CANCELLED')",
+            "nullable": false,
+            "defaultValue": "ACTIVE",
+            "length": 9,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "NOTES": {
+            "name": "NOTES",
+            "type": "TEXT",
+            "columnType": "text",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 65535,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_BY_STAFF_ID": {
+            "name": "CREATED_BY_STAFF_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "UPDATED_AT": {
+            "name": "UPDATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "PB_JOB_PRODUCTION": {
+        "name": "PB_JOB_PRODUCTION",
+        "columns": {
+          "ID": {
+            "name": "ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "PB_QUOTE_JOB_ID": {
+            "name": "PB_QUOTE_JOB_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": true
+          },
+          "JOB_NUMBER": {
+            "name": "JOB_NUMBER",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": true
+          },
+          "LIFECYCLE_STATE": {
+            "name": "LIFECYCLE_STATE",
+            "type": "VARCHAR",
+            "columnType": "varchar(20)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 20,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CURRENT_STATION_ID": {
+            "name": "CURRENT_STATION_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "VERSION": {
+            "name": "VERSION",
+            "type": "INT",
+            "columnType": "int unsigned",
+            "nullable": false,
+            "defaultValue": "1",
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_BY_STAFF_ID": {
+            "name": "CREATED_BY_STAFF_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "UPDATED_BY_STAFF_ID": {
+            "name": "UPDATED_BY_STAFF_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "UPDATED_AT": {
+            "name": "UPDATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "PB_JOB_STATION_MOVEMENTS": {
+        "name": "PB_JOB_STATION_MOVEMENTS",
+        "columns": {
+          "ID": {
+            "name": "ID",
+            "type": "BIGINT",
+            "columnType": "bigint unsigned",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 20,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "PRODUCTION_ID": {
+            "name": "PRODUCTION_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "JOB_NUMBER": {
+            "name": "JOB_NUMBER",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "PRODUCTION_VERSION": {
+            "name": "PRODUCTION_VERSION",
+            "type": "INT",
+            "columnType": "int unsigned",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "REQUEST_KEY": {
+            "name": "REQUEST_KEY",
+            "type": "VARCHAR",
+            "columnType": "varchar(100)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 100,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "MOVEMENT_TYPE": {
+            "name": "MOVEMENT_TYPE",
+            "type": "VARCHAR",
+            "columnType": "varchar(20)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 20,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "ORIGIN": {
+            "name": "ORIGIN",
+            "type": "VARCHAR",
+            "columnType": "varchar(20)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 20,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "FROM_STATION_ID": {
+            "name": "FROM_STATION_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "FROM_STATION_NAME": {
+            "name": "FROM_STATION_NAME",
+            "type": "VARCHAR",
+            "columnType": "varchar(80)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 80,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "FROM_DISPLAY_ORDER": {
+            "name": "FROM_DISPLAY_ORDER",
+            "type": "INT",
+            "columnType": "int unsigned",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "TO_STATION_ID": {
+            "name": "TO_STATION_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "TO_STATION_NAME": {
+            "name": "TO_STATION_NAME",
+            "type": "VARCHAR",
+            "columnType": "varchar(80)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 80,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "TO_DISPLAY_ORDER": {
+            "name": "TO_DISPLAY_ORDER",
+            "type": "INT",
+            "columnType": "int unsigned",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "REASON": {
+            "name": "REASON",
+            "type": "VARCHAR",
+            "columnType": "varchar(500)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 500,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "STAFF_ID": {
+            "name": "STAFF_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "PB_PRODUCTION_STATIONS": {
+        "name": "PB_PRODUCTION_STATIONS",
+        "columns": {
+          "ID": {
+            "name": "ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "STATION_KEY": {
+            "name": "STATION_KEY",
+            "type": "VARCHAR",
+            "columnType": "varchar(40)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 40,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": true
+          },
+          "NAME": {
+            "name": "NAME",
+            "type": "VARCHAR",
+            "columnType": "varchar(80)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 80,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "DESCRIPTION": {
+            "name": "DESCRIPTION",
+            "type": "VARCHAR",
+            "columnType": "varchar(500)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 500,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "STATION_ROLE": {
+            "name": "STATION_ROLE",
+            "type": "VARCHAR",
+            "columnType": "varchar(20)",
+            "nullable": false,
+            "defaultValue": null,
+            "length": 20,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "DISPLAY_ORDER": {
+            "name": "DISPLAY_ORDER",
+            "type": "INT",
+            "columnType": "int unsigned",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": true
+          },
+          "IS_ACTIVE": {
+            "name": "IS_ACTIVE",
+            "type": "TINYINT",
+            "columnType": "tinyint(1)",
+            "nullable": false,
+            "defaultValue": "1",
+            "length": null,
+            "precision": 3,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_BY_STAFF_ID": {
+            "name": "CREATED_BY_STAFF_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "UPDATED_BY_STAFF_ID": {
+            "name": "UPDATED_BY_STAFF_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CREATED_AT": {
+            "name": "CREATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "UPDATED_AT": {
+            "name": "UPDATED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": "CURRENT_TIMESTAMP",
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ID"
+        ],
+        "uniqueIndexes": []
+      },
       "PB_QUOTE_ASSESSMENTS": {
         "name": "PB_QUOTE_ASSESSMENTS",
         "columns": {
@@ -53646,6 +56472,54 @@
             "columnType": "varchar(5)",
             "nullable": true,
             "defaultValue": null,
+            "length": 5,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "PAYROLL_VIEW": {
+            "name": "PAYROLL_VIEW",
+            "type": "VARCHAR",
+            "columnType": "varchar(5)",
+            "nullable": false,
+            "defaultValue": "No",
+            "length": 5,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "PAYROLL_PROCESS": {
+            "name": "PAYROLL_PROCESS",
+            "type": "VARCHAR",
+            "columnType": "varchar(5)",
+            "nullable": false,
+            "defaultValue": "No",
+            "length": 5,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "PAYROLL_FINALISE": {
+            "name": "PAYROLL_FINALISE",
+            "type": "VARCHAR",
+            "columnType": "varchar(5)",
+            "nullable": false,
+            "defaultValue": "No",
+            "length": 5,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "PAYROLL_ADMIN": {
+            "name": "PAYROLL_ADMIN",
+            "type": "VARCHAR",
+            "columnType": "varchar(5)",
+            "nullable": false,
+            "defaultValue": "No",
             "length": 5,
             "precision": null,
             "scale": null,
@@ -65942,6 +68816,6 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-10-06T13:00:04.908Z"
+    "lastUpdated": "2026-10-09T05:39:43.394Z"
   }
 }

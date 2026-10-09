@@ -99,6 +99,29 @@ function getMappingDefault(rule = {}) {
 	return rule.defaultValue;
 }
 
+const NUMERIC_DATA_TYPES = new Set([
+	"tinyint", "smallint", "mediumint", "int", "integer", "bigint",
+	"decimal", "numeric", "float", "double", "bit", "year"
+]);
+// Line invoice numbers: AUTONEER writes NULL for "not invoiced". A blank mapping
+// default would reach the INT column as "" and MySQL stores it as 0. Widen this
+// list only after confirming how AUTONEER-PWA reads the column.
+const BLANK_DEFAULT_NULL_COLUMNS = new Set(["spares_used.invoice_nr", "work_done.invoice_nr"]);
+
+function isNumericDataType(dataType) {
+	return NUMERIC_DATA_TYPES.has(normalizeName(dataType));
+}
+
+// Mapping default for a NULL source value, given the target column's MySQL data
+// type. An empty-string default on a numeric line invoice number stays NULL;
+// explicit defaults such as "0" are returned unchanged.
+function resolveMappingDefault(rule = {}, { targetTable, targetColumn, dataType } = {}) {
+	const value = getMappingDefault(rule);
+	if (value !== "" || !isNumericDataType(dataType)) return value;
+	const column = `${normalizeName(targetTable)}.${normalizeName(targetColumn ?? rule.target ?? rule.targetColumn)}`;
+	return BLANK_DEFAULT_NULL_COLUMNS.has(column) ? null : value;
+}
+
 function normalizeIdentityValue(value) {
 	if (value === null || value === undefined || String(value).trim() === "") return null;
 	const number = Number(value);
@@ -184,8 +207,10 @@ module.exports = {
 	filterValidInvoiceKeys,
 	getMappingDefault,
 	hasMappingDefault,
+	isNumericDataType,
 	isValidInvoiceNumber,
 	reconcileInvoiceIdentities,
 	resolveMappedSourceColumn,
+	resolveMappingDefault,
 	resolveOnDuplicatePolicy
 };

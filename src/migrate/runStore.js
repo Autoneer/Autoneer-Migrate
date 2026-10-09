@@ -37,6 +37,13 @@ async function createRun(pool, { run_label, source_conn_name, target_schema_name
 	return runId;
 }
 
+async function recordRunWarnings(pool, runId, warnings = []) {
+	await pool.query(
+		"update migration_runs set warn_count = ?, warnings_json = ? where run_id = ?",
+		[warnings.length, warnings.length ? JSON.stringify(warnings) : null, runId]
+	);
+}
+
 async function finishRun(pool, runId, status, errorMessage) {
 	const finalStatus = normalizeRunStatus(status);
 	try {
@@ -358,6 +365,7 @@ async function deleteRun(pool, runId) {
 module.exports = {
 	createRun,
 	finishRun,
+	recordRunWarnings,
 	startTableRun,
 	updateTableProgress,
 	finishTableRun,

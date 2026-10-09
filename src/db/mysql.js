@@ -313,6 +313,9 @@ async function ensureMigrationTables(pool) {
 	if (!columnNames.includes("error_message")) {
 		await pool.query("alter table migration_runs add column error_message varchar(1000) null");
 	}
+	if (!columnNames.includes("warnings_json")) {
+		await pool.query("alter table migration_runs add column warnings_json json null");
+	}
 
 	// Expand status column from enum to varchar to support COMPLETED_WITH_ERRORS, STOPPED, etc.
 	try {

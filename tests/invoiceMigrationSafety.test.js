@@ -12,6 +12,7 @@ const {
 	getMappingDefault,
 	hasMappingDefault,
 	reconcileInvoiceIdentities,
+	resolveMappingDefault,
 	resolveOnDuplicatePolicy
 } = require("../src/migrate/invoiceMigrationSafety");
 const { buildPlan } = require("../src/migrate/migrationPlan");
@@ -34,6 +35,20 @@ test('legacy split invoice numbers also populate the modern split flag without c
 	assert.equal(buildInvoiceSplitPolicy('invoices', { SPLITNR: { target: 'splitnr' } }, []), null);
 	assert.equal(buildInvoiceSplitPolicy('invoices', { SPLITNR: { target: 'splitnr' }, FLAG: { target: 'IS_SPLIT_INVOICE' } }, ['is_split_invoice']), null);
 	assert.equal(buildInvoiceSplitPolicy('stock', { SPLITNR: { target: 'splitnr' } }, ['is_split_invoice']), null);
+});
+
+test("a blank default keeps uninvoiced line invoice numbers NULL instead of 0", () => {
+	const blank = { targetColumn: "INVOICE_NR", defaultValue: "" };
+	for (const table of ["SPARES_USED", "work_done"]) {
+		assert.equal(resolveMappingDefault(blank, { targetTable: table, dataType: "int" }), null);
+		assert.equal(resolveMappingDefault(blank, { targetTable: table, dataType: "INT" }), null);
+		assert.equal(resolveMappingDefault({ ...blank, defaultValue: "0" }, { targetTable: table, dataType: "int" }), "0");
+	}
+	// Columns not yet approved, non-numeric targets, and unknown types keep the blank default.
+	assert.equal(resolveMappingDefault(blank, { targetTable: "job_information", dataType: "int" }), "");
+	assert.equal(resolveMappingDefault({ target: "job_number", default: "" }, { targetTable: "spares_used", dataType: "int" }), "");
+	assert.equal(resolveMappingDefault(blank, { targetTable: "spares_used", dataType: "varchar" }), "");
+	assert.equal(resolveMappingDefault(blank, { targetTable: "spares_used" }), "");
 });
 
 test("invoice source policy excludes null, zero, and negative legacy invoice numbers", () => {

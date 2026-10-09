@@ -1,4 +1,5 @@
 const SchemaValidator = require('./SchemaValidator');
+const { resolveMappingDefault } = require('../invoiceMigrationSafety');
 
 /**
  * Plan validator - validates migration plan before execution
@@ -228,7 +229,7 @@ class PlanValidator {
 
 			// Apply mapping default if source/transform value is null
 			if ((valueToWrite === null || valueToWrite === undefined) && field.defaultValue !== null && field.defaultValue !== undefined) {
-				valueToWrite = field.defaultValue;
+				valueToWrite = resolveMappingDefault(field, { targetTable, targetColumn: field.targetColumn, dataType: targetColumn?.type });
 			}
 
 			// Now validate the final payload value

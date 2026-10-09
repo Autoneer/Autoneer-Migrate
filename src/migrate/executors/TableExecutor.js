@@ -2,6 +2,7 @@ const firebird = require('../../db/firebird');
 const mysql = require('../../db/mysql');
 const { applyTransform } = require('../mappers');
 const { applyMigrationMarker } = require('../migrationMarkers');
+const { resolveMappingDefault } = require('../invoiceMigrationSafety');
 
 /**
  * Table executor - migrates a single table
@@ -301,7 +302,11 @@ class TableExecutor {
 
 			// Apply default if null
 			if ((value === null || value === undefined) && fieldMap.defaultValue !== null) {
-				value = fieldMap.defaultValue;
+				value = resolveMappingDefault(fieldMap, {
+					targetTable: this.targetTable,
+					targetColumn: fieldMap.targetColumn,
+					dataType: this.schema?.getColumn('mysql', this.targetTable, fieldMap.targetColumn)?.type
+				});
 			}
 
 			// Apply transform

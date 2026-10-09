@@ -18,6 +18,7 @@ const {
 	ACCCLASS_TO_TYPE_ID
 } = require("./gl/glAccountTypes");
 const { runAllChecks: runGLValidationChecks } = require("./gl/glValidation");
+const { runOpenPartVatPostImport } = require("./openPartVatPostImport");
 const {
 	reorderAccountingPlanSteps,
 	validateGLExecutionPrereqs
@@ -41,6 +42,7 @@ const {
 	hasMappingDefault,
 	reconcileInvoiceIdentities,
 	resolveMappedSourceColumn,
+	resolveMappingDefault,
 	resolveOnDuplicatePolicy
 } = require("./invoiceMigrationSafety");
 
@@ -868,10 +870,12 @@ async function mapRow(row, columnMap, lookupFn, options = {}) {
 	const result = {};
 	const targetTable = String(options.targetTable || "").toLowerCase();
 	const accnrConversionMap = options.accnrConversionMap || null;
+	const columnTypes = options.columnTypes || null;
 	for (const [sourceCol, rule] of Object.entries(columnMap)) {
 		const srcKey = sourceCol.toLowerCase();
 		const value = row[srcKey];
 		let mappedValue = value;
+		const outKey = rule.target ?? rule.targetColumn;
 		if (rule.lookup) {
 			mappedValue = await lookupFn(rule.lookup.table, value);
 		}
@@ -879,9 +883,12 @@ async function mapRow(row, columnMap, lookupFn, options = {}) {
 			mappedValue = applyTransform(rule.transform, mappedValue);
 		}
 		if ((mappedValue === undefined || mappedValue === null) && hasMappingDefault(rule)) {
-			mappedValue = getMappingDefault(rule);
+			mappedValue = resolveMappingDefault(rule, {
+				targetTable,
+				targetColumn: outKey,
+				dataType: columnTypes?.get(String(outKey || "").toLowerCase())
+			});
 		}
-		const outKey = rule.target ?? rule.targetColumn;
 		mappedValue = applyMigrationMarker(targetTable, outKey, mappedValue);
 		if (shouldConvertAccnrReference(targetTable, outKey)) {
 			mappedValue = applyAccnrReferenceConversion(mappedValue, accnrConversionMap);
@@ -1733,7 +1740,9 @@ async function runMigrationInternal({
 				if (!continueOnError) break;
 				continue;
 			}
-			const mysqlColumnNames = (await mysql.listColumns(pool, tableName)).map((c) => c.name.toLowerCase());
+			const mysqlColumnList = await mysql.listColumns(pool, tableName);
+			const mysqlColumnNames = mysqlColumnList.map((c) => c.name.toLowerCase());
+			const mysqlColumnTypes = new Map(mysqlColumnList.map((c) => [c.name.toLowerCase(), c.dataType]));
 			const invoiceSplitPolicy = buildInvoiceSplitPolicy(tableName, columnsMap, mysqlColumnNames);
 			if (invoiceSplitPolicy) targetColumns.push(invoiceSplitPolicy.targetColumn);
 			const missingSource = firebirdColumns.filter((c) => !firebirdColumnNames.includes(c.toLowerCase()));
@@ -2178,7 +2187,8 @@ async function runMigrationInternal({
 							return target;
 						}, {
 							targetTable: tableName,
-							accnrConversionMap
+							accnrConversionMap,
+							columnTypes: mysqlColumnTypes
 						});
 						applyInvoiceSplitPolicy(row, mappedRow, invoiceSplitPolicy);
 						const values = targetColumnsForInsert.map((c) => mappedRow[c]);
@@ -2851,6 +2861,37 @@ async function runMigrationInternal({
 			if (runFailed && !continueOnError) break;
 		}
 
+		// ─── POST-IMPORT OPEN PART VAT ───────────────────────────────
+		// Repair only after a clean run; a partial run is still verified.
+		const importedTables = new Set(runState.tables
+			.filter((t) => t.status === "SUCCESS")
+			.map((t) => String(t.name || "").toLowerCase()));
+		const postImport = dryRun || (runFailed && !(continueOnError && tableErrors.length > 0))
+			? { error: null, warnings: [] }
+			: await runOpenPartVatPostImport({ pool, importedTables, repair: !runFailed, logRun });
+		if (postImport.warnings.length) {
+			runState.warnings = postImport.warnings;
+			try {
+				await runStore.recordRunWarnings(pool, runId, postImport.warnings);
+			} catch (err) {
+				logRun({ level: "warn", phase: "post_import_verification", error: `Could not record run warnings: ${err.message}` });
+			}
+		}
+		const finishSucceeded = async () => {
+			runState.finishedAt = new Date().toISOString();
+			if (postImport.error) {
+				runState.status = "COMPLETED_WITH_ERRORS";
+				runState.lastError = { message: postImport.error, phase: "post_import_open_part_vat" };
+				await runStore.finishRun(pool, runId, "COMPLETED_WITH_ERRORS", postImport.error);
+				logRun({ level: "warn", phase: "run_finalize", status: "completed_with_errors", error: postImport.error });
+			} else {
+				runState.status = "SUCCESS";
+				await runStore.finishRun(pool, runId, "SUCCESS");
+				logRun({ level: "info", phase: "run_finalize", status: "success", warnings: postImport.warnings.length });
+			}
+			emitRunState(runId, emitter);
+		};
+
 		if (runFailed) {
 			if (continueOnError && tableErrors.length > 0) {
 				// Migration completed but with errors on some tables
@@ -2917,11 +2958,7 @@ async function runMigrationInternal({
 						emitRunState(runId, emitter);
 					} else {
 						logRun({ level: "info", phase: "post_migration_gl_validation", status: "passed" });
-						runState.status = "SUCCESS";
-						runState.finishedAt = new Date().toISOString();
-						await runStore.finishRun(pool, runId, "SUCCESS");
-						logRun({ level: "info", phase: "run_finalize", status: "success" });
-						emitRunState(runId, emitter);
+						await finishSucceeded();
 					}
 				} catch (glErr) {
 					// If GL validation itself errors (e.g. tables don't exist yet), log but allow success
@@ -2932,18 +2969,10 @@ async function runMigrationInternal({
 						error: glErr.message,
 						hint: "GL validation could not run — tables may not exist yet. Run 'Rebuild GL Accounts' to create them."
 					});
-					runState.status = "SUCCESS";
-					runState.finishedAt = new Date().toISOString();
-					await runStore.finishRun(pool, runId, "SUCCESS");
-					logRun({ level: "info", phase: "run_finalize", status: "success" });
-					emitRunState(runId, emitter);
+					await finishSucceeded();
 				}
 			} else {
-				runState.status = "SUCCESS";
-				runState.finishedAt = new Date().toISOString();
-				await runStore.finishRun(pool, runId, "SUCCESS");
-				logRun({ level: "info", phase: "run_finalize", status: "success" });
-				emitRunState(runId, emitter);
+				await finishSucceeded();
 			}
 			// ─── END POST-MIGRATION GL VALIDATION ────────────────────────
 		}
