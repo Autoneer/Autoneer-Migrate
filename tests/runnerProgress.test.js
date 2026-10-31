@@ -10,7 +10,7 @@ const runnerRequire = createRequire(runnerFile);
 const deferred = () => { let resolve; const promise = new Promise(done => { resolve = done; }); return { promise, resolve }; };
 
 // Execute the real runner with in-memory database adapters. No live DB or log files.
-function harness({ retryOfRunId, invoiceRace = false, realJobConflict = false, existingInvoices = [], existingStaff = [], cleanBefore = false, invoiceSchemaGate, invoiceSchemaError, commitGate, validationGate, cleanupGate, cleanupError, staffCleanupGate, staffCleanupError, invoiceRows, invoiceBatchSize, filteredInvoiceKeys, nullInvoice = false, dryRun = false, failRows = false, partialInvoiceFailure = false, shortRead = false, continueOnError = false, legacySplits = false } = {}) {
+function harness({ qualityGate, qualityError, qualityBlocked = false, retryOfRunId, invoiceRace = false, realJobConflict = false, existingInvoices = [], existingStaff = [], cleanBefore = false, invoiceSchemaGate, invoiceSchemaError, commitGate, validationGate, cleanupGate, cleanupError, staffCleanupGate, staffCleanupError, invoiceRows, invoiceBatchSize, filteredInvoiceKeys, nullInvoice = false, dryRun = false, failRows = false, partialInvoiceFailure = false, shortRead = false, continueOnError = false, legacySplits = false } = {}) {
 	const records = new Map();
 	const logs = [];
 	const events = [];
@@ -99,7 +99,30 @@ function harness({ retryOfRunId, invoiceRace = false, realJobConflict = false, e
 			: source[table.toLowerCase()];
 		return rows.slice(offset, offset + size);
 	};
+	const snapshot = new Map();
 	const mocks = {
+		'./dataQuality/service': { createAudit: async ({ onProgress = () => {} } = {}) => {
+			for (const table of Object.keys(source)) onProgress({ stage: 'rows', phase: 'reading', table, scanned: 1, total: source[table].length, flagged: 0 });
+			if (qualityGate) { qualityGate.entered.resolve(); await qualityGate.release.promise; }
+			if (qualityError) throw Error(qualityError);
+			const tables = new Map();
+			let duplicate = false;
+			for (const [table, raw] of Object.entries(source)) {
+				const rows = raw.filter(row => table !== 'invoices' || (row.inv_nr != null && row.inv_nr > 0 && (!filteredInvoiceKeys || filteredInvoiceKeys.includes(row.inv_nr))));
+				if (table === 'invoices') duplicate = new Set(rows.map(row => row.inv_nr)).size !== rows.length;
+				snapshot.set(table, JSON.parse(JSON.stringify(rows)));
+				tables.set(table, { sourceColumns: Object.keys(mapping.tables[table.toUpperCase()].columns), acceptedFile: table, summary: { accepted: rows.length, quarantined: raw.length - rows.length } });
+			}
+			const blocked = qualityBlocked || duplicate;
+			return { tables, context: null, accnrConversionMap: new Map(), report: { id: 'fixture-audit', status: blocked ? 'blocked' : 'ready', totals: { review: blocked ? 1 : 0, errors: 0 } } };
+		} },
+		'./dataQuality/store': {
+			readRecords: async function* (file) { yield* snapshot.get(file); },
+			openBatchReader: async (file, offset) => ({ next: async size => {
+				if (shortRead && file === 'staff') return [];
+				const rows = snapshot.get(file).slice(offset, offset + size); offset += rows.length; return rows;
+			}, close: async () => {} })
+		},
 		'../db/mysql': { connectToSchema: async (_, schema) => { mysqlSchemas.push(schema); return pool; }, ensureMigrationTables: async () => {},
 			listColumns: async (_, table) => (table === 'invoices'
 				? ['invoice_nr', ...(invoiceRows ? ['job_number', 'cid'] : []), ...(legacySplits ? ['splitnr', 'is_split_invoice'] : [])] : ['id']).map(name => ({ name })),
@@ -299,73 +322,52 @@ test('invoice key correction failure stops migration even with continue-on-error
 	assert.match(h.state().lastError.message, /Invoice active-job schema correction failed: permission denied/);
 });
 
-test('preflight waits for Firebird invoice cleanup before counting or copying source rows', async () => {
-	const cleanupGate = { entered: deferred(), release: deferred() };
-	const h = harness({ cleanupGate, nullInvoice: true });
+test('all-table audit finishes before target writes and preserves legacy data', async () => {
+	const qualityGate = { entered: deferred(), release: deferred() };
+	const h = harness({ qualityGate, nullInvoice: true });
 	const finished = h.run();
-	await Promise.race([cleanupGate.entered.promise, finished.then(() => { throw Error(JSON.stringify(h.logs.slice(-3))); })]);
-	assert.equal(h.sourceReads.length, 0);
+	await Promise.race([qualityGate.entered.promise, finished.then(() => { throw Error(JSON.stringify(h.logs.slice(-3))); })]);
 	assert.equal(h.writes.length, 0);
-	cleanupGate.release.resolve();
+	assert.ok(h.state().tables.every(table => table.audit?.phase === 'reading' && table.audit.scanned === 1 && !table.audit.done), JSON.stringify(h.state().tables.map(table => table.audit)));
+	assert.equal(h.targetCleanups.length, 0);
+	qualityGate.release.resolve();
 	await finished;
 	assert.equal(h.state().status, 'SUCCESS', JSON.stringify(h.logs.slice(-3)));
 	assert.equal(h.state().tables[0].processed, 2);
-	const cleanupQueries = h.firebirdQueries.filter(query => query.sql.startsWith('delete '));
-	assert.deepEqual(cleanupQueries.map(query => query.sql), [
-		'delete from invoices where inv_nr is null',
-		"delete from invoices where status = 'REDO'",
-		'delete from spares_used where job_nr is null',
-		'delete from workdone where job_nr is null',
-		'delete from payments where inv_nr is null',
-		'delete from invtotal where invoicenr is null',
-		'delete from paymentssupp where invoicenr is null'
-	]);
-	assert.ok(h.logs.some(log => log.action === 'firebird_invoice_cleanup' && log.status === 'passed'));
+	assert.equal(h.state().tables[0].quarantined, 1);
+	assert.equal(h.state().tables[0].audit.done, true);
+	assert.equal(h.state().tables[0].audit.flagged, 1);
+	assert.equal(h.firebirdQueries.some(query => /^delete /i.test(query.sql)), false);
+	assert.equal(h.sourceReads.length, 0, 'import reads the snapshot, not the live source');
 });
 
-test('Firebird cleanup failure stops migration before reading or writing table data', async () => {
-	const h = harness({ cleanupError: 'permission denied', continueOnError: true });
+test('a blocked audit stops every selected table even with continue-on-error', async () => {
+	const h = harness({ qualityBlocked: true, continueOnError: true, cleanBefore: true });
 	await h.run();
 	assert.equal(h.state().status, 'FAILED');
-	assert.equal(h.sourceReads.length, 0);
 	assert.equal(h.writes.length, 0);
-	assert.match(h.state().lastError.message, /Firebird pre-migration invoice cleanup failed: permission denied/);
-	assert.ok(h.logs.some(log => log.action === 'firebird_invoice_cleanup' && log.status === 'failed'));
+	assert.equal(h.targetCleanups.length, 0);
+	assert.match(h.state().lastError.message, /Data quality audit.*blocked/);
+	assert.ok(h.state().tables.every(table => table.status === 'FAILED'));
 });
 
-test('preflight waits for staff cleanup in the selected MySQL schema before copying data', async () => {
-	const staffCleanupGate = { entered: deferred(), release: deferred() };
-	const h = harness({ staffCleanupGate });
-	const finished = h.run();
-	await Promise.race([staffCleanupGate.entered.promise, finished.then(() => { throw Error(JSON.stringify(h.logs.slice(-3))); })]);
-	assert.deepEqual(h.mysqlSchemas, ['fixture']);
-	assert.deepEqual(h.targetCleanups, ["delete from staff where staff_group <> 'MASTER'"]);
-	assert.equal(h.sourceReads.length, 0);
-	assert.equal(h.writes.length, 0);
-	staffCleanupGate.release.resolve();
-	await finished;
-	assert.equal(h.state().status, 'SUCCESS', JSON.stringify(h.logs.slice(-3)));
-	assert.ok(h.logs.some(log => log.action === 'mysql_staff_cleanup' && log.status === 'passed' && log.deletedRows === 3));
-});
-
-test('MySQL staff cleanup failure stops migration before table data is copied', async () => {
-	const h = harness({ staffCleanupError: 'foreign key constraint fails', continueOnError: true });
+test('audit read failure stops migration before schema changes or target writes', async () => {
+	const h = harness({ qualityError: 'Audit source unavailable', continueOnError: true });
 	await h.run();
 	assert.equal(h.state().status, 'FAILED');
-	assert.equal(h.sourceReads.length, 0);
 	assert.equal(h.writes.length, 0);
-	assert.match(h.state().lastError.message, /MySQL pre-migration staff cleanup failed: foreign key constraint fails/);
-	assert.ok(h.logs.some(log => log.action === 'mysql_staff_cleanup' && log.status === 'failed'));
+	assert.equal(h.logs.some(log => log.action === 'invoice_active_job_schema'), false);
+	assert.match(h.state().lastError.message, /Audit source unavailable/);
 });
 
-test('dry runs skip Firebird and MySQL cleanup deletions', async () => {
+test('dry runs audit without source or target deletions', async () => {
 	const h = harness({ dryRun: true });
 	await h.run();
 	assert.equal(h.state().status, 'SUCCESS', JSON.stringify(h.logs.slice(-3)));
-	assert.equal(h.firebirdQueries.some(query => query.sql.startsWith('delete ')), false);
+	assert.equal(h.firebirdQueries.some(query => /^delete /i.test(query.sql)), false);
 	assert.equal(h.targetCleanups.length, 0);
-	assert.ok(h.logs.some(log => log.action === 'firebird_invoice_cleanup' && log.reason === 'dry_run'));
-	assert.ok(h.logs.some(log => log.action === 'mysql_staff_cleanup' && log.reason === 'dry_run'));
+	assert.equal(h.writes.length, 0);
+	assert.ok(h.logs.some(log => log.action === 'data_quality' && log.status === 'ready'));
 });
 
 test('runner inserts legacy split flags and maps preserved IDs even when insertId is zero', async () => {
@@ -439,90 +441,28 @@ test('premature end of source data cannot be marked completed', async () => {
 	await h.run();
 	assert.equal(h.state().status, 'FAILED');
 	assert.equal(h.records.get('staff').status, 'failed');
-	assert.match(h.state().tables[1].lastError.message, /processed 0 of 1 rows/);
+	assert.match(h.state().tables[1].lastError.message, /Audited snapshot ended early/);
 });
 
-test('duplicate source invoices prefer a nonzero job across batches and count every skipped row', async () => {
-	for (const invoiceBatchSize of [1, 1000]) {
-		const h = harness({ invoiceBatchSize, invoiceRows: [
-			{ inv_nr: 15888, job_card_nr: 0, cid: 1 },
-			{ inv_nr: 2, job_card_nr: 0, cid: 2 },
-			{ inv_nr: 15888, job_card_nr: 5001, cid: 3 },
-			{ inv_nr: 15888, job_card_nr: 7001, cid: 4 },
-			{ inv_nr: 2, job_card_nr: 0, cid: 99 }
+test('source duplicate conflicts block import and dry-run rather than selecting an arbitrary invoice', async () => {
+	for (const dryRun of [false, true]) for (const invoiceBatchSize of [1, 1000]) {
+		const h = harness({ dryRun, invoiceBatchSize, invoiceRows: [
+			{ inv_nr: 1, job_card_nr: 0, cid: 1 }, { inv_nr: 1, job_card_nr: 7, cid: 2 }
 		] });
 		await h.run();
-		assert.equal(h.state().status, 'SUCCESS', JSON.stringify(h.logs.slice(-3)));
-		assert.deepEqual(h.targetInvoices, [
-			{ invoice_nr: 2, job_number: 0, cid: 2 },
-			{ invoice_nr: 15888, job_number: 5001, cid: 3 }
-		]);
-		const table = h.state().tables[0];
-		assert.equal(table.total, 5);
-		assert.equal(table.processed, 5);
-		assert.equal(table.inserted, 2);
-		assert.equal(table.skippedDuplicates, 3);
-		assert.equal(table.errors, 0);
-		assert.equal(h.records.get('invoices').last_offset, 5);
-		assert.equal(h.records.get('invoices').rows_skipped_duplicates, 3);
-		assert.equal(h.idMappings.filter(params => params[1] === 'INVOICES').length, invoiceBatchSize === 1 ? 2 : 1);
-		assert.ok(h.sourceFetches.filter(fetch => fetch.table === 'INVOICES').every(fetch => fetch.orderBy === 'RDB$DB_KEY'));
+		assert.equal(h.state().status, 'FAILED');
+		assert.equal(h.writes.length, 0);
+		assert.match(h.state().lastError.message, /Data quality audit.*blocked/);
 	}
 });
 
-test('dry-run duplicate selection matches the real import without writing invoices', async () => {
-	const h = harness({ dryRun: true, invoiceBatchSize: 1, invoiceRows: [
-		{ inv_nr: 1, job_card_nr: 0, cid: 1 },
-		{ inv_nr: 1, job_card_nr: 7, cid: 2 }
-	] });
-	await h.run();
-	assert.equal(h.state().status, 'SUCCESS', JSON.stringify(h.logs.slice(-3)));
-	assert.equal(h.state().tables[0].processed, 2);
-	assert.equal(h.state().tables[0].migrated, 1);
-	assert.equal(h.state().tables[0].skippedDuplicates, 1);
-	assert.equal(h.writes.length, 0);
-});
-
-test('filtered invoice keys import one header per number and use raw row offsets', async () => {
+test('accepted date-filter snapshot is used without fetching excluded source rows', async () => {
 	const h = harness({ filteredInvoiceKeys: [1], invoiceBatchSize: 1, invoiceRows: [
-		{ inv_nr: 1, job_card_nr: 0, cid: 1 },
-		{ inv_nr: 2, job_card_nr: 5, cid: 2 },
-		{ inv_nr: 1, job_card_nr: 7, cid: 3 },
-		{ inv_nr: 1, job_card_nr: 0, cid: 4 }
+		{ inv_nr: 1, job_card_nr: 7, cid: 3 }, { inv_nr: 2, job_card_nr: 5, cid: 2 }
 	] });
 	await h.run();
 	assert.equal(h.state().status, 'SUCCESS', JSON.stringify(h.logs.slice(-3)));
 	assert.deepEqual(h.targetInvoices, [{ invoice_nr: 1, job_number: 7, cid: 3 }]);
-	assert.equal(h.state().tables[0].total, 3);
-	assert.equal(h.state().tables[0].processed, 3);
-	assert.equal(h.state().tables[0].skippedDuplicates, 2);
-});
-
-test('preflight finds preferred duplicates beyond its page boundary', async () => {
-	for (const filteredInvoiceKeys of [undefined, [1]]) {
-		const h = harness({ filteredInvoiceKeys, invoiceBatchSize: 1000,
-			invoiceRows: [...Array.from({ length: 1000 }, () => ({ inv_nr: 1, job_card_nr: 0, cid: 1 })),
-				{ inv_nr: 1, job_card_nr: 99, cid: 2 }] });
-		await h.run();
-		assert.equal(h.state().status, 'SUCCESS', JSON.stringify(h.logs.slice(-3)));
-		assert.deepEqual(h.targetInvoices, [{ invoice_nr: 1, job_number: 99, cid: 2 }]);
-		assert.equal(h.state().tables[0].total, 1001);
-		assert.equal(h.state().tables[0].processed, 1001);
-		assert.equal(h.state().tables[0].skippedDuplicates, 1000);
-	}
-});
-
-test('linked invoice selection preserves offsets across multiple IN-list partitions', async () => {
-	const filteredInvoiceKeys = Array.from({ length: 1001 }, (_, index) => index + 1);
-	const h = harness({ filteredInvoiceKeys, invoiceBatchSize: 700, invoiceRows: [
-		{ inv_nr: 1001, job_card_nr: 0, cid: 99 },
-		...filteredInvoiceKeys.map(inv_nr => ({ inv_nr, job_card_nr: inv_nr + 10, cid: 1 }))
-	] });
-	await h.run();
-	assert.equal(h.state().status, 'SUCCESS', JSON.stringify(h.logs.slice(-3)));
-	assert.equal(h.targetInvoices.length, 1001);
-	assert.deepEqual(h.targetInvoices.find(row => row.invoice_nr === 1001), { invoice_nr: 1001, job_number: 1011, cid: 1 });
-	assert.equal(h.state().tables[0].total, 1002);
-	assert.equal(h.state().tables[0].processed, 1002);
-	assert.equal(h.state().tables[0].skippedDuplicates, 1);
+	assert.equal(h.sourceFetches.length, 0);
+	assert.equal(h.state().tables[0].total, 1);
 });

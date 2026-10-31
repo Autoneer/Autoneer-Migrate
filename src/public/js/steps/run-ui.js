@@ -167,12 +167,14 @@ class RunUI {
 		const glRebuildDone = this.isGLRebuildMarkedDone();
 
 		const glSection = needsGlRebuild ? `
-        <div class="execution-summary">
-          <h3>Accounting Prerequisite</h3>
+        <div class="execution-summary run-gl-card ${glRebuildDone ? 'is-ready' : 'is-required'}">
+          <div class="run-card-head">
+            <h3>Accounting Prerequisite</h3>
+            <span class="run-gl-status">${glRebuildDone ? 'Ready for this plan' : 'Required before GL posting runs'}</span>
+          </div>
           <p>${glRebuildDone
 				? 'GL accounts were rebuilt for this plan. You can start the migration.'
 				: 'This plan includes GL journal posting tables. Rebuild GL accounts before starting the migration so postings use the converted account numbers.'}</p>
-          <p><strong>Rebuild Status:</strong> ${glRebuildDone ? 'Ready for this plan' : 'Required before GL posting runs'}</p>
           <div class="execution-actions">
             <button class="btn btn-secondary" onclick="window.wizard.steps[3].component.rebuildGLAccounts(this)">
               ${glRebuildDone ? 'Rebuild GL Accounts Again' : 'Rebuild GL Accounts Now'}
@@ -180,26 +182,34 @@ class RunUI {
           </div>
         </div>` : '';
 
+		const cleanBefore = Object.values(this.plan.tableConfigs || {}).some(c => c && c.cleanBefore === true);
+		const dateFilter = config.transactionalDateFilter?.enabled && config.transactionalDateFilter?.startDate ? `On or after ${config.transactionalDateFilter.startDate}` : 'Off';
+		const summaryItems = [
+			['Plan', planName],
+			['Tables', tableCount],
+			['Batch Size', `${config.batchSize} rows`],
+			['Continue on Error', config.continueOnError ? 'Yes' : 'No'],
+			['Clean target before migrate', cleanBefore ? 'Yes' : 'No'],
+			['Transactional Date Filter', dateFilter]
+		];
+
 		return `
       <div class="run-pre-execution">
 
         <div class="execution-summary">
-          <h3>Plan Summary</h3>
-          <ul>
-						<li><strong>Plan:</strong> ${planName}</li>
-						<li><strong>Tables:</strong> ${tableCount}</li>
-						<li><strong>Batch Size:</strong> ${config.batchSize} rows</li>
-						<li><strong>Continue on Error:</strong> ${config.continueOnError ? 'Yes' : 'No'}</li>
-				<li><strong>Clean target before migrate:</strong> ${(() => { const anyClean = Object.values(this.plan.tableConfigs || {}).some(c => c && c.cleanBefore === true); return anyClean ? 'Yes' : 'No'; })()}</li>
-						<li><strong>Transactional Date Filter:</strong> ${config.transactionalDateFilter?.enabled && config.transactionalDateFilter?.startDate ? `On or after ${config.transactionalDateFilter.startDate}` : 'Off'}</li>
-          </ul>
+          <div class="run-card-head">
+            <h3>Plan Summary</h3>
+          </div>
+          <dl class="run-summary-grid">
+            ${summaryItems.map(([label, value]) => `<div><dt>${label}</dt><dd>${this.wizard.escapeHtml(String(value))}</dd></div>`).join('')}
+          </dl>
         </div>
 
         ${glSection}
 
-        <div class="execution-actions">
-          <button class="btn btn-primary btn-large" onclick="window.wizard.steps[3].component.startMigration()">
-            ▶  Start Migration
+        <div class="execution-actions run-start">
+          <button class="btn btn-primary" onclick="window.wizard.steps[3].component.startMigration()">
+            Start Migration
           </button>
         </div>
       </div>
@@ -231,34 +241,36 @@ class RunUI {
         
 		${currentStatus === 'ABORTING' ? `<div class="alert alert-warning">Stopping migration... (please wait)</div>` : ''}
 
-		<!-- Table Progress -->
-        <div class="table-progress">
-          <h3>Table Status</h3>
-          <p id="current-table-status" aria-live="polite">Preparing migration…</p>
-          <p class="progress-explanation">Tables run one at a time, in the order below. Processed rows include written, skipped, and failed records.</p>
-          <table class="status-table">
-            <thead>
-              <tr>
-                <th>Table</th>
-                <th>Status</th>
-                <th>Rows Processed</th>
-                <th>Progress</th>
-                <th>Time</th>
-              </tr>
-            </thead>
-            <tbody id="table-status-list">
-              ${this.renderTableStatus(tableResults)}
-            </tbody>
-          </table>
+		<div class="run-progress-layout">
+          <!-- Table Progress -->
+          <div class="table-progress">
+            <h3>Table Status</h3>
+            <p id="current-table-status" aria-live="polite">Preparing migration…</p>
+            <p class="progress-explanation">Every table is checked for data quality first, then tables run one at a time in the order below. Processed rows include written, skipped, and failed records.</p>
+            <table class="status-table">
+              <thead>
+                <tr>
+                  <th>Table</th>
+                  <th>Status</th>
+                  <th>Rows Processed</th>
+                  <th>Progress</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody id="table-status-list">
+                ${this.renderTableStatus(tableResults)}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Live Log -->
+          <aside class="live-log" aria-label="Live log">
+            <h3>Live Log</h3>
+            <p class="progress-explanation">One result per finished table. Row errors: <a href="/migration/history" target="_blank" rel="noopener">Migration History</a></p>
+            <div id="log-container" class="log-container" data-empty="Results appear here as each table finishes."></div>
+          </aside>
         </div>
-        
-        <!-- Live Log -->
-        <div class="live-log">
-          <h3>Live Log</h3>
-          <p class="progress-explanation">One result per completed or failed table. Detailed row errors are available in <a href="/migration/history" target="_blank" rel="noopener">Migration History</a>.</p>
-          <div id="log-container" class="log-container"></div>
-        </div>
-        
+
 				<div class="execution-actions">
 					<button class="btn btn-danger" onclick="window.wizard.steps[3].component.stopMigration()" ${currentStatus === 'ABORTING' ? 'disabled' : ''}>
 						■ Stop Migration
@@ -274,36 +286,42 @@ class RunUI {
 	renderCompleted() {
 		setTimeout(() => this._loadAndRenderRowErrors(), 0);
 		const glRebuildDone = this.isGLRebuildMarkedDone();
+		const tablesCompleted = Number(this.run.tablesCompleted || 0);
+		const stats = [
+			['Tables migrated', tablesCompleted.toLocaleString()],
+			['Rows migrated', Number(this.run.rowsMigrated || 0).toLocaleString()],
+			['Duration', this.formatDuration(this.run.duration)]
+		];
 		return `
-			<div class="run-completed">
-				<div style="display:flex;align-items:center;gap:0.5rem;" class="completed-header">
-					<div class="success-icon" style="font-size:1.6rem;line-height:1;">✓</div>
-					<h2 style="margin:0;">Migration Completed Successfully!</h2>
-				</div>
-				<p style="margin-top:0.5rem;">All tables have been migrated</p>
-        
-        <div class="completion-summary">
-          <div class="stat">
-		  <span>Tables Migrated</span>
-            <strong>${this.run.tablesCompleted || 0}</strong>
-          </div>
-          <div class="stat">
-		  <span>Total Rows</span>
-            <strong>${this.run.rowsMigrated || 0}</strong>
-          </div>
-          <div class="stat">
-		  <span>Duration</span>
-            <strong>${this.formatDuration(this.run.duration)}</strong>
+      <div class="run-completed">
+        <div class="run-result-banner">
+          <span class="run-result-icon" aria-hidden="true">✓</span>
+          <div>
+            <h2>Migration completed</h2>
+            <p>All ${tablesCompleted === 1 ? '1 table was' : `${tablesCompleted.toLocaleString()} tables were`} migrated to MySQL.</p>
           </div>
         </div>
-        
-        <div class="completion-actions">
-          <button class="btn btn-secondary" onclick="window.wizard.steps[3].component.rebuildGLAccounts(this)">
-            ${glRebuildDone ? 'Rebuild GL Accounts Again' : 'Rebuild GL Accounts'}
-          </button>
-          <button class="btn btn-primary" onclick="window.wizard.nextStep()">
-            Convert Account Numbers →
-          </button>
+
+        <dl class="run-summary-grid run-result-stats">
+          ${stats.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}
+        </dl>
+
+        <div class="execution-summary run-gl-card ${glRebuildDone ? 'is-ready' : 'is-required'}">
+          <div class="run-card-head">
+            <h3>Next: Convert Account Numbers</h3>
+            <span class="run-gl-status">${glRebuildDone ? 'GL accounts rebuilt' : 'GL rebuild not run for this plan'}</span>
+          </div>
+          <p>${glRebuildDone
+				? 'GL accounts are ready. Continue to Step 5 to convert account numbers to the new 4-digit GL accounts.'
+				: 'Rebuild GL accounts first, then continue to Step 5 to convert account numbers to the new 4-digit GL accounts.'}</p>
+          <div class="execution-actions">
+            <button class="btn btn-secondary" onclick="window.wizard.steps[3].component.rebuildGLAccounts(this)">
+              ${glRebuildDone ? 'Rebuild GL Accounts Again' : 'Rebuild GL Accounts'}
+            </button>
+            <button class="btn btn-primary" onclick="window.wizard.nextStep()">
+              Convert Account Numbers →
+            </button>
+          </div>
         </div>
 
         <div id="run-row-errors-container"></div>
@@ -371,7 +389,7 @@ class RunUI {
 	/**
 	 * Render table status rows
 	 */
-	renderTableStatus(tableResults) {
+	renderTableStatus(tableResults, auditing = this._auditing) {
 		// The runner can reorder dependencies; its snapshot is the execution order.
 		const rows = tableResults?.length ? tableResults : (this.plan?.tables || []).map(table => ({ table }));
 		return rows.map(result => {
@@ -379,6 +397,7 @@ class RunUI {
 			const raw = String(result.status || result.state || 'pending').toLowerCase();
 			const normalized = ({ success: 'completed', queued: 'pending', not_run: 'pending' })[raw] || raw;
 			const status = ['completed', 'pending', 'running', 'failed', 'skipped'].includes(normalized) ? normalized : 'pending';
+			if (auditing && status === 'pending') return this.renderAuditRow(tableName, result.audit);
 			const written = Number(result.rowsMigrated ?? result.migrated ?? result.rows_migrated ?? 0);
 			const skipped = Number(result.skippedDuplicates ?? result.rows_skipped_duplicates ?? 0);
 			const errors = Number(result.errors ?? result.rows_error ?? 0);
@@ -403,6 +422,56 @@ class RunUI {
         </tr>
       `;
 		}).join('');
+	}
+
+	/**
+	 * Render a table row while the pre-import data quality audit is running.
+	 * Rows read come from the source scan; the audit checks one table at a time.
+	 */
+	renderAuditRow(tableName, audit) {
+		const number = value => Number(value || 0).toLocaleString();
+		const scanned = Number(audit?.scanned || 0);
+		const total = audit?.total == null ? null : Number(audit.total);
+		const flagged = Number(audit?.flagged || 0);
+		const flaggedText = flagged ? `${number(flagged)} flagged for review` : 'no issues found';
+		let badge, rows, detail, percent;
+		if (!audit) {
+			badge = `<span class="status-badge status-pending">○ waiting to check</span>`;
+			rows = `0 / ${total == null ? '?' : number(total)}`;
+			detail = 'data quality check';
+			percent = 0;
+		} else if (audit.blocked) {
+			badge = `<span class="status-badge status-failed">✕ blocked</span>`;
+			rows = `${number(scanned)} checked`;
+			detail = 'definition issues · see the Data Quality report';
+			percent = 0;
+		} else if (audit.done) {
+			badge = `<span class="status-badge status-checked">✓ checked</span>`;
+			rows = `${number(scanned)} checked`;
+			detail = `${flaggedText}${total > scanned ? ` · ${number(total - scanned)} outside date scope` : ''}`;
+			percent = 100;
+		} else {
+			badge = `<span class="status-badge status-checking"><span class="dry-spinner" aria-hidden="true"></span> ${audit.phase === 'counting' ? 'counting rows' : 'checking'}</span>`;
+			rows = `${number(scanned)} / ${total == null ? '?' : number(total)}`;
+			detail = `rows read · ${flaggedText}`;
+			percent = total > 0 ? Math.min(100, Math.floor(scanned / total * 100)) : 0;
+		}
+		const state = audit?.blocked ? 'failed' : audit?.done ? 'checked' : audit ? 'checking' : 'pending';
+		return `
+        <tr class="table-status-audit table-status-${state}">
+          <td><strong>${this.wizard.escapeHtml(String(tableName).toUpperCase())}</strong></td>
+          <td>${badge}</td>
+          <td>${rows}
+            <small class="row-outcomes">${detail}</small>
+          </td>
+          <td>
+            <div class="mini-progress-bar" role="progressbar" aria-label="Rows checked for data quality" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}">
+              <div class="mini-progress-fill is-audit" style="width: ${percent}%"></div>
+            </div><small>${percent}%</small>
+          </td>
+          <td>—</td>
+        </tr>
+      `;
 	}
 
 	/**
@@ -631,6 +700,10 @@ class RunUI {
 			progressText.textContent = `Overall Progress: ${progress.percent || 0}%`;
 		}
 
+		// The audit runs before any table imports; rows show its progress until it finishes.
+		this._auditing = Boolean(progress.dataQualityProgress && !progress.dataQuality && String(progress.status).toUpperCase() === 'RUNNING'
+			&& !(progress.tables || []).some(table => table.status === 'running'));
+
 		// Update table status list
 		const tableList = document.getElementById('table-status-list');
 		if (tableList) {
@@ -643,6 +716,11 @@ class RunUI {
 			const phase = active?.phase === 'validating' ? 'Validating' : active?.phase === 'preparing' ? 'Preparing' : 'Migrating';
 			current.textContent = active ? `${phase}: ${String(active.table).toUpperCase()} · ${progress.tablesCompleted || 0} of ${progress.tablesTotal || 0} tables completed`
 				: progress.tablesTotal > 0 && progress.tablesCompleted === progress.tablesTotal ? 'Finalizing migration…' : 'Preparing the next table…';
+			if (this._auditing) {
+				const audit = progress.dataQualityProgress;
+				const position = audit.tableIndex && audit.tableCount ? ` (${audit.tableIndex} of ${audit.tableCount})` : '';
+				current.textContent = `Checking data quality: ${String(audit.table || audit.phase || 'all selected tables').replaceAll('_', ' ')}${position}${audit.scanned != null ? ` · ${Number(audit.scanned).toLocaleString()} rows scanned` : ''}`;
+			}
 		}
 
 		// Update elapsed time
@@ -687,11 +765,13 @@ class RunUI {
 		const table = singleLine(e.tableName || e.table);
 		if (!table) return null;
 		if (status === 'success') {
-			return { icon: '✓', text: `${table}: completed — inserted ${Number(e.inserted || 0).toLocaleString()}, updated ${Number(e.updated || 0).toLocaleString()}, skipped ${Number(e.skipped || 0).toLocaleString()}`, cls: 'log-success' };
+			const counts = [['inserted', e.inserted], ['updated', e.updated], ['skipped', e.skipped]].map(([label, value]) => [label, Number(value || 0)]);
+			const summary = counts.filter(([, value]) => value > 0).map(([label, value]) => `${value.toLocaleString()} ${label}`).join(' · ') || 'no rows';
+			return { icon: '✓', table, summary, text: `${table}: completed — ${counts.map(([label, value]) => `${label} ${value.toLocaleString()}`).join(', ')}`, cls: 'log-success' };
 		}
 		const errorCount = Number(e.errors) || Number(String(e.error || '').match(/(?:failed with|completed with) ([\d,]+) (?:row )?errors?/i)?.[1]?.replaceAll(',', '')) || 0;
 		const reason = errorCount > 0 ? `${errorCount.toLocaleString()} row error${errorCount === 1 ? '' : 's'}` : singleLine(e.error || 'Table migration failed').slice(0, 160);
-		return { icon: '✕', text: `${table}: failed — ${reason}. See Migration History for details.`, cls: 'log-error' };
+		return { icon: '✕', table, summary: `failed · ${reason}`, text: `${table}: failed — ${reason}. See Migration History for details.`, cls: 'log-error' };
 	}
 
 	/**
@@ -712,8 +792,10 @@ class RunUI {
 			if (this._loggedTables.has(tableKey)) continue;
 			this._loggedTables.add(tableKey);
 
+			// Compact entry: icon, table name with its outcome underneath, time on the right.
 			const el = document.createElement('div');
 			el.className = `log-entry ${formatted.cls}`;
+			el.title = formatted.text;
 
 			const iconSpan = document.createElement('span');
 			iconSpan.className = 'log-icon';
@@ -721,16 +803,21 @@ class RunUI {
 
 			const textSpan = document.createElement('span');
 			textSpan.className = 'log-text';
-			textSpan.textContent = formatted.text;
+			const nameEl = document.createElement('strong');
+			nameEl.textContent = formatted.table.toUpperCase();
+			const summaryEl = document.createElement('small');
+			summaryEl.textContent = formatted.summary;
+			textSpan.appendChild(nameEl);
+			textSpan.appendChild(summaryEl);
 
+			el.appendChild(iconSpan);
+			el.appendChild(textSpan);
 			if (e.timestamp) {
 				const tsSpan = document.createElement('span');
 				tsSpan.className = 'log-ts';
-				tsSpan.textContent = new Date(e.timestamp).toLocaleTimeString();
+				tsSpan.textContent = new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 				el.appendChild(tsSpan);
 			}
-			el.appendChild(iconSpan);
-			el.appendChild(textSpan);
 			container.appendChild(el);
 		}
 		container.scrollTop = container.scrollHeight;

@@ -221,38 +221,37 @@ class SchemaUI {
 
 		container.innerHTML = `
       <div class="schema-summary">
-        <h2>Schema Discovery Complete ✓</h2>
-        <p>Found tables in databases</p>
-        
-        ${firebirdWarning}
-        
-        <div class="schema-stats">
-          <div class="stat-card ${firebirdTables.length === 0 ? 'status-warning' : ''}">
-            <div class="stat-icon">🗄️</div>
-            <div class="stat-content">
-              <div class="stat-label">Firebird (Source)</div>
-              <div class="stat-value">${firebirdTables.length}</div>
-              <div class="stat-detail">tables</div>
-            </div>
+        <div class="schema-summary-header">
+          <div>
+            <h2>Schema Discovery Complete</h2>
+            <p>Tables found in the source and target databases</p>
           </div>
-          
-          <div class="stat-card">
-            <div class="stat-icon">🗃️</div>
-            <div class="stat-content">
-              <div class="stat-label">MySQL (Target)</div>
-              <div class="stat-value">${mysqlTables.length}</div>
-              <div class="stat-detail">tables</div>
-            </div>
+          <div class="schema-actions">
+            <button class="btn btn-secondary" onclick="window.wizard.steps[0].component.refresh()">
+              Refresh Schemas
+            </button>
+            <button class="btn btn-secondary" aria-expanded="false" aria-controls="schema-details" onclick="window.wizard.steps[0].component.showDetails(this)">
+              View Details
+            </button>
           </div>
         </div>
-        
-        <div class="schema-actions">
-          <button class="btn btn-secondary" onclick="window.wizard.steps[0].component.refresh()">
-            🔄 Refresh Schemas
-          </button>
-          <button class="btn btn-secondary" onclick="window.wizard.steps[0].component.showDetails()">
-            📋 View Details
-          </button>
+
+        ${firebirdWarning}
+
+        <div class="schema-stats">
+          <div class="stat-card ${firebirdTables.length === 0 ? 'status-warning' : ''}">
+            <div class="stat-content">
+              <div class="stat-label">Firebird (Source)</div>
+              <div class="stat-value">${firebirdTables.length} <span class="stat-detail">tables</span></div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-content">
+              <div class="stat-label">MySQL (Target)</div>
+              <div class="stat-value">${mysqlTables.length} <span class="stat-detail">tables</span></div>
+            </div>
+          </div>
         </div>
       </div>
       
@@ -403,15 +402,17 @@ class SchemaUI {
 	/**
 	 * Show/hide detailed view
 	 */
-	showDetails() {
+	showDetails(btn = window.event?.target?.closest('button')) {
 		const details = document.getElementById('schema-details');
 		if (details) {
 			const isHidden = details.style.display === 'none';
 			details.style.display = isHidden ? 'block' : 'none';
 
 			// Update button text
-			const btn = event.target;
-			btn.textContent = isHidden ? '📋 Hide Details' : '📋 View Details';
+			if (btn) {
+				btn.textContent = isHidden ? 'Hide Details' : 'View Details';
+				btn.setAttribute('aria-expanded', String(isHidden));
+			}
 		}
 	}
 
@@ -443,17 +444,17 @@ class SchemaUI {
 		if (!container) return;
 
 		container.innerHTML = `
-      <div class="error-state">
-        <div class="error-icon">⚠️</div>
+      <div class="error-state" role="alert">
+        <div class="error-icon" aria-hidden="true">!</div>
         <h3>Schema Discovery Failed</h3>
-        <p>${message}</p>
-        
+        <p>${this.wizard.escapeHtml(message)}</p>
+
         <div class="error-actions">
           <button class="btn btn-primary" onclick="window.wizard.steps[0].component.discover()">
-            🔄 Retry Discovery
+            Retry Discovery
           </button>
           <button class="btn btn-secondary" onclick="location.reload()">
-            🔄 Reload Page
+            Reload Page
           </button>
         </div>
         

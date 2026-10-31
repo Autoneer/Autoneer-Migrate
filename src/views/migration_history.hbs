@@ -48,7 +48,8 @@
 							<div class="gh-actions" style="display:flex;gap:8px;align-items:center;">
 								<button class="gh-btn" type="button" style="cursor: pointer;" data-action="view-results"
 									data-run-id="{{run_id}}">View Results</button>
-								<a class="gh-btn" href="/migration/history/{{run_id}}">View</a>
+								<button class="gh-btn" type="button" style="cursor: pointer;" data-action="view-log"
+									data-run-id="{{run_id}}">View log</button>
 								<form method="post" action="/migration/history/{{run_id}}/delete"
 									data-confirm="Delete run #{{run_id}} and all related records? This cannot be undone.">
 									<button class="gh-btn gh-btn-sm gh-danger" type="submit">Delete</button>

@@ -14,6 +14,7 @@ A guided 5-step wizard is available at **http://localhost:3000/wizard**.
 5. **View Results** — review statistics and errors
 
 ### Wizard Highlights (verified)
+- **Data Quality Preflight** — check every selected table, quarantine confirmed junk, and block unresolved data problems before import. See [data quality preflight](docs/data-quality-preflight.md).
 - **State Persistence** — progress is saved in localStorage
 - **Responsive UI** — layout includes mobile and tablet breakpoints
 - **Real-time Progress** — run progress polls every 2 seconds and auto-stops when complete

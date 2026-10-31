@@ -10,34 +10,40 @@
 		return;
 	}
 
+	const dialogEl = document.getElementById("test-result-dialog");
 	const titleEl = document.getElementById("test-result-title");
 	const messageEl = document.getElementById("test-result-message");
-	const toggleBtn = document.getElementById("test-result-toggle");
-	const detailsPanel = document.getElementById("test-result-details");
-	const detailsText = document.getElementById("test-result-details-text");
+	const detailsEl = document.getElementById("test-result-details");
+	const copyBtn = document.getElementById("test-result-copy");
 
+	const isError = payload.status === "error";
+	if (dialogEl) dialogEl.classList.add(isError ? "is-error" : "is-success");
 	if (titleEl) titleEl.textContent = payload.title || "Connection result";
 	if (messageEl) messageEl.textContent = payload.message || "";
-	if (detailsText) detailsText.value = payload.details || "";
 
-	const hasDetails = Boolean(payload.details);
-	if (!hasDetails && toggleBtn) {
-		toggleBtn.setAttribute("hidden", "true");
+	const details = payload.details || "";
+	if (details && detailsEl) {
+		window.DetailFields.render(detailsEl, details, { variant: isError ? "is-error" : "" });
+		detailsEl.removeAttribute("hidden");
 	}
 
-	if (toggleBtn && detailsPanel) {
-		toggleBtn.addEventListener("click", () => {
-			const isHidden = detailsPanel.hasAttribute("hidden");
-			if (isHidden) {
-				detailsPanel.removeAttribute("hidden");
-				toggleBtn.textContent = "Hide details";
-			} else {
-				detailsPanel.setAttribute("hidden", "true");
-				toggleBtn.textContent = "Show details";
+	// Error output is worth copying into a support message; success details are short.
+	if (copyBtn && details && isError && navigator.clipboard) {
+		copyBtn.removeAttribute("hidden");
+		copyBtn.addEventListener("click", async () => {
+			try {
+				await navigator.clipboard.writeText(details);
+				copyBtn.textContent = "Copied";
+			} catch (err) {
+				copyBtn.textContent = "Copy failed";
 			}
+			setTimeout(() => {
+				copyBtn.textContent = "Copy details";
+			}, 1500);
 		});
 	}
 
 	modal.classList.add("show");
 	modal.setAttribute("aria-hidden", "false");
+	modal.querySelector(".btn.primary")?.focus();
 })();

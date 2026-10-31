@@ -15,6 +15,7 @@
 	const runWarning = document.getElementById("conn-warning");
 	const runWarningText = document.getElementById("conn-warning-text");
 	const progressEl = document.getElementById("progress");
+	const startNewBtn = document.getElementById("btn-start-new-migration");
 
 	let consecutiveFailures = 0;
 	let abortInProgress = false;
@@ -41,7 +42,13 @@
 		if (lower) {
 			el.classList.add(lower);
 		}
-		el.textContent = `${name}: ${formatStatusLabel(status)}`;
+		el.textContent = name ? `${name}: ${formatStatusLabel(status)}` : formatStatusLabel(status);
+	};
+
+	// Only offered once both connections pass; the wizard page has its own Reset Wizard button.
+	const setStartNewVisible = (bothConnected) => {
+		if (!startNewBtn) return;
+		startNewBtn.hidden = !bothConnected || document.body.dataset.page === "wizard";
 	};
 
 	const openModal = (target) => {
@@ -63,10 +70,10 @@
 	};
 
 	const updateModal = (data, ts) => {
-		if (firebirdStatusEl) firebirdStatusEl.textContent = formatStatusLabel(data.firebird?.status);
-		if (firebirdDetailsEl) firebirdDetailsEl.textContent = data.firebird?.details || data.firebird?.message || "";
-		if (mysqlStatusEl) mysqlStatusEl.textContent = formatStatusLabel(data.mysql?.status);
-		if (mysqlDetailsEl) mysqlDetailsEl.textContent = data.mysql?.details || data.mysql?.message || "";
+		setBadge(firebirdStatusEl, null, data.firebird?.status);
+		window.DetailFields.render(firebirdDetailsEl, data.firebird?.details || data.firebird?.message || "");
+		setBadge(mysqlStatusEl, null, data.mysql?.status);
+		window.DetailFields.render(mysqlDetailsEl, data.mysql?.details || data.mysql?.message || "");
 		if (lastCheckedEl) lastCheckedEl.textContent = ts || new Date().toLocaleString();
 	};
 
@@ -130,6 +137,7 @@
 		setBadge(firebirdBadge, "Firebird", data.firebird?.status || "");
 		const mysqlLabel = data.mysql?.schemaName ? `MySQL (${data.mysql.schemaName})` : "MySQL";
 		setBadge(mysqlBadge, mysqlLabel, data.mysql?.status || "");
+		setStartNewVisible(data.firebird?.status === "CONNECTED" && data.mysql?.status === "CONNECTED");
 		updateModal(data, data.ts ? new Date(data.ts).toLocaleString() : null);
 
 		if (isRunActive()) {
@@ -150,6 +158,7 @@
 	const applyFailure = () => {
 		setBadge(firebirdBadge, "Firebird", "DISCONNECTED");
 		setBadge(mysqlBadge, "MySQL", "DISCONNECTED");
+		setStartNewVisible(false);
 		updateModal(
 			{
 				firebird: { status: "DISCONNECTED", message: "Unable to check status" },
@@ -200,8 +209,18 @@
 	});
 
 	if (recheckBtn) {
-		recheckBtn.addEventListener("click", () => {
-			fetchConnections();
+		recheckBtn.addEventListener("click", async () => {
+			if (recheckBtn.disabled) return;
+			recheckBtn.disabled = true;
+			recheckBtn.classList.add("is-loading");
+			recheckBtn.textContent = "Checking...";
+			try {
+				await fetchConnections();
+			} finally {
+				recheckBtn.disabled = false;
+				recheckBtn.classList.remove("is-loading");
+				recheckBtn.textContent = "Recheck now";
+			}
 		});
 	}
 

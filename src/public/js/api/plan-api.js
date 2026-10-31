@@ -138,6 +138,70 @@ class PlanAPI {
 	}
 
 	/**
+	 * Plan-level dry run that reports each table as soon as it is checked.
+	 * @param {string} id - Plan ID
+	 * @param {Function} onEvent - Called with { type: 'start', tables } and { type: 'table', table }
+	 * @returns {Promise<Object>} The final results (same shape as dryRun)
+	 */
+	async dryRunStream(id, onEvent = () => {}) {
+		const response = await fetch(`${this.client.baseURL}/plans/${encodeURIComponent(id)}/dry-run`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ stream: true })
+		});
+		if (!response.ok || !response.body) {
+			const body = await response.json().catch(() => ({}));
+			throw new Error(body?.error?.message || `Dry run failed (${response.status})`);
+		}
+		const reader = response.body.getReader();
+		const decoder = new TextDecoder();
+		let buffer = '';
+		for (;;) {
+			const { value, done } = await reader.read();
+			buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+			let newline;
+			while ((newline = buffer.indexOf('\n')) >= 0) {
+				const line = buffer.slice(0, newline).trim();
+				buffer = buffer.slice(newline + 1);
+				if (!line) continue;
+				const event = JSON.parse(line);
+				if (event.type === 'done') return event.results;
+				if (event.type === 'error') throw new Error(event.error || 'Dry run failed');
+				onEvent(event);
+			}
+			if (done) throw new Error('Dry run ended without a result');
+		}
+	}
+
+	async auditDataQuality(id) {
+		try { return await this.client.post(`/plans/${id}/data-quality`, {}, { maxRetries: 0 }); }
+		catch (err) {
+			// Another tab may have started a scan after our active-scan lookup.
+			if (err.status === 409 && err.data?.auditId) return { auditId: err.data.auditId, resumed: true };
+			throw err;
+		}
+	}
+
+	async getActiveDataQualityAudit() {
+		const response = await this.client.get('/quality-audits/active');
+		return response.report;
+	}
+
+	async getLatestDataQualityAudit(planId) {
+		const response = await this.client.get(`/plans/${encodeURIComponent(planId)}/data-quality`);
+		return response.report;
+	}
+
+	async getDataQualityAudit(id) {
+		const response = await this.client.get(`/quality-audits/${encodeURIComponent(id)}`);
+		return response.report;
+	}
+
+	async stopDataQualityAudit(id) {
+		return this.client.post(`/quality-audits/${encodeURIComponent(id)}/stop`, {}, { maxRetries: 0 });
+	}
+
+	/**
 	 * Get estimated migration time and resources
 	 * @param {string} id - Plan ID
 	 * @returns {Promise<Object>} Estimation data

@@ -131,6 +131,8 @@ class PlanUI {
 		this.wizard.renderNavigation();
 
 		this.render();
+		// Reattach to server work without blocking wizard navigation on its completion.
+		void this.runDataQualityAudit({ resumeOnly: true });
 	}
 
 	/**
@@ -148,87 +150,70 @@ class PlanUI {
 
 		container.innerHTML = `
       <div class="plan-builder">
-        <h2>Create Migration Plan</h2>
+        <div class="plan-builder-head"><h2>Create Migration Plan</h2><button type="button" class="btn btn-secondary btn-sm" id="plan-toggle-all">Collapse all</button></div>
 
         
         <!-- Plan Settings -->
-        <div class="plan-settings">
-					<div class="form-group" style="display:flex;flex-direction:column;">
-						<div style="display:flex;align-items:center;gap:0.5rem;">
-							<label for="plan-name" style="margin:0;white-space:nowrap;">Plan Name:</label>
-							<input type="text" id="plan-name" class="form-control" 
-									 value="${planName}" 
-									 placeholder="Enter plan name" style="flex:1;min-width:160px;">
+        <details class="plan-settings" id="plan-settings-section" ${this.settingsCollapsed ? '' : 'open'}>
+          <summary class="plan-settings-summary">
+            <span class="table-plan-title">Plan Settings</span>
+            <span class="table-plan-chevron" aria-hidden="true"></span>
+          </summary>
+          <div class="plan-settings-body">
+					<div class="plan-settings-grid">
+						<div class="form-group">
+							<label for="plan-name">Plan Name</label>
+							<input type="text" id="plan-name" class="form-control" value="${planName}" placeholder="Enter plan name">
+						</div>
+						<div class="form-group">
+							<label for="mapping-profile-display">Mapping Profile</label>
+							<input type="text" id="mapping-profile-display" class="form-control" value="${mappingProfileName}" disabled>
+							<small>Using the profile saved in Step 2</small>
 						</div>
 					</div>
 
-					<div class="form-group" style="display:flex;flex-direction:column;">
-						<div style="display:flex;align-items:center;gap:0.5rem;">
-							<label for="mapping-profile-display" style="margin:0;white-space:nowrap;">Mapping Profile:</label>
-							<input type="text" id="mapping-profile-display" class="form-control" 
-									 value="${mappingProfileName}" disabled style="flex:1;min-width:160px;">
+					<div class="plan-settings-grid plan-settings-grid-3">
+						<div class="form-group">
+							<label for="batch-size">Batch Size</label>
+							<input type="number" id="batch-size" class="form-control" value="${config.batchSize}" min="100" max="10000" step="100">
+							<small>Rows migrated per batch</small>
 						</div>
-						<small style="margin-top:0.4rem;">Using the profile saved in Step 2</small>
+						<label class="plan-option">
+							<input type="checkbox" id="continue-on-error" ${config.continueOnError ? 'checked' : ''}>
+							<span><strong>Continue on Error</strong><small>Keep migrating other tables if one fails</small></span>
+						</label>
+						<label class="plan-option">
+							<input type="checkbox" id="validate-data" ${config.validateData ? 'checked' : ''}>
+							<span><strong>Validate Data</strong><small>Check data types and constraints</small></span>
+						</label>
 					</div>
-          
-					<div class="form-row" style="display:flex;gap:1rem;flex-wrap:wrap;">
-						<div class="form-group" style="flex:1;min-width:220px;display:flex;flex-direction:column;">
-							<div style="display:flex;align-items:center;gap:0.5rem;">
-								<label for="batch-size" style="margin:0;white-space:nowrap;">Batch Size:</label>
-								<input type="number" id="batch-size" class="form-control" 
-																					 value="${config.batchSize}" 
-											 min="100" max="10000" step="100" style="flex:1;min-width:80px;">
-							</div>
-							<small style="margin-top:0.4rem;">Number of rows to migrate per batch</small>
-						</div>
-            
-						<div class="form-group" style="flex:1;min-width:220px;display:flex;flex-direction:column;">
-							<label style="display:inline-flex;align-items:center;">
-								<input type="checkbox" id="continue-on-error" 
-											${config.continueOnError ? 'checked' : ''} style="margin-right:0.5rem;">
-								Continue on Error
-							</label>
-							<small style="margin-top:0.4rem;">Keep migrating other tables if one fails</small>
-						</div>
-            
-						<div class="form-group" style="flex:1;min-width:220px;display:flex;flex-direction:column;">
-							<label style="display:inline-flex;align-items:center;">
-								<input type="checkbox" id="validate-data" 
-																						 ${config.validateData ? 'checked' : ''} style="margin-right:0.5rem;">
-								Validate Data
-							</label>
-							<small style="margin-top:0.4rem;">Validate data types and constraints</small>
-						</div>
-					</div> 
 
-						<div class="form-row" style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;">
-							<div class="form-group" style="flex:1;min-width:220px;display:flex;flex-direction:column;">
-								<label style="display:inline-flex;align-items:center;">
-									<input type="checkbox" id="transactional-date-filter-enabled"
-										${config.transactionalDateFilter?.enabled ? 'checked' : ''} style="margin-right:0.5rem;">
-									Only Migrate Transactional Data After Date
-								</label>
-								<small style="margin-top:0.4rem;">Filters only transactional tables such as jobs, invoices, and payments. Master data like customers, stock, and accounts is not filtered.</small>
-							</div>
-
-							<div class="form-group" style="flex:1;min-width:220px;display:flex;flex-direction:column;">
-								<div style="display:flex;align-items:center;gap:0.5rem;">
-									<label for="transactional-date-filter-start" style="margin:0;white-space:nowrap;">Start Date:</label>
-									<input type="date" id="transactional-date-filter-start" class="form-control"
-										value="${config.transactionalDateFilter?.startDate || ''}"
-										${config.transactionalDateFilter?.enabled ? '' : 'disabled'}
-										style="flex:1;min-width:160px;">
-								</div>
-								<small style="margin-top:0.4rem;">When enabled, only transactional records on or after this date are imported.</small>
-							</div>
+					<div class="plan-date-filter">
+						<label class="plan-option">
+							<input type="checkbox" id="transactional-date-filter-enabled" ${config.transactionalDateFilter?.enabled ? 'checked' : ''}>
+							<span>
+								<strong>Only Migrate Transactional Data From Date</strong>
+								<small>Jobs, invoices, payments and other transactional tables only import records on or after the start date. Master data such as customers, stock and accounts is always migrated in full.</small>
+							</span>
+						</label>
+						<div class="form-group">
+							<label for="transactional-date-filter-start">Start Date</label>
+							<input type="date" id="transactional-date-filter-start" class="form-control"
+								value="${config.transactionalDateFilter?.startDate || ''}"
+								${config.transactionalDateFilter?.enabled ? '' : 'disabled'}>
 						</div>
-        </div>
+					</div>
+          </div>
+        </details>
         
         <!-- Table Selection and Order -->
-				<div class="table-plan">
-          <h3>Tables to Migrate (in order)</h3>
-          <p class="help-text">Drag to reorder tables or use ↑↓ buttons</p>
-          
+				<details class="table-plan" id="table-plan-section" ${this.tablesCollapsed ? '' : 'open'}>
+          <summary>
+            <span class="table-plan-title">Tables to Migrate (in order)</span>
+            <span class="table-plan-count">${tables.length} table${tables.length === 1 ? '' : 's'}</span>
+            <span class="table-plan-chevron" aria-hidden="true"></span>
+          </summary>
+
           <table class="plan-table">
             <thead>
               <tr>
@@ -244,21 +229,39 @@ class PlanUI {
 							${this.renderPlanTables(tables)}
             </tbody>
           </table>
-        </div>
-        
+        </details>
+
+        <details class="dry-run-section plan-check-card plan-section" id="check-section" ${this.checkCollapsed ? '' : 'open'}>
+          <summary class="plan-check-header">
+            <div>
+              <h3>Check and Clean Migration Data</h3>
+              <p>Check every selected table and its relationships. Confirmed junk is quarantined; records needing repair stop the migration. The legacy database stays intact.</p>
+              <small>Migration repeats this full check and imports the audited snapshot. The date filter applies to the records checked.</small>
+            </div>
+            <button id="data-quality-scan" class="btn btn-primary" onclick="window.wizard.steps[2].component.runDataQualityAudit()" ${this.auditRunning ? 'disabled' : ''}>
+              ${this.auditRunning ? 'Scan in progress…' : 'Check All Selected Tables'}
+            </button>
+            <span class="table-plan-chevron" aria-hidden="true"></span>
+          </summary>
+          <div id="data-quality-results" aria-live="polite">${this.renderDataQualityReport()}</div>
+        </details>
+
         <!-- Dry Run Section -->
-        <div class="dry-run-section">
-          <h3>Test Migration (Dry Run)</h3>
-          <p>Run a simulation to validate the plan without migrating data</p>
-          
-          <button class="btn btn-secondary" onclick="window.wizard.steps[2].component.runDryRun()">
-            🧪 Run Dry Run
-          </button>
-          
+        <details class="dry-run-section plan-check-card plan-section" id="dry-run-card" ${this.dryRunCollapsed ? '' : 'open'}>
+          <summary class="plan-check-header">
+            <div>
+              <h3>Test Migration (Dry Run)</h3>
+              <p>Check a few sample rows per table without migrating data. Use Check All Selected Tables above to audit every record.</p>
+            </div>
+            <button class="btn btn-secondary" id="dry-run-btn" onclick="window.wizard.steps[2].component.runDryRun()">
+              Run Dry Run
+            </button>
+            <span class="table-plan-chevron" aria-hidden="true"></span>
+          </summary>
           <div id="dry-run-results" style="display: none;">
             ${this.renderDryRunResults()}
           </div>
-        </div>
+        </details>
         
         <!-- Validation Summary -->
         <div id="plan-validation" class="validation-summary"></div>
@@ -348,6 +351,26 @@ class PlanUI {
 	 */
 	attachEventListeners() {
 		this.plan.config = this.getDefaultPlanConfig(this.plan.config || {});
+
+		// The scan result is redrawn often; remember whether it was folded.
+		document.getElementById('data-quality-results')?.addEventListener('toggle', event => {
+			if (event.target.id === 'quality-result') this.resultCollapsed = !event.target.open;
+		}, true);
+
+		// Remember which page sections are collapsed across re-renders, and drive the Collapse all / Expand all button.
+		const sections = { 'plan-settings-section': 'settingsCollapsed', 'table-plan-section': 'tablesCollapsed', 'check-section': 'checkCollapsed', 'dry-run-card': 'dryRunCollapsed' };
+		const toggleAll = document.getElementById('plan-toggle-all');
+		const visibleSections = () => Object.keys(sections).map(id => document.getElementById(id)).filter(section => section && section.offsetParent !== null);
+		const syncToggleAll = () => { if (toggleAll) toggleAll.textContent = visibleSections().some(section => section.open) ? 'Collapse all' : 'Expand all'; };
+		for (const [id, flag] of Object.entries(sections)) {
+			const section = document.getElementById(id);
+			section?.addEventListener('toggle', () => { this[flag] = !section.open; syncToggleAll(); });
+		}
+		toggleAll?.addEventListener('click', () => {
+			const open = !visibleSections().some(section => section.open);
+			for (const section of visibleSections()) section.open = open;
+		});
+		syncToggleAll();
 
 		// Plan name
 		const planName = document.getElementById('plan-name');
@@ -570,7 +593,19 @@ class PlanUI {
 	 * Run dry-run simulation
 	 */
 	async runDryRun() {
-		this.wizard.showLoading('Running dry-run simulation...');
+		if (this.dryRunLive) return;
+		// Open the card if it was folded, so the progress is visible.
+		const card = document.getElementById('dry-run-card');
+		if (card && !card.open) card.open = true;
+		// Show the table list straight away; statuses fill in as the server checks each table.
+		const button = document.getElementById('dry-run-btn');
+		if (button) { button.disabled = true; button.textContent = 'Running…'; }
+		const planTables = (this.plan?.tables || []).map(t => String(typeof t === 'string' ? t : (t?.targetTable || t?.table || t?.value || '')).toUpperCase()).filter(Boolean);
+		this.dryRunLive = { tables: planTables, results: new Map(), started: false };
+		this.drawDryRunLive();
+		// Bring the card to the top of the window (after the table list is drawn, so the page is tall enough to scroll that far).
+		const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+		card?.scrollIntoView?.({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
 
 		try {
 			// CRITICAL: Determine mappingProfileId with strict precedence
@@ -697,110 +732,369 @@ class PlanUI {
 			}
 
 			// Run dry-run (without tableName for plan-level dry run)
-			this.dryRunResults = await this.api.dryRun(planId);
+			// Stream the plan-level dry run so each table's status appears as soon as it is checked.
+			this.dryRunResults = await this.api.dryRunStream(planId, event => {
+				if (event.type === 'start') this.dryRunLive.tables = event.tables;
+				if (event.type === 'table') this.dryRunLive.results.set(event.table.tableName, event.table);
+				this.dryRunLive.started = true;
+				this.drawDryRunLive();
+			});
+			this.dryRunLive = null;
 
 			// Render results
 			const resultsDiv = document.getElementById('dry-run-results');
 			if (resultsDiv) {
 				resultsDiv.innerHTML = this.renderDryRunResults();
 				resultsDiv.style.display = 'block';
-				resultsDiv.scrollIntoView({ behavior: 'smooth' });
 			}
 
 		} catch (err) {
 			console.error('Dry run failed:', err);
 			this.wizard.showError(`Dry run failed: ${err.message}`);
 		} finally {
+			// Early returns and failures leave the live list behind; go back to the last complete result (or nothing).
+			if (this.dryRunLive) {
+				this.dryRunLive = null;
+				const resultsDiv = document.getElementById('dry-run-results');
+				if (resultsDiv) {
+					resultsDiv.innerHTML = this.dryRunResults ? this.renderDryRunResults() : '';
+					resultsDiv.style.display = this.dryRunResults ? 'block' : 'none';
+				}
+			}
 			this.wizard.hideLoading();
+			const button = document.getElementById('dry-run-btn');
+			if (button) { button.disabled = false; button.textContent = 'Run Dry Run'; }
 		}
+	}
+
+	/**
+	 * Draw the dry run while it runs: the table list with a status per table, filled in as results arrive.
+	 */
+	drawDryRunLive() {
+		const resultsDiv = document.getElementById('dry-run-results');
+		const live = this.dryRunLive;
+		if (!resultsDiv || !live) return;
+		const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+		const done = live.results.size;
+		const total = live.tables.length;
+		const failed = [...live.results.values()].filter(result => result.errors?.length);
+		resultsDiv.style.display = 'block';
+		resultsDiv.innerHTML = `<div class="dry-run-results dry-run-summary dry-run-live" role="status">
+			<div class="quality-record-progress"><span><strong>${live.started ? `Checking ${Math.min(done + 1, total)} of ${total} tables` : 'Saving the plan…'}</strong></span><strong>${total ? Math.round(done / total * 100) : 0}%</strong></div>
+			<div class="qbar" role="progressbar" aria-label="Dry run progress" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${done}"><span style="--from:${total ? (Math.max(0, done - 1) / total * 100).toFixed(2) : 0}%;--to:${total ? (done / total * 100).toFixed(2) : 0}%"></span></div>
+			${failed.length ? `<ul class="dry-run-issues errors">${failed.flatMap(result => result.errors.map(message => `<li><strong>${escape(result.tableName)}</strong> ${escape(message)}</li>`)).join('')}</ul>` : ''}
+			${this.dryRunTable(live.tables, live.results, live.started ? done : -1)}
+		</div>`;
 	}
 
 	/**
 	 * Render dry-run results
 	 */
+	async runDataQualityAudit({ resumeOnly = false } = {}) {
+		if (this.auditRunning) return;
+		// A started scan opens its card if it was folded, so the progress is visible.
+		const checkSection = !resumeOnly && typeof document.getElementById === 'function' ? document.getElementById('check-section') : null;
+		if (checkSection && !checkSection.open) checkSection.open = true;
+		const previousReport = this.dataQualityReport;
+		this.auditRunning = true;
+		this.auditStopRequested = false;
+		this.auditStopError = null;
+		this.activeAuditId = null;
+		this.auditResumed = false;
+		this.auditStartedAt = Date.now();
+		this.auditUpdatedAt = null;
+		this.dataQualityReport = { status: 'running', progress: { phase: 'finding_active' }, tables: [] };
+		const draw = () => this.drawDataQualityState();
+		draw();
+		if (!resumeOnly) document.getElementById('data-quality-results')?.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
+		const ticker = setInterval(draw, 1000);
+		let auditId;
+		try {
+			const active = await this.api.getActiveDataQualityAudit?.();
+			if (active) {
+				auditId = active.id;
+				this.activeAuditId = auditId;
+				this.auditResumed = true;
+				this.dataQualityReport = active;
+				this.auditStartedAt = Date.parse(active.createdAt) || this.auditStartedAt;
+				this.auditStopRequested ||= active.status === 'stopping';
+				draw();
+				if (!['running', 'stopping'].includes(active.status)) return;
+			} else if (resumeOnly) {
+				const params = typeof URLSearchParams === 'function' ? new URLSearchParams(window.location?.search || '') : null;
+				let rememberedId;
+				try { rememberedId = window.sessionStorage?.getItem(`migration-audit:${this.plan?.id}`); } catch { /* Storage can be disabled. Server history still works. */ }
+				const returnedId = params?.get('audit') || rememberedId;
+				const saved = this.plan?.id ? await this.api.getLatestDataQualityAudit?.(this.plan.id) : null;
+				// Explicit return links also recover reports created before plan-linked history existed.
+				const returned = !saved && returnedId ? await this.api.getDataQualityAudit(returnedId).catch(err => { if (err.status === 404) return null; throw err; }) : null;
+				this.dataQualityReport = saved || (returned && (returned.planId == null || String(returned.planId) === String(this.plan?.id)) ? { ...returned, settingsChanged: true } : null) || (['ready', 'blocked', 'cancelled', 'failed'].includes(previousReport?.status) ? previousReport : null);
+				if (this.dataQualityReport && params?.get('decisionSaved')) this.dataQualityReport.settingsChanged = true;
+				return;
+			} else {
+			this.dataQualityReport.progress = { phase: 'saving_plan' };
+			draw();
+			// Save inside the guarded operation so validation and save failures are visible here.
+			if (!await this.onNext({ inline: true })) {
+				this.dataQualityReport = { status: 'not_started', error: this.planSaveError || 'The plan could not be saved. Check the plan name, selected tables and saved mapping, then try again.' };
+				return;
+			}
+			if (this.auditStopRequested) {
+				this.dataQualityReport = { status: 'cancelled' };
+				return;
+			}
+			this.dataQualityReport.progress = { phase: 'starting' };
+			draw();
+			const started = await this.api.auditDataQuality(this.plan.id);
+			auditId = started.auditId;
+			this.auditResumed = !!started.resumed;
+			this.activeAuditId = auditId;
+			}
+			if (this.auditStopRequested) await this.stopDataQualityAudit(true);
+			do {
+				this.dataQualityReport = await this.api.getDataQualityAudit(auditId);
+				this.auditStartedAt = Date.parse(this.dataQualityReport.createdAt) || this.auditStartedAt;
+				this.auditUpdatedAt = Date.now();
+				draw();
+				if (!['running', 'stopping'].includes(this.dataQualityReport.status)) break;
+				await new Promise(resolve => setTimeout(resolve, 1500));
+			} while (true);
+		} catch (err) {
+			this.dataQualityReport = { ...this.dataQualityReport, id: auditId, status: auditId ? 'connection_lost' : 'not_started', error: err?.message || 'The scan request failed without an error message. Please try again.' };
+		} finally {
+			clearInterval(ticker);
+			this.auditRunning = false;
+			if (this.plan?.id && this.dataQualityReport?.id && ['ready', 'blocked'].includes(this.dataQualityReport.status)) {
+				try { window.sessionStorage?.setItem(`migration-audit:${this.plan.id}`, this.dataQualityReport.id); } catch { /* Server history remains available. */ }
+			}
+			draw();
+		}
+	}
+
+	drawDataQualityState() {
+		const container = document.getElementById('data-quality-results');
+		if (container) container.innerHTML = this.renderDataQualityReport();
+		const button = document.getElementById('data-quality-scan');
+		if (button) {
+			button.disabled = this.auditRunning;
+			button.textContent = this.auditRunning ? this.auditStopRequested ? 'Stopping…' : 'Scan in progress…' : 'Check All Selected Tables';
+		}
+	}
+
+	async confirmBulkExclusion(count) {
+		const records = count.toLocaleString();
+		if (!window.Modal?.custom) {
+			return window.confirm(`Exclude ${records} unresolved source records from the migration and rescan?\n\n• Any unresolved records the next scan finds are excluded too.\n• Every table switches to insert-only: existing target records are kept and no table is emptied first.\n• Financial transactions may be excluded, which can change opening balances. Add missing parent tables in Step 2 first.\n\nYour legacy database is not changed, and excluded records stay available for recovery.`);
+		}
+		return window.Modal.custom({
+			title: 'Exclude unresolved records from this migration?',
+			type: 'warning',
+			size: 'md',
+			confirmText: 'Exclude records and rescan',
+			cancelText: 'Keep reviewing',
+			contentHTML: `<div class="bulk-exclude">
+				<p class="bulk-lead"><strong>${records} source records</strong> still need a decision. This leaves them out of the migration instead of repairing them.</p>
+				<h4>What happens</h4>
+				<ol>
+					<li>The ${records} blocked records are excluded, along with any unresolved records the next scan finds.</li>
+					<li>Every table switches to insert-only: existing target records are kept and no table is emptied first.</li>
+					<li>A new full scan starts straight away so you can review the new totals.</li>
+				</ol>
+				<h4>Before you continue</h4>
+				<ul class="bulk-warn">
+					<li>Excluded records can include financial transactions, which can change opening balances.</li>
+					<li>If records are blocked because a parent table is missing, add that table in Step 2 first.</li>
+				</ul>
+				<p class="bulk-safe">Your legacy database is not changed, and excluded records stay available for recovery.</p>
+			</div>`,
+			// Modal focuses the confirm button after 100ms; move focus to the safe choice for this destructive action.
+			onMount: overlay => setTimeout(() => overlay.querySelector('.modal-cancel')?.focus(), 150)
+		});
+	}
+
+	async setUnresolvedPolicy(exclude) {
+		if (this.auditRunning) return;
+		const count = this.dataQualityReport?.totals?.review || 0;
+		if (exclude && !await this.confirmBulkExclusion(count)) return;
+		this.plan.config ||= {};
+		this.plan.config.dataQuality = { ...this.plan.config.dataQuality, excludeUnresolved: exclude };
+		if (exclude) {
+			// The confirmed bulk action explicitly retains destination records.
+			this.plan.tableConfigs ||= {};
+			for (const table of this.plan.tables || []) this.plan.tableConfigs[table] = { ...this.plan.tableConfigs[table], cleanBefore: false, mode: 'INSERT', onDuplicate: 'SKIP' };
+		}
+		await this.runDataQualityAudit();
+	}
+
+	async stopDataQualityAudit(dispatchQueued = false) {
+		if (!this.auditRunning || (this.auditStopRequested && !dispatchQueued)) return;
+		this.auditStopRequested = true;
+		this.auditStopError = null;
+		this.drawDataQualityState();
+		// If the start request is in flight, send the stop as soon as its ID arrives.
+		if (!this.activeAuditId) return;
+		try {
+			await this.api.stopDataQualityAudit(this.activeAuditId);
+		} catch (err) {
+			this.auditStopRequested = false;
+			this.auditStopError = `Could not request stop: ${err?.message || 'No error details were returned'}. The scan may still be running; try Stop Scan again.`;
+		}
+		this.drawDataQualityState();
+	}
+
+	renderDataQualityReport() {
+		const report = this.dataQualityReport;
+		if (!report) return '<p class="quality-idle">No scan run yet. Click Check All Selected Tables to see which records can migrate and which need attention. This check does not import data or change the legacy database.</p>';
+		const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+		if (report.status === 'cancelled') return '<div class="quality-progress" role="status"><p><strong>Scan stopped</strong></p><p>No data was imported or deleted. This scan is incomplete and cannot be used as a migration result.</p><p>Click Check All Selected Tables to start a new scan from the beginning.</p></div>';
+		if (['running', 'stopping'].includes(report.status)) {
+			const stopping = this.auditStopRequested || report.status === 'stopping';
+			const progress = report.progress || {};
+			const phases = { saving_plan: 'Saving your current plan', starting: 'Starting the scan', target_metadata: 'Reading target database rules', connecting_source: 'Connecting to the legacy database', table_metadata: 'Checking table columns and mappings', date_scope: 'Preparing the selected date range', account_mapping: 'Preparing account number mappings', collecting_seed_keys: 'Finding records in the selected date range', seed_keys_collected: 'Date range records found', link_traversal: 'Finding linked records', link_traversal_table: 'Finding linked records', link_traversal_converged: 'Date range links prepared', validating_definition: 'Checking required fields and mappings', counting: 'Counting source records', reading: 'Reading and checking source records', validating_rows: 'Checking required values, types and duplicates', table_blocked: 'Table needs mapping repairs', scan_complete: 'Row scan complete — relationship checks follow', target_keys: 'Checking keys against existing target records', parent_keys: 'Loading related record keys', existing_children: 'Checking existing dependent records', checking_relationships: 'Checking links between records', saving_quarantine: 'Saving accepted and excluded records' };
+			const phase = progress.phase === 'finding_active' ? 'Looking for an existing scan' : phases[progress.phase] || (progress.table ? 'Checking records' : 'Preparing database checks');
+			const measured = progress.total != null && Number.isFinite(Number(progress.total)) && Number(progress.total) >= 0;
+			const total = measured ? Number(progress.total) : 0;
+			const scanned = Math.max(0, Number(progress.scanned) || 0);
+			const percent = measured ? (total ? Math.min(100, Math.round(scanned / total * 1000) / 10) : 100) : null;
+			const number = value => Number(value || 0).toLocaleString();
+			const stage = progress.stage || ({ checking_relationships: 'links', saving_quarantine: 'results' }[progress.phase]) || (progress.table ? 'rows' : 'prepare');
+			const stages = [['prepare', 'Prepare'], ['rows', 'Check rows'], ['links', 'Check links'], ['results', 'Save results']];
+			const stageIndex = Math.max(0, stages.findIndex(([key]) => key === stage));
+			// Overall progress: each stage covers a share of the bar; within a stage, finished tables plus the current table's share.
+			const weights = { prepare: 5, rows: 60, links: 20, results: 15 };
+			const tableCount = Number(progress.tableCount) || 0;
+			const tableIndex = Number(progress.tableIndex) || 0;
+			const within = tableCount && tableIndex ? Math.min(1, (tableIndex - 1 + (measured && total ? Math.min(1, scanned / total) : 0)) / tableCount) : 0;
+			const overall = Math.min(99, Math.round(stages.slice(0, stageIndex).reduce((sum, [key]) => sum + weights[key], 0) + (weights[stage] || 0) * within));
+			const tablesLeft = tableCount && tableIndex ? tableCount - tableIndex : null;
+			const stagesLeft = stages.length - 1 - stageIndex;
+			const overallDetail = stage === 'prepare' ? 'Preparing the scan' : `Stage ${stageIndex + 1} of ${stages.length}${tablesLeft != null ? ` · ${tablesLeft} ${tablesLeft === 1 ? 'table' : 'tables'} left in this stage` : ''}${stagesLeft ? `, then ${stagesLeft} more ${stagesLeft === 1 ? 'stage' : 'stages'}` : ''}`;
+			// Animated bars: each redraw slides from the previous value to the new one (reset when the table changes),
+			// and the shine keeps its phase across redraws so it does not restart every second.
+			this._bars ||= {};
+			const phaseDelay = period => `-${Date.now() % period}ms`;
+			const bar = (key, label, value, max, tone, id = key) => {
+				if (max == null) return `<div class="qbar ${tone} indeterminate" role="progressbar" aria-label="${label}"><span style="animation-delay:${phaseDelay(1400)}"></span></div>`;
+				const to = max ? Math.min(100, value / max * 100) : 100;
+				const from = this._bars[key]?.id === id ? Math.min(this._bars[key].pct, to) : 0;
+				this._bars[key] = { id, pct: to };
+				return `<div class="qbar ${tone}" role="progressbar" aria-label="${label}" aria-valuemin="0" aria-valuemax="${max}" aria-valuenow="${value}"><span style="--from:${from.toFixed(2)}%;--to:${to.toFixed(2)}%;--shine-delay:${phaseDelay(1800)}"></span></div>`;
+			};
+			const elapsed = Math.max(0, Math.floor((Date.now() - this.auditStartedAt) / 1000));
+			// Optional lines always keep their slot so the card does not jump in height between updates.
+			const slot = (className, html) => `<p class="quality-slot ${className}"${html ? '' : ' aria-hidden="true"'}>${html || '&nbsp;'}</p>`;
+			return `<div class="quality-progress" role="status">
+				${this.auditResumed ? '<p>Reconnected to the existing scan. It uses the table selection saved when that scan started.</p>' : ''}
+				<div class="quality-stop-controls"><strong>${stopping ? 'Stopping scan…' : 'Scan in progress'}</strong><button class="btn btn-secondary" onclick="window.wizard.steps[2].component.stopDataQualityAudit()" ${stopping ? 'disabled' : ''}>${stopping ? 'Stopping…' : 'Stop Scan'}</button></div>
+				${stopping ? '<p>Waiting for the current database operation to finish, then releasing connections. Stopping can take a little time.</p>' : ''}
+				${this.auditStopError ? `<p role="alert">${escape(this.auditStopError)}</p>` : ''}
+				<ol class="quality-stages" aria-label="Audit stages">${stages.map(([key, label], i) => `<li class="${i === stageIndex ? 'active' : i < stageIndex ? 'complete' : ''}" ${i === stageIndex ? 'aria-current="step"' : ''}>${i + 1}. ${label}</li>`).join('')}</ol>
+				<div class="quality-overall"><div class="quality-record-progress"><span><strong>Overall progress</strong> · ${escape(overallDetail)}</span><strong>${overall}%</strong></div>${bar('overall', 'Overall scan progress', overall, 100, 'overall')}</div>
+				<div class="quality-current-header"><p class="quality-status-title"><span class="quality-spinner" aria-hidden="true"></span><span>${progress.table ? escape(String(progress.table).toUpperCase()) : stage === 'prepare' ? 'Preparing audit' : escape(stages[stageIndex][1])}</span><span class="quality-phase">${escape(phase)}${progress.relatedTable ? ` · ${escape(String(progress.relatedTable).toUpperCase())}` : ''}${progress.pass > 1 ? ` · pass ${escape(progress.pass)}` : ''}</span></p>${progress.tableIndex ? `<strong class="quality-table-position">Table ${escape(progress.tableIndex)} of ${escape(progress.tableCount)} · ${escape(stages[stageIndex][1])}</strong>` : ''}</div>
+				${slot('quality-source', progress.sourceTable && String(progress.sourceTable).toLowerCase() !== String(progress.table).toLowerCase() ? `Legacy source: ${escape(progress.sourceTable)}` : '')}
+				<div class="quality-record-progress"><span>${measured ? `${number(scanned)} of ${number(total)} records ${progress.phase === 'reading' ? 'read' : progress.stage === 'results' ? 'saved' : 'checked'}` : progress.scanned != null ? `${number(scanned)} records checked` : progress.phase === 'counting' ? 'Counting records…' : 'Working…'}</span>${measured ? `<strong>${percent}%</strong>` : ''}</div>
+				${bar('table', 'Current table records', total ? Math.min(scanned, total) : 1, measured ? (total || 1) : null, 'table', `${stage}:${progress.table || ''}`)}
+				${slot('quality-flagged', progress.flagged != null ? `${number(progress.flagged)} records flagged so far. Final decisions follow relationship checks.` : '')}
+				${slot('quality-next', progress.nextTable ? `Next table: ${escape(String(progress.nextTable).toUpperCase())}` : '')}
+				<div class="quality-footer">
+					<p><small>Elapsed: ${Number.isFinite(elapsed) ? elapsed : 0}s${this.auditUpdatedAt ? ` · Last server response ${Math.max(0, Math.floor((Date.now() - this.auditUpdatedAt) / 1000))}s ago` : ''}. Keep this page open to see the result.</small></p>
+					<p><small>Checking data only. No records are being imported or deleted from the legacy database.</small></p>
+				</div>
+			</div>`;
+		}
+		if (['not_started', 'failed', 'connection_lost'].includes(report.status)) {
+			const title = { not_started: 'Scan could not start', failed: 'Scan failed — no complete result', connection_lost: 'Unable to retrieve scan progress' }[report.status];
+			return `<div class="validation-errors" role="alert"><p><strong>${title}</strong></p><p>${escape(report.error)}</p><p>${report.status === 'connection_lost' ? 'The server scan may still be running. No completed result has been confirmed.' : 'Resolve the error above, then click Check All Selected Tables to retry.'}</p>${report.id ? `<p><a href="/api/quality-audits/${encodeURIComponent(report.id)}?download=report">View latest audit report</a></p>` : ''}</div>`;
+		}
+		const totals = report.totals || {};
+		const tables = report.tables || [];
+		const hasRule = rule => tables.some(table => table.rules?.[rule]);
+		const blocked = report.status === 'blocked';
+		const audit = report.id ? `/api/quality-audits/${encodeURIComponent(report.id)}` : '';
+		// Parent tables that records point to but that were not part of this scan.
+		const selected = new Set(tables.map(table => String(table.table).toLowerCase()));
+		const missing = new Set();
+		for (const table of tables) for (const sample of table.samples || []) for (const reason of sample.reasons || []) {
+			const parent = /^No accepted ([a-z0-9_]+) parent/i.exec(reason.message || '')?.[1];
+			if (parent && !selected.has(parent.toLowerCase())) missing.add(parent);
+		}
+		// A short list of next steps, each with its own action.
+		const steps = [];
+		if (blocked) {
+			if (hasRule('TARGET_EXPRESSION')) steps.push('<strong>Fix the audit expression error.</strong> This is a checker or schema problem, not bad data.');
+			if (missing.size) steps.push(`<strong>Add the missing tables in Step 2:</strong> ${[...missing].map(escape).join(', ')}. Records point to them but they are not in this migration.`);
+			if (totals.review && !report.excludeUnresolved) steps.push(`<strong>Decide what to do with ${escape(Number(totals.review).toLocaleString())} blocked ${Number(totals.review) === 1 ? 'record' : 'records'}.</strong>${audit ? ` <a class="btn btn-primary btn-sm" href="${audit}/groups">Review grouped repair decisions</a>` : ''} <span class="quality-or">or <button class="btn btn-secondary btn-sm" onclick="window.wizard.steps[2].component.setUnresolvedPolicy(true)">Leave them all out and rescan</button></span>`);
+			steps.push('<strong>Run Check All Selected Tables again.</strong> Continue to migration once the scan is ready.');
+		}
+		const counts = `${escape(totals.scanned || 0)} checked · ${escape(totals.accepted || 0)} accepted · ${escape(totals.quarantined || 0)} quarantined · ${escape(totals.review || 0)} need review`;
+		const title = report.settingsChanged ? 'Saved scan results — out of date' : report.status === 'ready' ? 'Scan complete — ready to migrate' : 'Scan complete — Migration blocked';
+		// is-ready marks a current, ready full check; the one-row dry run is then hidden because the full check supersedes it.
+		// The result card folds to its status line; the open state survives redraws (see attachEventListeners).
+		return `<details id="quality-result" class="quality-result ${report.status === 'ready' ? 'validation-success' : 'validation-errors'}${report.status === 'ready' && !report.settingsChanged ? ' is-ready' : ''}"${this.resultCollapsed ? '' : ' open'}>
+			<summary class="quality-result-head"><p role="status"><strong>${title}</strong></p><p class="quality-counts">${counts}</p></summary>
+			${report.settingsChanged ? '<p class="quality-stale">Your settings or decisions changed after this scan. Run <strong>Check All Selected Tables</strong> to check them.</p>' : ''}
+			${report.error ? `<p>${escape(report.error)}</p>` : ''}
+			${report.excludeUnresolved ? '<p class="quality-policy"><strong>All unresolved records are being left out.</strong> Only accepted records will migrate. <button class="btn btn-secondary btn-sm" onclick="window.wizard.steps[2].component.setUnresolvedPolicy(false)">Require repair decisions and rescan</button></p>' : ''}
+			${steps.length ? `<div class="quality-next-actions"><h4>What to do next</h4><ol class="quality-steps">${steps.map(step => `<li>${step}</li>`).join('')}</ol></div>` : report.status === 'ready' && !report.settingsChanged ? '<p>Quarantined records are left out. Click <strong>Next →</strong> to continue to the migration.</p>' : ''}
+			${report.appliedCorrectionCount ? `<p class="quality-note">${escape(report.appliedCorrectionCount)} saved ${Number(report.appliedCorrectionCount) === 1 ? 'correction was' : 'corrections were'} applied in this scan.</p>` : ''}
+			<details class="quality-more"><summary>Results by table</summary>
+				<table class="plan-table"><thead><tr><th>Source → Target</th><th>Checked</th><th>Accepted</th><th>Quarantined</th><th>Review</th><th>Findings</th></tr></thead><tbody>
+				${tables.map(table => `<tr><td>${escape(table.sourceTable)} → ${escape(table.table)}</td><td>${table.scanned}</td><td>${table.accepted}</td><td>${table.quarantined}</td><td>${table.review}</td><td>${[...(table.errors || []), ...Object.entries(table.rules || {}).map(([rule, count]) => `${rule}: ${count}`)].map(escape).join('<br>')}</td></tr>`).join('')}
+				</tbody></table>
+				${tables.filter(table => table.samples?.length).map(table => `<details><summary>${escape(table.table)} — example findings</summary><ul>${table.samples.map(sample => `<li>Source row ${escape(sample.ordinal + 1)}: ${sample.reasons.map(reason => escape(reason.message)).join('; ')}</li>`).join('')}</ul></details>`).join('')}
+			</details>
+			${report.automaticRepairs?.length ? `<details class="quality-more"><summary>Automatic repairs prepared (${report.automaticRepairs.length})</summary><ul>${report.automaticRepairs.map(item => `<li><strong>${escape(item.table)}</strong>: ${escape(item.action)}. ${escape(item.explanation)}</li>`).join('')}</ul></details>` : ''}
+			${audit ? `<p class="quality-links"><a href="${audit}/view" target="_blank" rel="noopener">Record details</a> · <a href="${audit}/view?download=html">Download readable summary</a> · <a href="${audit}?download=report">Audit JSON</a> · <a href="${audit}?download=quarantine">Record evidence JSON</a>${report.completedAt ? ` · <span>Completed ${escape(new Date(report.completedAt).toLocaleString())}</span>` : ''}</p>` : ''}</details>`;
+	}
+
 	renderDryRunResults() {
 		if (!this.dryRunResults) {
 			return '<p>No dry-run results available</p>';
 		}
 
 		const results = this.dryRunResults.results || this.dryRunResults;
-		const hasErrors = results.errors && results.errors.length > 0;
-		const hasWarnings = results.warnings && results.warnings.length > 0;
 		const perTable = results.perTable || [];
-			const estimatedRowsDisplay = results.estimatedRowsDisplay || results.estimatedRows || results.totals?.estimatedRows || 0;
+		const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+		const withErrors = perTable.filter(table => table.errors?.length);
+		const withWarnings = perTable.filter(table => !table.errors?.length && table.warnings?.length);
+		const total = results.tableCount || perTable.length;
+		const headline = withErrors.length
+			? `✕ ${withErrors.length} of ${total} ${total === 1 ? 'table has' : 'tables have'} errors`
+			: withWarnings.length ? `⚠ All ${total} tables passed, ${withWarnings.length} with warnings` : `✓ All ${total} tables passed`;
+		const rows = results.estimatedRowsDisplay || results.estimatedRows || results.totals?.estimatedRows || 0;
+		// "2962 seconds" reads better as "about 49 min".
+		const seconds = parseInt(String(results.estimatedTime || ''), 10);
+		const plus = String(results.estimatedTime || '').includes('+') ? '+' : '';
+		const duration = !Number.isFinite(seconds) ? null : seconds < 90 ? `${seconds} sec${plus}` : seconds < 5400 ? `${Math.round(seconds / 60)} min${plus}` : `${Math.floor(seconds / 3600)} h ${Math.round(seconds % 3600 / 60)} min${plus}`;
+		const issues = (list, kind) => list.length ? `<ul class="dry-run-issues ${kind}">${list.flatMap(table => (table[kind] || []).map(message => `<li><strong>${escape(table.tableName)}</strong> ${escape(message)}</li>`)).join('')}</ul>` : '';
+		const tableMap = new Map(perTable.map(table => [table.tableName, table]));
+		return `<div class="dry-run-results dry-run-summary ${withErrors.length ? 'has-errors' : withWarnings.length ? 'has-warnings' : 'all-ok'}">
+			<div class="dry-run-head"><strong>${headline}</strong><ul class="dry-run-stats"><li><strong>${escape(total)}</strong> tables</li><li><strong>${escape(this.formatCount(rows))}</strong> estimated rows</li>${duration ? `<li>about <strong>${escape(duration)}</strong> to migrate</li>` : ''}</ul></div>
+			<p class="dry-run-note">A few sample rows per table. Estimated rows are table sizes, not errors. Use <strong>Check All Selected Tables</strong> to check every record.</p>
+			${issues(withErrors, 'errors')}${issues(withWarnings, 'warnings')}
+			${this.dryRunTable(perTable.map(table => table.tableName), tableMap)}
+		</div>`;
+	}
 
-		return `
-      <div class="dry-run-results">
-        <h4>Dry Run Results ${hasErrors ? '❌' : '✓'}</h4>
-        
-        <div class="results-summary">
-          <div class="stat">
-            <strong>${results.tableCount || 0}</strong>
-            <span>Tables</span>
-          </div>
-          <div class="stat">
-						<strong>${estimatedRowsDisplay}</strong>
-            <span>Estimated Rows</span>
-          </div>
-          <div class="stat">
-            <strong>${results.estimatedTime || 'Unknown'}</strong>
-            <span>Est. Duration</span>
-          </div>
-        </div>
-        
-        ${perTable.length > 0 ? `
-          <div class="per-table-results">
-            <h5>Per-Table Summary</h5>
-            <table class="plan-table">
-              <thead>
-                <tr>
-                  <th>Table</th>
-                  <th>Est. Rows</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${perTable.map(t => `
-                  <tr>
-                    <td>${t.tableName}</td>
-										<td>${t.estimatedRowsDisplay || t.estimatedRows || 0}</td>
-                    <td>
-                      ${t.errors.length > 0 ? '<span class="status-badge status-warning">❌ Errors</span>' : ''}
-                      ${t.warnings.length > 0 ? '<span class="status-badge status-warning">⚠ Warnings</span>' : ''}
-                      ${t.errors.length === 0 && t.warnings.length === 0 ? '<span class="status-badge status-success">✓ OK</span>' : ''}
-                    </td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        ` : ''}
-        
-        ${hasErrors ? `
-          <div class="dry-run-errors">
-            <h5>⚠ Errors Found</h5>
-            <ul>
-              ${results.errors.map(err => `<li>${err}</li>`).join('')}
-            </ul>
-          </div>
-        ` : ''}
-        
-        ${hasWarnings ? `
-          <div class="dry-run-warnings">
-            <h5>⚠ Warnings</h5>
-            <ul>
-              ${results.warnings.map(warn => `<li>${warn}</li>`).join('')}
-            </ul>
-          </div>
-        ` : ''}
-        
-        ${!hasErrors && !hasWarnings ? `
-          <div class="dry-run-success">
-            <p>✓ Plan validated successfully. Ready to execute migration.</p>
-          </div>
-        ` : ''}
-      </div>
-    `;
+	formatCount(value) {
+		return /^\d+$/.test(String(value)) ? Number(value).toLocaleString() : String(value ?? '');
+	}
+
+	/**
+	 * Dry run table shared by the live view and the final result: rows right-aligned, status on the right.
+	 * checkingIndex marks the table currently being checked (live view only).
+	 */
+	dryRunTable(names, results, checkingIndex = -1) {
+		const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+		const badge = (result, index) => {
+			if (result?.errors?.length) return '<span class="status-badge status-warning">✕ Errors</span>';
+			if (result?.warnings?.length) return '<span class="status-badge status-warning">⚠ Warnings</span>';
+			if (result) return '<span class="status-badge status-success">✓ OK</span>';
+			return index === checkingIndex ? '<span class="status-badge status-checking"><span class="dry-spinner" aria-hidden="true"></span> Checking…</span>' : '<span class="status-badge status-pending">Waiting</span>';
+		};
+		return `<table class="plan-table dry-run-table"><thead><tr><th>Table</th><th class="num">Est. rows</th><th class="status-col">Status</th></tr></thead><tbody>
+			${names.map((name, index) => { const result = results.get(name); return `<tr${result ? '' : ' class="dry-pending"'}><td>${escape(name)}</td><td class="num">${result ? escape(this.formatCount(result.estimatedRowsDisplay || result.estimatedRows || 0)) : '—'}</td><td class="status-col">${badge(result, index)}</td></tr>`; }).join('')}
+			</tbody></table>`;
 	}
 
 	/**
@@ -854,7 +1148,7 @@ class PlanUI {
 		} else if (warnings.length > 0) {
 			summary.innerHTML = `
         <div class="validation-success">
-          <h4>âœ“ Plan Valid</h4>
+          <h4>✓ Plan Valid</h4>
           <p>Migration plan is ready.</p>
           <ul>
             ${warnings.map(warn => `<li>${warn}</li>`).join('')}
@@ -874,21 +1168,25 @@ class PlanUI {
 	/**
 	 * Validate before proceeding
 	 */
-	async onNext() {
+	async onNext({ inline = false } = {}) {
 		this.wizard.clearMessages();
+		this.planSaveError = null;
 
 		if (!this.plan.name || this.plan.name.trim() === '') {
-			this.wizard.showError('Missing plan name. Stay on Step 3, enter a plan name, then save the plan.');
+			this.planSaveError = 'Missing plan name. Stay on Step 3, enter a plan name, then save the plan.';
+			this.wizard.showError(this.planSaveError);
 			return false;
 		}
 
 		if (this.plan.tables.length === 0) {
-			this.wizard.showError('No tables selected. Stay on Step 3, select at least one table, then save the plan.');
+			this.planSaveError = 'No tables selected. Stay on Step 3, select at least one table, then save the plan.';
+			this.wizard.showError(this.planSaveError);
 			return false;
 		}
 
 		if (!this.mapping?.mappingProfileId && !this.mapping?.id) {
-			this.wizard.showError('Mapping profile missing. Go back to Step 2 to save the mapping, then return to Step 3.');
+			this.planSaveError = 'Mapping profile missing. Go back to Step 2 to save the mapping, then return to Step 3.';
+			this.wizard.showError(this.planSaveError);
 			return false;
 		}
 
@@ -896,7 +1194,7 @@ class PlanUI {
 
 		// Create/update plan
 		try {
-			this.wizard.showLoading('Saving migration plan...');
+			if (!inline) this.wizard.showLoading('Saving migration plan...');
 
 			const mappingProfileId = this.mapping.mappingProfileId || this.mapping.id;
 
@@ -906,10 +1204,10 @@ class PlanUI {
 				const result = {
 					table: tableName,
 					include: true,
-					mode: 'INSERT',
-					keyStrategy: 'preserve',
-					onDuplicate: 'SKIP',
-					dedupeKeys: []
+					mode: tableConfig.mode || 'INSERT',
+					keyStrategy: tableConfig.keyStrategy || 'preserve',
+					onDuplicate: tableConfig.onDuplicate || 'SKIP',
+					dedupeKeys: tableConfig.dedupeKeys || []
 				};
 				if (tableConfig.batchSize) result.batchSize = tableConfig.batchSize;
 				result.cleanBefore = tableConfig.cleanBefore === true;
@@ -937,13 +1235,14 @@ class PlanUI {
 
 			this.state.setPlan(this.plan);
 			this.wizard.renderNavigation();
-			this.wizard.hideLoading();
+			if (!inline) this.wizard.hideLoading();
 
 			return true;
 
 		} catch (err) {
-			this.wizard.hideLoading();
-			this.wizard.showError(`Failed to save plan: ${err.message}`);
+			if (!inline) this.wizard.hideLoading();
+			this.planSaveError = `Failed to save plan: ${err.message}`;
+			this.wizard.showError(this.planSaveError);
 			return false;
 		}
 	}

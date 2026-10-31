@@ -114,15 +114,16 @@ function normalizePlanTables(planTablesInput, mapping) {
 				tablesList.push(targetName);
 			}
 
-			if (!tablesObject[targetName]) {
-				tablesObject[targetName] = {
-					include: true,
-					mode: 'INSERT',
-					keyStrategy: 'preserve',
-					onDuplicate: 'SKIP',
-					dedupeKeys: []
-				};
-			}
+			const config = typeof tableName === 'object' ? tableName : {};
+			tablesObject[targetName] = {
+				include: true,
+				mode: 'INSERT',
+				keyStrategy: 'preserve',
+				onDuplicate: 'SKIP',
+				dedupeKeys: [],
+				...tablesObject[targetName],
+				...config
+			};
 		}
 	}
 	// Case 2: Input is an object keyed by table names

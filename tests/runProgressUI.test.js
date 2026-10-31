@@ -41,9 +41,12 @@ test('live log only adds one final result per table across repeated snapshots', 
 	ui.appendLogEntries(events);
 	const lines = elements.get('log-container').children;
 	assert.equal(lines.length, 2);
-	assert.match(lines[0].children[1].textContent, /stock: completed/);
-	assert.match(lines[1].children[1].textContent, /invoices: failed — 364 row errors/);
-	assert.doesNotMatch(lines.map(line => line.children[1].textContent).join(''), /Duplicate entry/);
+	assert.match(lines[0].title, /stock: completed/);
+	assert.equal(lines[0].children[1].children[0].textContent, 'STOCK');
+	assert.match(lines[0].children[1].children[1].textContent, /^47[,\s]977 skipped$/);
+	assert.match(lines[1].title, /invoices: failed — 364 row errors/);
+	assert.equal(lines[1].children[1].children[1].textContent, 'failed · 364 row errors');
+	assert.doesNotMatch(lines.map(line => line.title).join(''), /Duplicate entry/);
 });
 
 test('table rows show execution order, all processed records, zero totals and validation status', () => {
@@ -89,4 +92,30 @@ test('slow polls cannot overlap and an old run response cannot overwrite a new r
 	await pending;
 	assert.equal(values.get('run.progress'), 10);
 	ui.stopPolling();
+});
+
+test('execution shows full-audit progress before any table starts importing', async () => {
+	const { ui, elements } = setup();
+	await ui.updateProgressDisplay({ status: 'RUNNING', percent: 0, tables: [], tablesCompleted: 0, tablesTotal: 4,
+		dataQualityProgress: { table: 'stock', scanned: 1500 }, dataQuality: null });
+	assert.match(elements.get('current-table-status').textContent, /Checking data quality: stock · 1[,\s]500 rows scanned/);
+});
+
+test('table rows show per-table audit progress until the audit finishes', async () => {
+	const { ui, elements } = setup();
+	const tables = [
+		{ table: 'banks', status: 'pending', audit: { phase: 'checked', done: true, scanned: 12, total: 12, flagged: 1 } },
+		{ table: 'stock', status: 'pending', audit: { phase: 'reading', scanned: 800, total: 3200, flagged: 0 } },
+		{ table: 'invoices', status: 'pending', audit: null }
+	];
+	await ui.updateProgressDisplay({ status: 'RUNNING', percent: 0, tables, tablesCompleted: 0, tablesTotal: 3,
+		dataQualityProgress: { table: 'stock', tableIndex: 2, tableCount: 3, scanned: 800 }, dataQuality: null });
+	const html = elements.get('table-status-list').innerHTML;
+	assert.match(html, /✓ checked[\s\S]*12 checked[\s\S]*1 flagged for review[\s\S]*width: 100%/);
+	assert.match(html, /checking<\/span>[\s\S]*800 \/ 3[,\s]200[\s\S]*width: 25%/);
+	assert.match(html, /waiting to check/);
+	assert.match(elements.get('current-table-status').textContent, /stock \(2 of 3\) · 800 rows scanned/);
+	await ui.updateProgressDisplay({ status: 'RUNNING', percent: 0, tables, tablesCompleted: 0, tablesTotal: 3,
+		dataQualityProgress: { table: 'stock' }, dataQuality: { id: 'a', status: 'ready' } });
+	assert.doesNotMatch(elements.get('table-status-list').innerHTML, /checked|waiting to check/);
 });

@@ -9,6 +9,7 @@
 	<link rel="stylesheet" href="/public/css/styles.css" />
 	<link rel="stylesheet" href="/public/css/modal.css" />
 	<link rel="stylesheet" href="/public/css/theme-github.css" />
+	<script src="/public/js/utils/detailFields.js"></script>
 </head>
 
 <body data-page="{{currentStep}}">
@@ -16,6 +17,10 @@
 		{{> sidebar currentStep=currentStep}}
 		<main class="content">
 			<div class="topbar">
+				<a class="topbar-new-migration" id="btn-start-new-migration" href="/wizard?new=1" hidden>
+					<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 4h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1h-7v2h3v2H7v-2h3v-2H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm1 2v9h16V6H4z"/></svg>
+					Start New Migration
+				</a>
 				<div class="conn-status" id="conn-status" role="button" tabindex="0" aria-label="Connection status">
 					<span class="conn-title">Connection Status</span>
 					<span id="conn-badge-firebird" class="conn-badge">Firebird: Checking...</span>
@@ -31,20 +36,37 @@
 			{{{body}}}
 		</main>
 	</div>
-	<div class="modal" id="conn-modal" aria-hidden="true" role="dialog">
-		<div class="modal-content modal-stack">
-			<div>
-				<h3>Connection details</h3>
-				<p><strong>Firebird:</strong> <span id="conn-modal-firebird-status"></span></p>
-				<p class="hint" id="conn-modal-firebird-details"></p>
-				<p><strong>MySQL:</strong> <span id="conn-modal-mysql-status"></span></p>
-				<p class="hint" id="conn-modal-mysql-details"></p>
-				<p class="hint">Last checked: <span id="conn-last-checked">-</span></p>
+	<div class="modal" id="conn-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="conn-modal-title">
+		<div class="modal-content status-dialog">
+			<header class="status-dialog-header">
+				<div class="status-dialog-heading">
+					<h3 id="conn-modal-title">Connection details</h3>
+				</div>
+				<button class="status-dialog-close" type="button" data-modal-close="conn-modal" aria-label="Close">&times;</button>
+			</header>
+			<div class="status-dialog-body">
+				<section class="conn-row">
+					<div class="conn-row-head">
+						<span class="conn-row-name">Firebird</span>
+						<span class="conn-badge" id="conn-modal-firebird-status">Checking...</span>
+					</div>
+					<div class="conn-row-details" id="conn-modal-firebird-details"></div>
+				</section>
+				<section class="conn-row">
+					<div class="conn-row-head">
+						<span class="conn-row-name">MySQL</span>
+						<span class="conn-badge" id="conn-modal-mysql-status">Checking...</span>
+					</div>
+					<div class="conn-row-details" id="conn-modal-mysql-details"></div>
+				</section>
 			</div>
-			<div class="actions">
-				<button class="btn primary" type="button" id="conn-recheck-btn">Recheck now</button>
-				<button class="btn secondary" type="button" data-modal-close="conn-modal">Close</button>
-			</div>
+			<footer class="status-dialog-footer">
+				<span class="hint">Last checked <span id="conn-last-checked">-</span></span>
+				<div class="actions">
+					<button class="btn secondary" type="button" data-modal-close="conn-modal">Close</button>
+					<button class="btn primary" type="button" id="conn-recheck-btn">Recheck now</button>
+				</div>
+			</footer>
 		</div>
 	</div>
 	<script src="/public/js/utils/modal.js"></script>

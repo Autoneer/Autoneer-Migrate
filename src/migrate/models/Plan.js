@@ -4,6 +4,7 @@
  * (mode, keyStrategy, dedupeKeys, etc.)
  */
 
+const { orderedTableEntries } = require('../planNormalize');
 class Plan {
 	/**
 	 * @param {string} mappingProfileId - Reference to Mapping Profile
@@ -16,6 +17,7 @@ class Plan {
 		this.mappingProfileName = mappingProfileName;
 		this.name = '';
 		this.tables = tableConfigs; // Per-table migration config
+		this.tableOrder = [];
 		this.config = {};
 		this.createdAt = createdAt || new Date();
 		this.isValidated = false;
@@ -75,7 +77,7 @@ class Plan {
 	 * @returns {string[]}
 	 */
 	getIncludedTables() {
-		return Object.keys(this.tables);
+		return orderedTableEntries(this.tables, this.tableOrder).map(([name]) => name);
 	}
 
 	/**
@@ -159,6 +161,7 @@ class Plan {
 			name: this.name,
 			createdAt: this.createdAt.toISOString(),
 			tables: this.tables,
+			tableOrder: Array.isArray(this.tables) ? this.tables.map(item => typeof item === 'string' ? item : item.table || item.name || item.targetTable) : this.getIncludedTables(),
 			config: this.config,
 			isValidated: this.isValidated,
 			validationErrors: this.validationErrors,
@@ -172,13 +175,15 @@ class Plan {
 	 * @returns {Plan}
 	 */
 	static fromJSON(obj) {
+		const normalized = Array.isArray(obj.tables) ? require('../utils/tableNameCanonical').normalizePlanTables(obj.tables) : null;
 		const plan = new Plan(
 			obj.mappingProfileId || obj.mappingId,
 			obj.mappingProfileName || obj.mappingName,
-			obj.tables,
+			normalized?.tablesObject || obj.tables,
 			obj.createdAt ? new Date(obj.createdAt) : null
 		);
 		plan.name = obj.name || '';
+		plan.tableOrder = Array.isArray(obj.tableOrder) ? obj.tableOrder : normalized?.tablesList || [];
 		plan.config = obj.config || {};
 		plan.isValidated = obj.isValidated || false;
 		plan.validationErrors = obj.validationErrors || [];

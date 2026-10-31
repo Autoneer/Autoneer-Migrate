@@ -183,6 +183,26 @@ class PlanValidator {
 	}
 
 	/**
+	 * Dry-run a few sample rows. A failing first row only means the mapping is broken when no later
+	 * sample passes; otherwise it is a bad record, which the full check finds and handles, so it is
+	 * reported as a warning against the passing sample.
+	 * @param {Object[]} samples - Sample rows in source order
+	 * @returns {Promise<{ result: Object, sampleRow: Object }>}
+	 */
+	static async dryRunSamples(samples, mapping, sourceTable, targetTable, schema) {
+		const first = await PlanValidator.dryRun(samples[0], mapping, sourceTable, targetTable, schema);
+		if (first.migratable) return { result: first, sampleRow: samples[0] };
+		for (const candidate of samples.slice(1)) {
+			const attempt = await PlanValidator.dryRun(candidate, mapping, sourceTable, targetTable, schema);
+			if (!attempt.migratable) continue;
+			const reason = String(first.issues?.[0] || 'it has invalid data').split('. ')[0];
+			const note = `Some records fail (the first sample row: ${reason}), but later sample rows pass, so the mapping works. Check All Selected Tables finds and handles records like this.`;
+			return { result: { ...attempt, warnings: [...(attempt.warnings || []), note] }, sampleRow: candidate };
+		}
+		return { result: first, sampleRow: samples[0] };
+	}
+
+	/**
 	 * Check if row 1 can be migrated (dry-run)
 	 * @param {any} firstRow - First row from source
 	 * @param {Mapping} mapping
@@ -252,7 +272,8 @@ class PlanValidator {
 					// Primary key cannot be NULL
 					issues.push(
 						`Target primary key column ${field.targetColumn} would receive NULL. ` +
-						`Provide a mapping default or mark as omitted.`
+						`Check the mapping from ${srcCol}, then run "Check All Selected Tables" to assess every record. ` +
+						`This result is from one sample row. Preserve business identifiers such as invoice numbers; do not invent a default or omit them to bypass this error.`
 					);
 				} else {
 					// Target is NOT NULL and no default and no primary key

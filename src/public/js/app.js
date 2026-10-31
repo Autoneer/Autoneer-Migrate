@@ -443,6 +443,24 @@ document.querySelectorAll("[data-modal-close]").forEach((btn) => {
 	btn.dataset.modalCloseBound = "1";
 });
 
+// Escape or a click on the backdrop closes the open status dialog.
+const closeStatusDialog = (modal) => {
+	modal.classList.remove("show");
+	modal.setAttribute("aria-hidden", "true");
+};
+document.querySelectorAll(".modal").forEach((modal) => {
+	if (!modal.querySelector(".status-dialog")) return;
+	modal.addEventListener("click", (event) => {
+		if (event.target === modal) closeStatusDialog(modal);
+	});
+});
+document.addEventListener("keydown", (event) => {
+	if (event.key !== "Escape") return;
+	document.querySelectorAll(".modal.show").forEach((modal) => {
+		if (modal.querySelector(".status-dialog")) closeStatusDialog(modal);
+	});
+});
+
 document.querySelectorAll("[data-toggle]").forEach((button) => {
 	button.addEventListener("click", () => {
 		const targetId = button.getAttribute("data-toggle");

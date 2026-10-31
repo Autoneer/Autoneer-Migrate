@@ -728,9 +728,11 @@ router.get("/runs/:runId/logs", async (req, res) => {
 	try {
 		const { runId } = req.params;
 		const sinceMs = req.query.since ? Number(req.query.since) : null;
-		const limit = Math.min(Math.max(Number(req.query.limit || 200), 1), 1000);
 		const tableResultsOnly = req.query.view === 'table-results';
-		let logs = tableResultsOnly ? logger.getTableResultBuffer(runId) : logger.getLogBuffer(runId);
+		// The full view reads the log file; the in-memory buffer only keeps the newest events.
+		const fullLog = req.query.view === 'full';
+		const limit = Math.min(Math.max(Number(req.query.limit || 200), 1), fullLog ? 10000 : 1000);
+		let logs = fullLog ? [] : tableResultsOnly ? logger.getTableResultBuffer(runId) : logger.getLogBuffer(runId);
 		if (logs == null || (!tableResultsOnly && !logs.length)) {
 			const logPath = logger.getLogFilePath(runId);
 			try {
@@ -767,6 +769,7 @@ router.get("/runs/:runId/logs", async (req, res) => {
 				return ts > sinceMs;
 			});
 		}
+		const total = logs.length;
 		if (logs.length > limit) {
 			logs = logs.slice(-limit);
 		}
@@ -774,6 +777,7 @@ router.get("/runs/:runId/logs", async (req, res) => {
 		res.json({
 			success: true,
 			count: logs.length,
+			total,
 			logs
 		});
 	} catch (err) {

@@ -1,88 +1,99 @@
-<section class="card">
+<section class="card setup-card">
 	<form method="post" id="setup-form">
-		<div class="grid">
-			<div>
-				<h3>Firebird</h3>
-				<label>Host
-					<input name="fb_host" value="{{firebird.host}}" />
-				</label>
-				<label>Port
-					<input name="fb_port" value="{{firebird.port}}" />
-				</label>
-				<label>Database path
+		<div class="setup-grid">
+			<div class="setup-panel">
+				<h3>Firebird <span class="setup-panel-sub">Legacy source</span></h3>
+				<div class="setup-row setup-row-host">
+					<label><span>Host</span>
+						<input name="fb_host" value="{{firebird.host}}" />
+					</label>
+					<label><span>Port</span>
+						<input name="fb_port" value="{{firebird.port}}" />
+					</label>
+				</div>
+				<label><span>Database path</span>
 					<input name="fb_database" value="{{firebird.database}}" />
 				</label>
-				<label>User
-					<input name="fb_user" value="{{firebird.user}}" />
-				</label>
-				<label>Password
-					<input name="fb_password" type="password" value="masterkey" autocomplete="new-password" />
-				</label>
-				<label>
+				<div class="setup-row">
+					<label><span>User</span>
+						<input name="fb_user" value="{{firebird.user}}" />
+					</label>
+					<label><span>Password</span>
+						<input name="fb_password" type="password" value="masterkey" autocomplete="new-password" />
+					</label>
+				</div>
+				<label class="setup-check">
 					<input type="checkbox" name="fb_use_default" {{#if useDefaultSysdbaMasterkey}}checked{{/if}} />
 					Use default SYSDBA/masterkey
 				</label>
-				<label>Role (optional)
+				<label><span>Role <em>(optional)</em></span>
 					<input name="fb_role" value="{{firebird.role}}" />
 				</label>
-				<div class="hint">Using Firebird user: {{firebirdUser}} • Password loaded: {{#if
-					firebirdPasswordSet}}Yes{{else}}No{{/if}}</div>
-				<button class="btn" formaction="/setup/test-firebird" formmethod="post">Test Firebird</button>
+				<div class="setup-actions">
+					<button class="btn primary" formaction="/setup/test-firebird" formmethod="post">Test Firebird</button>
+					<div class="hint">Using Firebird user: {{firebirdUser}} • Password loaded: {{#if
+						firebirdPasswordSet}}Yes{{else}}No{{/if}}</div>
+				</div>
 			</div>
-			<div>
-				<h3>MySQL</h3>
-				<label>Host
-					<input name="my_host" value="{{mysql.host}}" />
-				</label>
-				<label>Port
-					<input name="my_port" value="{{mysql.port}}" />
-				</label>
-				<label>User
-					<input name="my_user" value="{{mysql.user}}" />
-				</label>
-				<label>Password
-					<input name="my_password" type="password" value="" autocomplete="new-password" />
-				</label>
-				<label>Target Schema
+			<div class="setup-panel">
+				<h3>MySQL <span class="setup-panel-sub">Migration target</span></h3>
+				<div class="setup-row setup-row-host">
+					<label><span>Host</span>
+						<input name="my_host" value="{{mysql.host}}" />
+					</label>
+					<label><span>Port</span>
+						<input name="my_port" value="{{mysql.port}}" />
+					</label>
+				</div>
+				<div class="setup-row">
+					<label><span>User</span>
+						<input name="my_user" value="{{mysql.user}}" />
+					</label>
+					<label><span>Password</span>
+						<input name="my_password" type="password" value="" autocomplete="new-password" />
+					</label>
+				</div>
+				<label><span>Target Schema</span>
 					<input name="my_schema" value="{{schemaName}}" />
+					<small class="hint">DDL schema name: {{ddlSchemaName}}</small>
 				</label>
-				<div class="hint">DDL schema name: {{ddlSchemaName}}</div>
-				<div class="actions">
-					<button class="btn" formaction="/setup/test-mysql" formmethod="post">Test MySQL</button>
-					<button class="btn secondary" formaction="/setup/check-schema" formmethod="post">Check MySQL schema
-						exists</button>
-					<button class="btn" formaction="/setup/create-schema" formmethod="post">Create schema from
-						DDL</button>
+				<div class="setup-actions">
+					<button class="btn primary" formaction="/setup/test-mysql" formmethod="post">Test MySQL</button>
+					<button class="btn secondary" formaction="/setup/check-schema" formmethod="post">Check MySQL schema exists</button>
+					<button class="btn secondary" formaction="/setup/create-schema" formmethod="post">Create schema from DDL</button>
 				</div>
 			</div>
 		</div>
 	</form>
 </section>
 
-<section class="card">
-	<h3>Diagnostics</h3>
+<section class="card setup-card">
+	<h3 class="setup-card-title">Diagnostics</h3>
 	{{#if diagnostics}}
-	<div class="grid">
-		<div>
-			<strong>Firebird</strong>
-			<div class="hint">Host: {{diagnostics.firebird.host}}</div>
-			<div class="hint">Port: {{diagnostics.firebird.port}}</div>
-			<div class="hint">Database: {{diagnostics.firebird.database}}</div>
-			<div class="hint">User: {{diagnostics.firebird.user}}</div>
-			<div class="hint">Password set: {{#if diagnostics.firebird.passwordSet}}Yes{{else}}No{{/if}}</div>
-			{{#if diagnostics.firebird.passwordSource}}
-			<div class="hint">Password source: {{diagnostics.firebird.passwordSource}}</div>
-			{{/if}}
-			<div class="hint">Default SYSDBA/masterkey: {{#if
-				diagnostics.firebird.useDefaultSysdbaMasterkey}}Enabled{{else}}Disabled{{/if}}</div>
+	<div class="setup-grid">
+		<div class="setup-panel">
+			<h4>Firebird</h4>
+			<dl class="setup-diag">
+				<dt>Host</dt><dd>{{diagnostics.firebird.host}}</dd>
+				<dt>Port</dt><dd>{{diagnostics.firebird.port}}</dd>
+				<dt>Database</dt><dd>{{diagnostics.firebird.database}}</dd>
+				<dt>User</dt><dd>{{diagnostics.firebird.user}}</dd>
+				<dt>Password set</dt><dd>{{#if diagnostics.firebird.passwordSet}}Yes{{else}}No{{/if}}</dd>
+				{{#if diagnostics.firebird.passwordSource}}
+				<dt>Password source</dt><dd>{{diagnostics.firebird.passwordSource}}</dd>
+				{{/if}}
+				<dt>Default SYSDBA/masterkey</dt><dd>{{#if diagnostics.firebird.useDefaultSysdbaMasterkey}}Enabled{{else}}Disabled{{/if}}</dd>
+			</dl>
 		</div>
-		<div>
-			<strong>MySQL</strong>
-			<div class="hint">Host: {{diagnostics.mysql.host}}</div>
-			<div class="hint">Port: {{diagnostics.mysql.port}}</div>
-			<div class="hint">User: {{diagnostics.mysql.user}}</div>
-			<div class="hint">Password set: {{#if diagnostics.mysql.passwordSet}}Yes{{else}}No{{/if}}</div>
-			<div class="hint">Schema: {{diagnostics.mysql.schemaName}}</div>
+		<div class="setup-panel">
+			<h4>MySQL</h4>
+			<dl class="setup-diag">
+				<dt>Host</dt><dd>{{diagnostics.mysql.host}}</dd>
+				<dt>Port</dt><dd>{{diagnostics.mysql.port}}</dd>
+				<dt>User</dt><dd>{{diagnostics.mysql.user}}</dd>
+				<dt>Password set</dt><dd>{{#if diagnostics.mysql.passwordSet}}Yes{{else}}No{{/if}}</dd>
+				<dt>Schema</dt><dd>{{diagnostics.mysql.schemaName}}</dd>
+			</dl>
 		</div>
 	</div>
 	{{/if}}
@@ -99,19 +110,23 @@
 <script id="test-result-data" type="application/json">{{{json testResult}}}</script>
 {{/if}}
 
-<div class="modal" id="testResultModal" aria-hidden="true" role="dialog">
-	<div class="modal-content modal-stack">
-		<div>
-			<h3 id="test-result-title">Connection result</h3>
-			<p id="test-result-message"></p>
-			<button class="btn secondary" type="button" id="test-result-toggle">Show details</button>
-			<div id="test-result-details" class="details-panel" hidden>
-				<textarea class="error-textarea" id="test-result-details-text" readonly></textarea>
+<div class="modal" id="testResultModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="test-result-title">
+	<div class="modal-content status-dialog" id="test-result-dialog">
+		<header class="status-dialog-header">
+			<span class="status-dialog-icon" aria-hidden="true"></span>
+			<div class="status-dialog-heading">
+				<h3 id="test-result-title">Connection result</h3>
+				<p id="test-result-message"></p>
 			</div>
-		</div>
-		<div class="actions">
-			<button class="btn primary" type="button" data-modal-close="testResultModal">Close</button>
-		</div>
+			<button class="status-dialog-close" type="button" data-modal-close="testResultModal" aria-label="Close">&times;</button>
+		</header>
+		<div class="status-dialog-body" id="test-result-details" hidden></div>
+		<footer class="status-dialog-footer">
+			<button class="btn secondary" type="button" id="test-result-copy" hidden>Copy details</button>
+			<div class="actions">
+				<button class="btn primary" type="button" data-modal-close="testResultModal">Close</button>
+			</div>
+		</footer>
 	</div>
 </div>
 

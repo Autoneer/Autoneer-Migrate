@@ -28,7 +28,9 @@ class APIClient {
 	async request(endpoint, options = {}) {
 		const url = endpoint.startsWith('http') ? endpoint : `${this.baseURL}${endpoint}`;
 		const requestTimeout = options.timeout ?? this.timeout;
-		const maxRetries = options.maxRetries ?? this.maxRetries;
+		// This client's legacy option counts total attempts. Zero disables retries,
+		// but must still send the initial request (especially for start/stop actions).
+		const maxRetries = Math.max(1, options.maxRetries ?? this.maxRetries);
 		const { timeout: _t, maxRetries: _r, ...fetchOptions } = options;
 		const config = {
 			...this.defaultOptions,

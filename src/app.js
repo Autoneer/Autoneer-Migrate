@@ -21,6 +21,7 @@ const runApiRoutes = require("./routes/api/runs");
 const presetsApiRoutes = require("./routes/api/presets");
 const profilesApiRoutes = require("./routes/api/profiles");
 const toolsApiRoutes = require("./routes/api/tools");
+const { router: dataQualityRoutes } = require('./routes/api/dataQuality');
 
 const app = express();
 
@@ -73,6 +74,7 @@ app.use(schemaRoutes); // New schema API routes
 // Phase 2: Refactored API routes
 app.use("/api", mappingApiRoutes); // Mapping CRUD endpoints
 app.use("/api", planApiRoutes);    // Plan management endpoints
+app.use('/api', dataQualityRoutes);
 app.use("/api", runApiRoutes);     // Run tracking endpoints
 app.use("/api", presetsApiRoutes);
 app.use("/api", profilesApiRoutes);

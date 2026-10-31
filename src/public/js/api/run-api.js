@@ -150,6 +150,17 @@ class RunAPI {
 	}
 
 	/**
+	 * Get the saved log file for a run, newest entries last
+	 * @param {string} id - Run ID
+	 * @returns {Promise<{logs: Array, total: number}>} Entries and the file's entry count
+	 */
+	async getFullLog(id, limit = 10000) {
+		const response = await this.client.get(`/runs/${id}/logs`, { view: 'full', limit });
+		const logs = response.logs || [];
+		return { logs, total: response.total ?? logs.length };
+	}
+
+	/**
 	 * Get errors for a run
 	 * @param {string} id - Run ID
 	 * @returns {Promise<Array>} Error details

@@ -4,6 +4,17 @@
  * an array of step objects with stable defaults.
  */
 
+function orderedTableEntries(tables, order = []) {
+	const entries = Object.entries(tables || {});
+	const byName = new Map(entries.map(entry => [entry[0].toUpperCase(), entry]));
+	const used = new Set();
+	return [...(Array.isArray(order) ? order : []), ...entries.map(([name]) => name)].flatMap(name => {
+		const key = String(name).toUpperCase();
+		if (used.has(key) || !byName.has(key)) return [];
+		used.add(key); return [byName.get(key)];
+	});
+}
+
 function normalizePlanSteps(plan, mappingForLookup) {
 	const defaultBatchSize = plan?.config?.batchSize || 1000;
 	const defaults = {
@@ -51,7 +62,7 @@ function normalizePlanSteps(plan, mappingForLookup) {
 	}
 
 	if (plan?.tables && typeof plan.tables === 'object') {
-		return Object.entries(plan.tables).map(([tableName, config]) => {
+		return orderedTableEntries(plan.tables, plan.tableOrder).map(([tableName, config]) => {
 			let resolvedTable = config?.target || config?.targetTable;
 			if (!resolvedTable && mappingForLookup?.tables?.[tableName]) {
 				resolvedTable = mappingForLookup.tables[tableName].target || mappingForLookup.tables[tableName].targetTable;
@@ -73,4 +84,4 @@ function normalizePlanSteps(plan, mappingForLookup) {
 	return [];
 }
 
-module.exports = { normalizePlanSteps };
+module.exports = { normalizePlanSteps, orderedTableEntries };

@@ -217,6 +217,8 @@ class MappingUI {
 			const data = await res.json();
 			if (!data || !data.profile) return Modal.alert({ title: 'Error', message: 'Failed to load profile' });
 			this.applySavedProfile(data.profile);
+			// Show just the profile's tables after loading
+			this.showOnlySelected = true;
 			this.render();
 
 			// Modal.alert({ title: 'Loaded', message: 'Profile applied' });
@@ -351,44 +353,51 @@ class MappingUI {
 		<h2>Build a table and Field Map</h2>
 		
         <!-- Profile Settings -->
-        <div class="profile-settings">
-          <div class="form-group">
-            <label for="mapping-profile-name">Profile Name:</label>
-            <input type="text" id="mapping-profile-name" class="form-control" 
-                   value="${this.mapping.name}" 
-                   placeholder="Enter profile name">
+        <div class="mapping-profile-card">
+          <div class="mapping-profile-row">
+            <div class="mapping-field">
+              <label for="mapping-profile-name">Profile Name</label>
+              <input type="text" id="mapping-profile-name" class="form-control"
+                     value="${this.mapping.name}"
+                     placeholder="Enter profile name">
+            </div>
+            <div class="mapping-field mapping-field-grow">
+              <label for="profile-load-select">Saved Profiles</label>
+              <div class="profile-actions">
+                <select id="profile-load-select" class="form-control"></select>
+                <button class="btn btn-secondary btn-sm" id="btn-load-profile">Load Profile</button>
+                <button class="btn btn-secondary btn-sm" id="btn-update-profile">Update Profile</button>
+                <button class="btn btn-secondary btn-sm" id="btn-save-profile">Save as Profile</button>
+                <button class="btn btn-danger btn-sm" id="btn-delete-profile">Delete Profile</button>
+              </div>
+            </div>
+          </div>
+          <div class="mapping-presets">
+            <span class="mapping-presets-label">Quick presets</span>
+            <!-- Preset shortcuts (populated from server) -->
+            <div class="preset-shortcuts" id="preset-shortcuts-container"></div>
           </div>
         </div>
-        
+
 				<!-- Table Selection -->
-				<div class="table-selection"> 
-					<!-- Preset shortcuts (populated from server) -->
-					<div class="preset-shortcuts" style="margin-bottom:10px;" id="preset-shortcuts-container">
-						<!-- Buttons loaded dynamically -->
-					</div>
-					<div class="profile-actions" style="margin-bottom:10px;">
-						<select id="profile-load-select" class="form-control" style="display:inline-block; width:300px; margin-right:8px;"></select>
-						<button class="btn btn-secondary btn-sm" id="btn-load-profile">Load Profile</button>
-						<button class="btn btn-secondary btn-sm" id="btn-update-profile">Update Profile</button>
-						<button class="btn btn-danger btn-sm" id="btn-delete-profile">Delete Profile</button>
-						<button class="btn btn-secondary btn-sm" id="btn-save-profile">Save as Profile</button>
-					</div>
+				<div class="table-selection">
           <h3>Select Tables to Map</h3>
 					<div class="table-actions">
-						<input style="margin-bottom: 10px !important;" type="text" id="table-filter" class="form-control" 
-								 placeholder="🔍 Filter tables..." value="${this.tableFilterQuery || ''}">
-						<div style="display:inline-block; margin-left:8px; vertical-align: top;">
-						  <select id="table-visibility-select" class="form-control">
-							<option value="all" ${this.showOnlySelected ? '' : 'selected'}>All</option>
-							<option value="checked" ${this.showOnlySelected ? 'selected' : ''}>Checked</option>
-						  </select>
+						<input type="text" id="table-filter" class="form-control"
+								 placeholder="Filter tables..." value="${this.tableFilterQuery || ''}">
+						<div class="table-actions-row">
+						  <label class="toggle-switch" title="Show only checked tables">
+							<input type="checkbox" id="table-visibility-toggle" ${this.showOnlySelected ? 'checked' : ''}>
+							<span class="toggle-slider" aria-hidden="true"></span>
+							<span class="toggle-label">Checked only</span>
+						  </label>
+						  <button class="btn btn-secondary btn-sm" onclick="window.wizard.steps[1].component.selectAll()">
+							Select All
+						  </button>
+						  <button class="btn btn-secondary btn-sm" onclick="window.wizard.steps[1].component.deselectAll()">
+							Deselect All
+						  </button>
 						</div>
-						<button class="btn btn-secondary btn-sm" onclick="window.wizard.steps[1].component.selectAll()">
-						  ☑ Select All
-						</button>
-						<button class="btn btn-secondary btn-sm" onclick="window.wizard.steps[1].component.deselectAll()">
-						  ☐ Deselect All
-						</button>
 					  </div>
           
           <table class="mapping-table">
@@ -536,11 +545,11 @@ class MappingUI {
 			});
 		}
 
-		// Table visibility select (All / Checked)
-		const visibilitySelect = document.getElementById('table-visibility-select');
-		if (visibilitySelect) {
-			visibilitySelect.addEventListener('change', (e) => {
-				this.showOnlySelected = e.target.value === 'checked';
+		// Table visibility toggle (All / Checked only)
+		const visibilityToggle = document.getElementById('table-visibility-toggle');
+		if (visibilityToggle) {
+			visibilityToggle.addEventListener('change', (e) => {
+				this.showOnlySelected = e.target.checked;
 				this.render();
 			});
 		}

@@ -20,6 +20,50 @@ const { resolveMappingDefault } = require("../../migrate/invoiceMigrationSafety"
 
 const router = express.Router();
 
+router.post('/plans/:id/data-quality', async (req, res) => {
+	let pool;
+	try {
+		if (require('../../migrate/runner').isRunActive()) return res.status(409).json({ success: false, error: 'Wait for the active migration to finish before starting a preview audit' });
+		pool = await mysql.connectToSchema(state.mysql, state.schemaName);
+		const meta = await getPlanTableMeta(pool);
+		const [rows] = await pool.query('SELECT * FROM migration_plans WHERE plan_id = ?', [req.params.id]);
+		if (!rows.length) return res.status(404).json({ success: false, error: 'Plan not found' });
+		const plan = safeParseJson(rows[0][meta.planJsonColumn]);
+		const { mappingProfileId } = await resolvePlanMappingProfileId(pool, rows[0], meta);
+		const profile = mappingProfileId && await runStore.getMappingProfile(pool, mappingProfileId);
+		if (!profile) return res.status(400).json({ success: false, error: 'Plan requires a saved mapping profile' });
+		const { startAuditJob } = require('./dataQuality');
+		const id = await startAuditJob({ pool, plan, planId: req.params.id, planConfig: plan.config || {}, mapping: safeParseJson(profile.mapping_json),
+			firebirdConfig: firebird.resolveFirebirdConfig({ ...state.firebird }), mysqlConfig: { ...state.mysql }, schemaName: state.schemaName });
+		pool = null; // Background job now owns the connection pool.
+		res.status(202).json({ success: true, auditId: id });
+	} catch (err) { res.status(err.auditId ? 409 : 400).json({ success: false, error: err.message, ...(err.auditId ? { auditId: err.auditId } : {}) }); }
+	finally { if (pool) await pool.end(); }
+});
+
+router.get('/plans/:id/data-quality', async (req, res) => {
+	let pool;
+	try {
+		pool = await mysql.connectToSchema(state.mysql, state.schemaName);
+		const meta = await getPlanTableMeta(pool);
+		const [rows] = await pool.query('SELECT * FROM migration_plans WHERE plan_id = ?', [req.params.id]);
+		if (!rows.length) return res.status(404).json({ success: false, error: 'Plan not found' });
+		const { mappingProfileId } = await resolvePlanMappingProfileId(pool, rows[0], meta);
+		const profile = mappingProfileId && await runStore.getMappingProfile(pool, mappingProfileId);
+		const { latestReport, inputFingerprint } = require('../../migrate/dataQuality/history');
+		const scope = { mysqlConfig: state.mysql, schemaName: state.schemaName };
+		const report = await latestReport(scope, req.params.id, undefined, profile ? { plan: safeParseJson(rows[0][meta.planJsonColumn]), mapping: safeParseJson(profile.mapping_json), source: firebird.resolveFirebirdConfig(state.firebird) } : null);
+		if (report) {
+			const corrections = await require('../../migrate/dataQuality/corrections').readCorrections(scope);
+			const decisions = await require('../../migrate/dataQuality/decisions').readDecisions(scope);
+			report.settingsChanged = !profile || report.inputFingerprint !== inputFingerprint(safeParseJson(rows[0][meta.planJsonColumn]), safeParseJson(profile.mapping_json), firebird.resolveFirebirdConfig(state.firebird), { corrections, decisions });
+		}
+		res.set('Cache-Control', 'no-store');
+		res.json({ success: true, report });
+	} catch (err) { res.status(400).json({ success: false, error: err.message }); }
+	finally { if (pool) await pool.end(); }
+});
+
 async function getPlanTableColumns(pool) {
 	const [rows] = await pool.query(
 		"select column_name from information_schema.columns where table_schema = database() and table_name = 'migration_plans'"
@@ -234,6 +278,7 @@ router.post("/plans", async (req, res) => {
 
 				// Replace plan.tables with normalized (TARGET names only)
 				plan.tables = normalized.tablesObject;
+				plan.tableOrder = normalized.tablesList;
 				// console.log('[Plans] Normalized table keys to targets:', Object.keys(normalized.tablesObject));
 			}
 		} else {
@@ -355,6 +400,7 @@ router.get("/plans/:id", async (req, res) => {
 		// SELF-HEAL: Normalize plan tables to target names if needed
 		let normalized = null;
 		if (mappingData && plan.tables) {
+			plan.tableOrder = plan.getIncludedTables().map(name => resolveTargetTableName(name, mappingData));
 			normalized = normalizePlanTables(plan.tables, mappingData);
 
 			// Check if normalization changed keys
@@ -382,7 +428,7 @@ router.get("/plans/:id", async (req, res) => {
 		// Prepare response: tables as ARRAY (for UI), tableConfigs as OBJECT (for per-table settings)
 		const planJson = plan.toJSON();
 		const tableConfigs = planJson.tables || {};
-		const tableList = Object.keys(tableConfigs); // Extract target table names as array
+		const tableList = plan.getIncludedTables(); // Explicit order survives JSON object key reordering.
 
 		res.json({
 			success: true,
@@ -473,6 +519,7 @@ router.put("/plans/:id", async (req, res) => {
 			// Normalize tables to target names
 			const normalized = normalizePlanTables(tables, mappingData);
 			plan.tables = normalized.tablesObject;
+			plan.tableOrder = normalized.tablesList;
 			// console.log('[Plans] Normalized tables on update:', Object.keys(normalized.tablesObject));
 		} else if (tables) {
 			// Fallback without mapping (try to preserve structure)
@@ -483,14 +530,12 @@ router.put("/plans/:id", async (req, res) => {
 					existingConfigs[tableName] = plan.getTableConfig(tableName);
 				}
 				plan.tables = {};
-				for (const tableName of normalizedTables) {
-					const existing = existingConfigs[tableName];
-					if (existing) {
-						plan.addTable(tableName, existing);
-					} else {
-						plan.addTable(tableName, {});
-					}
-				}
+				const normalized = normalizePlanTables(normalizedTables.map(entry => {
+					const tableName = resolveTargetTableName(entry);
+					return { ...existingConfigs[tableName], ...(typeof entry === 'object' ? entry : {}), table: tableName };
+				}));
+				plan.tables = normalized.tablesObject;
+				plan.tableOrder = normalized.tablesList;
 			} else if (typeof tables === "object") {
 				for (const [tableName, config] of Object.entries(tables)) {
 					if (plan.includesTable(tableName)) {
@@ -756,6 +801,7 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 
 		// SELF-HEAL: Normalize plan tables before dry-run
 		if (plan.tables && mappingData) {
+			plan.tableOrder = plan.getIncludedTables().map(name => resolveTargetTableName(name, mappingData));
 			const normalized = normalizePlanTables(plan.tables, mappingData);
 			if (needsNormalization(plan.tables, mappingData)) {
 				console.warn('[Dry Run] Auto-repairing plan tables to target-table keys', {
@@ -830,10 +876,12 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 					warnings: []
 				};
 			}
-			let sampleRow = null;
+			// A few sample rows, so one bad record does not make a working mapping look broken.
+			const SAMPLE_ROWS = 10;
+			let samples = [];
 			try {
 				if (tableFilter?.hasLinkClause) {
-					sampleRow = fbDb
+					const first = fbDb
 						? await fetchFirstMatchingRowWithDb({
 							db: fbDb,
 							sourceTable,
@@ -842,15 +890,14 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 							filter: tableFilter
 						})
 						: null;
+					samples = first ? [first] : [];
 					if (!fbDb && tableFilter?.datePlan) {
-						const rows = await firebird.fetchBatchWhere(resolvedFirebirdConfig, sourceTable, columns, 0, 1, columns[0], tableFilter.datePlan.clause, tableFilter.datePlan.params);
-						sampleRow = rows?.[0] || null;
+						samples = await firebird.fetchBatchWhere(resolvedFirebirdConfig, sourceTable, columns, 0, SAMPLE_ROWS, columns[0], tableFilter.datePlan.clause, tableFilter.datePlan.params) || [];
 					}
 				} else {
-					const rows = fbDb
-						? await firebird.fetchBatchWithDbWhere(fbDb, sourceTable, columns, 0, 1, columns[0], tableFilter?.clause || '', tableFilter?.params || [])
-						: await firebird.fetchBatchWhere(resolvedFirebirdConfig, sourceTable, columns, 0, 1, columns[0], tableFilter?.clause || '', tableFilter?.params || []);
-					sampleRow = rows?.[0] || null;
+					samples = (fbDb
+						? await firebird.fetchBatchWithDbWhere(fbDb, sourceTable, columns, 0, SAMPLE_ROWS, columns[0], tableFilter?.clause || '', tableFilter?.params || [])
+						: await firebird.fetchBatchWhere(resolvedFirebirdConfig, sourceTable, columns, 0, SAMPLE_ROWS, columns[0], tableFilter?.clause || '', tableFilter?.params || [])) || [];
 				}
 			} catch (err) {
 				return {
@@ -862,7 +909,7 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 				};
 			}
 
-			if (!sampleRow) {
+			if (!samples.length) {
 				return {
 					success: true,
 					sampleRow: null,
@@ -872,7 +919,7 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 				};
 			}
 
-			const dryRunResult = await PlanValidator.dryRun(sampleRow, mapping, sourceTable, targetTable, schema);
+			const { result: dryRunResult, sampleRow } = await PlanValidator.dryRunSamples(samples, mapping, sourceTable, targetTable, schema);
 			const transformedRow = {};
 			for (const [srcCol, field] of fieldMaps) {
 				// Skip omitted fields - they won't be in the actual migration
@@ -938,7 +985,14 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 			}
 		}
 
-		// Plan-level dry run across all tables
+		// Plan-level dry run across all tables. With { stream: true } each table's result is sent as an
+		// NDJSON line as soon as it is checked, so the page can fill in the table list progressively.
+		const stream = req.body?.stream === true;
+		const send = event => res.write(JSON.stringify(event) + '\n');
+		if (stream) {
+			res.status(200).set({ 'Content-Type': 'application/x-ndjson', 'Cache-Control': 'no-store' });
+			send({ type: 'start', tables });
+		}
 		const perTableResults = [];
 		let totalEstimatedRows = 0;
 		let totalWarnings = 0;
@@ -1009,6 +1063,7 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 					});
 					totalErrors++;
 				}
+				if (stream) send({ type: 'table', table: perTableResults[perTableResults.length - 1] });
 			}
 		} finally {
 			// Detach Firebird connection
@@ -1021,9 +1076,7 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 			}
 		}
 
-		res.json({
-			success: true,
-			results: {
+		const results = {
 				tableCount: tables.length,
 				estimatedRows: totalEstimatedRows,
 				estimatedRowsDisplay: hasApproximateCounts ? `${totalEstimatedRows}+` : String(totalEstimatedRows),
@@ -1037,10 +1090,13 @@ router.post("/plans/:id/dry-run", async (req, res) => {
 				},
 				warnings: perTableResults.flatMap(t => t.warnings.map(w => `${t.tableName}: ${w}`)),
 				errors: perTableResults.flatMap(t => t.errors.map(e => `${t.tableName}: ${e}`))
-			}
-		});
+		};
+		if (stream) return res.end(JSON.stringify({ type: 'done', results }) + '\n');
+		res.json({ success: true, results });
 	} catch (err) {
 		console.error('[Dry Run] Error:', err);
+		// Once streaming has started the status is already sent; report the failure as a final line.
+		if (res.headersSent) return res.end(JSON.stringify({ type: 'error', error: err.message }) + '\n');
 		res.status(500).json({
 			success: false,
 			error: { message: err.message, details: err.stack }

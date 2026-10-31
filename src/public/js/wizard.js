@@ -44,6 +44,13 @@ class MigrationWizard {
 			const reusePlanId = urlParams.get('reusePlanId');
 			const stepParam = urlParams.get('step');
 
+			// ?new=1 comes from the topbar "Start New Migration" button: begin from a clean slate
+			if (urlParams.get('new') === '1') {
+				this.storage.clearAll();
+				this.state.reset();
+				window.history.replaceState({}, document.title, '/wizard');
+			}
+
 			let initialStep = this.state.get('currentStep') || 1;
 			if (stepParam) {
 				initialStep = parseInt(stepParam, 10);
@@ -195,6 +202,37 @@ class MigrationWizard {
 		return ['SUCCESS', 'COMPLETED'].includes(String(this.state.get('run.status') || '').toUpperCase());
 	}
 
+	/**
+	 * Fold the app menu away during a wizard session (from Step 2 until the wizard is reset).
+	 * An arrow tab on the left edge reopens it; that choice holds until the session state changes.
+	 */
+	updateSidebar() {
+		const app = document.querySelector('.app');
+		if (!app) return;
+		const active = this.currentStep > 1;
+		if (active !== this._sessionActive) {
+			this._sessionActive = active;
+			this._sidebarOpen = false;
+		}
+		let toggle = app.querySelector('.sidebar-toggle');
+		if (!toggle) {
+			toggle = document.createElement('button');
+			toggle.type = 'button';
+			toggle.className = 'sidebar-toggle';
+			toggle.addEventListener('click', () => {
+				this._sidebarOpen = !this._sidebarOpen;
+				this.updateSidebar();
+			});
+			app.prepend(toggle);
+		}
+		app.classList.toggle('wizard-session', active);
+		app.classList.toggle('sidebar-collapsed', active && !this._sidebarOpen);
+		toggle.textContent = this._sidebarOpen ? '‹' : '›';
+		toggle.title = this._sidebarOpen ? 'Hide menu' : 'Show menu';
+		toggle.setAttribute('aria-label', toggle.title);
+		toggle.setAttribute('aria-expanded', String(!active || this._sidebarOpen));
+	}
+
 	hasFailureResults() {
 		return ['FAILED', 'COMPLETED_WITH_ERRORS', 'CANCELLED', 'STOPPED', 'ABORTED'].includes(String(this.state.get('run.status') || '').toUpperCase());
 	}
@@ -203,6 +241,7 @@ class MigrationWizard {
 	 * Render progress bar
 	 */
 	renderProgressBar() {
+		this.updateSidebar();
 		const progressBar = document.getElementById('wizard-progress');
 		if (!progressBar) return;
 
@@ -251,11 +290,14 @@ class MigrationWizard {
 	 * Render navigation buttons
 	 */
 	renderNavigation() {
+		this.updateSidebar();
 		const nav = document.getElementById('wizard-navigation');
 		if (!nav) return;
 
 		const canGoBack = this.currentStep > 1;
 		const canGoNext = this.currentStep < this.steps.length;
+		// The last step has nowhere to go, so its forward button starts a new migration instead.
+		const isLastStep = this.currentStep === this.steps.length;
 		const validation = this.state.canProceed();
 
 		// Build validation feedback HTML
@@ -271,31 +313,42 @@ class MigrationWizard {
 			`;
 		}
 
-		nav.innerHTML = `
-      ${validationFeedback}
+		const navButtons = (idPrefix, centerHtml) => `
       <div class="nav-buttons">
-        <button 
-          id="btn-prev" 
-          class="btn btn-secondary" 
+        <button
+          id="${idPrefix}-prev"
+          class="btn btn-secondary"
           ${!canGoBack || this._isBusy ? 'disabled' : ''}
           ${!canGoBack ? 'style="visibility: hidden;"' : ''}
         >
           ← Previous
         </button>
-        
+
         <div class="nav-center">
-          <span class="step-indicator">${this.currentStep === 6 && this.hasFailureResults() ? 'Failure results · resolve before Step 5' : `Step ${this.currentStep} of ${this.steps.length}`}</span>
+          ${centerHtml}
         </div>
-        
-        <button 
-          id="btn-next" 
-          class="btn btn-primary" 
+
+        ${isLastStep ? `<button
+          id="${idPrefix}-next"
+          class="btn ${this.hasFailureResults() ? 'btn-secondary' : 'btn-primary'}"
+          ${this._isBusy ? 'disabled' : ''}
+          title="Clear this run and start the wizard again"
+        >
+          ↻ Start new migration
+        </button>` : `<button
+          id="${idPrefix}-next"
+          class="btn btn-primary"
           ${!canGoNext || !validation.valid || this._isBusy ? 'disabled' : ''}
           title="${!validation.valid ? validation.errors.join(', ') : ''}"
         >
           ${this.currentStep === 4 && this.hasFailureResults() ? 'View Failure Results →' : this.currentStep === this.steps.length - 1 ? 'Finish' : 'Next →'}
-        </button>
+        </button>`}
       </div>
+    `;
+
+		nav.innerHTML = `
+      ${validationFeedback}
+      ${navButtons('btn', `<span class="step-indicator">${this.currentStep === 6 && this.hasFailureResults() ? 'Failure results · resolve before Step 5' : `Step ${this.currentStep} of ${this.steps.length}`}</span>`)}
     `;
 
 		// Attach event listeners
@@ -307,7 +360,24 @@ class MigrationWizard {
 		}
 
 		if (btnNext) {
-			btnNext.addEventListener('click', () => this.nextStep());
+			btnNext.addEventListener('click', () => isLastStep ? this.startNewMigration() : this.nextStep());
+		}
+
+		// Step 3 (Create Plan) is long, so repeat the navigation below its content with a back-to-top link.
+		const bottomNav = document.getElementById('wizard-navigation-bottom');
+		if (bottomNav) {
+			if (this.currentStep !== 3) {
+				bottomNav.hidden = true;
+				bottomNav.innerHTML = '';
+			} else {
+				bottomNav.hidden = false;
+				bottomNav.innerHTML = navButtons('btn-bottom', '<button type="button" id="btn-back-to-top" class="btn btn-secondary btn-sm">↑ Back to top</button>');
+				document.getElementById('btn-bottom-prev')?.addEventListener('click', () => this.previousStep());
+				document.getElementById('btn-bottom-next')?.addEventListener('click', () => this.nextStep());
+				document.getElementById('btn-back-to-top')?.addEventListener('click', () => {
+					window.scrollTo({ top: 0, behavior: 'smooth' });
+				});
+			}
 		}
 	}
 
@@ -700,6 +770,9 @@ class MigrationWizard {
 				nextBtn.classList.add('disabled');
 				nextBtn.textContent = 'Working...';
 			}
+			document.querySelectorAll('#wizard-navigation-bottom #btn-bottom-prev, #wizard-navigation-bottom #btn-bottom-next').forEach(btn => {
+				btn.disabled = true;
+			});
 		} else {
 			this.hideLoading();
 			// Re-render navigation to restore button states
@@ -747,6 +820,15 @@ class MigrationWizard {
 				contentDiv.insertBefore(banner, contentDiv.firstChild);
 			}
 		}
+	}
+
+	/**
+	 * Start a new migration from the last step (lets ResultsUI clear its own state first)
+	 */
+	startNewMigration() {
+		const resultsComponent = this.steps[this.steps.length - 1]?.component;
+		if (resultsComponent?.startNewMigration) resultsComponent.startNewMigration();
+		else this.reset();
 	}
 
 	/**

@@ -1,10 +1,12 @@
 const EventEmitter = require("events");
+const { prepareLegacyMapping } = require("./prepareLegacyMapping");
+const { createAudit } = require("./dataQuality/service");
+const { openBatchReader, readRecords } = require("./dataQuality/store");
 const { ensureInvoiceActiveJobSchema } = require('../db/invoiceActiveJobSchema');
 const { findExistingRetryRows } = require('./retryExistingRecords');
 const firebird = require("../db/firebird");
 const mysql = require("../db/mysql");
-const { applyTransform } = require("./mappers");
-const { applyMigrationMarker } = require("./migrationMarkers");
+const { mapRow } = require("./rowMapping");
 const { explainError } = require("./runDiagnostics");
 const runStore = require("./runStore");
 const logger = require("./logger");
@@ -24,25 +26,18 @@ const {
 	validateGLExecutionPrereqs
 } = require("./gl/glMigrationOrder");
 const {
-	buildTransactionalLinkContextWithDb,
 	buildTransactionalTableFilter,
-	collectMatchingKeyValuesWithDb,
-	FIREBIRD_IN_MEMBER_LIST_LIMIT,
 	normalizeTransactionalDateFilterConfig,
-	summarizeTransactionalContext
 } = require("./transactionalDateFilter");
 const {
 	applyInvoiceSplitPolicy,
 	buildInvoiceSplitPolicy,
 	buildInvoiceSourcePolicy,
-	buildSourceInvoiceSelection,
-	combineSourceWhere,
-	filterValidInvoiceKeys,
+	buildSourceInvoiceIdentityMap,
 	getMappingDefault,
 	hasMappingDefault,
 	reconcileInvoiceIdentities,
 	resolveMappedSourceColumn,
-	resolveMappingDefault,
 	resolveOnDuplicatePolicy
 } = require("./invoiceMigrationSafety");
 
@@ -206,126 +201,6 @@ function resolveFirebirdSourceTable(mappedSource, firebirdTableMap) {
 	}
 
 	return null;
-}
-
-const ACCNR_COLLISION_OVERRIDES = new Map([
-	[1601200, 6200],
-	[1601300, 6301],
-	[6606300, 6302]
-]);
-
-function getRowValue(row, key) {
-	if (!row || !key) return undefined;
-	return row[key] ?? row[key.toLowerCase()] ?? row[key.toUpperCase()];
-}
-
-function convertLegacyGroupAccnr(accnr) {
-	const numeric = Number(accnr);
-	if (!Number.isFinite(numeric)) return accnr;
-	if (ACCNR_COLLISION_OVERRIDES.has(numeric)) {
-		return ACCNR_COLLISION_OVERRIDES.get(numeric);
-	}
-	return ((numeric % 10000) + 10000) % 10000;
-}
-
-function shouldConvertAccnrReference(targetTable, targetColumn) {
-	if (!targetTable || !targetColumn) return false;
-	return targetColumn.toLowerCase() === "accnr" && targetTable.toLowerCase() !== "accounts";
-}
-
-function applyAccnrReferenceConversion(value, accnrConversionMap) {
-	if (!accnrConversionMap || !accnrConversionMap.size) return value;
-	if (value === null || value === undefined || value === "") return value;
-	const numeric = Number(value);
-	if (!Number.isFinite(numeric)) return value;
-	return accnrConversionMap.get(numeric) ?? value;
-}
-
-async function loadAccnrConversionMap({
-	firebirdConfig,
-	firebirdTableMap,
-	mapping,
-	pool,
-	logRun
-}) {
-	const accnrConversionMap = new Map();
-	const registerRow = (row) => {
-		const accnr = Number(getRowValue(row, "accnr"));
-		const acctype = String(getRowValue(row, "acctype") || "").trim().toLowerCase();
-		const accclassRaw = getRowValue(row, "accclass");
-		const accclass = accclassRaw === null || accclassRaw === undefined || accclassRaw === ""
-			? null
-			: Number(accclassRaw);
-
-		if (!Number.isFinite(accnr)) return;
-		if (acctype !== "group account") return;
-		if (accclass === null || !Number.isFinite(accclass) || accclass === 7) return;
-
-		accnrConversionMap.set(accnr, convertLegacyGroupAccnr(accnr));
-	};
-
-	const accountsMapping = resolveMappingForTarget("accounts", mapping);
-	const mappedAccountsSource = accountsMapping?.sourceTable || "accounts";
-	const firebirdAccountsTable = resolveFirebirdSourceTable(mappedAccountsSource, firebirdTableMap)
-		|| firebirdTableMap.get("accounts");
-
-	if (firebirdAccountsTable) {
-		try {
-			const rows = await firebird.query(
-				firebirdConfig,
-				`SELECT ACCNR, ACCTYPE, ACCCLASS FROM ${firebirdAccountsTable}`
-			);
-			for (const row of rows) {
-				registerRow(row);
-			}
-			logRun({
-				level: "info",
-				phase: "preflight",
-				action: "accnr_conversion_map",
-				source: "firebird",
-				sourceTable: firebirdAccountsTable,
-				count: accnrConversionMap.size
-			});
-			return accnrConversionMap;
-		} catch (err) {
-			logRun({
-				level: "warn",
-				phase: "preflight",
-				action: "accnr_conversion_map",
-				source: "firebird",
-				status: "failed",
-				error: err.message
-			});
-		}
-	}
-
-	try {
-		const [rows] = await pool.query(
-			"SELECT accnr, acctype, accclass FROM accounts WHERE accnr IS NOT NULL"
-		);
-		for (const row of rows) {
-			registerRow(row);
-		}
-		logRun({
-			level: "info",
-			phase: "preflight",
-			action: "accnr_conversion_map",
-			source: "mysql",
-			sourceTable: "accounts",
-			count: accnrConversionMap.size
-		});
-	} catch (err) {
-		logRun({
-			level: "warn",
-			phase: "preflight",
-			action: "accnr_conversion_map",
-			source: "mysql",
-			status: "failed",
-			error: err.message
-		});
-	}
-
-	return accnrConversionMap;
 }
 
 function formatConfigSummary(firebirdConfig) {
@@ -866,38 +741,6 @@ async function validateDataTypeMapping(pool, firebirdConfig, sourceTable, target
 	}
 }
 
-async function mapRow(row, columnMap, lookupFn, options = {}) {
-	const result = {};
-	const targetTable = String(options.targetTable || "").toLowerCase();
-	const accnrConversionMap = options.accnrConversionMap || null;
-	const columnTypes = options.columnTypes || null;
-	for (const [sourceCol, rule] of Object.entries(columnMap)) {
-		const srcKey = sourceCol.toLowerCase();
-		const value = row[srcKey];
-		let mappedValue = value;
-		const outKey = rule.target ?? rule.targetColumn;
-		if (rule.lookup) {
-			mappedValue = await lookupFn(rule.lookup.table, value);
-		}
-		if (rule.transform) {
-			mappedValue = applyTransform(rule.transform, mappedValue);
-		}
-		if ((mappedValue === undefined || mappedValue === null) && hasMappingDefault(rule)) {
-			mappedValue = resolveMappingDefault(rule, {
-				targetTable,
-				targetColumn: outKey,
-				dataType: columnTypes?.get(String(outKey || "").toLowerCase())
-			});
-		}
-		mappedValue = applyMigrationMarker(targetTable, outKey, mappedValue);
-		if (shouldConvertAccnrReference(targetTable, outKey)) {
-			mappedValue = applyAccnrReferenceConversion(mappedValue, accnrConversionMap);
-		}
-		if (outKey) result[outKey] = mappedValue;
-	}
-	return result;
-}
-
 function buildInsertStatement(tableName, columns, mode, primaryKeys, ignoreDuplicates) {
 	const colList = columns.map((c) => `\`${c}\``).join(", ");
 	const ignorePrefix = ignoreDuplicates && mode !== "UPSERT" ? "ignore " : "";
@@ -909,76 +752,6 @@ function buildInsertStatement(tableName, columns, mode, primaryKeys, ignoreDupli
 		.join(", ");
 	const sql = updates.length ? `${base} on duplicate key update ${updates}` : base;
 	return { sql, updateCols: updates };
-}
-
-async function loadSourceInvoiceSelection({
-	fbDb,
-	sourceTable,
-	columnsMap,
-	sourceWhere,
-	filteredSourceKeys,
-	rowKeyColumn,
-	totalSource,
-	checkSourceAbort = () => { }
-}) {
-	const identityColumns = [
-		resolveMappedSourceColumn(columnsMap, "invoice_nr"),
-		resolveMappedSourceColumn(columnsMap, "job_number"),
-		resolveMappedSourceColumn(columnsMap, "cid")
-	].filter(Boolean);
-	const uniqueColumns = Array.from(new Set(identityColumns));
-	const rows = [];
-	// Record raw row ranges for linked-key filters: one key can select several
-	// source rows. Both scans use DB_KEY order so the selected offsets agree.
-	const partitions = [];
-
-	if (filteredSourceKeys) {
-		for (let index = 0; index < filteredSourceKeys.length; index += FIREBIRD_IN_MEMBER_LIST_LIMIT) {
-			const pageKeys = filteredSourceKeys.slice(index, index + FIREBIRD_IN_MEMBER_LIST_LIMIT);
-			const keyWhere = `"${String(rowKeyColumn).replace(/"/g, '""')}" IN (${pageKeys.map(() => "?").join(", ")})`;
-			const start = rows.length;
-			let pageOffset = 0;
-			while (true) {
-				checkSourceAbort();
-				const page = await firebird.fetchBatchWithDbWhere(
-					fbDb, sourceTable, uniqueColumns, pageOffset, 1000,
-					"RDB$DB_KEY", keyWhere, pageKeys
-				);
-				rows.push(...page);
-				pageOffset += page.length;
-				if (page.length < 1000) break;
-			}
-			partitions.push({ start, count: pageOffset, clause: keyWhere, params: pageKeys });
-		}
-	} else {
-		let offset = 0;
-		while (offset < totalSource) {
-			checkSourceAbort();
-			const page = await firebird.fetchBatchWithDbWhere(
-				fbDb,
-				sourceTable,
-				uniqueColumns,
-				offset,
-				1000,
-				"RDB$DB_KEY",
-				sourceWhere.clause,
-				sourceWhere.params
-			);
-			if (!page.length) break;
-			rows.push(...page);
-			offset += page.length;
-		}
-	}
-
-	const selection = buildSourceInvoiceSelection(rows, columnsMap);
-	const expectedCount = filteredSourceKeys ? filteredSourceKeys.length : Number(totalSource);
-	const actualCount = filteredSourceKeys ? selection.identities.size : rows.length;
-	if (actualCount !== expectedCount) {
-		throw new Error(
-			`Invoice migration safety check failed: expected ${expectedCount} source ${filteredSourceKeys ? "invoice numbers" : "rows"} but found ${actualCount}.`
-		);
-	}
-	return { ...selection, partitions, totalSource: rows.length };
 }
 
 async function validateTargetInvoiceIdentities({
@@ -1240,150 +1013,7 @@ async function runMigrationInternal({
 		});
 		await runTimed("preflight", preflightConnectivity);
 
-		if (includedSteps.some(step => String(resolveTargetTableName(step.table, mapping) || step.table).toLowerCase() === 'invoices')) {
-			checkAbort(runId);
-			const action = { phase: 'preflight', action: 'invoice_active_job_schema', schema: schemaName };
-			try {
-				const result = await ensureInvoiceActiveJobSchema(pool, { dryRun });
-				logRun({ level: 'info', ...action, ...result });
-			} catch (err) {
-				logRun({ level: 'error', ...action, status: 'failed', error: err.message });
-				throw new Error(`Invoice active-job schema correction failed: ${err.message}`);
-			}
-		}
 
-		// Commit source invoice cleanup before any source counts or migration reads.
-		const invoiceCleanup = { phase: "preflight", action: "firebird_invoice_cleanup" };
-		if (dryRun) {
-			logRun({ level: "info", ...invoiceCleanup, status: "skipped", reason: "dry_run" });
-		} else {
-			checkAbort(runId);
-			logRun({ level: "info", ...invoiceCleanup, status: "start" });
-			try {
-				await firebird.query(firebirdConfig, "delete from invoices where inv_nr is null");
-				await firebird.query(firebirdConfig, "delete from invoices where status = 'REDO'");
-				await firebird.query(firebirdConfig, "delete from spares_used where job_nr is null");
-				await firebird.query(firebirdConfig, "delete from workdone where job_nr is null");
-				await firebird.query(firebirdConfig, "delete from payments where inv_nr is null");
-				await firebird.query(firebirdConfig, "delete from invtotal where invoicenr is null");
-				await firebird.query(firebirdConfig, "delete from paymentssupp where invoicenr is null");
-				// await firebird.query(firebirdConfig, "delete from staff where groups <> 'MASTER'");
-
-				logRun({ level: "info", ...invoiceCleanup, status: "passed" });
-
-
-			} catch (err) {
-				logRun({ level: "error", ...invoiceCleanup, status: "failed", error: err.message });
-				throw new Error(`Firebird pre-migration invoice cleanup failed: ${err.message}`);
-			}
-		}
-
-		// The pool is connected to the selected target schema.
-		const staffCleanup = { phase: "preflight", action: "mysql_staff_cleanup", schema: schemaName };
-		if (dryRun) {
-			logRun({ level: "info", ...staffCleanup, status: "skipped", reason: "dry_run" });
-		} else if (retryOfRunId) {
-			logRun({ level: 'info', ...staffCleanup, status: 'skipped', reason: 'retry_preserves_existing_records' });
-		} else {
-			checkAbort(runId);
-			logRun({ level: "info", ...staffCleanup, status: "start" });
-			try {
-				const [result] = await pool.query("delete from staff where staff_group <> 'SUPER USER'");
-				logRun({ level: "info", ...staffCleanup, status: "passed", deletedRows: result.affectedRows });
-				// const [result2] = await pool.query("delete from staff where staff_group <> 'MASTER'");
-				// logRun({ level: "info", ...staffCleanup, status: "passed", deletedRows: result2.affectedRows });
-			} catch (err) {
-				logRun({ level: "error", ...staffCleanup, status: "failed", error: err.message });
-				throw new Error(`MySQL pre-migration staff cleanup failed: ${err.message}`);
-			}
-		}
-
-		// Validate NOT NULL constraints for all tables before starting migration
-		logRun({ level: "info", phase: "preflight", action: "nullability_validation", status: "start" });
-		const nullabilityViolations = [];
-
-		for (const step of includedSteps) {
-			const tableName = (step.table || '').toLowerCase();
-			const mappingEntry = resolveMappingForTarget(tableName, mapping);
-
-			if (mappingEntry && mappingEntry.columns) {
-				const validation = await validateColumnNullability(pool, tableName, mappingEntry.columns);
-
-				if (!validation.safe) {
-					for (const violation of validation.violations) {
-						nullabilityViolations.push({
-							table: tableName,
-							...violation
-						});
-					}
-				}
-			}
-		}
-
-		if (nullabilityViolations.length > 0) {
-			const errorMessages = nullabilityViolations.map(v =>
-				`  • [${v.table}] ${v.message} ${v.suggestion}`
-			).join('\n');
-
-			logRun({
-				level: "error",
-				phase: "preflight",
-				action: "nullability_validation",
-				status: "failed",
-				violations: nullabilityViolations
-			});
-
-			throw new Error(
-				`Column NOT NULL constraint violations detected:\n${errorMessages}\n\n` +
-				`Fix these mapping issues before starting migration.`
-			);
-		}
-
-		logRun({ level: "info", phase: "preflight", action: "nullability_validation", status: "passed" });
-
-		// ─── GL HARD-FAIL GUARDS ────────────────────────────────────────
-		// Seed and validate gl_account_types BEFORE any table migration.
-		// This ensures the authoritative type set is always present.
-		logRun({ level: "info", phase: "preflight", action: "gl_account_types_seed", status: "start" });
-		try {
-			await seedAccountTypes(pool);
-			const gatValidation = await validateAccountTypes(pool);
-			if (!gatValidation.valid) {
-				throw new Error(
-					`GL HARD FAIL: gl_account_types validation failed after seeding:\n` +
-					gatValidation.errors.map(e => `  • ${e}`).join("\n")
-				);
-			}
-			logRun({ level: "info", phase: "preflight", action: "gl_account_types_seed", status: "passed" });
-		} catch (seedErr) {
-			if (seedErr.message.includes("GL HARD FAIL")) throw seedErr;
-			logRun({
-				level: "warn",
-				phase: "preflight",
-				action: "gl_account_types_seed",
-				status: "skipped",
-				error: seedErr.message,
-				hint: "gl_account_types table may not exist yet — will be created during migration"
-			});
-		}
-
-		// Check if any GL tables are included in this run — if so, enforce guards
-		const glTablesInPlan = includedSteps.filter(s =>
-			["gl_account_types", "gl_accounts", "gl_journal_headers", "gl_journal_lines"].includes(s.table?.toLowerCase())
-		);
-		const accountsInPlan = includedSteps.some(s => s.table?.toLowerCase() === "accounts");
-
-		if (glTablesInPlan.length > 0 && accountsInPlan) {
-			logRun({
-				level: "info",
-				phase: "preflight",
-				action: "gl_guard",
-				status: "gl_tables_detected",
-				tables: glTablesInPlan.map(s => s.table),
-				message: "GL tables detected in migration plan — ACCCLASS→type_id enforcement active"
-			});
-		}
-		// ─── END GL GUARDS ──────────────────────────────────────────────
 
 		startKeepalive();
 		checkAbort(runId);
@@ -1391,125 +1021,7 @@ async function runMigrationInternal({
 		const firebirdTableMap = new Map(
 			firebirdTables.map((name) => [name.toLowerCase(), name])
 		);
-		let transactionalFilterContext = null;
-		if (transactionalDateFilter.enabled) {
-			logRun({ level: 'info', phase: 'preflight', action: 'transactional_filter_context', status: 'start', startDate: transactionalDateFilter.startDate });
-			const fbDb = await firebird.attachWithRetry(firebirdConfig);
-			try {
-				const tableConfigs = includedSteps.map((step) => {
-					const tableName = String(step?.table || '').toLowerCase();
-					const mappingEntry = resolveMappingForTarget(tableName, mapping);
-					const mappedSource = mappingEntry?.sourceTable;
-					const sourceTable = resolveFirebirdSourceTable(mappedSource, firebirdTableMap);
-					if (!mappingEntry || !sourceTable) return null;
-					return {
-						tableName,
-						sourceTable,
-						columnsMap: mappingEntry.columns
-					};
-				}).filter(Boolean);
-
-				transactionalFilterContext = await buildTransactionalLinkContextWithDb({
-					db: fbDb,
-					tableConfigs,
-					planConfig,
-					firebirdConfig,
-					onProgress: (phase, detail) => logRun({ level: 'info', phase: 'preflight', action: 'transactional_filter_context', status: phase, ...detail })
-				});
-
-				logRun({
-					level: 'info',
-					phase: 'preflight',
-					action: 'transactional_filter_context',
-					status: 'done',
-					startDate: transactionalDateFilter.startDate,
-					keyCounts: summarizeTransactionalContext(transactionalFilterContext)
-				});
-			} finally {
-				try {
-					fbDb.detach();
-				} catch (err) {
-					logRun({ level: 'warn', phase: 'preflight', action: 'transactional_filter_context_detach', error: err.message });
-				}
-			}
-		}
-		const accnrConversionMap = await loadAccnrConversionMap({
-			firebirdConfig,
-			firebirdTableMap,
-			mapping,
-			pool,
-			logRun
-		});
-
-		// Auto-migrate old INVOICES column mapping to match actual schema
-		if (mapping?.tables?.INVOICES?.columns) {
-			const cols = mapping.tables.INVOICES.columns;
-			const renames = {
-				INVOICE_NR: "INV_NR",
-				IDATE: "INVOICE_DATE",
-				TOTAL: "INV_TOTALEXLVAT",
-				TOTALINCLVAT: "INV_TOTALINCLVAT"
-			};
-			const targetRenames = {
-				idate: "invoice_date",
-				total: "inv_totalexlvat",
-				totalinclvat: "inv_totalinclvat"
-			};
-			for (const [oldKey, newKey] of Object.entries(renames)) {
-				if (cols[oldKey] && !cols[newKey]) {
-					cols[newKey] = cols[oldKey];
-					delete cols[oldKey];
-					logRun({ level: "info", phase: "mapping_migrate", table: "INVOICES", oldKey, newKey });
-				}
-			}
-			for (const rule of Object.values(cols)) {
-				const lower = String(rule.target || "").toLowerCase();
-				if (targetRenames[lower]) {
-					logRun({ level: "info", phase: "mapping_migrate", table: "INVOICES", oldTarget: rule.target, newTarget: targetRenames[lower] });
-					rule.target = targetRenames[lower];
-				}
-			}
-		}
-
-		// Auto-migrate old JOB_INFORMATION mappings that paired similarly named fields to the wrong targets.
-		for (const [sourceKey, entry] of Object.entries(mapping?.tables || {})) {
-			const targetName = String(entry?.target || entry?.targetTable || "").toLowerCase();
-			if (String(sourceKey).toUpperCase() !== "JOB_INFORMATION" && targetName !== "job_information") continue;
-			const cols = entry?.columns || {};
-			if (cols.INVTOTAL) {
-				const target = String(cols.INVTOTAL.target || cols.INVTOTAL.targetColumn || "").toLowerCase();
-				if (target === "job_number") {
-					cols.INVTOTAL.target = "invoice_total";
-					cols.INVTOTAL.targetColumn = "invoice_total";
-					logRun({ level: "info", phase: "mapping_migrate", table: "JOB_INFORMATION", source: "INVTOTAL", oldTarget: "job_number", newTarget: "invoice_total" });
-				}
-			}
-			if (cols.CONT_JOBNR) {
-				const target = String(cols.CONT_JOBNR.target || cols.CONT_JOBNR.targetColumn || "").toLowerCase();
-				if (target === "cont_id") {
-					cols.CONT_JOBNR.target = "cont_job_number";
-					cols.CONT_JOBNR.targetColumn = "cont_job_number";
-					logRun({ level: "info", phase: "mapping_migrate", table: "JOB_INFORMATION", source: "CONT_JOBNR", oldTarget: "cont_id", newTarget: "cont_job_number" });
-				}
-			}
-		}
-
-		// Auto-migrate old SPARES_USED column names
-		if (mapping?.tables?.SPARES_USED?.columns) {
-			const cols = mapping.tables.SPARES_USED.columns;
-			const renames = {
-				JOB_NUMBER: "JOB_NR",
-				QTY: "QUANTITY",
-				SPARE_ID: "SPARES_ID"
-			};
-			for (const [oldKey, newKey] of Object.entries(renames)) {
-				if (cols[oldKey] && !cols[newKey]) {
-					cols[newKey] = cols[oldKey];
-					delete cols[oldKey];
-					logRun({ level: "info", phase: "mapping_migrate", table: "SPARES_USED", oldKey, newKey });
-				}
-			}
-		}
+		prepareLegacyMapping(mapping, logRun);
 		// Fix dedupe keys for spares_used based on keyStrategy
 		for (const step of plan || []) {
 			if (step.table === "spares_used") {
@@ -1606,6 +1118,107 @@ async function runMigrationInternal({
 			// console.warn('[Runner] Failed to rebuild runState.tables after normalization:', e.message);
 		}
 		logRun({ level: 'info', phase: 'table_loop', action: 'normalized_tables', sampleTables: includedSteps.slice(0, 5).map(s => s.table) });
+
+		logRun({ level: 'info', phase: 'preflight', action: 'data_quality', status: 'start' });
+		for (const tableState of runState.tables || []) tableState.audit = null;
+		const quality = await createAudit({
+			pool, firebirdConfig, mysqlConfig, schemaName, plan: includedSteps, planConfig, mapping, runId, retryOfRunId,
+			checkAbort: () => checkAbort(runId),
+			onProgress: detail => {
+				runState.dataQualityProgress = detail;
+				// Per-table audit state lets Step 4 fill each row's progress bar before import starts.
+				const tableState = detail.table && tableStateMap.get(String(detail.table).toLowerCase());
+				if (tableState) {
+					const previous = tableState.audit || {};
+					const done = previous.done || ['scan_complete', 'table_blocked'].includes(detail.phase) || detail.stage === 'links';
+					tableState.audit = {
+						phase: detail.phase,
+						scanned: detail.scanned ?? previous.scanned ?? 0,
+						total: detail.total ?? previous.total ?? null,
+						flagged: detail.flagged ?? previous.flagged ?? 0,
+						blocked: previous.blocked || detail.phase === 'table_blocked',
+						done
+					};
+				}
+				logRun({ level: 'info', phase: 'preflight', action: 'data_quality', ...detail });
+				emitRunState(runId, emitter);
+			}
+		});
+		for (const [name, audited] of quality.tables || []) {
+			const tableState = tableStateMap.get(String(name).toLowerCase());
+			const summary = audited?.summary;
+			if (!tableState || !summary) continue;
+			tableState.audit = { ...tableState.audit, phase: 'checked', done: true,
+				scanned: summary.scanned ?? tableState.audit?.scanned ?? 0,
+				flagged: Number(summary.quarantined || 0) + Number(summary.review || 0) };
+		}
+		runState.dataQuality = quality.report;
+		logRun({ level: quality.report.status === 'ready' ? 'info' : 'error', phase: 'preflight', action: 'data_quality', status: quality.report.status, auditId: quality.report.id, totals: quality.report.totals });
+		emitRunState(runId, emitter);
+		if (quality.report.status !== 'ready') throw new Error('Data quality audit ' + quality.report.id + ' blocked migration: ' + quality.report.totals.review + ' records require review; ' + quality.report.totals.errors + ' configuration issues. Open the Data Quality report before retrying.');
+		const transactionalFilterContext = quality.context;
+		const accnrConversionMap = quality.accnrConversionMap;
+		mapping = quality.mapping || mapping;
+		// Execute the same safe internal-ID policy that the audit validated.
+		for (const step of includedSteps) {
+			const audited = quality.tables?.get(String(resolveTargetTableName(step.table, mapping) || step.table).toLowerCase());
+			if (audited?.step) step.keyStrategy = audited.step.keyStrategy;
+		}
+		if (includedSteps.some(step => String(resolveTargetTableName(step.table, mapping) || step.table).toLowerCase() === 'invoices')) {
+			checkAbort(runId);
+			const action = { phase: 'preflight', action: 'invoice_active_job_schema', schema: schemaName };
+			try {
+				const result = await ensureInvoiceActiveJobSchema(pool, { dryRun });
+				logRun({ level: 'info', ...action, ...result });
+			} catch (err) {
+				logRun({ level: 'error', ...action, status: 'failed', error: err.message });
+				throw new Error(`Invoice active-job schema correction failed: ${err.message}`);
+			}
+		}
+
+		// ─── GL HARD-FAIL GUARDS ────────────────────────────────────────
+		// Seed and validate gl_account_types BEFORE any table migration.
+		// This ensures the authoritative type set is always present.
+		logRun({ level: "info", phase: "preflight", action: "gl_account_types_seed", status: "start" });
+		try {
+			if (!dryRun) await seedAccountTypes(pool);
+			const gatValidation = await validateAccountTypes(pool);
+			if (!gatValidation.valid) {
+				throw new Error(
+					`GL HARD FAIL: gl_account_types validation failed after seeding:\n` +
+					gatValidation.errors.map(e => `  • ${e}`).join("\n")
+				);
+			}
+			logRun({ level: "info", phase: "preflight", action: "gl_account_types_seed", status: "passed" });
+		} catch (seedErr) {
+			if (seedErr.message.includes("GL HARD FAIL")) throw seedErr;
+			logRun({
+				level: "warn",
+				phase: "preflight",
+				action: "gl_account_types_seed",
+				status: "skipped",
+				error: seedErr.message,
+				hint: "gl_account_types table may not exist yet — will be created during migration"
+			});
+		}
+
+		// Check if any GL tables are included in this run — if so, enforce guards
+		const glTablesInPlan = includedSteps.filter(s =>
+			["gl_account_types", "gl_accounts", "gl_journal_headers", "gl_journal_lines"].includes(s.table?.toLowerCase())
+		);
+		const accountsInPlan = includedSteps.some(s => s.table?.toLowerCase() === "accounts");
+
+		if (glTablesInPlan.length > 0 && accountsInPlan) {
+			logRun({
+				level: "info",
+				phase: "preflight",
+				action: "gl_guard",
+				status: "gl_tables_detected",
+				tables: glTablesInPlan.map(s => s.table),
+				message: "GL tables detected in migration plan — ACCCLASS→type_id enforcement active"
+			});
+		}
+		// ─── END GL GUARDS ──────────────────────────────────────────────
 
 		// Extract continueOnError from plan config
 		const continueOnError = planConfig?.continueOnError === true;
@@ -1723,7 +1336,8 @@ async function runMigrationInternal({
 				continue;
 			}
 
-			const firebirdColumnNames = (await firebird.listColumns(firebirdConfig, sourceTable)).map((c) => c.toLowerCase());
+			const auditedTable = quality.tables.get(tableName);
+			const firebirdColumnNames = auditedTable.sourceColumns.map(c => c.toLowerCase());
 			const tableFilter = buildTransactionalTableFilter(tableName, columnsMap, planConfig || {}, {
 				availableSourceColumns: firebirdColumnNames,
 				context: transactionalFilterContext
@@ -1778,44 +1392,6 @@ async function runMigrationInternal({
 				continue;
 			}
 
-			// Validate dedupe keys for NULL values in source data
-			if (dedupeKeys.length && !dryRun) {
-				const dedupeSourceCols = dedupeKeys
-					.map(targetCol => {
-						const entry = Object.entries(columnsMap || {}).find(([, rule]) => (rule.target ?? rule.targetColumn) === targetCol);
-						return entry ? entry[0] : null;
-					})
-					.filter(Boolean);
-
-				if (dedupeSourceCols.length === dedupeKeys.length) {
-					try {
-						const nullCheckQuery = `SELECT COUNT(*) as null_count FROM ${sourceTable} WHERE ${dedupeSourceCols.map(c => `${c} IS NULL`).join(' OR ')}`;
-						const nullCheckResult = await firebird.query(firebirdConfig, nullCheckQuery);
-						const nullCount = nullCheckResult[0]?.NULL_COUNT || 0;
-
-						if (nullCount > 0) {
-							logRun({
-								level: 'warn',
-								phase: 'preflight',
-								table: tableName,
-								action: 'dedupe_keys_validation',
-								message: `Found ${nullCount} rows with NULL values in dedupe key columns [${dedupeKeys.join(', ')}]`,
-								hint: 'These rows will be inserted without deduplication. Consider choosing dedupe keys without NULLs or adding transforms to provide default values.'
-							});
-						}
-					} catch (err) {
-						// Non-critical validation - log and continue
-						logRun({
-							level: 'debug',
-							phase: 'preflight',
-							table: tableName,
-							action: 'dedupe_keys_validation',
-							error: err.message
-						});
-					}
-				}
-			}
-
 			if (step.keyStrategy === "rekey" && step.mode === "UPSERT" && !dedupeKeys.length) {
 				const errorMessage = `UPSERT with re-key IDs requires dedupe keys for table ${tableName}.`;
 				if (!tableRun) {
@@ -1864,62 +1440,19 @@ async function runMigrationInternal({
 
 			const conn = await pool.getConnection();
 			let fbDb = null;
+			let auditedReader = null;
 			try {
-				fbDb = await firebird.attachWithRetry(firebirdConfig);
-				let filteredSourceKeys = null;
-				if (tableFilter?.hasLinkClause) {
-					filteredSourceKeys = await collectMatchingKeyValuesWithDb({
-						db: fbDb,
-						sourceTable,
-						keyColumn: rowKeyColumn,
-						filter: tableFilter
-					});
-					if (sourcePolicy) {
-						filteredSourceKeys = filterValidInvoiceKeys(filteredSourceKeys);
-					}
+				const totalSource = auditedTable.summary.accepted;
+				let invoiceSourceIdentities = null;
+				if (sourcePolicy) {
+					const identities = [];
+					for await (const row of readRecords(auditedTable.acceptedFile)) { checkAbort(runId); identities.push(row); }
+					invoiceSourceIdentities = buildSourceInvoiceIdentityMap(identities, columnsMap);
 				}
-				const sourceWhere = combineSourceWhere(
-					tableFilter?.clause,
-					tableFilter?.params,
-					sourcePolicy
-				);
-				let totalSource = filteredSourceKeys
-					? filteredSourceKeys.length
-					: sourceWhere.clause
-						? await firebird.countRowsWithDbWhere(fbDb, sourceTable, sourceWhere.clause, sourceWhere.params)
-						: await firebird.countRowsWithDb(fbDb, sourceTable);
-				const invoiceSourceSelection = sourcePolicy
-					? await loadSourceInvoiceSelection({
-						fbDb,
-						sourceTable,
-						columnsMap,
-						sourceWhere,
-						filteredSourceKeys,
-						rowKeyColumn,
-						totalSource,
-						checkSourceAbort: () => checkAbort(runId)
-					})
-					: null;
-				const invoiceSourceIdentities = invoiceSourceSelection?.identities;
-				if (invoiceSourceSelection) totalSource = invoiceSourceSelection.totalSource;
 				tableState.total = totalSource;
+				tableState.quarantined = auditedTable.summary.quarantined;
 				await runStore.updateTableProgress(pool, runId, tableName, { rows_source: totalSource });
 				emitRunState(runId, emitter);
-				if (sourcePolicy) {
-					logRun({
-						level: "info",
-						phase: "preflight",
-						tableName,
-						tableRunId,
-						action: "invoice_source_identity_policy",
-						sourceColumn: sourcePolicy.sourceColumn,
-						validInvoiceRows: totalSource,
-						uniqueInvoices: invoiceSourceIdentities.size,
-						duplicateRowsToSkip: totalSource - invoiceSourceIdentities.size,
-						duplicateSelection: "first_row_prefer_nonzero_job",
-						onDuplicate
-					});
-				}
 
 				const cleanBefore = !retryOfRunId && shouldCleanTable(plan?.config, step);
 				// Debug: emit resolved clean decision for this table
@@ -2098,71 +1631,18 @@ async function runMigrationInternal({
 				};
 
 				let currentBatchOffsets = [];
+				auditedReader = await openBatchReader(auditedTable.acceptedFile, offset);
 				while (offset < totalSource) {
 					// Allow per-table override but clamp to safe bounds
 					const effectiveBatch = (typeof step.batchSize === 'number' && !Number.isNaN(step.batchSize))
 						? Math.min(Math.max(Number(step.batchSize), 1), 10000)
 						: batchSize;
 					checkAbort(runId);
-					let batch = [];
-					if (invoiceSourceSelection?.partitions.length) {
-						const partition = invoiceSourceSelection.partitions.find(part => offset >= part.start && offset < part.start + part.count);
-						if (!partition) break;
-						batch = await firebird.fetchBatchWithDbWhere(
-							fbDb, sourceTable, firebirdColumns, offset - partition.start,
-							Math.min(effectiveBatch, partition.start + partition.count - offset),
-							"RDB$DB_KEY", partition.clause, partition.params
-						);
-					} else if (filteredSourceKeys) {
-						const pageSize = Math.min(effectiveBatch, FIREBIRD_IN_MEMBER_LIST_LIMIT);
-						const pageKeys = filteredSourceKeys.slice(offset, offset + pageSize);
-						if (!pageKeys.length) break;
-						const keyWhere = `"${String(rowKeyColumn).replace(/"/g, '""')}" IN (${pageKeys.map(() => "?").join(", ")})`;
-						batch = await firebird.fetchBatchWithDbWhere(
-							fbDb,
-							sourceTable,
-							firebirdColumns,
-							0,
-							pageKeys.length,
-							rowKeyColumn,
-							keyWhere,
-							pageKeys
-						);
-					} else {
-						batch = sourceWhere.clause
-							? await firebird.fetchBatchWithDbWhere(
-								fbDb,
-								sourceTable,
-								firebirdColumns,
-								offset,
-								effectiveBatch,
-								invoiceSourceSelection ? "RDB$DB_KEY" : firebirdColumns[0],
-								sourceWhere.clause,
-								sourceWhere.params
-							)
-							: await firebird.fetchBatchWithDb(
-								fbDb,
-								sourceTable,
-								firebirdColumns,
-								offset,
-								effectiveBatch,
-								firebirdColumns[0]
-							);
-					}
-
-					if (!batch.length) break;
+					let batch = await auditedReader.next(effectiveBatch);
+					if (!batch.length) throw new Error('Audited snapshot ended early for ' + tableName);
 					const sourceBatchLength = batch.length;
-					currentBatchOffsets = [];
-					if (invoiceSourceSelection) {
-						batch = batch.filter((_row, index) => {
-							if (!invoiceSourceSelection.selectedOffsets.has(offset + index)) return false;
-							currentBatchOffsets.push(offset + index);
-							return true;
-						});
-					}
-					const sourceDuplicatesSkipped = sourceBatchLength - batch.length;
-					rowsSkippedDuplicates += sourceDuplicatesSkipped;
-					totals.rows_total_skipped_duplicates += sourceDuplicatesSkipped;
+					currentBatchOffsets = batch.map((_row, index) => offset + index);
+					const sourceDuplicatesSkipped = 0;
 
 					let rowsToInsert = [];
 					for (const [rowIndex, row] of batch.entries()) {
@@ -2841,6 +2321,7 @@ async function runMigrationInternal({
 				try { await runStore.finishTableRun(pool, runId, tableName, "failed", errorMessage); } catch (e) { /* ignore */ }
 				await failRun(errorMessage, hint, "run");
 			} finally {
+				if (auditedReader) await auditedReader.close();
 				if (fbDb) {
 					try {
 						fbDb.detach();

@@ -19,3 +19,6 @@ yarn-error.log
 # Ignore build artifacts
 dist/
 coverage/
+
+# Tenant snapshots and quarantine evidence (may contain customer data)
+data/quality-audits/

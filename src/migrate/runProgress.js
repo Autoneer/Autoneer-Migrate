@@ -34,7 +34,8 @@ function normalizeTables(tables, now = Date.now()) {
 			inserted: count(table.inserted ?? table.rowsInserted ?? table.rows_inserted),
 			updated: count(table.updated ?? table.rowsUpdated ?? table.rows_updated),
 			skippedDuplicates, errors,
-			lastError: table.lastError ?? table.error_message ?? null
+			lastError: table.lastError ?? table.error_message ?? null,
+			audit: table.audit || null
 		};
 	});
 }
@@ -54,6 +55,8 @@ function buildRunProgress(run, tableStates, now = Date.now()) {
 		percent,
 		estimatedSecondsRemaining: null,
 		currentTable: active?.table || null,
+		dataQuality: run.dataQuality ? { id: run.dataQuality.id, status: run.dataQuality.status, totals: run.dataQuality.totals } : null,
+		dataQualityProgress: run.dataQualityProgress || null,
 		tables,
 		tablesCompleted,
 		tablesTotal: tables.length,
