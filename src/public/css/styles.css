@@ -1030,6 +1030,31 @@ pre {
 .gl-backfill-scope .gl-backfill-section > h4 { margin-top: 0; }
 .gl-backfill-section > :last-child { margin-bottom: 0; }
 .gl-backfill-section table tr:last-child td { border-bottom: 0; }
+/* GL Backfill: a section that folds to its title (gl-backfill-opening-stock.js), with the cards' chevron. */
+.gl-backfill-fold > summary { display: flex; align-items: center; gap: 8px; cursor: pointer; list-style: none; user-select: none; }
+.gl-backfill-fold > summary::-webkit-details-marker { display: none; }
+.gl-backfill-fold > summary::after { content: ""; flex: 0 0 auto; width: 7px; height: 7px; margin: -4px 4px 0 auto; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .15s ease; }
+.gl-backfill-fold:not([open]) > summary::after { margin: 0 4px 0 auto; transform: rotate(-45deg); }
+.gl-backfill-fold > summary:hover::after { border-color: var(--text); }
+.gl-backfill-fold > summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+.gl-backfill-scope .gl-backfill-fold > summary > h4 { margin: 0; }
+.gl-backfill-fold[open] > summary { margin-bottom: 6px; }
+@media (prefers-reduced-motion: reduce) { .gl-backfill-fold > summary::after { transition: none; } }
+/* GL Backfill: a task at work, such as a run deleting journals or the opening stock posting, with seven dots bouncing in turn (workingLine in gl-backfill-common.js keeps their phase across redraws). */
+.gl-backfill-working { display: flex; align-items: center; gap: 12px; margin: 10px 0; font-size: 13px; }
+.gl-dots { display: inline-flex; flex: 0 0 auto; align-items: flex-end; gap: 5px; height: 18px; }
+.gl-dots span { width: 7px; height: 7px; background: var(--primary); border-radius: 50%; animation: gl-dot-bounce 1.4s ease-in-out infinite; animation-delay: calc(var(--dots-phase, 0ms) + var(--i) * 120ms); }
+@keyframes gl-dot-bounce { 0%, 50%, 100% { transform: translateY(0); opacity: 0.45; } 25% { transform: translateY(-9px); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .gl-dots span { animation: none; opacity: 0.7; } }
+/* GL Backfill, Opening Stock: the stat tiles with "Collapse all" for the sections. */
+.gl-opening-bar { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.gl-opening-bar .btn { flex: 0 0 auto; padding: 6px 12px; font-size: 13px; background: #fff; }
+/* GL Backfill: a column title that sorts its table; the arrow shows the order. */
+.gl-sort { padding: 0; font: inherit; color: inherit; white-space: nowrap; background: none; border: 0; cursor: pointer; }
+.gl-sort:hover { color: var(--text); }
+.gl-sort:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 2px; }
+th[aria-sort="ascending"] > .gl-sort::after { content: " \25B2"; font-size: 9px; }
+th[aria-sort="descending"] > .gl-sort::after { content: " \25BC"; font-size: 9px; }
 .gl-backfill-run-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr); align-items: start; gap: 12px 32px; }
 .gl-backfill-run-form .gl-tool-note { margin: 0; }
 .gl-repair-form { display: flex; flex-direction: column; gap: 10px; }
@@ -1127,6 +1152,31 @@ pre {
 .gl-control-fix-fields input[data-field="name"] { width: 220px; }
 .gl-control-fix-preview { margin-top: 12px; padding: 10px 12px; background: var(--panel); border: 1px solid var(--border-subtle); border-radius: 6px; }
 .gl-control-fix-preview ul { margin: 6px 0 0; padding-left: 18px; }
+/* GL Backfill: confirm dialogs in the page's own style (modal.js builds them on <body>; modal.css loads later, hence body[...]). */
+body[data-page="glBackfill"] .modal-dialog { max-width: 600px; border-radius: 10px; box-shadow: 0 12px 32px rgba(31, 35, 40, 0.25); }
+body[data-page="glBackfill"] .modal-dialog .modal-header { padding: 16px 20px; background: var(--bg); border-bottom: 1px solid var(--border-subtle); }
+body[data-page="glBackfill"] .modal-dialog .modal-header h2 { font-size: 17px; font-weight: 600; color: var(--text); }
+body[data-page="glBackfill"] .modal-warning .modal-header h2 { color: var(--danger); }
+body[data-page="glBackfill"] .modal-dialog .modal-body { padding: 16px 20px; }
+body[data-page="glBackfill"] .modal-dialog .modal-footer { padding: 12px 20px; border-top: 1px solid var(--border-subtle); }
+body[data-page="glBackfill"] .modal-dialog .modal-footer .btn { padding: 8px 18px; font-size: 13px; font-weight: 600; border: 1px solid transparent; border-radius: 6px; box-shadow: none; transform: none; }
+body[data-page="glBackfill"] .modal-dialog .modal-footer .btn-secondary { color: var(--text); background: var(--bg); border-color: var(--border); }
+body[data-page="glBackfill"] .modal-dialog .modal-footer .btn-secondary:hover { background: var(--panel); }
+body[data-page="glBackfill"] .modal-dialog .modal-footer .btn-primary { color: #fff; background: var(--primary); border-color: var(--primary); }
+body[data-page="glBackfill"] .modal-dialog .modal-footer .btn-primary:hover { background: #0550ae; border-color: #0550ae; }
+body[data-page="glBackfill"] .modal-dialog .modal-footer .btn-danger { color: #fff; background: var(--danger); border-color: var(--danger); }
+body[data-page="glBackfill"] .modal-dialog .modal-footer .btn-danger:hover { background: #a40e26; border-color: #a40e26; }
+body[data-page="glBackfill"] .modal-dialog.modal-xl { max-width: 980px; }
+/* A wide confirm: intro and warning across the top, then the summary blocks and the list two to a row. */
+.gl-confirm-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 12px 16px; }
+.gl-control-fix.gl-confirm-grid > p { grid-column: 1 / -1; margin: 0; }
+.gl-confirm-grid > .gl-control-fix-preview { margin: 0; }
+@media (max-width: 760px) { .gl-confirm-grid { grid-template-columns: minmax(0, 1fr); } }
+.gl-confirm-table table { width: 100%; font-size: 12px; border: 1px solid var(--border-subtle); border-radius: 6px; border-collapse: separate; border-spacing: 0; overflow: hidden; }
+.gl-confirm-table th, .gl-confirm-table td { padding: 5px 10px; border-bottom: 1px solid var(--border-subtle); }
+.gl-confirm-table th { font-weight: 600; text-align: left; color: var(--muted); background: var(--panel); }
+.gl-confirm-table tr:last-child td { border-bottom: 0; }
+.gl-confirm-table .gl-confirm-total td { font-weight: 600; color: var(--text); border-top: 1px solid var(--border); }
 @media (max-width: 1100px) {
 	.gl-backfill-scope-cols, .gl-backfill-run-form { grid-template-columns: minmax(0, 1fr); }
 }

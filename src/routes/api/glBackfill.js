@@ -81,6 +81,18 @@ router.get("/tools/gl-backfill/status/:runId", async (req, res) => {
 });
 
 /**
+ * POST /tools/gl-backfill/stop/:runId
+ * Asks a running backfill to stop between deletion batches, or before its next document.
+ */
+router.post("/tools/gl-backfill/stop/:runId", (req, res) => {
+	try {
+		res.json({ success: true, ...glBackfill.stopRun(state.mysql, state.schemaName, req.params.runId) });
+	} catch (err) {
+		sendError(res, err, "Failed to stop the GL backfill");
+	}
+});
+
+/**
  * GET /tools/gl-backfill/repairs
  * Read-only: what each repair tool would work on.
  */
@@ -141,6 +153,40 @@ router.post("/tools/gl-backfill/opening-stock/undo", async (req, res) => {
 		res.json({ success: true, ...result });
 	} catch (err) {
 		sendError(res, err, "Failed to undo the opening stock");
+	}
+});
+
+/**
+ * POST /tools/gl-backfill/wip-write-off/preview
+ * Read-only. Body: { cutoverDate, keepFrom, keepJobs[], writeOffJobs[] }.
+ */
+router.post("/tools/gl-backfill/wip-write-off/preview", async (req, res) => {
+	try {
+		const preview = await glBackfill.readWipWriteOff(state.mysql, state.schemaName, req.body || {});
+		res.set("Cache-Control", "no-store");
+		res.json({ success: true, ...preview });
+	} catch (err) {
+		sendError(res, err, "Failed to read the WIP write-off");
+	}
+});
+
+/** POST /tools/gl-backfill/wip-write-off/post  Body: the preview's body plus { confirm } */
+router.post("/tools/gl-backfill/wip-write-off/post", async (req, res) => {
+	try {
+		const result = await glBackfill.postWipWriteOff(state.mysql, state.schemaName, req.body || {});
+		res.json({ success: true, ...result });
+	} catch (err) {
+		sendError(res, err, "Posting the WIP write-off failed");
+	}
+});
+
+/** POST /tools/gl-backfill/wip-write-off/undo  Body: { confirm } */
+router.post("/tools/gl-backfill/wip-write-off/undo", async (req, res) => {
+	try {
+		const result = await glBackfill.undoWipWriteOff(state.mysql, state.schemaName, req.body || {});
+		res.json({ success: true, ...result });
+	} catch (err) {
+		sendError(res, err, "Failed to undo the WIP write-off");
 	}
 });
 

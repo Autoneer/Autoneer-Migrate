@@ -7,7 +7,13 @@
 		CREDITOR_PAYMENT: "Supplier payments"
 	};
 	const RUN_STATES = { RUNNING: "Running", DONE: "Done", FAILED: "Failed", CANCELLED: "Cancelled" };
-	const { escapeHtml, count, money, localDate, getJson, postJson, table, section, statTiles, setCardDone, announceChange } = window.GlBackfill;
+	const { escapeHtml, count, money, localDate, getJson, postJson, table, section, statTiles, setCardDone, announceChange, timeLeft, formatTimeLeft, workingLine } = window.GlBackfill;
+
+	// " · about 12 min left, done around 14:35" while a stage works; null rate means too early to tell.
+	function etaText(key, done, total) {
+		const left = timeLeft(key, done, total);
+		return left == null ? " · working out the time left" : ` · ${formatTimeLeft(left)}`;
+	}
 
 	function accountText(accnr, name) {
 		return accnr ? `${accnr}${name ? ` ${escapeHtml(name)}` : ""}` : "-";
@@ -90,6 +96,14 @@
 			`<span style="--from:${from.toFixed(2)}%;--to:${to.toFixed(2)}%;--shine-delay:-${Date.now() % 1800}ms"></span></div>`;
 	}
 
+	// Seven dots bouncing in turn. Their phase follows the clock, so the redraw on each poll does not restart them.
+	// A live run deleting the journals it replaces, before it posts.
+	function renderClearing(clearing, runId) {
+		const detail = clearing.total == null ? "Finding them"
+			: `${count(clearing.deleted)} of ${count(clearing.total)} journals${etaText(`${runId}:clearing`, clearing.deleted, clearing.total)}`;
+		return workingLine("Deleting existing journals…", detail);
+	}
+
 	function barHead(title, detail, value, max) {
 		const percent = max ? Math.min(100, Math.floor(value / max * 100)) : 100;
 		return `<div class="gl-backfill-bar-head"><span><strong>${title}</strong> · ${detail}</span><strong>${percent}%</strong></div>`;
@@ -112,7 +126,8 @@
 				: index === current ? (running ? "Working" : "Stopped")
 					: (running ? "Waiting" : "Not started");
 			const bar = typeTotal ? [typeProcessed, typeTotal] : [state === "Done" ? 1 : 0, 1];
-			parts.push(barHead(TYPES[type], `${state} · ${count(typeProcessed)} of ${count(typeTotal)}`, ...bar) +
+			const eta = state === "Working" && typeTotal ? etaText(`${run.id}:${type}`, typeProcessed, typeTotal) : "";
+			parts.push(barHead(TYPES[type], `${state} · ${count(typeProcessed)} of ${count(typeTotal)}${eta}`, ...bar) +
 				qbar(`${run.id}:${type}`, `${TYPES[type]} progress`, ...bar, { moving: running && state === "Working" }));
 		}
 		return `<div class="gl-backfill-bars">${parts.join("")}</div>`;
@@ -123,17 +138,18 @@
 		const summary = status.summary || {};
 		const dryRun = Number(run.dry_run) === 1;
 		const running = status.active;
-		const state = status.stopped ? "Stopped"
-			: run.status === "DONE" && status.active ? "Updating customer and supplier balances"
-				: (RUN_STATES[run.status] || run.status);
+		const state = running && status.stopping ? "Stopping"
+			: status.stopped ? "Stopped"
+				: run.status === "DONE" && status.active ? "Updating customer and supplier balances"
+					: (RUN_STATES[run.status] || run.status);
 		const stats = dryRun
 			? [["Would post or nothing to post", summary.skipped], ["Already posted", summary.exists], ["Failed", summary.failed]]
 			: [["Posted", summary.posted], ["Already posted", summary.exists], ["Nothing to post", summary.skipped], ["Failed", summary.failed]];
 		const parts = [
 			`<p><strong>Run #${run.id}${dryRun ? ", dry run" : ""}</strong>: ${escapeHtml(state)}. ` +
 			`${localDate(run.from_date)} to ${localDate(run.to_date)}.</p>`,
-			renderBars(run, summary, running),
-			statTiles(stats)
+			status.clearing ? renderClearing(status.clearing, run.id) : renderBars(run, summary, running),
+			status.clearing ? "" : statTiles(stats)
 		];
 		if (summary.lastError) parts.push(`<p class="gl-backfill-blocked">Run stopped: ${escapeHtml(summary.lastError)}</p>`);
 		if (status.stopped) {
@@ -312,6 +328,7 @@
 		const toEl = document.getElementById("gl-backfill-to");
 		const dryRunEl = document.getElementById("gl-backfill-dry-run");
 		const clearEl = document.getElementById("gl-backfill-clear");
+		const stopBtn = document.getElementById("btn-gl-backfill-stop");
 		const typeEls = Array.from(document.querySelectorAll('input[name="gl-backfill-type"]'));
 		let ready = false;
 		let runId = null;
@@ -341,6 +358,10 @@
 			clearEl.disabled = dryRunEl.checked;
 			button.textContent = dryRunEl.checked ? "Start Dry Run" : "Post Journals";
 			button.disabled = !ready || following;
+			// Stop shows while the shown run is working here; once asked, it waits for the run to stop.
+			const working = Boolean(lastStatus && lastStatus.active && Number(lastStatus.run.id) === Number(runId));
+			stopBtn.hidden = !working;
+			stopBtn.disabled = !working || Boolean(lastStatus.stopping);
 		};
 
 		async function loadScope(notice) {
@@ -459,6 +480,22 @@
 			}
 		}
 
+		stopBtn.addEventListener("click", async () => {
+			const id = runId;
+			const message = "The run stops after the current batch of deletions, or after the document it is posting. " +
+				"What it has deleted or posted so far stays that way. Start it again to finish; nothing is posted twice.";
+			const ok = window.Modal && typeof window.Modal.confirm === "function"
+				? await window.Modal.confirm({ title: "Stop GL Backfill", message, type: "warning", confirmText: "Stop", cancelText: "Keep Running" })
+				: window.confirm(message);
+			if (!ok || id !== runId) return;
+			stopBtn.disabled = true;
+			try {
+				await postJson(`/api/tools/gl-backfill/stop/${id}`, {});
+			} catch (err) {
+				await window.Modal.alert({ title: "Stop GL Backfill", message: err.message, type: "error" });
+				syncControls();
+			}
+		});
 		dryRunEl.addEventListener("change", syncControls);
 		checkBtn.addEventListener("click", () => loadScope());
 		document.addEventListener("glbackfill:repaired", () => loadScope());

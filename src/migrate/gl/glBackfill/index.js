@@ -9,6 +9,7 @@ const mysql = require("mysql2/promise");
 const { withPool, query, companyTransaction } = require("./mirror/database/database");
 const controlAccounts = require("./controlAccounts");
 const openingStock = require("./openingStock");
+const wipWriteOff = require("./wipWriteOff");
 const rfcOriginals = require("./rfcOriginals");
 const glBackfill = require("./mirror/lib/finance/glBackfill");
 const { clearControlAccountCache } = require("./mirror/lib/finance/postingEngine");
@@ -40,6 +41,9 @@ const DOCUMENT_DATES = {
 };
 
 const activeRuns = new Map();
+// The run this process is executing, by tenant: { runId, stopRequested, clearing }.
+// clearing is { deleted, total } while it deletes the journals it replaces.
+const runControls = new Map();
 // Repair tasks in progress, by tenant: what is running, for the busy message.
 const activeTasks = new Map();
 
@@ -218,19 +222,43 @@ async function prepareRun(schema, options, backfill) {
 			throw httpError(409, "opening_stock_posted", `The opening stock take was posted on ${openingDate}. ` +
 				"Undo it before a live backfill on or before that date, then post it again.");
 		}
+		// Likewise the WIP write-off cleared each job's WIP as the backfill had left it.
+		const writeOffDate = await wipWriteOff.readWipWriteOffDate(schema);
+		if (writeOffDate && options.fromDate <= writeOffDate) {
+			throw httpError(409, "wip_write_off_posted", `The WIP write-off was posted on ${writeOffDate}. ` +
+				"Undo it before a live backfill on or before that date, then post it again.");
+		}
 	}
 	// Rebuild GL Accounts can change the chart in this process.
 	clearControlAccountCache(schema);
 	flushStockGlCache();
 	const base = { companyDb: schema, schema, fromDate: options.fromDate, toDate: options.toDate, types: options.types };
-	const cleared = options.clearPrevious ? await backfill.clearPreviousBackfillScope(base) : null;
-	const runId = await backfill.createRun({ ...base, staffId: STAFF_ID, dryRun: options.dryRun });
-	return { runId, cleared };
+	return backfill.createRun({ ...base, staffId: STAFF_ID, dryRun: options.dryRun });
+}
+
+// The run's work, in the background: delete the journals it replaces when asked
+// to, then post. A stop or failure while deleting ends the run as FAILED with
+// its message, as runBackfillJob does for its own.
+async function executeRun(schema, runId, options, control, backfill) {
+	const base = { companyDb: schema, schema, fromDate: options.fromDate, toDate: options.toDate, types: options.types };
+	const shouldStop = () => control.stopRequested;
+	if (options.clearPrevious) {
+		control.clearing = { deleted: 0, total: null };
+		try {
+			await backfill.clearPreviousBackfillScope(base, { onProgress: (progress) => { control.clearing = progress; }, shouldStop });
+		} catch (err) {
+			await backfill.updateRunSummary({ companyDb: schema, schema, runId, summary: { lastError: err.message }, status: "FAILED" }).catch(() => {});
+			return;
+		}
+		control.clearing = null;
+	}
+	await backfill.runBackfillJob({ ...base, runId, dryRun: options.dryRun, staffId: STAFF_ID, shouldStop });
 }
 
 /**
- * Starts a run and returns once it is recorded. The run itself continues in the
- * background on its own pool; poll readRunStatus for progress.
+ * Starts a run and returns once it is recorded. The run itself, including
+ * deleting the journals it replaces, continues in the background on its own
+ * pool; poll readRunStatus for progress.
  */
 async function startRun(config, schema, input, { backfill = glBackfill, openPool = createPool } = {}) {
 	assertSchemaName(schema);
@@ -240,19 +268,18 @@ async function startRun(config, schema, input, { backfill = glBackfill, openPool
 	const pool = openPool(config, schema);
 	let runId = null;
 	try {
-		const prepared = await withPool(pool, () => prepareRun(schema, options, backfill));
-		runId = prepared.runId;
+		runId = await withPool(pool, () => prepareRun(schema, options, backfill));
 		activeRuns.set(key, runId);
+		const control = { runId, stopRequested: false, clearing: null };
+		runControls.set(key, control);
 		setImmediate(() => {
-			withPool(pool, () => backfill.runBackfillJob({
-				companyDb: schema, schema, runId, fromDate: options.fromDate, toDate: options.toDate,
-				types: options.types, dryRun: options.dryRun, staffId: STAFF_ID
-			})).finally(async () => {
+			withPool(pool, () => executeRun(schema, runId, options, control, backfill)).finally(async () => {
 				activeRuns.delete(key);
+				runControls.delete(key);
 				await pool.end().catch(() => {});
 			});
 		});
-		return { runId, cleared: prepared.cleared, dryRun: options.dryRun, types: options.types };
+		return { runId, dryRun: options.dryRun, types: options.types };
 	} finally {
 		if (runId == null) {
 			activeRuns.delete(key);
@@ -270,7 +297,21 @@ async function readRunStatus(config, schema, runId, { itemStatuses, itemLimit } 
 	const active = activeRuns.get(runKey(config, schema)) === id;
 	// A run executes inside the Migrate process that started it. RUNNING without
 	// that process means it stopped, for example when Migrate restarted.
-	return { ...status, active, stopped: status.run.status === "RUNNING" && !active };
+	const control = active ? runControls.get(runKey(config, schema)) : null;
+	return {
+		...status, active, stopped: status.run.status === "RUNNING" && !active,
+		stopping: Boolean(control && control.stopRequested),
+		clearing: control ? control.clearing : null
+	};
+}
+
+/** Asks the run this process is executing to stop: between deletion batches, or before its next document. */
+function stopRun(config, schema, runId) {
+	assertSchemaName(schema);
+	const control = runControls.get(runKey(config, schema));
+	if (!control || control.runId !== Number(runId)) throw httpError(409, "not_running", "That GL backfill run is not running.");
+	control.stopRequested = true;
+	return { runId: control.runId, stopping: true };
 }
 
 /** Read-only: the ways one control account can be fixed. */
@@ -462,6 +503,27 @@ async function undoOpeningStock(config, schema, input = {}) {
 	return runTask(config, schema, "undoing the opening stock take", () => openingStock.undoOpeningStock({ schema }));
 }
 
+// The migration WIP write-off (wipWriteOff.js). Migrate's own step, like the
+// opening stock.
+
+/** Read-only: the WIP write-off Migrate would post, or the one it posted. */
+async function readWipWriteOff(config, schema, input = {}) {
+	return withSchema(config, schema, async () => ({
+		busy: activeRuns.has(runKey(config, schema)) || activeTasks.has(runKey(config, schema)),
+		...await wipWriteOff.readWipWriteOff({ schema, input })
+	}));
+}
+
+async function postWipWriteOff(config, schema, input = {}) {
+	if (!flag(input.confirm)) throw httpError(400, "confirmation_required", "Posting the WIP write-off needs explicit confirmation.");
+	return runTask(config, schema, "the WIP write-off", () => wipWriteOff.postWipWriteOff({ schema, input, staffId: STAFF_ID }));
+}
+
+async function undoWipWriteOff(config, schema, input = {}) {
+	if (!flag(input.confirm)) throw httpError(400, "confirmation_required", "Undoing the WIP write-off needs explicit confirmation.");
+	return runTask(config, schema, "undoing the WIP write-off", () => wipWriteOff.undoWipWriteOff({ schema }));
+}
+
 /** POST /accounting/gl-backfill/truncate: empties the run history. Journals are untouched. */
 async function clearRunHistory(config, schema, input = {}) {
 	if (!flag(input.confirm)) throw httpError(400, "confirmation_required", "Clearing the run history needs explicit confirmation.");
@@ -478,6 +540,7 @@ module.exports = {
 	readRunOptions,
 	startRun,
 	readRunStatus,
+	stopRun,
 	readRepairScope,
 	migrateLegacyRfcs,
 	postBackfillRepair,
@@ -489,5 +552,8 @@ module.exports = {
 	applyRfcOriginalFix,
 	readOpeningStock,
 	postOpeningStock,
-	undoOpeningStock
+	undoOpeningStock,
+	readWipWriteOff,
+	postWipWriteOff,
+	undoWipWriteOff
 };

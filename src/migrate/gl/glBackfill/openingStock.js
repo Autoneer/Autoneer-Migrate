@@ -143,20 +143,13 @@ async function readStockItems(schema, legacy, idMap, queryFn = query) {
 	return { items, notImported };
 }
 
-/**
- * Stock already issued to open jobs that finalising those jobs will relieve
- * from an asset account. Legacy took these parts out of stock when they went on
- * the job, so the counted quantity no longer holds them; without them in the
- * opening journal, finalising the job would take Inventory below the stock.
- * Each job is split as finalise splits it (buildDebtorInvoicePartCostLines):
- * its supplier WIP first, the rest from each part's asset account.
- */
-async function readOpenJobStock(schema, cutoverDate, controls, queryFn = query) {
+/** readOpenJobStock's parts: costed and not invoiced, on jobs the PWA can still finalise. */
+async function readOpenJobParts(schema, queryFn = query) {
 	const s = `\`${schema}\``;
 	const historical = (await hasColumn(schema, "job_information", "is_historical_import")) ? "AND COALESCE(j.is_historical_import, 0) = 0" : "";
 	const excludedLinesCosted = await areExcludedLinesCosted(schema, schema, (_db, sql, params) => queryFn(sql, params));
 	const statusList = (values) => values.map((value) => `'${value}'`).join(", ");
-	const parts = await queryFn(
+	return queryFn(
 		`SELECT su.spares_id, su.job_number, su.stock_id, su.partnr, su.siid, su.accasset, su.cost
 		 FROM (
 		   SELECT spares_id, job_number, stock_id, partnr, siid, accasset,
@@ -178,6 +171,24 @@ async function readOpenJobStock(schema, cutoverDate, controls, queryFn = query) 
 		   )
 		 ORDER BY su.job_number, su.spares_id`
 	);
+}
+
+/** The jobs readOpenJobStock covers, without working out their stock. */
+async function readOpenJobNumbers(schema, queryFn = query) {
+	return new Set((await readOpenJobParts(schema, queryFn)).map((part) => Number(part.job_number)));
+}
+
+/**
+ * Stock already issued to open jobs that finalising those jobs will relieve
+ * from an asset account. Legacy took these parts out of stock when they went on
+ * the job, so the counted quantity no longer holds them; without them in the
+ * opening journal, finalising the job would take Inventory below the stock.
+ * Each job is split as finalise splits it (buildDebtorInvoicePartCostLines):
+ * its supplier WIP first, the rest from each part's asset account.
+ */
+async function readOpenJobStock(schema, cutoverDate, controls, queryFn = query) {
+	const s = `\`${schema}\``;
+	const parts = await readOpenJobParts(schema, queryFn);
 	if (!parts.length) return { jobs: [], lines: [] };
 
 	const accnrs = [...new Set(parts.flatMap((p) => [p.siid, p.accasset]).map(Number).filter((n) => n > 0))];
@@ -652,10 +663,29 @@ async function readOpeningStockDate(schema) {
 	return session && String(session.set_type || "").toUpperCase() === "FINALISED" ? session.stocktakeday : null;
 }
 
+/** What the other cut-over steps share with this one: the tables, dates, last live backfill and control accounts. */
+async function readCutoverContext(schema, queryFn = query) {
+	const tables = await readTables(schema);
+	const latestDocument = await readLatestDocumentDate(schema, tables);
+	return {
+		tables,
+		latestDocument,
+		defaultCutover: latestDocument ? addDays(latestDocument, 1) : todayYmd(),
+		openingStockDate: await readOpeningStockDate(schema),
+		backfill: await readBackfillStatus(schema, tables),
+		controlsByKey: await readControlsByKey(schema, queryFn)
+	};
+}
+
 module.exports = {
+	ISSUED_INVOICE_STATUSES,
 	readOpeningStock,
 	postOpeningStock,
 	undoOpeningStock,
 	readOpeningStockDate,
-	readOpenJobStock
+	readOpenJobStock,
+	readOpenJobNumbers,
+	readCutoverContext,
+	controlAccnrs,
+	isYmd
 };

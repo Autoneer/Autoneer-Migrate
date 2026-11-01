@@ -108,6 +108,7 @@
 			</section>
 		</div>
 		<div class="gl-tool-actions">
+			<button id="btn-gl-backfill-stop" class="btn danger" type="button" hidden>Stop</button>
 			<button id="btn-gl-backfill" class="btn secondary" type="button">Start Dry Run</button>
 		</div>
 	</section>
@@ -141,6 +142,9 @@
 				<label class="gl-repair-field">Cut-over date <input id="gl-opening-date" type="date" /></label>
 				<label class="gl-repair-field">Placeholder from quantity <input id="gl-opening-min-qty" type="number" min="1" step="1" value="900" /></label>
 				<p class="gl-tool-note">Tick or untick <strong>Set to 0</strong> in the lists below to choose which items count. The totals update.</p>
+				<div class="gl-tool-actions">
+					<button id="btn-gl-opening-post-top" class="btn" type="button" disabled>Post Opening Stock</button>
+				</div>
 			</div>
 			<div id="gl-opening-scope" class="gl-backfill-scope" aria-live="polite">Checking the tenant...</div>
 		</div>
@@ -153,8 +157,32 @@
 		</div>
 	</section>
 
+	<section class="card gl-tool collapsible" tabindex="-1" aria-labelledby="gl-wip-title">
+		<h3 id="gl-wip-title"><span class="gl-tool-num" aria-hidden="true">7</span><span class="gl-card-check" role="img" aria-label="All checks done" title="All checks done" hidden></span> WIP Write-off</h3>
+		<button type="button" class="card-collapse" title="Collapse" aria-labelledby="gl-wip-title" aria-expanded="true"></button>
+		<p class="hint">Run after the backfill. The backfill leaves supplier cost in Work In Progress for jobs that will never be invoiced. This writes it off on the cut-over date, one line per job, against Opening Stock, and keeps the WIP of jobs that can still be invoiced.</p>
+		<div class="gl-backfill-scope-cols">
+			<div class="gl-repair-form">
+				<label class="gl-repair-field">Cut-over date <input id="gl-wip-date" type="date" /></label>
+				<label class="gl-repair-field">Keep unfinished jobs with WIP since <input id="gl-wip-keep-from" type="date" /></label>
+				<p class="gl-tool-note">Tick or untick <strong>Write off</strong> on an unfinished job to choose. The totals update.</p>
+				<div class="gl-tool-actions">
+					<button id="btn-gl-wip-post-top" class="btn" type="button" disabled>Post WIP Write-off</button>
+				</div>
+			</div>
+			<div id="gl-wip-scope" class="gl-backfill-scope" aria-live="polite">Checking the tenant...</div>
+		</div>
+		<div id="gl-wip-details" class="gl-backfill-scope"></div>
+		<div id="gl-wip-result" class="gl-backfill-scope gl-repair-result" aria-live="polite"></div>
+		<div class="gl-tool-actions">
+			<button id="btn-gl-wip-csv" class="btn secondary" type="button" disabled>Download CSV</button>
+			<button id="btn-gl-wip-undo" class="btn danger" type="button" hidden>Undo WIP Write-off</button>
+			<button id="btn-gl-wip-post" class="btn" type="button" disabled>Post WIP Write-off</button>
+		</div>
+	</section>
+
 	<section class="card gl-tool collapsible" tabindex="-1" aria-labelledby="gl-history-title">
-		<h3 id="gl-history-title"><span class="gl-tool-num" aria-hidden="true">7</span> Clear Run History</h3>
+		<h3 id="gl-history-title"><span class="gl-tool-num" aria-hidden="true">8</span> Clear Run History</h3>
 		<button type="button" class="card-collapse" title="Collapse" aria-labelledby="gl-history-title" aria-expanded="true"></button>
 		<p class="hint">Deletes the backfill run log. Journals are kept. Cannot be undone.</p>
 		<div class="gl-backfill-scope-cols">
@@ -176,3 +204,4 @@
 <script src="/public/js/tools/gl-backfill.js"></script>
 <script src="/public/js/tools/gl-backfill-repairs.js"></script>
 <script src="/public/js/tools/gl-backfill-opening-stock.js"></script>
+<script src="/public/js/tools/gl-backfill-wip.js"></script>

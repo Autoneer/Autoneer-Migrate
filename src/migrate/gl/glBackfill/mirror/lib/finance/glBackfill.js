@@ -650,7 +650,26 @@ function getAffectedRows(result) {
 	return Number(result.affectedRows || result.affected_rows || result.changedRows || 0);
 }
 
-async function clearPreviousBackfillScope({ companyDb, schema, fromDate, toDate, types }) {
+// A run the user stopped. runBackfillJob records its message as the run's last error.
+function backfillStopped(message) {
+	return Object.assign(new Error(message), { code: 'BACKFILL_STOPPED' });
+}
+
+// Journals deleted per statement; their lines go with them (fk_gl_journal_lines_header cascades).
+const CLEAR_BATCH = 500;
+
+/**
+ * Deletes the journals a live run is about to post again. Finds them first,
+ * then deletes them by id in batches, so a caller can show progress and stop
+ * between batches. Each lookup starts from the documents and reaches their
+ * journals through uk_gl_journal_headers_source; a correlated EXISTS from the
+ * journals re-scanned every document for each journal (15,566 customer invoice
+ * journals: 265 s to find, against 1 s this way).
+ *
+ * onProgress({ deleted, total }) follows each batch; shouldStop() is checked
+ * before each one. Journals deleted before a stop stay deleted.
+ */
+async function clearPreviousBackfillScope({ companyDb, schema, fromDate, toDate, types }, { onProgress = null, shouldStop = null } = {}) {
 	const selected = new Set((types || []).map(t => String(t || '').toUpperCase()));
 	const cleared = { totalDeleted: 0, byType: {} };
 
@@ -675,85 +694,124 @@ async function clearPreviousBackfillScope({ companyDb, schema, fromDate, toDate,
 		}
 	}
 
-	async function runDelete(docType, sql, params) {
-		const res = await tenantQuery(companyDb, sql, params || []);
-		const deleted = getAffectedRows(res);
-		cleared.byType[docType] = deleted;
-		cleared.totalDeleted += deleted;
+	const scopes = [];
+	async function findJournals(docType, sql, params) {
+		const rows = await tenantQuery(companyDb, sql, params || []);
+		scopes.push({ docType, ids: (rows || []).map(row => Number(row.id)) });
 	}
 
 	if (selected.has('CREDITOR_INVOICE')) {
 		// Supplier invoice journals are keyed suppid:invoice_nr
 		// (buildCreditorInvoiceSourceId); older ones by the bare invoice number.
 		// A migrated legacy return is keyed by its supplier RFC (legacyRfcJournalIdentity).
-		await runDelete(
+		await findJournals(
 			'CREDITOR_INVOICE',
-			`DELETE h
-			 FROM ${schema}.gl_journal_headers h
-			 WHERE h.source IN ('CREDITOR_INVOICE', 'CREDITOR_RFC')
-			   AND EXISTS (
-				 SELECT 1
-				 FROM ${schema}.invoices_supplier s
-				 WHERE (
-				     CAST(s.invoice_nr AS CHAR) = h.source_id
-				     OR (h.source = 'CREDITOR_INVOICE' AND CONCAT(s.suppid, ':', s.invoice_nr) = h.source_id)
-				     OR (h.source = 'CREDITOR_RFC' AND CAST(${legacyRfcIdSql(schema, 's')} AS CHAR) = h.source_id)
-				   )
-				   AND s.inv_date BETWEEN ? AND ?
-			   )`,
-			[fromDate, toDate]
+			`SELECT h.id
+			 FROM ${schema}.invoices_supplier s
+			 JOIN ${schema}.gl_journal_headers h
+			   ON h.source IN ('CREDITOR_INVOICE', 'CREDITOR_RFC')
+			  AND h.source_id = CAST(s.invoice_nr AS CHAR)
+			 WHERE s.inv_date BETWEEN ? AND ?
+			 UNION
+			 SELECT h.id
+			 FROM ${schema}.invoices_supplier s
+			 JOIN ${schema}.gl_journal_headers h
+			   ON h.source = 'CREDITOR_INVOICE'
+			  AND h.source_id = CONCAT(s.suppid, ':', s.invoice_nr)
+			 WHERE s.inv_date BETWEEN ? AND ?
+			 UNION
+			 SELECT h.id
+			 FROM ${schema}.invoices_supplier s
+			 JOIN ${schema}.gl_journal_headers h
+			   ON h.source = 'CREDITOR_RFC'
+			  AND h.source_id = CAST(${legacyRfcIdSql(schema, 's')} AS CHAR)
+			 WHERE s.inv_date BETWEEN ? AND ?
+			   AND s.invoice_nr LIKE '%-RFC'`,
+			[fromDate, toDate, fromDate, toDate, fromDate, toDate]
 		);
 	}
 
 	if (selected.has('DEBTOR_INVOICE')) {
-		const debtorInvoiceEligibilitySql = buildDebtorInvoiceBackfillEligibilitySql(schema, 'i');
-		await runDelete(
+		await findJournals(
 			'DEBTOR_INVOICE',
-			`DELETE h
-			 FROM ${schema}.gl_journal_headers h
-			 WHERE h.source = 'DEBTOR_INVOICE'
-			   AND h.source_id REGEXP '^[0-9]+$'
-			   AND EXISTS (
-				 SELECT 1
-				 FROM ${schema}.invoices i
-				 WHERE CAST(i.invoice_nr AS CHAR) = h.source_id
-				   AND i.invoice_date BETWEEN ? AND ?
-				   AND ${debtorInvoiceEligibilitySql}
-			   )`,
+			`SELECT DISTINCT h.id
+			 FROM ${schema}.invoices i
+			 JOIN ${schema}.gl_journal_headers h
+			   ON h.source = 'DEBTOR_INVOICE'
+			  AND h.source_id = CAST(i.invoice_nr AS CHAR)
+			  AND h.source_id REGEXP '^[0-9]+$'
+			 WHERE i.invoice_date BETWEEN ? AND ?
+			   AND ${buildDebtorInvoiceBackfillEligibilitySql(schema, 'i')}`,
 			[fromDate, toDate]
 		);
 	}
 
 	if (selected.has('DEBTOR_PAYMENT')) {
-		await runDelete(
+		await findJournals(
 			'DEBTOR_PAYMENT',
-			`DELETE h
-			 FROM ${schema}.gl_journal_headers h
-			 WHERE h.source = 'DEBTOR_PAYMENT'
-			   AND h.source_id REGEXP '^[0-9]+$'
-			   AND EXISTS (
-				 SELECT 1
-				 FROM ${schema}.payments p
-				 WHERE CAST(p.payid AS CHAR) = h.source_id
-				   AND p.paydate BETWEEN ? AND ?
-				   AND ${DEBTOR_PAYMENT_BACKFILL_SQL}
-			   )`,
+			`SELECT DISTINCT h.id
+			 FROM ${schema}.payments p
+			 JOIN ${schema}.gl_journal_headers h
+			   ON h.source = 'DEBTOR_PAYMENT'
+			  AND h.source_id = CAST(p.payid AS CHAR)
+			  AND h.source_id REGEXP '^[0-9]+$'
+			 WHERE p.paydate BETWEEN ? AND ?
+			   AND ${DEBTOR_PAYMENT_BACKFILL_SQL}`,
 			[fromDate, toDate]
 		);
-		await runDelete(
+		await findJournals(
 			'DEBTOR_PAYMENT_ADJUSTMENTS',
-			`DELETE h
-			 FROM ${schema}.gl_journal_headers h
-			 WHERE h.source IN ('INVOICE_DISCOUNT', 'INVOICE_WRITE_OFF', 'DEBTOR_INVOICE_CREDIT')
-			   AND EXISTS (
-				 SELECT 1
-				 FROM ${schema}.payments p
-				 WHERE h.source_id = CONCAT('PAYMENT-', p.payid)
-				   AND p.paydate BETWEEN ? AND ?
-				   AND ${LEGACY_PAYMENT_ADJUSTMENT_SQL}
-			   )`,
+			`SELECT DISTINCT h.id
+			 FROM ${schema}.payments p
+			 JOIN ${schema}.gl_journal_headers h
+			   ON h.source IN ('INVOICE_DISCOUNT', 'INVOICE_WRITE_OFF', 'DEBTOR_INVOICE_CREDIT')
+			  AND h.source_id = CONCAT('PAYMENT-', p.payid)
+			 WHERE p.paydate BETWEEN ? AND ?
+			   AND ${LEGACY_PAYMENT_ADJUSTMENT_SQL}`,
 			[fromDate, toDate]
 		);
+	}
+
+	if (selected.has('CREDITOR_PAYMENT')) {
+		if (!(await tableExists(companyDb, schema, 'payments_suppliers'))) {
+			cleared.byType.CREDITOR_PAYMENT = 0;
+		} else {
+			// Not limited to SUPPLIER_PAYMENT_BACKFILL_SQL: this also clears journals
+			// posted earlier for REVERSED payments, which the backfill no longer posts.
+			await findJournals(
+				'CREDITOR_PAYMENT',
+				`SELECT DISTINCT h.id
+				 FROM ${schema}.payments_suppliers p
+				 JOIN ${schema}.gl_journal_headers h
+				   ON h.source = 'CREDITOR_PAYMENT'
+				  AND h.source_id = CAST(p.payid AS CHAR)
+				  AND h.source_id REGEXP '^[0-9]+$'
+				 WHERE p.paydate BETWEEN ? AND ?
+				   AND ${PAYMENT_BACKFILL_EXCLUSION_SQL}`,
+				[fromDate, toDate]
+			);
+		}
+	}
+
+	const total = scopes.reduce((sum, scope) => sum + scope.ids.length, 0);
+	let done = 0;
+	const report = () => { if (onProgress) onProgress({ deleted: done, total }); };
+	report();
+	for (const { docType, ids } of scopes) {
+		cleared.byType[docType] = 0;
+		for (let at = 0; at < ids.length; at += CLEAR_BATCH) {
+			if (shouldStop && shouldStop()) {
+				throw backfillStopped(`Stopped while deleting existing journals: ${done} of ${total} deleted. ` +
+					'Start it again with Delete existing journals on to delete the rest.');
+			}
+			const batch = ids.slice(at, at + CLEAR_BATCH);
+			const res = await tenantQuery(companyDb, `DELETE FROM ${schema}.gl_journal_headers WHERE id IN (${batch.map(() => '?').join(', ')})`, batch);
+			const deleted = getAffectedRows(res);
+			cleared.byType[docType] += deleted;
+			cleared.totalDeleted += deleted;
+			done += batch.length;
+			report();
+		}
 	}
 
 	if (selected.has('REBUILD_STOCK')) {
@@ -797,31 +855,6 @@ async function clearPreviousBackfillScope({ companyDb, schema, fromDate, toDate,
 			}, { maxRetries: 0 });
 			cleared.byType.REBUILD_STOCK = deleted;
 			cleared.totalDeleted += deleted;
-		}
-	}
-
-	if (selected.has('CREDITOR_PAYMENT')) {
-		const hasSupplierPayments = await tableExists(companyDb, schema, 'payments_suppliers');
-		if (!hasSupplierPayments) {
-			cleared.byType.CREDITOR_PAYMENT = 0;
-		} else {
-			// Not limited to SUPPLIER_PAYMENT_BACKFILL_SQL: this also clears journals
-			// posted earlier for REVERSED payments, which the backfill no longer posts.
-			await runDelete(
-				'CREDITOR_PAYMENT',
-				`DELETE h
-				 FROM ${schema}.gl_journal_headers h
-				 WHERE h.source = 'CREDITOR_PAYMENT'
-				   AND h.source_id REGEXP '^[0-9]+$'
-				   AND EXISTS (
-					 SELECT 1
-					 FROM ${schema}.payments_suppliers p
-					 WHERE CAST(p.payid AS CHAR) = h.source_id
-					   AND p.paydate BETWEEN ? AND ?
-					   AND ${PAYMENT_BACKFILL_EXCLUSION_SQL}
-				   )`,
-				[fromDate, toDate]
-			);
 		}
 	}
 
@@ -1188,7 +1221,8 @@ async function backfillRebuildStockCapitalisations({
 	}
 }
 
-async function runBackfillJob({ companyDb, schema, runId, fromDate, toDate, types, dryRun, staffId, targetedSourceIds = null }) {
+// shouldStop() is checked before each document; a stop ends the run as FAILED with a message saying so.
+async function runBackfillJob({ companyDb, schema, runId, fromDate, toDate, types, dryRun, staffId, targetedSourceIds = null, shouldStop = null }) {
 	// logger.info && logger.info('Starting GL backfill', { runId, fromDate, toDate, types, dryRun });
 	const summary = { posted: 0, exists: 0, failed: 0, skipped: 0, totalDocs: 0, processedDocs: 0, byType: {} };
 	const touchedCids = new Set();
@@ -1228,6 +1262,9 @@ async function runBackfillJob({ companyDb, schema, runId, fromDate, toDate, type
 		// Helper to process a list of docs
 		async function processDocs(docs, docType, buildFn) {
 			for (const d of docs) {
+				if (shouldStop && shouldStop()) {
+					throw backfillStopped(`Stopped after ${summary.processedDocs} of ${summary.totalDocs} documents. Start it again; nothing is posted twice.`);
+				}
 				const src = d.source;
 				const sid = d.source_id;
 				const docDate = formatDateToSql(d.doc_date || d.inv_date || d.paydate || d.inv_date);
@@ -2843,6 +2880,7 @@ module.exports = {
 	buildDebtorInvoiceBackfillEligibilitySql,
 	createRun,
 	runBackfillJob,
+	updateRunSummary,
 	getRunStatus,
 	truncateGlBackfillTables,
 	clearPreviousBackfillScope,

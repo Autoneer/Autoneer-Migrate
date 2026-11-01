@@ -94,20 +94,32 @@ window.GlBackfill = (function () {
 			`<span style="width: ${percent}%"></span></div>`;
 	}
 
+	// Seven dots bouncing in turn. The phase follows the clock, so a redraw doesn't restart the wave.
+	function bouncingDots() {
+		const dots = Array.from({ length: 7 }, (_, i) => `<span style="--i:${i}"></span>`).join("");
+		return `<span class="gl-dots" aria-hidden="true" style="--dots-phase:-${Date.now() % 1400}ms">${dots}</span>`;
+	}
+
+	// A task at work: the dots, then "Title… detail".
+	function workingLine(title, detail = "") {
+		return `<div class="gl-backfill-working" role="status">${bouncingDots()}<span><strong>${title}</strong>${detail ? ` ${detail}` : ""}</span></div>`;
+	}
+
 	// stats: [[label, value], ...]
 	function statTiles(stats) {
 		return `<div class="gl-backfill-stats">${stats.map(([label, value]) =>
 			`<div class="gl-backfill-stat"><strong>${count(value)}</strong><span>${label}</span></div>`).join("")}</div>`;
 	}
 
-	// A confirm modal whose body is a list of what will happen. Resolves true on confirm.
-	function confirmList({ title, intro, items, confirmText, danger = false }) {
-		const contentHTML = `<div class="gl-control-fix"><p>${intro}</p>` +
+	// A confirm modal whose body is a list of what will happen, after an optional summary. Resolves true on confirm.
+	// wide: a broader dialog that sets the summary blocks and the list two to a row.
+	function confirmList({ title, intro, summary = "", items, confirmText, danger = false, wide = false }) {
+		const contentHTML = `<div class="gl-control-fix${wide ? " gl-confirm-grid" : ""}"><p>${intro}</p>${summary}` +
 			`<div class="gl-control-fix-preview"><strong>What will happen</strong><ul>${items.map((item) => `<li>${item}</li>`).join("")}</ul></div></div>`;
 		if (!window.Modal || typeof window.Modal.custom !== "function") {
 			return Promise.resolve(window.confirm(`${title}\n\n${items.map((item) => `- ${item.replace(/<[^>]+>/g, "")}`).join("\n")}`));
 		}
-		return window.Modal.custom({ title, contentHTML, type: danger ? "warning" : "info", confirmText, cancelText: "Cancel" });
+		return window.Modal.custom({ title, contentHTML, type: danger ? "warning" : "info", size: wide ? "xl" : "lg", confirmText, cancelText: "Cancel" });
 	}
 
 	function alertError(title, err) {
@@ -127,6 +139,34 @@ window.GlBackfill = (function () {
 		if (check) check.hidden = !done;
 	}
 
+	// Recent progress readings by key, for the time left at the recent rate.
+	const ETA_WINDOW_MS = 2 * 60 * 1000;
+	const ETA_MIN_SPAN_MS = 10 * 1000;
+	const progressReadings = new Map();
+
+	/**
+	 * Records that `done` of `total` are finished and returns the milliseconds
+	 * left at the rate of the last two minutes, or null until there are 10
+	 * seconds of movement to go on.
+	 */
+	function timeLeft(key, done, total, now = Date.now()) {
+		const readings = (progressReadings.get(key) || []).filter((r) => now - r.at <= ETA_WINDOW_MS && r.done <= done);
+		readings.push({ at: now, done });
+		progressReadings.set(key, readings);
+		const span = now - readings[0].at;
+		const moved = done - readings[0].done;
+		if (done >= total || span < ETA_MIN_SPAN_MS || moved <= 0) return null;
+		return (total - done) * span / moved;
+	}
+
+	function formatTimeLeft(ms, now = Date.now()) {
+		if (ms < 60000) return "less than a minute left";
+		const minutes = Math.round(ms / 60000);
+		const span = minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h ${minutes % 60} min`;
+		const at = new Date(now + ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+		return `about ${span} left, done around ${at}`;
+	}
+
 	// Tells the page's other scripts that the tenant changed: "posted" after a
 	// backfill run, "repaired" after a repair task, "controls" after a control fix.
 	function announceChange(kind) {
@@ -135,6 +175,6 @@ window.GlBackfill = (function () {
 
 	return {
 		escapeHtml, count, money, localDate, getJson, postJson, streamPost, table, section,
-		progressBar, statTiles, confirmList, alertError, setCardDone, announceChange
+		progressBar, statTiles, confirmList, alertError, setCardDone, announceChange, timeLeft, formatTimeLeft, workingLine
 	};
 })();

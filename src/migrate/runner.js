@@ -22,6 +22,7 @@ const {
 const { runAllChecks: runGLValidationChecks } = require("./gl/glValidation");
 const { runOpenPartVatPostImport } = require("./openPartVatPostImport");
 const stockQuantityHoldback = require("./stockQuantityHoldback");
+const sparesUnitCost = require("./sparesUnitCost");
 const {
 	reorderAccountingPlanSteps,
 	validateGLExecutionPrereqs
@@ -870,6 +871,8 @@ async function runMigrationInternal({
 	};
 	// Source stock rows whose quantity was held back for the opening stock take.
 	let stockQuantitiesHeldBack = 0;
+	// Job part lines whose whole-line legacy cost was stored per unit.
+	let spareCostsConverted = 0;
 	const transactionalDateFilter = normalizeTransactionalDateFilterConfig(planConfig || {});
 
 	const maskConfig = (config) => {
@@ -1596,6 +1599,10 @@ async function runMigrationInternal({
 				if (holdsBackStockQuantity) {
 					logRun({ level: "info", phase: "stock_quantity_holdback", tableName, message: "Stock is imported with quantity 0. Opening Stock on the GL Backfill page posts the legacy quantities." });
 				}
+				const convertsSpareCost = sparesUnitCost.convertsCost(tableName);
+				if (convertsSpareCost) {
+					logRun({ level: "info", phase: "spares_unit_cost", tableName, message: "Legacy part costs are line totals; they are stored per unit (cost ÷ quantity)." });
+				}
 				const updatableColumns = stockQuantityHoldback.updatableColumns(tableName, targetColumnsForInsert);
 				const { sql } = buildInsertStatement(
 					tableName,
@@ -1681,6 +1688,7 @@ async function runMigrationInternal({
 						});
 						applyInvoiceSplitPolicy(row, mappedRow, invoiceSplitPolicy);
 						if (holdsBackStockQuantity && stockQuantityHoldback.holdBackQuantity(mappedRow) && !dryRun) stockQuantitiesHeldBack += 1;
+						if (convertsSpareCost && sparesUnitCost.toUnitCost(mappedRow)) spareCostsConverted += 1;
 						const values = targetColumnsForInsert.map((c) => mappedRow[c]);
 						const sourceId = sourceIdColumn ? row[sourceIdColumn.toLowerCase()] : undefined;
 						const dedupeValues = dedupeKeys.map((key) => mappedRow[key]);
@@ -2360,6 +2368,9 @@ async function runMigrationInternal({
 		const postImport = dryRun || (runFailed && !(continueOnError && tableErrors.length > 0))
 			? { error: null, warnings: [] }
 			: await runOpenPartVatPostImport({ pool, importedTables, repair: !runFailed, logRun });
+		if (spareCostsConverted > 0) {
+			logRun({ level: "info", phase: "spares_unit_cost", tableName: "spares_used", count: spareCostsConverted, message: `${spareCostsConverted} job part line cost(s) were stored per unit.` });
+		}
 		if (!dryRun && importedTables.has("stock") && stockQuantitiesHeldBack > 0) {
 			const warning = stockQuantityHoldback.openingStockPendingWarning(stockQuantitiesHeldBack);
 			postImport.warnings.push(warning);

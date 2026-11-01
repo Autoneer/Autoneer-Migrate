@@ -27,9 +27,12 @@ const PAYMENTS = [
 
 const executed = [];
 const journals = [];
+// Journal ids the Clear Previous lookups find.
+let foundJournals = [];
 async function run(sql, params = []) {
 	const text = String(sql).replace(/\s+/g, " ").trim();
 	executed.push({ sql: text, params });
+	if (/^SELECT DISTINCT h\.id /.test(text)) return foundJournals.map((id) => ({ id }));
 	if (/^SELECT 1 FROM information_schema\.tables/.test(text)) return [{ 1: 1 }];
 	if (/^SELECT COUNT\(\*\) AS cnt/.test(text)) return [{ cnt: 0 }];
 	if (/WHERE c\.control_key = 'VAT_INPUT'/.test(text)) return [{ accnr: 3300, name: "VAT Input", type_code: "ASSET" }];
@@ -108,10 +111,35 @@ test("customer payments skip only INVOICE, REVERSED and CUSTOMER CREDIT; supplie
 	for (const q of supplier) assert.match(q.sql, /NOT IN \('INVOICE', 'INTERNAL' , 'WARRANTY', 'REFUND','SERVICE PLAN','REVERSED','ROUNDING','CUSTOMER CREDIT'\)/);
 });
 
-test("Clear Previous removes the receipts the run posts again, settlements included", async () => {
+test("Clear Previous finds the receipts the run posts again, settlements included", async () => {
 	executed.length = 0;
 	await clearPreviousBackfillScope({ companyDb: "tenant", schema: "tenant", fromDate: "2016-01-01", toDate: "2026-12-31", types: ["DEBTOR_PAYMENT"] });
-	const deletes = executed.filter((q) => /^DELETE h FROM tenant\.gl_journal_headers h WHERE h\.source = 'DEBTOR_PAYMENT'/.test(q.sql));
-	assert.equal(deletes.length, 1);
-	assert.match(deletes[0].sql, /NOT IN \('INVOICE', 'REVERSED', 'CUSTOMER CREDIT'\)/);
+	const finds = executed.filter((q) => /^SELECT DISTINCT h\.id FROM tenant\.payments p JOIN tenant\.gl_journal_headers h ON h\.source = 'DEBTOR_PAYMENT'/.test(q.sql));
+	assert.equal(finds.length, 1);
+	assert.match(finds[0].sql, /NOT IN \('INVOICE', 'REVERSED', 'CUSTOMER CREDIT'\)/);
+});
+
+test("Clear Previous deletes what it found by id in batches of 500, reporting progress, and stops between batches", async () => {
+	const scope = { companyDb: "tenant", schema: "tenant", fromDate: "2016-01-01", toDate: "2026-12-31", types: ["DEBTOR_INVOICE"] };
+	foundJournals = Array.from({ length: 1200 }, (_, i) => i + 1);
+	try {
+		executed.length = 0;
+		const progress = [];
+		await clearPreviousBackfillScope(scope, { onProgress: (p) => progress.push(`${p.deleted}/${p.total}`) });
+		const find = executed.find((q) => /^SELECT DISTINCT h\.id FROM tenant\.invoices i JOIN tenant\.gl_journal_headers h ON h\.source = 'DEBTOR_INVOICE'/.test(q.sql));
+		assert.ok(find, "the lookup starts from the invoices and joins their journals");
+		const deletes = executed.filter((q) => /^DELETE FROM tenant\.gl_journal_headers WHERE id IN/.test(q.sql));
+		assert.deepEqual(deletes.map((q) => q.params.length), [500, 500, 200]);
+		assert.deepEqual(progress, ["0/1200", "500/1200", "1000/1200", "1200/1200"]);
+
+		executed.length = 0;
+		let batches = 0;
+		await assert.rejects(
+			() => clearPreviousBackfillScope(scope, { onProgress: () => {}, shouldStop: () => batches++ >= 1 }),
+			{ code: "BACKFILL_STOPPED", message: /Stopped while deleting existing journals: 500 of 1200 deleted\./ }
+		);
+		assert.equal(executed.filter((q) => /^DELETE FROM tenant\.gl_journal_headers/.test(q.sql)).length, 1);
+	} finally {
+		foundJournals = [];
+	}
 });
