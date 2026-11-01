@@ -53,7 +53,7 @@ function wrapLineIdRepairs(table, references, store, report, checkAbort) {
 			yield row.source;
 		}
 		if (repaired) report.automaticRepairs.push({ table: table.name, column: key, count: repaired, action: `Repair ${repaired} unreferenced internal line IDs`, explanation: 'Only missing or conflicting technical IDs without known incoming references were reassigned. Business identifiers and line values are preserved; the destination table is empty. Referenced conflicting IDs still require a decision.' });
-		if (table.summary.sourceRows != null) table.summary.outOfScope = table.summary.sourceRows - table.summary.scanned;
+		if (table.summary.sourceRows != null) table.summary.outOfScope = table.summary.sourceRows - table.summary.scanned - (table.summary.leftOut || []).reduce((sum, item) => sum + item.count, 0);
 		await fs.unlink(file);
 	};
 }

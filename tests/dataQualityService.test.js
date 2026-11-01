@@ -86,6 +86,82 @@ test('empty text defaults on nullable numeric fields become NULL in both the aud
 	assert.ok(result.report.automaticRepairs.some(item => item.column === 'optional_number'));
 });
 
+test('reversed supplier payments never reach the accepted records', async t => {
+	const { options } = await fixture(t);
+	t.mock.method(firebird, 'listTablesWithDb', async () => ['PAYMENTSSUPP']);
+	t.mock.method(firebird, 'listColumnsWithDb', async () => ['PAYID', 'PAYSTATUS', 'INVOICENR']);
+	t.mock.method(firebird, 'countRowsWithDb', async () => 3);
+	t.mock.method(firebird, 'fetchBatchWithDb', async (handle, name, columns, offset, size) => [
+		{ payid: 1, paystatus: 'DONE', invoicenr: 'A1' },
+		{ payid: 2, paystatus: ' reversed ', invoicenr: 'A1' },
+		{ payid: 3, paystatus: 'DONE', invoicenr: 'A1' }
+	].slice(offset, offset + size));
+	options.pool.query = async sql => {
+		assert.match(sql, /^SELECT /i);
+		if (sql.includes('information_schema.COLUMNS')) return [[
+			{ TABLE_NAME: 'payments_suppliers', COLUMN_NAME: 'payid', DATA_TYPE: 'int', COLUMN_TYPE: 'int', COLUMN_KEY: 'PRI', IS_NULLABLE: 'NO', EXTRA: 'auto_increment', COLUMN_DEFAULT: null },
+			{ TABLE_NAME: 'payments_suppliers', COLUMN_NAME: 'status', DATA_TYPE: 'varchar', COLUMN_TYPE: 'varchar(20)', CHARACTER_MAXIMUM_LENGTH: 20, IS_NULLABLE: 'YES', COLUMN_DEFAULT: null },
+			{ TABLE_NAME: 'payments_suppliers', COLUMN_NAME: 'invoice_nr', DATA_TYPE: 'varchar', COLUMN_TYPE: 'varchar(30)', CHARACTER_MAXIMUM_LENGTH: 30, IS_NULLABLE: 'YES', COLUMN_DEFAULT: null }
+		]];
+		if (sql.includes('information_schema.STATISTICS')) return [[{ TABLE_NAME: 'payments_suppliers', INDEX_NAME: 'PRIMARY', COLUMN_NAME: 'payid', SUB_PART: null }]];
+		if (sql.includes('information_schema.KEY_COLUMN_USAGE') || sql.includes('information_schema.TABLE_CONSTRAINTS')) return [[]];
+		if (sql.includes('FROM `payments_suppliers`')) return [[]];
+		throw new Error(`Unexpected SQL: ${sql}`);
+	};
+	options.plan = [{ table: 'payments_suppliers', include: true }];
+	// The rule reads the status through the mapping, whatever the source column is called.
+	options.mapping = { tables: { PAYMENTSSUPP: { target: 'payments_suppliers', columns: { PAYID: { target: 'payid' }, PAYSTATUS: { target: 'status' }, INVOICENR: { target: 'invoice_nr' } } } } };
+	const result = await createAudit(options);
+	const rows = []; for await (const row of readRecords(result.tables.get('payments_suppliers').acceptedFile)) rows.push(row.payid);
+	assert.deepEqual(rows, [1, 3]);
+	const summary = result.report.tables.find(item => item.table === 'payments_suppliers');
+	assert.deepEqual(summary.leftOut, [{ reason: 'reversed supplier payments', count: 1 }]);
+	assert.equal(summary.outOfScope, 0, 'left-out rows are not counted as outside the date scope');
+	assert.equal(summary.scanned, 2);
+});
+
+test('customer payment markers are left out and counted by reason', async t => {
+	const { options } = await fixture(t);
+	t.mock.method(firebird, 'listTablesWithDb', async () => ['PAYMENTS']);
+	t.mock.method(firebird, 'listColumnsWithDb', async () => ['PAYID', 'PAYMETHOD', 'INVOICE_NR']);
+	t.mock.method(firebird, 'countRowsWithDb', async () => 6);
+	t.mock.method(firebird, 'fetchBatchWithDb', async (handle, name, columns, offset, size) => [
+		{ payid: 1, paymethod: 'INVOICE', invoice_nr: 1001 },
+		{ payid: 2, paymethod: 'CASH', invoice_nr: 1001 },
+		{ payid: 3, paymethod: 'REDO INVOICE', invoice_nr: 1001 },
+		{ payid: 4, paymethod: 'CREDIT NOTE', invoice_nr: 1001 },
+		{ payid: 5, paymethod: ' Invoice ', invoice_nr: 1002 },
+		{ payid: 6, paymethod: 'REVERSED', invoice_nr: 1002 }
+	].slice(offset, offset + size));
+	options.pool.query = async sql => {
+		assert.match(sql, /^SELECT /i);
+		if (sql.includes('information_schema.COLUMNS')) return [[
+			{ TABLE_NAME: 'payments', COLUMN_NAME: 'payid', DATA_TYPE: 'int', COLUMN_TYPE: 'int', COLUMN_KEY: 'PRI', IS_NULLABLE: 'NO', EXTRA: 'auto_increment', COLUMN_DEFAULT: null },
+			{ TABLE_NAME: 'payments', COLUMN_NAME: 'paymethod', DATA_TYPE: 'varchar', COLUMN_TYPE: 'varchar(30)', CHARACTER_MAXIMUM_LENGTH: 30, IS_NULLABLE: 'YES', COLUMN_DEFAULT: null },
+			{ TABLE_NAME: 'payments', COLUMN_NAME: 'invoice_nr', DATA_TYPE: 'varchar', COLUMN_TYPE: 'varchar(30)', CHARACTER_MAXIMUM_LENGTH: 30, IS_NULLABLE: 'YES', COLUMN_DEFAULT: null },
+			{ TABLE_NAME: 'invoices', COLUMN_NAME: 'invoice_nr', DATA_TYPE: 'int', COLUMN_TYPE: 'int', COLUMN_KEY: 'PRI', IS_NULLABLE: 'NO', EXTRA: 'auto_increment', COLUMN_DEFAULT: null }
+		]];
+		if (sql.includes('information_schema.STATISTICS')) return [[{ TABLE_NAME: 'payments', INDEX_NAME: 'PRIMARY', COLUMN_NAME: 'payid', SUB_PART: null }, { TABLE_NAME: 'invoices', INDEX_NAME: 'PRIMARY', COLUMN_NAME: 'invoice_nr', SUB_PART: null }]];
+		if (sql.includes('information_schema.KEY_COLUMN_USAGE') || sql.includes('information_schema.TABLE_CONSTRAINTS')) return [[]];
+		if (sql.includes('FROM `payments`')) return [[]];
+		if (sql.includes('FROM `invoices`')) return [/OFFSET 0$/.test(sql) ? [{ invoice_nr: 1001 }, { invoice_nr: 1002 }] : []];
+		throw new Error(`Unexpected SQL: ${sql}`);
+	};
+	options.plan = [{ table: 'payments', include: true }];
+	options.mapping = { tables: { PAYMENTS: { target: 'payments', columns: { PAYID: { target: 'payid' }, PAYMETHOD: { target: 'paymethod' }, INVOICE_NR: { target: 'invoice_nr' } } } } };
+	const result = await createAudit(options);
+	const rows = []; for await (const row of readRecords(result.tables.get('payments').acceptedFile)) rows.push(row.payid);
+	assert.deepEqual(rows, [2, 4]);
+	const summary = result.report.tables.find(item => item.table === 'payments');
+	assert.deepEqual(summary.leftOut, [
+		{ reason: 'released-with-invoice markers', count: 2 },
+		{ reason: 'redo-invoice markers', count: 1 },
+		{ reason: 'reversed customer payments', count: 1 }
+	]);
+	assert.equal(summary.outOfScope, 0, 'left-out rows are not counted as outside the date scope');
+	assert.equal(summary.scanned, 2);
+});
+
 test('cancelled audit persists its status and releases the source snapshot', async t => {
 	const { calls, options } = await fixture(t);
 	let caught;

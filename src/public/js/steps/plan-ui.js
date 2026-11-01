@@ -1036,10 +1036,11 @@ class PlanUI {
 			${report.error ? `<p>${escape(report.error)}</p>` : ''}
 			${report.excludeUnresolved ? '<p class="quality-policy"><strong>All unresolved records are being left out.</strong> Only accepted records will migrate. <button class="btn btn-secondary btn-sm" onclick="window.wizard.steps[2].component.setUnresolvedPolicy(false)">Require repair decisions and rescan</button></p>' : ''}
 			${steps.length ? `<div class="quality-next-actions"><h4>What to do next</h4><ol class="quality-steps">${steps.map(step => `<li>${step}</li>`).join('')}</ol></div>` : report.status === 'ready' && !report.settingsChanged ? '<p>Quarantined records are left out. Click <strong>Next →</strong> to continue to the migration.</p>' : ''}
+			${tables.flatMap(table => table.leftOut || []).map(item => `<p class="quality-note">${escape(Number(item.count).toLocaleString())} ${escape(item.reason)} are never migrated.</p>`).join('')}
 			${report.appliedCorrectionCount ? `<p class="quality-note">${escape(report.appliedCorrectionCount)} saved ${Number(report.appliedCorrectionCount) === 1 ? 'correction was' : 'corrections were'} applied in this scan.</p>` : ''}
 			<details class="quality-more"><summary>Results by table</summary>
 				<table class="plan-table"><thead><tr><th>Source → Target</th><th>Checked</th><th>Accepted</th><th>Quarantined</th><th>Review</th><th>Findings</th></tr></thead><tbody>
-				${tables.map(table => `<tr><td>${escape(table.sourceTable)} → ${escape(table.table)}</td><td>${table.scanned}</td><td>${table.accepted}</td><td>${table.quarantined}</td><td>${table.review}</td><td>${[...(table.errors || []), ...Object.entries(table.rules || {}).map(([rule, count]) => `${rule}: ${count}`)].map(escape).join('<br>')}</td></tr>`).join('')}
+				${tables.map(table => `<tr><td>${escape(table.sourceTable)} → ${escape(table.table)}</td><td>${table.scanned}</td><td>${table.accepted}</td><td>${table.quarantined}</td><td>${table.review}</td><td>${[...(table.errors || []), ...Object.entries(table.rules || {}).map(([rule, count]) => `${rule}: ${count}`), ...(table.leftOut || []).map(item => `Left out: ${item.count} ${item.reason}`)].map(escape).join('<br>')}</td></tr>`).join('')}
 				</tbody></table>
 				${tables.filter(table => table.samples?.length).map(table => `<details><summary>${escape(table.table)} — example findings</summary><ul>${table.samples.map(sample => `<li>Source row ${escape(sample.ordinal + 1)}: ${sample.reasons.map(reason => escape(reason.message)).join('; ')}</li>`).join('')}</ul></details>`).join('')}
 			</details>

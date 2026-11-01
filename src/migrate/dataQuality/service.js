@@ -5,6 +5,7 @@ const { resolveTargetTableName } = require('../utils/tableNameCanonical');
 const { prepareLegacyMapping } = require('../prepareLegacyMapping');
 const { convertLegacyGroupAccnr } = require('../rowMapping');
 const { buildTransactionalLinkContextWithDb, buildTransactionalTableFilter } = require('../transactionalDateFilter');
+const { legacyRowExclusion } = require('../legacyRowExclusions');
 const { auditTables } = require('./engine');
 const { createStore } = require('./store');
 const { RELATIONSHIPS } = require('./rules');
@@ -261,7 +262,9 @@ async function createAudit({ pool, firebirdConfig, mysqlConfig, schemaName, plan
 		for (const table of tables) {
 			const filter = buildTransactionalTableFilter(table.name, table.mapping, planConfig, { availableSourceColumns: table.sourceColumns, context });
 			if (filter && !filter.hasPredicate) table.errors.push('Date filter has no usable date or link columns');
+			const exclusion = legacyRowExclusion(table.name, table.mapping);
 			table.rows = async function* () {
+				const leftOut = new Map();
 				progressFor(table, 'counting');
 				const expected = await firebird.countRowsWithDb(tx, table.sourceTable);
 				let scanned = 0;
@@ -274,7 +277,9 @@ async function createAudit({ pool, firebirdConfig, mysqlConfig, schemaName, plan
 					for (const [index, row] of page.entries()) {
 						checkAbort();
 						table.sourceProgress.scanned = scanned + index + 1;
-						if (inDateScope(row, filter)) {
+						const leftOutReason = exclusion?.reasonFor(row);
+						if (leftOutReason) leftOut.set(leftOutReason, (leftOut.get(leftOutReason) || 0) + 1);
+						else if (inDateScope(row, filter)) {
 							const original = await materializeRow(row, tx);
 							const corrected = applyCorrections(corrections, table.name, original);
 							if (corrected !== original) report.appliedCorrectionCount++;
@@ -286,7 +291,8 @@ async function createAudit({ pool, firebirdConfig, mysqlConfig, schemaName, plan
 				}
 				if (scanned !== Number(expected)) throw new Error(`Source count changed for ${table.sourceTable}`);
 				table.summary.sourceRows = Number(expected);
-				table.summary.outOfScope = Number(expected) - table.summary.scanned;
+				table.summary.outOfScope = Number(expected) - table.summary.scanned - [...leftOut.values()].reduce((sum, count) => sum + count, 0);
+				if (leftOut.size) table.summary.leftOut = [...leftOut].map(([reason, count]) => ({ reason, count }));
 			};
 		}
 		await require('./lineIdRepairs').prepareLineIdRepairs(tables, target, pool, store, report, async (child, column) => {
