@@ -261,7 +261,8 @@
 		el("btn-gl-general").addEventListener("click", runGeneralAccounts);
 		el("btn-gl-repair").addEventListener("click", runRepair);
 		el("btn-gl-history").addEventListener("click", clearHistory);
-		document.addEventListener("glbackfill:posted", loadScope);
+		// A backfill run, or a Tenant Check invoice fix that pairs a legacy return.
+		for (const kind of ["posted", "invoices"]) document.addEventListener(`glbackfill:${kind}`, loadScope);
 		loadScope();
 	}
 

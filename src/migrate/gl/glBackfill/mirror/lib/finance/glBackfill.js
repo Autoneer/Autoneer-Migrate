@@ -1,3 +1,5 @@
+// Copied from AUTONEER-PWA (964ba34f) and now Migrate's own: the GL backfill runs
+// only in Migrate, so changes are made here and mirrorSync never overwrites them.
 const logger = require('../logger');
 const { tenantQuery, companyTransaction, runInCompanyTx } = require('../../database/database');
 const { postJournal, ensureGlSchemaSeed, ensureDefaultPeriods, validateLines, getJournalBySource, deleteGlJournalBySource, getOpenPeriodId, resolveControlAccounts } = require('./postingEngine');
@@ -38,6 +40,15 @@ const REBUILD_STOCK_BACKFILL_WHERE_SQL = `r.status = 'STOCKED'
 // CUSTOMER CREDIT rows mirror deposit allocations — their GL is posted by the
 // customerCredit service under source CREDIT_ALLOCATION, never as a bank receipt.
 const PAYMENT_BACKFILL_EXCLUSION_SQL = `UPPER(TRIM(COALESCE(p.paymethod, ''))) NOT IN ('INVOICE', 'INTERNAL' , 'WARRANTY', 'REFUND','SERVICE PLAN','REVERSED','ROUNDING','CUSTOMER CREDIT')`;
+// Legacy imports mark a voided supplier payment REVERSED and keep its re-capture
+// as a separate row; the invoice's paid amount counts only the re-capture. The
+// PWA never writes this status, and supplier balances already skip these rows.
+const SUPPLIER_PAYMENT_BACKFILL_SQL = `${PAYMENT_BACKFILL_EXCLUSION_SQL} AND UPPER(TRIM(COALESCE(p.status, ''))) <> 'REVERSED'`;
+// Customer payments. Legacy imports also keep the non-cash settlements INTERNAL,
+// WARRANTY, SERVICE PLAN, ROUNDING and REFUND as payment rows, and the legacy
+// system credited Accounts Receivable for each, so they post too (see
+// legacySettlementType). INVOICE only marked a job released on account.
+const DEBTOR_PAYMENT_BACKFILL_SQL = `UPPER(TRIM(COALESCE(p.paymethod, ''))) NOT IN ('INVOICE', 'REVERSED', 'CUSTOMER CREDIT')`;
 const LEGACY_PAYMENT_ADJUSTMENT_SQL = `UPPER(TRIM(COALESCE(p.paymethod, ''))) IN ('DISCOUNT', 'BAD DEBT', 'BAD_DEBT', 'BAD-DEBT', 'BADDEBT', 'WRITE OFF', 'WRITE_OFF', 'WRITE-OFF', 'WRITEOFF', 'CREDIT NOTE', 'CREDIT_NOTE', 'CREDIT-NOTE', 'CREDITNOTE')`;
 const DEBTOR_INVOICE_BACKFILL_STATUSES = Object.freeze(['PRINTED', 'POSTED', 'FINAL', 'CREDIT']);
 
@@ -211,6 +222,37 @@ function legacyAdjustmentType(paymethod) {
 
 function legacyPaymentSourceId(payid) {
 	return `PAYMENT-${payid}`;
+}
+
+// A non-cash settlement a legacy import keeps as a customer payment row. The PWA
+// never writes these methods.
+function legacySettlementType(paymethod) {
+	const method = normalizeLegacyPaymentMethod(paymethod);
+	if (method === 'INTERNAL' || method === 'WARRANTY' || method === 'SERVICE PLAN') return 'ACCOUNT';
+	if (method === 'ROUNDING') return 'ROUNDING';
+	if (method === 'REFUND') return 'REFUND';
+	return null;
+}
+
+/**
+ * The journal lines of one legacy settlement: Accounts Receivable against
+ *   ACCOUNT  - the account the row names (legacy's INTERNAL PAYMENTS or WARRANTY
+ *              account), or Bank when it names no active account, as for a receipt;
+ *   ROUNDING - Discounts Allowed, as legacy's rounding account has no
+ *              counterpart in the chart;
+ *   REFUND   - Bank, as a customer refund is posted.
+ * A positive amount settles the invoice; a negative one (a refund) is owed again.
+ */
+function buildLegacySettlementLines({ type, amount, rowAccnr, controls, cid, invoiceNr }) {
+	let otherAccnr = controls.BANK;
+	if (type === 'ROUNDING') otherAccnr = controls.DISCOUNT;
+	else if (type === 'ACCOUNT' && rowAccnr) otherAccnr = rowAccnr;
+	const value = round2(amount);
+	const abs = Math.abs(value);
+	const refs = { cid, invoice_nr: invoiceNr };
+	return value >= 0
+		? [{ accnr: otherAccnr, debit: abs, credit: 0, ...refs }, { accnr: controls.AR, debit: 0, credit: abs, ...refs }]
+		: [{ accnr: controls.AR, debit: abs, credit: 0, ...refs }, { accnr: otherAccnr, debit: 0, credit: abs, ...refs }];
 }
 
 function buildCreditorInvoiceSourceId(suppid, invoiceNr) {
@@ -669,7 +711,7 @@ async function clearPreviousBackfillScope({ companyDb, schema, fromDate, toDate,
 				 FROM ${schema}.payments p
 				 WHERE CAST(p.payid AS CHAR) = h.source_id
 				   AND p.paydate BETWEEN ? AND ?
-				   AND ${PAYMENT_BACKFILL_EXCLUSION_SQL}
+				   AND ${DEBTOR_PAYMENT_BACKFILL_SQL}
 			   )`,
 			[fromDate, toDate]
 		);
@@ -738,6 +780,8 @@ async function clearPreviousBackfillScope({ companyDb, schema, fromDate, toDate,
 		if (!hasSupplierPayments) {
 			cleared.byType.CREDITOR_PAYMENT = 0;
 		} else {
+			// Not limited to SUPPLIER_PAYMENT_BACKFILL_SQL: this also clears journals
+			// posted earlier for REVERSED payments, which the backfill no longer posts.
 			await runDelete(
 				'CREDITOR_PAYMENT',
 				`DELETE h
@@ -1320,7 +1364,7 @@ async function runBackfillJob({ companyDb, schema, runId, fromDate, toDate, type
 					const numericIds = targetIds.map(Number).filter(Boolean);
 					if (numericIds.length > 0) {
 						const ph = numericIds.map(() => '?').join(',');
-						const [r] = await tenantQuery(companyDb, `SELECT COUNT(*) AS cnt FROM ${schema}.payments p WHERE p.payid IN (${ph}) AND ${PAYMENT_BACKFILL_EXCLUSION_SQL}`, numericIds);
+						const [r] = await tenantQuery(companyDb, `SELECT COUNT(*) AS cnt FROM ${schema}.payments p WHERE p.payid IN (${ph}) AND ${DEBTOR_PAYMENT_BACKFILL_SQL}`, numericIds);
 						summary.totalDocs += Number(r && r.cnt ? r.cnt : 0);
 					}
 					continue;
@@ -1335,7 +1379,7 @@ async function runBackfillJob({ companyDb, schema, runId, fromDate, toDate, type
 					const numericIds = targetIds.map(Number).filter(Boolean);
 					if (exists && numericIds.length > 0) {
 						const ph = numericIds.map(() => '?').join(',');
-						const [r] = await tenantQuery(companyDb, `SELECT COUNT(*) AS cnt FROM ${schema}.payments_suppliers p WHERE p.payid IN (${ph}) AND ${PAYMENT_BACKFILL_EXCLUSION_SQL}`, numericIds);
+						const [r] = await tenantQuery(companyDb, `SELECT COUNT(*) AS cnt FROM ${schema}.payments_suppliers p WHERE p.payid IN (${ph}) AND ${SUPPLIER_PAYMENT_BACKFILL_SQL}`, numericIds);
 						summary.totalDocs += Number(r && r.cnt ? r.cnt : 0);
 					}
 					continue;
@@ -1370,14 +1414,14 @@ async function runBackfillJob({ companyDb, schema, runId, fromDate, toDate, type
 				continue;
 			}
 			if (t === 'DEBTOR_PAYMENT') {
-				const [r] = await tenantQuery(companyDb, `SELECT COUNT(*) AS cnt FROM ${schema}.payments p WHERE p.paydate BETWEEN ? AND ? AND ${PAYMENT_BACKFILL_EXCLUSION_SQL}`, [fromDate, toDate]);
+				const [r] = await tenantQuery(companyDb, `SELECT COUNT(*) AS cnt FROM ${schema}.payments p WHERE p.paydate BETWEEN ? AND ? AND ${DEBTOR_PAYMENT_BACKFILL_SQL}`, [fromDate, toDate]);
 				summary.totalDocs += Number(r && r.cnt ? r.cnt : 0);
 				continue;
 			}
 			if (t === 'CREDITOR_PAYMENT') {
 				const exists = await tableExists(companyDb, schema, 'payments_suppliers');
 				if (!exists) continue;
-				const [r] = await tenantQuery(companyDb, `SELECT COUNT(*) AS cnt FROM ${schema}.payments_suppliers p WHERE p.paydate BETWEEN ? AND ? AND ${PAYMENT_BACKFILL_EXCLUSION_SQL}`, [fromDate, toDate]);
+				const [r] = await tenantQuery(companyDb, `SELECT COUNT(*) AS cnt FROM ${schema}.payments_suppliers p WHERE p.paydate BETWEEN ? AND ? AND ${SUPPLIER_PAYMENT_BACKFILL_SQL}`, [fromDate, toDate]);
 				summary.totalDocs += Number(r && r.cnt ? r.cnt : 0);
 			}
 		}
@@ -1995,11 +2039,11 @@ async function runBackfillJob({ companyDb, schema, runId, fromDate, toDate, type
 				const targetIds = targetedSourceIds && Array.isArray(targetedSourceIds.DEBTOR_PAYMENT) ? targetedSourceIds.DEBTOR_PAYMENT.map(Number).filter(Boolean) : null;
 				if (targetIds && targetIds.length > 0) {
 					const ph = targetIds.map(() => '?').join(',');
-					rows = await tenantQuery(companyDb, `SELECT p.payid, p.paydate, p.paymethod, p.amount, p.vat, p.cid, p.invoice_nr, p.job_number, p.acc FROM ${schema}.payments p WHERE p.payid IN (${ph}) AND ${PAYMENT_BACKFILL_EXCLUSION_SQL}`, targetIds);
+					rows = await tenantQuery(companyDb, `SELECT p.payid, p.paydate, p.paymethod, p.amount, p.vat, p.cid, p.invoice_nr, p.job_number, p.acc FROM ${schema}.payments p WHERE p.payid IN (${ph}) AND ${DEBTOR_PAYMENT_BACKFILL_SQL}`, targetIds);
 				} else if (targetIds) {
 					rows = [];
 				} else {
-					rows = await tenantQuery(companyDb, `SELECT p.payid, p.paydate, p.paymethod, p.amount, p.vat, p.cid, p.invoice_nr, p.job_number, p.acc FROM ${schema}.payments p WHERE p.paydate BETWEEN ? AND ? AND ${PAYMENT_BACKFILL_EXCLUSION_SQL}`, [fromDate, toDate]);
+					rows = await tenantQuery(companyDb, `SELECT p.payid, p.paydate, p.paymethod, p.amount, p.vat, p.cid, p.invoice_nr, p.job_number, p.acc FROM ${schema}.payments p WHERE p.paydate BETWEEN ? AND ? AND ${DEBTOR_PAYMENT_BACKFILL_SQL}`, [fromDate, toDate]);
 				}
 				const splitLegacyAdjustmentAmount = async (row) => {
 					const amount = Math.abs(round2(row.amount));
@@ -2075,6 +2119,20 @@ async function runBackfillJob({ companyDb, schema, runId, fromDate, toDate, type
 							extraRefs: { cid: row.cid, invoice_nr: row.invoice_nr, job_number: row.job_number }
 						};
 					}
+					const settlementType = legacySettlementType(row.paymethod);
+					if (settlementType) {
+						const validAccnrs = settlementType === 'ACCOUNT' ? await resolveValidAccnrs(companyDb, schema, [row.acc]) : new Set();
+						const lines = buildLegacySettlementLines({
+							type: settlementType,
+							amount: row.amount,
+							rowAccnr: validAccnrs.has(Number(row.acc)) ? Number(row.acc) : null,
+							controls,
+							cid: row.cid,
+							invoiceNr: row.invoice_nr
+						});
+						const method = normalizeLegacyPaymentMethod(row.paymethod).toLowerCase();
+						return { source: 'DEBTOR_PAYMENT', sourceId: row.payid, trxdate: row.doc_date, description: `Legacy ${method} R${Math.abs(round2(row.amount)).toFixed(2)} for invoice ${row.invoice_nr}`, lines, extraRefs: { cid: row.cid, invoice_nr: row.invoice_nr, job_number: row.job_number } };
+					}
 					const validPaymentAccnrs = await resolveValidAccnrs(companyDb, schema, [row.acc]);
 					const paymentAccnr = validPaymentAccnrs.has(Number(row.acc)) ? Number(row.acc) : controls.BANK;
 					const appliedAmount = round2(row.amount || 0);
@@ -2108,11 +2166,11 @@ async function runBackfillJob({ companyDb, schema, runId, fromDate, toDate, type
 				const targetIds = targetedSourceIds && Array.isArray(targetedSourceIds.CREDITOR_PAYMENT) ? targetedSourceIds.CREDITOR_PAYMENT.map(Number).filter(Boolean) : null;
 				if (targetIds && targetIds.length > 0) {
 					const ph = targetIds.map(() => '?').join(',');
-					rows = await tenantQuery(companyDb, `SELECT p.payid, p.paydate, p.amount, p.suppid, p.invoice_nr, p.acc, p.accnr FROM ${schema}.payments_suppliers p WHERE p.payid IN (${ph}) AND ${PAYMENT_BACKFILL_EXCLUSION_SQL}`, targetIds);
+					rows = await tenantQuery(companyDb, `SELECT p.payid, p.paydate, p.amount, p.suppid, p.invoice_nr, p.acc, p.accnr FROM ${schema}.payments_suppliers p WHERE p.payid IN (${ph}) AND ${SUPPLIER_PAYMENT_BACKFILL_SQL}`, targetIds);
 				} else if (targetIds) {
 					rows = [];
 				} else {
-					rows = await tenantQuery(companyDb, `SELECT p.payid, p.paydate, p.amount, p.suppid, p.invoice_nr, p.acc, p.accnr FROM ${schema}.payments_suppliers p WHERE p.paydate BETWEEN ? AND ? AND ${PAYMENT_BACKFILL_EXCLUSION_SQL}`, [fromDate, toDate]);
+					rows = await tenantQuery(companyDb, `SELECT p.payid, p.paydate, p.amount, p.suppid, p.invoice_nr, p.acc, p.accnr FROM ${schema}.payments_suppliers p WHERE p.paydate BETWEEN ? AND ? AND ${SUPPLIER_PAYMENT_BACKFILL_SQL}`, [fromDate, toDate]);
 				}
 				const buildFn = async (row) => {
 					const preferredAccnr = Number(row.acc || 0) || Number(row.accnr || 0) || 0;

@@ -9,6 +9,7 @@ const mysql = require("mysql2/promise");
 const { withPool, query, companyTransaction } = require("./mirror/database/database");
 const controlAccounts = require("./controlAccounts");
 const openingStock = require("./openingStock");
+const rfcOriginals = require("./rfcOriginals");
 const glBackfill = require("./mirror/lib/finance/glBackfill");
 const { clearControlAccountCache } = require("./mirror/lib/finance/postingEngine");
 const { flushStockGlCache } = require("./mirror/lib/finance/stockGlResolver");
@@ -144,29 +145,7 @@ async function readScope(config, schema) {
 			`SELECT fiscal_year, period_no, DATE_FORMAT(start_date, '%Y-%m-%d') AS start_date, DATE_FORMAT(end_date, '%Y-%m-%d') AS end_date
 			 FROM \`${schema}\`.gl_periods WHERE status = 'CLOSED' ORDER BY start_date`
 		);
-		// RFC-ORIGINAL invoices without a '-RFC' return to pair with (paired the way
-		// migrateLegacyRfcs pairs). The RFC migration never selects them and the
-		// backfill posts only DONE, POSTED and CREDIT invoices, so each needs a decision.
-		const unpairedRfcOriginals = (await query(
-			`SELECT o.sinvid, o.suppid, sup.supplier AS supplier_name, o.invoice_nr, DATE_FORMAT(o.inv_date, '%Y-%m-%d') AS inv_date,
-			        o.amount, o.rfcamount,
-			        (SELECT GROUP_CONCAT(r.invoice_nr ORDER BY r.invoice_nr SEPARATOR ', ') FROM \`${schema}\`.invoices_supplier r
-			         WHERE r.suppid = o.suppid AND r.sinvid <> o.sinvid AND r.invoice_nr LIKE '%-RFC'
-			           AND r.invoice_nr LIKE CONCAT(o.invoice_nr, '%')) AS similar_returns
-			 FROM \`${schema}\`.invoices_supplier o
-			 LEFT JOIN \`${schema}\`.suppliers sup ON sup.suppid = o.suppid
-			 WHERE o.status = 'RFC-ORIGINAL'
-			   AND NOT EXISTS (
-			     SELECT 1 FROM \`${schema}\`.invoices_supplier r
-			     WHERE r.suppid = o.suppid AND r.invoice_nr LIKE '%-RFC' AND r.status IN ('RFC-DONE', 'POSTED')
-			       AND REPLACE(r.invoice_nr, '-RFC', '') = o.invoice_nr
-			   )
-			 ORDER BY o.inv_date, o.sinvid
-			 LIMIT 200`
-		)).map((row) => ({
-			sinvid: Number(row.sinvid), supplier: row.supplier_name || `Supplier ${row.suppid}`, invoiceNr: row.invoice_nr,
-			date: row.inv_date, amount: Number(row.amount), returnRecorded: Math.abs(Number(row.rfcamount || 0)), similarReturns: row.similar_returns
-		}));
+		const unpairedRfcOriginals = await rfcOriginals.readUnpaired(query, schema);
 		const journals = await query(
 			`SELECT source, COUNT(*) AS headers FROM \`${schema}\`.gl_journal_headers GROUP BY source ORDER BY source`
 		);
@@ -308,6 +287,26 @@ async function applyControlFix(config, schema, key, choice) {
 			await tx.commit();
 			clearControlAccountCache(schema);
 			return { applied };
+		} catch (err) {
+			await tx.rollback();
+			throw err;
+		}
+	});
+}
+
+/** Read-only: one unpaired RFC-ORIGINAL invoice and the fixes it supports. */
+async function readRfcOriginalFix(config, schema, sinvid) {
+	return withSchema(config, schema, () => rfcOriginals.readFixOptions(query, schema, sinvid));
+}
+
+/** Applies one unpaired RFC-ORIGINAL invoice fix in a single transaction. */
+async function applyRfcOriginalFix(config, schema, sinvid, choice) {
+	return runTask(config, schema, "an RFC-ORIGINAL invoice fix", async () => {
+		const tx = await companyTransaction();
+		try {
+			const result = await rfcOriginals.applyFix(tx.query, schema, sinvid, choice);
+			await tx.commit();
+			return result;
 		} catch (err) {
 			await tx.rollback();
 			throw err;
@@ -486,6 +485,8 @@ module.exports = {
 	clearRunHistory,
 	readControlFix,
 	applyControlFix,
+	readRfcOriginalFix,
+	applyRfcOriginalFix,
 	readOpeningStock,
 	postOpeningStock,
 	undoOpeningStock

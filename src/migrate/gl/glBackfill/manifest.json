@@ -11,7 +11,7 @@
 		},
 		{
 			"path": "lib/finance/glBackfill.js",
-			"mode": "verbatim"
+			"mode": "migrate"
 		},
 		{
 			"path": "lib/finance/postingEngine.js",

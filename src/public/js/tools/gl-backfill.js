@@ -65,11 +65,14 @@
 		const unpaired = scope.unpairedRfcOriginals || [];
 		if (unpaired.length) {
 			parts.push(section("Supplier invoices that will not post", `<p class="gl-backfill-warning">${count(unpaired.length)} marked RFC-ORIGINAL ` +
-				`with no matching -RFC return. RFC migration and the backfill skip them, so correct each one first.</p>` + table(
-				[["ID", "gl-backfill-num"], ["Supplier"], ["Invoice"], ["Date"], ["Amount", "gl-backfill-num"], ["Return recorded", "gl-backfill-num"], ["Similar return"]],
+				`with no matching -RFC return. RFC migration and the backfill skip them, so fix each one first.</p>` + table(
+				[["ID", "gl-backfill-num"], ["Supplier"], ["Invoice"], ["Date"], ["Amount", "gl-backfill-num"], ["Paid", "gl-backfill-num"],
+					["Return recorded", "gl-backfill-num"], ["Unpaired return"], [""]],
 				unpaired.map((row) => `<tr><td class="gl-backfill-num">${row.sinvid}</td><td>${escapeHtml(row.supplier)}</td>` +
 					`<td>${escapeHtml(row.invoiceNr)}</td><td>${escapeHtml(row.date || "-")}</td><td class="gl-backfill-num">${money(row.amount)}</td>` +
-					`<td class="gl-backfill-num">${row.returnRecorded ? money(row.returnRecorded) : "-"}</td><td>${escapeHtml(row.similarReturns || "-")}</td></tr>`)
+					`<td class="gl-backfill-num">${money(row.paid)}</td>` +
+					`<td class="gl-backfill-num">${row.returnRecorded ? money(row.returnRecorded) : "-"}</td><td>${escapeHtml(row.unpairedReturns || "-")}</td>` +
+					`<td><button class="btn secondary gl-backfill-fix" type="button" data-rfc-fix="${row.sinvid}">Fix</button></td></tr>`)
 			) + (unpaired.length >= 200 ? "<p>First 200 shown.</p>" : "")));
 		}
 		return parts.join("");
@@ -227,6 +230,36 @@
 		update();
 	}
 
+	function invoiceFixHtml(options) {
+		const facts = [`Amount ${money(options.amount)}`, `paid ${money(options.paid)}`, `owing ${money(options.payable)}`,
+			options.returnRecorded ? `return of ${money(options.returnRecorded)} recorded on the invoice` : "no return recorded",
+			`${count(options.payments.count)} supplier ${options.payments.count === 1 ? "payment" : "payments"}`];
+		const choices = options.actions.map((item) => fixChoiceHtml(item.action,
+			`${escapeHtml(item.title)}${item.recommended ? " (suggested)" : ""}`, escapeHtml(item.hint || "")));
+		return '<div class="gl-control-fix">' +
+			`<p><strong>${escapeHtml(options.supplier)} invoice ${escapeHtml(options.invoiceNr)}</strong>: ${escapeHtml(facts.join(", "))}.</p>` +
+			choices.join("") +
+			'<div class="gl-control-fix-preview"><strong>What will change</strong><ul data-field="preview"></ul></div></div>';
+	}
+
+	// Keeps the preview and the Apply button in step with the chosen fix.
+	function wireInvoiceFixDialog(overlay, options, state) {
+		const radios = Array.from(overlay.querySelectorAll('input[name="gl-control-fix"]'));
+		const confirmBtn = overlay.querySelector(".modal-confirm");
+		const previewEl = overlay.querySelector('[data-field="preview"]');
+		const update = () => {
+			const action = (radios.find((radio) => radio.checked) || {}).value;
+			const chosen = options.actions.find((item) => item.action === action);
+			previewEl.innerHTML = chosen ? chosen.changes.map((line) => `<li>${escapeHtml(line)}</li>`).join("") : "<li>Choose how to fix it.</li>";
+			state.choice = chosen ? { action: chosen.action } : null;
+			confirmBtn.disabled = !chosen;
+		};
+		overlay.addEventListener("change", update);
+		const suggested = options.actions.find((item) => item.recommended);
+		if (suggested) radios.find((radio) => radio.value === suggested.action).checked = true;
+		update();
+	}
+
 	function setup() {
 		const button = document.getElementById("btn-gl-backfill");
 		if (!button) return;
@@ -353,12 +386,48 @@
 			}
 		}
 
+		async function fixInvoice(sinvid) {
+			const url = `/api/tools/gl-backfill/rfc-originals/${encodeURIComponent(sinvid)}`;
+			let options;
+			try {
+				options = await getJson(url);
+			} catch (err) {
+				await window.Modal.alert({ title: "Fix supplier invoice", message: err.message, type: "error" });
+				return;
+			}
+			const title = `Fix invoice ${options.invoiceNr}`;
+			if (!options.actions.length) {
+				await window.Modal.alert({ title, type: "warning",
+					message: "None of the automatic fixes fits this invoice: it was part paid or a return was recorded against it. Correct it in the legacy data, then import it again." });
+				return;
+			}
+			const state = { choice: null };
+			const ok = await window.Modal.custom({
+				title,
+				contentHTML: invoiceFixHtml(options),
+				type: "info",
+				confirmText: "Apply",
+				cancelText: "Cancel",
+				onMount: (overlay) => wireInvoiceFixDialog(overlay, options, state)
+			});
+			if (!ok || !state.choice) return;
+			try {
+				const result = await postJson(url, state.choice);
+				await loadScope(`Invoice ${escapeHtml(options.invoiceNr)} fixed: ${result.applied.map(escapeHtml).join("; ")}.`);
+				announceChange("invoices");
+			} catch (err) {
+				await window.Modal.alert({ title, message: err.message, type: "error" });
+			}
+		}
+
 		dryRunEl.addEventListener("change", syncControls);
 		checkBtn.addEventListener("click", () => loadScope());
 		document.addEventListener("glbackfill:repaired", () => loadScope());
 		scopeEl.addEventListener("click", (event) => {
 			const fix = event.target.closest("[data-fix]");
 			if (fix) fixControl(fix.dataset.fix);
+			const invoiceFix = event.target.closest("[data-rfc-fix]");
+			if (invoiceFix) fixInvoice(invoiceFix.dataset.rfcFix);
 		});
 		filterEl.addEventListener("change", () => {
 			if (runId !== null && !following) showRun(runId);

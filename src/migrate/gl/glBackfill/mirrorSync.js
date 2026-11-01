@@ -5,7 +5,9 @@
 // mirror/ follows the PWA's src/ layout, so the copied modules keep their
 // relative requires. Each manifest entry is a whole file copied verbatim, or a
 // file holding selected top-level declarations copied verbatim from the PWA
-// file of the same path. mirror/database/database.js is Migrate's own.
+// file of the same path. Entries in mode "migrate" are Migrate's own and never
+// synced: mirror/database/database.js, and mirror/lib/finance/glBackfill.js since
+// the GL backfill runs only in Migrate.
 // Nothing here writes to the PWA checkout; it is only read.
 
 const fs = require("fs");

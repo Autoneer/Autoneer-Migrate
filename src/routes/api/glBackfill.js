@@ -170,4 +170,30 @@ router.post("/tools/gl-backfill/controls/:key", async (req, res) => {
 	}
 });
 
+/**
+ * GET /tools/gl-backfill/rfc-originals/:sinvid
+ * Read-only: how one unpaired RFC-ORIGINAL supplier invoice can be fixed, for the preview.
+ */
+router.get("/tools/gl-backfill/rfc-originals/:sinvid", async (req, res) => {
+	try {
+		const options = await glBackfill.readRfcOriginalFix(state.mysql, state.schemaName, req.params.sinvid);
+		res.json({ success: true, ...options });
+	} catch (err) {
+		sendError(res, err, "Failed to read the invoice");
+	}
+});
+
+/**
+ * POST /tools/gl-backfill/rfc-originals/:sinvid
+ * Body: { action: "pair" | "done" | "void" }.
+ */
+router.post("/tools/gl-backfill/rfc-originals/:sinvid", async (req, res) => {
+	try {
+		const result = await glBackfill.applyRfcOriginalFix(state.mysql, state.schemaName, req.params.sinvid, req.body || {});
+		res.json({ success: true, ...result });
+	} catch (err) {
+		sendError(res, err, "Failed to fix the invoice");
+	}
+});
+
 module.exports = router;
