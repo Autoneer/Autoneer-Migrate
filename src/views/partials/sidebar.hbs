@@ -1,9 +1,25 @@
 <aside class="sidebar">
 	<div class="brand">Autoneer Migrator</div>
 	<nav class="steps">
-		<a class="step {{#if (eq currentStep 'setup')}}active{{/if}}" href="/setup">Setup</a>
-		<a class="step {{#if (eq currentStep 'wizard')}}active{{/if}}" href="/wizard">Migration Wizard</a>
-		<a class="step {{#if (eq currentStep 'glTools')}}active{{/if}}" href="/tools/gl">GL Maintenance</a>
-		<a class="step {{#if (eq currentStep 'migration')}}active{{/if}}" href="/migration/history">Migration History</a>
+		<a class="step {{#if (eq currentStep 'setup')}}active{{/if}}" href="/setup" data-tooltip="Setup">
+			<svg class="step-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
+			<span class="step-label">Setup</span>
+		</a>
+		<a class="step {{#if (eq currentStep 'wizard')}}active{{/if}}" href="/wizard" data-tooltip="Migration Wizard">
+			<svg class="step-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 8h15l-4-4M20 16H5l4 4"/></svg>
+			<span class="step-label">Migration Wizard</span>
+		</a>
+		<a class="step {{#if (eq currentStep 'glTools')}}active{{/if}}" href="/tools/gl" data-tooltip="GL Maintenance">
+			<svg class="step-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 3h14v18H5zM9 3v18M12 8h4M12 12h4"/></svg>
+			<span class="step-label">GL Maintenance</span>
+		</a>
+		<a class="step {{#if (eq currentStep 'glBackfill')}}active{{/if}}" href="/tools/gl-backfill" data-tooltip="GL Backfill">
+			<svg class="step-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m12 2 9 5-9 5-9-5zM3 12l9 5 9-5M3 17l9 5 9-5"/></svg>
+			<span class="step-label">GL Backfill</span>
+		</a>
+		<a class="step {{#if (eq currentStep 'migration')}}active{{/if}}" href="/migration/history" data-tooltip="Migration History">
+			<svg class="step-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+			<span class="step-label">Migration History</span>
+		</a>
 	</nav>
 </aside>

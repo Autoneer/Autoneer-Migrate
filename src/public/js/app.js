@@ -2,6 +2,34 @@ if ("serviceWorker" in navigator) {
 	navigator.serviceWorker.register("/public/service-worker.js");
 }
 
+// App menu fold: the round button at the bottom of the sidebar folds/unfolds it on every page, and the choice is remembered.
+// The wizard folds it for a session without remembering (see MigrationWizard.updateSidebar).
+const appShell = document.querySelector(".app");
+const sidebarToggle = document.querySelector(".sidebar-toggle");
+const storedSidebarCollapsed = () => {
+	try {
+		return localStorage.getItem("sidebarCollapsed") === "1";
+	} catch {
+		return false;
+	}
+};
+window.setSidebarCollapsed = (collapsed, remember = true) => {
+	if (!appShell || !sidebarToggle) return;
+	appShell.classList.toggle("sidebar-collapsed", collapsed);
+	sidebarToggle.title = collapsed ? "Expand sidebar" : "Collapse sidebar";
+	sidebarToggle.setAttribute("aria-label", sidebarToggle.title);
+	sidebarToggle.setAttribute("aria-expanded", String(!collapsed));
+	if (!remember) return;
+	try {
+		localStorage.setItem("sidebarCollapsed", collapsed ? "1" : "0");
+	} catch {}
+};
+window.restoreSidebar = () => window.setSidebarCollapsed(storedSidebarCollapsed(), false);
+if (appShell && sidebarToggle) {
+	sidebarToggle.addEventListener("click", () => window.setSidebarCollapsed(!appShell.classList.contains("sidebar-collapsed")));
+	window.restoreSidebar();
+}
+
 const progressEl = document.getElementById("progress");
 if (progressEl) {
 	const runId = progressEl.getAttribute("data-run-id");
@@ -472,6 +500,71 @@ document.querySelectorAll("[data-toggle]").forEach((button) => {
 		button.textContent = body.classList.contains("collapsed") ? "Expand" : "Collapse";
 	});
 });
+
+// Collapsible cards: the header strip, or the chevron at a card's top right, folds it to its heading.
+// A page can add a "Collapse all" button (#cards-collapse-all) and a remembered "One card only" switch (#cards-one-only):
+// with the switch on, a card taking focus folds every other card.
+const collapsibleCards = Array.from(document.querySelectorAll(".card.collapsible"));
+const collapseAllButton = document.getElementById("cards-collapse-all");
+const oneCardSwitch = document.getElementById("cards-one-only");
+const syncCollapseAll = () => {
+	if (collapseAllButton) collapseAllButton.textContent = collapsibleCards.some((card) => !card.classList.contains("is-collapsed")) ? "Collapse all" : "Expand all";
+};
+const setCardCollapsed = (card, collapsed) => {
+	card.classList.toggle("is-collapsed", collapsed);
+	const button = card.querySelector(":scope > .card-collapse");
+	button.title = collapsed ? "Expand" : "Collapse";
+	button.setAttribute("aria-expanded", String(!collapsed));
+	syncCollapseAll();
+};
+const collapseOtherCards = (keep) => {
+	if (!oneCardSwitch?.checked) return;
+	collapsibleCards.forEach((card) => {
+		if (card !== keep) setCardCollapsed(card, true);
+	});
+};
+let lastFocusedCard = null;
+let pointerDown = false;
+let pendingFocusCard = null;
+collapsibleCards.forEach((card) => {
+	const toggle = () => setCardCollapsed(card, !card.classList.contains("is-collapsed"));
+	card.querySelector(":scope > .card-collapse").addEventListener("click", toggle);
+	card.querySelector(":scope > h3").addEventListener("click", toggle);
+	card.addEventListener("focusin", () => {
+		lastFocusedCard = card;
+		// A mouse click folds the others once it has landed, so the cards don't shift under the pointer mid-click.
+		if (pointerDown) pendingFocusCard = card;
+		else collapseOtherCards(card);
+	});
+});
+const endPointer = () => {
+	pointerDown = false;
+	const card = pendingFocusCard;
+	pendingFocusCard = null;
+	if (card) setTimeout(() => collapseOtherCards(card));
+};
+document.addEventListener("pointerdown", () => { pointerDown = true; });
+document.addEventListener("pointerup", endPointer);
+document.addEventListener("pointercancel", endPointer);
+collapseAllButton?.addEventListener("click", () => {
+	const collapse = collapsibleCards.some((card) => !card.classList.contains("is-collapsed"));
+	collapsibleCards.forEach((card) => setCardCollapsed(card, collapse));
+});
+if (oneCardSwitch) {
+	try {
+		oneCardSwitch.checked = localStorage.getItem("cardsOneOnly") === "1";
+	} catch {}
+	// Switching on (or loading with it on) keeps the last focused card, else the first open one, and folds the rest.
+	const keepOneCard = () => collapseOtherCards(lastFocusedCard ?? collapsibleCards.find((card) => !card.classList.contains("is-collapsed")));
+	oneCardSwitch.addEventListener("change", () => {
+		try {
+			localStorage.setItem("cardsOneOnly", oneCardSwitch.checked ? "1" : "0");
+		} catch {}
+		keepOneCard();
+	});
+	keepOneCard();
+}
+syncCollapseAll();
 
 const nextPlan = document.getElementById("next-plan");
 const loadingModal = document.getElementById("loading-modal");

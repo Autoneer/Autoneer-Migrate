@@ -147,6 +147,18 @@
 	background: #545b62;
 }
 
+.modal-footer .btn:disabled,
+.modal-footer .btn:disabled:hover {
+	opacity: 0.5;
+	cursor: not-allowed;
+	transform: none;
+	box-shadow: none;
+}
+
+.modal-footer .btn-primary:disabled:hover {
+	background: #007bff;
+}
+
 /* Type-specific styling */
 .modal-info .modal-header {
 	background: #d1ecf1;

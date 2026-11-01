@@ -5,6 +5,51 @@ const runStore = require("../migrate/runStore");
 
 const router = express.Router();
 
+// History page filters: run statuses to pick from, and the periods (days) the query below accepts; 'all' applies no date filter.
+const HISTORY_STATUSES = ['SUCCESS', 'COMPLETED_WITH_ERRORS', 'FAILED', 'CANCELLED', 'RUNNING'];
+const HISTORY_RANGES = [['7', 'Last 7 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days'], ['all', 'All time']];
+
+// "COMPLETED_WITH_ERRORS" -> "Completed with errors"
+const statusLabel = (status) => {
+	const text = String(status || '').toLowerCase().replace(/_/g, ' ');
+	return text.charAt(0).toUpperCase() + text.slice(1);
+};
+
+const formatDuration = (startedAt, endedAt) => {
+	if (!startedAt || !endedAt) return null;
+	const ms = new Date(endedAt) - new Date(startedAt);
+	if (Number.isNaN(ms)) return null;
+	const secs = Math.max(0, Math.round(ms / 1000));
+	if (secs < 60) return `${secs}s`;
+	const mins = Math.floor(secs / 60);
+	if (mins < 60) return `${mins}m ${secs % 60}s`;
+	return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+};
+
+const renderHistory = (res, { runs = [], error = null, status = 'All', range = '7' } = {}) => {
+	const historyRuns = runs.map((run) => ({
+		...run,
+		status_key: String(run.status || '').toLowerCase(),
+		status_label: statusLabel(run.status),
+		duration: formatDuration(run.started_at, run.ended_at),
+		warn_label: run.warn_count ? `${run.warn_count} warning${run.warn_count === 1 ? '' : 's'}` : null
+	}));
+	const filters = {
+		status: String(status).toUpperCase(),
+		range: String(range),
+		statuses: HISTORY_STATUSES.map((value) => ({ value, label: statusLabel(value), selected: value === String(status).toUpperCase() })),
+		ranges: HISTORY_RANGES.map(([value, label]) => ({ value, label, selected: value === String(range) }))
+	};
+	res.render('migration_history', {
+		runs: historyRuns,
+		runCountLabel: `${historyRuns.length} run${historyRuns.length === 1 ? '' : 's'}`,
+		filtered: filters.status !== 'ALL' || filters.range !== 'all',
+		filters,
+		error,
+		currentStep: 'migration'
+	});
+};
+
 router.get("/migration/history", async (req, res) => {
 	const status = req.query.status || 'All';
 	const range = req.query.range || '7';
@@ -34,16 +79,17 @@ router.get("/migration/history", async (req, res) => {
 			params.push(Number(range));
 		}
 
-		const sql = `select * from migration_runs ${where.length ? 'where ' + where.join(' and ') : ''} limit 200`;
+		// Newest first, so the limit keeps the latest runs; the stable label sort below keeps that order within each label.
+		const sql = `select * from migration_runs ${where.length ? 'where ' + where.join(' and ') : ''} order by started_at desc, run_id desc limit 200`;
 		let [rows] = await pool.query(sql, params);
 		rows = rows
 			.slice()
 			.sort((a, b) => String(a.run_label || "").localeCompare(String(b.run_label || "")));
 		await pool.end();
 
-		res.render('migration_history', { runs: rows, currentStep: 'migration' });
+		renderHistory(res, { runs: rows, status, range });
 	} catch (err) {
-		res.render('migration_history', { runs: [], error: err.message, currentStep: 'migration' });
+		renderHistory(res, { error: err.message, status, range });
 	}
 });
 
@@ -120,7 +166,7 @@ router.post('/migration/history/:run_id/delete', async (req, res) => {
 		await pool.end();
 		res.redirect('/migration/history');
 	} catch (err) {
-		res.render('migration_history', { runs: [], error: `Failed to delete run: ${err.message}`, currentStep: 'migration' });
+		renderHistory(res, { error: `Failed to delete run: ${err.message}` });
 	}
 });
 
@@ -150,7 +196,7 @@ router.post('/migration/history/delete', async (req, res) => {
 		await pool.end();
 		res.redirect('/migration/history');
 	} catch (err) {
-		res.render('migration_history', { runs: [], error: `Failed to delete selected runs: ${err.message}`, currentStep: 'migration' });
+		renderHistory(res, { error: `Failed to delete selected runs: ${err.message}` });
 	}
 });
 
@@ -181,7 +227,7 @@ router.post('/migration/history/flush', async (req, res) => {
 		await pool.end();
 		res.redirect('/migration/history');
 	} catch (err) {
-		res.render('migration_history', { runs: [], error: `Failed to flush migration history: ${err.message}`, currentStep: 'migration' });
+		renderHistory(res, { error: `Failed to flush migration history: ${err.message}` });
 	}
 });
 

@@ -21,6 +21,7 @@ const {
 } = require("./gl/glAccountTypes");
 const { runAllChecks: runGLValidationChecks } = require("./gl/glValidation");
 const { runOpenPartVatPostImport } = require("./openPartVatPostImport");
+const stockQuantityHoldback = require("./stockQuantityHoldback");
 const {
 	reorderAccountingPlanSteps,
 	validateGLExecutionPrereqs
@@ -741,12 +742,12 @@ async function validateDataTypeMapping(pool, firebirdConfig, sourceTable, target
 	}
 }
 
-function buildInsertStatement(tableName, columns, mode, primaryKeys, ignoreDuplicates) {
+function buildInsertStatement(tableName, columns, mode, primaryKeys, ignoreDuplicates, updatableColumns = columns) {
 	const colList = columns.map((c) => `\`${c}\``).join(", ");
 	const ignorePrefix = ignoreDuplicates && mode !== "UPSERT" ? "ignore " : "";
 	const base = `insert ${ignorePrefix}into \`${tableName}\` (${colList}) values ?`;
 	if (mode !== "UPSERT") return { sql: base, updateCols: [] };
-	const updates = columns
+	const updates = updatableColumns
 		.filter((c) => !primaryKeys.includes(c))
 		.map((c) => `\`${c}\`=values(\`${c}\`)`)
 		.join(", ");
@@ -867,6 +868,8 @@ async function runMigrationInternal({
 		rows_total_error: 0,
 		rows_total_skipped_duplicates: 0
 	};
+	// Source stock rows whose quantity was held back for the opening stock take.
+	let stockQuantitiesHeldBack = 0;
 	const transactionalDateFilter = normalizeTransactionalDateFilterConfig(planConfig || {});
 
 	const maskConfig = (config) => {
@@ -1589,14 +1592,20 @@ async function runMigrationInternal({
 				emitRunState(runId, emitter);
 
 				const ignoreDuplicatesForInsert = onDuplicate !== "ERROR";
+				const holdsBackStockQuantity = stockQuantityHoldback.holdsBackQuantity(tableName);
+				if (holdsBackStockQuantity) {
+					logRun({ level: "info", phase: "stock_quantity_holdback", tableName, message: "Stock is imported with quantity 0. Opening Stock on the GL Backfill page posts the legacy quantities." });
+				}
+				const updatableColumns = stockQuantityHoldback.updatableColumns(tableName, targetColumnsForInsert);
 				const { sql } = buildInsertStatement(
 					tableName,
 					targetColumnsForInsert,
 					step.mode,
 					primaryKeys,
-					ignoreDuplicatesForInsert
+					ignoreDuplicatesForInsert,
+					updatableColumns
 				);
-				const updateColumns = targetColumnsForInsert.filter((c) => !primaryKeys.includes(c));
+				const updateColumns = updatableColumns.filter((c) => !primaryKeys.includes(c));
 				const useDedupe = dedupeKeys.length > 0;
 
 				const logRowError = async (sourceRow, rowIndex, errorMessage) => {
@@ -1671,6 +1680,7 @@ async function runMigrationInternal({
 							columnTypes: mysqlColumnTypes
 						});
 						applyInvoiceSplitPolicy(row, mappedRow, invoiceSplitPolicy);
+						if (holdsBackStockQuantity && stockQuantityHoldback.holdBackQuantity(mappedRow) && !dryRun) stockQuantitiesHeldBack += 1;
 						const values = targetColumnsForInsert.map((c) => mappedRow[c]);
 						const sourceId = sourceIdColumn ? row[sourceIdColumn.toLowerCase()] : undefined;
 						const dedupeValues = dedupeKeys.map((key) => mappedRow[key]);
@@ -2350,6 +2360,11 @@ async function runMigrationInternal({
 		const postImport = dryRun || (runFailed && !(continueOnError && tableErrors.length > 0))
 			? { error: null, warnings: [] }
 			: await runOpenPartVatPostImport({ pool, importedTables, repair: !runFailed, logRun });
+		if (!dryRun && importedTables.has("stock") && stockQuantitiesHeldBack > 0) {
+			const warning = stockQuantityHoldback.openingStockPendingWarning(stockQuantitiesHeldBack);
+			postImport.warnings.push(warning);
+			logRun({ level: "warn", phase: "post_import_verification", ...warning });
+		}
 		if (postImport.warnings.length) {
 			runState.warnings = postImport.warnings;
 			try {

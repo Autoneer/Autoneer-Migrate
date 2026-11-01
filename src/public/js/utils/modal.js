@@ -125,6 +125,7 @@
 			return new Promise((resolve) => {
 				const overlay = document.createElement('div');
 				overlay.className = 'modal-overlay';
+				overlay.dataset.flashModal = '';
 				overlay.setAttribute('role', 'dialog');
 				overlay.setAttribute('aria-modal', 'true');
 				overlay.setAttribute('aria-labelledby', 'modal-title');
@@ -225,6 +226,7 @@
 		}) {
 			const overlay = document.createElement('div');
 			overlay.className = 'modal-overlay';
+			overlay.dataset.flashModal = '';
 			overlay.setAttribute('role', 'dialog');
 			overlay.setAttribute('aria-modal', 'true');
 			overlay.setAttribute('aria-labelledby', 'modal-title');
@@ -323,8 +325,8 @@
 		 * @private
 		 */
 		static _showModal(modal) {
-			// Remove any existing modals
-			document.querySelectorAll('.modal-overlay').forEach(m => m.remove());
+			// Remove any existing modals of ours; pages keep their own .modal-overlay dialogs (e.g. #results-modal)
+			document.querySelectorAll('.modal-overlay[data-flash-modal]').forEach(m => m.remove());
 
 			document.body.appendChild(modal);
 			modal.style.display = 'flex';

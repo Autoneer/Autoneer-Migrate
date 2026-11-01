@@ -21,6 +21,7 @@ const runApiRoutes = require("./routes/api/runs");
 const presetsApiRoutes = require("./routes/api/presets");
 const profilesApiRoutes = require("./routes/api/profiles");
 const toolsApiRoutes = require("./routes/api/tools");
+const glBackfillApiRoutes = require("./routes/api/glBackfill");
 const { router: dataQualityRoutes } = require('./routes/api/dataQuality');
 
 const app = express();
@@ -79,6 +80,7 @@ app.use("/api", runApiRoutes);     // Run tracking endpoints
 app.use("/api", presetsApiRoutes);
 app.use("/api", profilesApiRoutes);
 app.use("/api", toolsApiRoutes);   // Tools and utilities endpoints
+app.use("/api", glBackfillApiRoutes); // GL backfill mirrored from AUTONEER-PWA
 app.use((err, req, res, next) => {
 	const message = err?.message || "Unexpected error";
 

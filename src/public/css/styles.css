@@ -31,7 +31,12 @@ body {
 	grid-template-columns: repeat(2, minmax(280px, 1fr));
 }
 
+/* Pinned to the viewport so the menu stays in view while the page content scrolls. */
 .sidebar {
+	position: sticky;
+	top: 0;
+	align-self: start;
+	height: 100vh;
 	background: var(--panel);
 	padding: 24px 16px;
 	border-right: 1px solid var(--border);
@@ -187,6 +192,23 @@ body {
 .card-body.collapsed {
 	display: none;
 }
+
+/* Collapsible card: its header strip, or the chevron at its top right, folds it to its heading (app.js); drawn like the wizard's section chevrons.
+   The heading bleeds over the card's top and side padding (--card-pad-y/x) so the whole strip is clickable. */
+.card.collapsible { --card-pad-y: 16px; --card-pad-x: 16px; position: relative; }
+.card.collapsible > h3 { display: flex; align-items: center; min-height: calc(var(--card-pad-y) + 22px); margin-top: calc(-1 * var(--card-pad-y)); margin-left: calc(-1 * var(--card-pad-x)); margin-right: calc(-1 * var(--card-pad-x)); padding: var(--card-pad-y) calc(var(--card-pad-x) + 32px) 0 var(--card-pad-x); cursor: pointer; user-select: none; }
+.card-collapse { position: absolute; top: calc(var(--card-pad-y) - 2px); right: calc(var(--card-pad-x) - 4px); display: grid; place-items: center; width: 26px; height: 26px; padding: 0; background: transparent; border: 0; border-radius: 6px; cursor: pointer; }
+.card-collapse::before { content: ''; width: 8px; height: 8px; margin-top: -4px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .15s ease; }
+.card-collapse:hover { background: var(--panel); }
+.card-collapse:hover::before, .card.collapsible > h3:hover ~ .card-collapse::before { border-color: var(--text); }
+.card.is-collapsed > :not(h3, .card-collapse) { display: none; }
+.card.is-collapsed > h3 { min-height: calc(2 * var(--card-pad-y) + 22px); margin-bottom: calc(-1 * var(--card-pad-y)); padding-bottom: var(--card-pad-y); }
+.card.is-collapsed .card-collapse::before { margin: 0 0 0 -3px; transform: rotate(-45deg); }
+@media (prefers-reduced-motion: reduce) { .card-collapse::before { transition: none; } }
+.card-controls { display: flex; align-items: center; gap: 16px; }
+.card-controls label { margin: 0; font-size: 13px; color: var(--text); cursor: pointer; }
+.card-controls .btn { padding: 6px 12px; font-size: 13px; background: #fff; }
+.card-controls .btn:hover { background: #eef1f4; }
 
 .grid {
 	display: grid;
@@ -976,6 +998,8 @@ pre {
 .gl-tools-header { margin: 4px 0 16px; }
 .gl-tools-header h1 { margin: 0 0 4px; font-size: 20px; }
 .gl-tools-header .hint { margin: 0; }
+.card-controls-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.card-controls-head h1 { margin: 0; }
 .gl-tools-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
 .gl-tools-grid .card { margin-bottom: 0; }
 .gl-tool { display: flex; flex-direction: column; padding: 18px 20px; }
@@ -998,10 +1022,195 @@ pre {
 	.gl-tools-grid { grid-template-columns: 1fr; }
 }
 
-/* Wizard session: the app menu folds away (see MigrationWizard.updateSidebar); an arrow tab on the left edge reopens it. */
-.app.sidebar-collapsed { grid-template-columns: 1fr; }
-.app.sidebar-collapsed .sidebar { display: none; }
-.sidebar-toggle { display: none; }
-.app.wizard-session .sidebar-toggle { display: inline-flex; align-items: center; justify-content: center; position: fixed; top: 24px; left: 239px; z-index: 50; width: 22px; height: 40px; padding: 0 0 2px; font-size: 20px; line-height: 1; color: var(--muted); background: #fff; border: 1px solid var(--border); border-left: none; border-radius: 0 8px 8px 0; box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.08); cursor: pointer; }
-.app.wizard-session.sidebar-collapsed .sidebar-toggle { left: 0; }
-.app.wizard-session .sidebar-toggle:hover { color: var(--text); background: #eef1f4; }
+/* GL Backfill page */
+.gl-backfill-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-bottom: 16px; }
+.gl-backfill-scope-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 8px 32px; }
+.gl-backfill-section { padding: 10px 12px; border: 1px solid var(--border-subtle); border-radius: 6px; }
+.gl-backfill-section + .gl-backfill-section, .gl-backfill-scope-cols + .gl-backfill-section { margin-top: 12px; }
+.gl-backfill-scope .gl-backfill-section > h4 { margin-top: 0; }
+.gl-backfill-section > :last-child { margin-bottom: 0; }
+.gl-backfill-section table tr:last-child td { border-bottom: 0; }
+.gl-backfill-run-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr); align-items: start; gap: 12px 32px; }
+.gl-backfill-run-form .gl-tool-note { margin: 0; }
+.gl-repair-form { display: flex; flex-direction: column; gap: 10px; }
+.gl-repair-form .gl-backfill-toggles { margin: 0; }
+.gl-repair-form .gl-tool-note { margin: 0; }
+.gl-repair-field { display: grid; grid-template-columns: 130px minmax(0, 320px); align-items: center; gap: 8px; margin: 0; font-size: 13px; color: var(--text); }
+.gl-repair-field input[type="number"] { width: 110px; }
+.gl-repair-result:empty { display: none; }
+.gl-repair-result { margin-top: 12px; }
+.gl-repair-result .gl-backfill-table-wrap { max-height: 320px; }
+.btn.danger { color: var(--danger); background: #fff; border-color: var(--danger); }
+.btn.danger:hover:not(:disabled) { color: #fff; background: var(--danger); }
+.btn.danger:disabled { cursor: not-allowed; opacity: 0.5; }
+/* GL Backfill: a green check beside the title once a card has nothing left to do. */
+.gl-card-check { display: inline-grid; flex: 0 0 auto; place-items: center; width: 20px; height: 20px; background: #1a7f37; border-radius: 50%; }
+.gl-card-check::before { content: ""; width: 5px; height: 10px; margin-top: -2px; border-right: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(45deg); }
+.gl-card-check[hidden] { display: none; }
+.card.is-done .gl-tool-num { color: #1a7f37; border-color: #1a7f37; }
+/* GL Backfill: each card's action sits bottom right as a solid button. */
+[data-page="glBackfill"] .gl-tool-actions { display: flex; justify-content: flex-end; gap: 8px; }
+[data-page="glBackfill"] .gl-tool-actions .btn { padding: 8px 18px; font-weight: 600; color: #fff; background: var(--primary); border-color: var(--primary); box-shadow: 0 1px 2px rgba(31, 35, 40, 0.15); transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease; }
+[data-page="glBackfill"] .gl-tool-actions .btn:hover:not(:disabled) { background: #0550ae; border-color: #0550ae; box-shadow: 0 2px 6px rgba(9, 105, 218, 0.35); }
+[data-page="glBackfill"] .gl-tool-actions .btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.3); }
+[data-page="glBackfill"] .gl-tool-actions .btn:disabled { cursor: not-allowed; opacity: 0.5; box-shadow: none; }
+[data-page="glBackfill"] .gl-tool-actions .btn.danger { background: var(--danger); border-color: var(--danger); }
+[data-page="glBackfill"] .gl-tool-actions .btn.danger:hover:not(:disabled) { background: #a40e26; border-color: #a40e26; box-shadow: 0 2px 6px rgba(207, 34, 46, 0.35); }
+.gl-backfill-run-form .gl-backfill-dates { flex-direction: column; margin: 0; }
+.gl-backfill-run-form .gl-backfill-dates label { display: grid; grid-template-columns: 40px auto; justify-content: start; }
+.gl-backfill-grid .card { margin-bottom: 0; }
+/* GL Backfill cards: a light drop shadow, and a primary border while the card or anything in it has focus (a click focuses the card: tabindex="-1"). */
+[data-page="glBackfill"] .card { box-shadow: 0 3px 8px rgba(31, 35, 40, 0.12), 0 1px 3px rgba(31, 35, 40, 0.1); transition: border-color .15s ease; }
+[data-page="glBackfill"] .card:focus { outline: none; }
+[data-page="glBackfill"] .card:focus-within { border-color: var(--primary); }
+.gl-tool.collapsible { --card-pad-y: 18px; --card-pad-x: 20px; }
+.gl-backfill-scope { font-size: 12px; line-height: 1.5; }
+.gl-backfill-scope h4 { margin: 14px 0 6px; font-size: 13px; }
+.gl-backfill-scope h4:first-child { margin-top: 0; }
+.gl-backfill-scope p { margin: 0 0 6px; }
+.gl-backfill-scope table { font-size: 12px; }
+.gl-backfill-scope th, .gl-backfill-scope td { padding: 5px 8px; }
+.gl-backfill-scope th { font-weight: 600; color: var(--muted); background: var(--panel); }
+.gl-backfill-num { text-align: right !important; font-variant-numeric: tabular-nums; }
+.gl-backfill-ok { color: #1a7f37; }
+.gl-backfill-warning { color: #6f4b00; }
+.gl-backfill-blocked { color: var(--danger); }
+.gl-backfill-dates { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0 0 12px; font-size: 12px; }
+.gl-backfill-dates label { flex-direction: row; align-items: center; gap: 6px; margin: 0; }
+.gl-backfill-types { display: flex; flex-direction: column; gap: 8px; margin: 0 0 14px; padding: 0; border: 0; font-size: 12px; }
+.gl-backfill-types legend { margin-bottom: 6px; padding: 0; color: var(--muted); }
+.gl-backfill-danger { color: var(--danger); }
+.gl-backfill-progress { height: 8px; margin: 0 0 12px; overflow: hidden; background: var(--panel); border: 1px solid var(--border-subtle); border-radius: 4px; }
+.gl-backfill-progress span { display: block; height: 100%; background: var(--primary); }
+.gl-backfill-stats { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 12px; }
+.gl-backfill-stat { min-width: 130px; padding: 8px 12px; background: var(--panel); border: 1px solid var(--border-subtle); border-radius: 6px; }
+.gl-backfill-stat strong { display: block; font-size: 18px; font-variant-numeric: tabular-nums; }
+.gl-backfill-stat span { font-size: 12px; color: var(--muted); }
+.gl-backfill-items-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.gl-backfill-items-head label { flex-direction: row; align-items: center; gap: 6px; margin: 0; font-size: 12px; }
+.gl-backfill-table-wrap { max-height: 480px; overflow: auto; border: 1px solid var(--border-subtle); border-radius: 6px; }
+.gl-backfill-table-wrap th { position: sticky; top: 0; }
+.gl-backfill-table-wrap > p { margin: 0; padding: 8px 10px; }
+.gl-backfill-table-wrap td:nth-child(-n+3) { white-space: nowrap; }
+.gl-backfill-toggles { display: flex; flex-direction: column; gap: 8px; margin: 0 0 12px; }
+.gl-backfill-types label, .gl-backfill-toggles label { gap: 10px; margin: 0; font-size: 13px; color: var(--text); }
+.gl-backfill-scope .gl-backfill-fix { padding: 2px 10px; font-size: 12px; }
+.gl-control-fix { font-size: 13px; line-height: 1.5; }
+.gl-control-fix p { margin: 0 0 10px; }
+.gl-control-fix-choice { margin: 0 0 10px; padding: 10px 12px; border: 1px solid var(--border-subtle); border-radius: 6px; }
+.gl-control-fix-choice > label { flex-direction: row; align-items: center; gap: 8px; margin: 0; font-weight: 600; color: var(--text); }
+.gl-control-fix-choice .hint { margin: 4px 0 0 24px; font-size: 12px; }
+.gl-control-fix-fields { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 8px 0 0 24px; }
+.gl-control-fix-fields label { flex-direction: row; align-items: center; gap: 6px; margin: 0; font-size: 12px; }
+.gl-control-fix-fields input[data-field="accnr"] { width: 90px; }
+.gl-control-fix-fields input[data-field="name"] { width: 220px; }
+.gl-control-fix-preview { margin-top: 12px; padding: 10px 12px; background: var(--panel); border: 1px solid var(--border-subtle); border-radius: 6px; }
+.gl-control-fix-preview ul { margin: 6px 0 0; padding-left: 18px; }
+@media (max-width: 1100px) {
+	.gl-backfill-scope-cols, .gl-backfill-run-form { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Toggle switch for a checkbox: <input type="checkbox" class="toggle">. Styled after the PWA's form switches. */
+input[type="checkbox"].toggle {
+	appearance: none;
+	flex: 0 0 auto;
+	width: 36px;
+	height: 20px;
+	margin: 0;
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	background: var(--bg) url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23adb5bd'/%3e%3c/svg%3e") left center / contain no-repeat;
+	cursor: pointer;
+	transition: background-position 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+input[type="checkbox"].toggle:checked {
+	border-color: var(--primary);
+	background-color: var(--primary);
+	background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+	background-position: right center;
+}
+input[type="checkbox"].toggle:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.25); }
+input[type="checkbox"].toggle:disabled { cursor: not-allowed; opacity: 0.5; }
+input[type="checkbox"].toggle:disabled + * { opacity: 0.6; }
+
+/* Sidebar links carry an icon; folded, the sidebar keeps only the icons, with the label as a hover tooltip. */
+.sidebar .step { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+.sidebar .step-icon { flex: 0 0 auto; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* App menu fold: a round button on the sidebar's edge, at the bottom, folds it to an icon rail on every page (app.js);
+   the wizard also folds it for a session (MigrationWizard.updateSidebar). Styled after the PWA's left navbar. */
+.app.sidebar-collapsed { grid-template-columns: 56px 1fr; }
+.app.sidebar-collapsed .sidebar { padding: 24px 8px; }
+.app.sidebar-collapsed .brand { visibility: hidden; overflow: hidden; white-space: nowrap; }
+.app.sidebar-collapsed .sidebar .step { position: relative; justify-content: center; padding: 10px 0; }
+.app.sidebar-collapsed .sidebar .step-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.app.sidebar-collapsed .sidebar .step:is(:hover, :focus-visible)::after { content: attr(data-tooltip); position: absolute; top: 50%; left: calc(100% + 12px); z-index: 60; padding: 6px 10px; font-size: 13px; color: #fff; white-space: nowrap; background: var(--primary); border-radius: 6px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2); transform: translateY(-50%); pointer-events: none; }
+.sidebar-toggle { display: flex; align-items: center; justify-content: center; position: fixed; bottom: 12px; left: 240px; z-index: 50; width: 25px; height: 25px; padding: 0; color: #fff; background: darkslategray; border: 1px solid #fff; border-radius: 50%; box-shadow: 1px 2px 3px rgba(0, 0, 0, 0.5); cursor: pointer; transform: translateX(-50%); transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease; }
+.sidebar-toggle:hover { background: darkgoldenrod; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35); transform: translateX(-50%) scale(1.04); }
+.sidebar-toggle svg { transition: transform 0.15s ease; }
+.app.sidebar-collapsed .sidebar-toggle { left: 56px; }
+.app.sidebar-collapsed .sidebar-toggle svg { transform: rotate(180deg); }
+
+/* Migration History page. Scoped to .history-page: the page also loads wizard.css (for the results and log modals), whose bare .btn and table rules would otherwise win. */
+.history-header { margin: 4px 0 16px; }
+.history-header h1 { margin: 0 0 4px; font-size: 20px; }
+.history-header .hint { margin: 0; }
+.history-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 0; }
+.history-filters label { flex-direction: row; align-items: center; gap: 8px; margin: 0; font-size: 13px; }
+.history-filters select { padding: 5px 8px; font-size: 13px; cursor: pointer; }
+.history-filters select:focus-visible { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.12); }
+.history-page .card { box-shadow: 0 3px 8px rgba(31, 35, 40, 0.12), 0 1px 3px rgba(31, 35, 40, 0.1); }
+.history-page .btn { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; font-size: 13px; font-weight: 500; line-height: 20px; color: var(--text); text-decoration: none; white-space: nowrap; background: #fff; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; transition: background-color .15s ease, border-color .15s ease, color .15s ease; }
+.history-page .btn:hover:not(:disabled) { background: #eef1f4; }
+.history-page .btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.3); }
+.history-page .btn:disabled { cursor: not-allowed; opacity: 0.5; }
+.history-page .btn.danger { color: var(--danger); border-color: var(--danger); }
+.history-page .btn.danger:hover:not(:disabled) { color: #fff; background: var(--danger); }
+.history-page .btn-icon { padding: 5px; color: var(--muted); background: transparent; border-color: transparent; }
+.history-page .btn-icon:hover:not(:disabled) { color: var(--danger); background: #ffebe9; }
+.history-page .btn-icon svg { display: block; width: 16px; height: 16px; }
+.history-card { padding: 0; overflow: hidden; }
+.history-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 8px 16px; border-bottom: 1px solid var(--border-subtle); }
+.history-count { font-size: 13px; color: var(--muted); }
+.history-table-wrap { overflow-x: auto; }
+.history-table { width: 100%; margin: 0; font-size: 13px; border-collapse: collapse; }
+.history-table th { padding: 8px 12px; font-size: 12px; font-weight: 600; color: var(--muted); text-align: left; white-space: nowrap; background: var(--panel); border-bottom: 1px solid var(--border-subtle); }
+.history-table td { padding: 10px 12px; vertical-align: middle; border-bottom: 1px solid var(--border-subtle); }
+.history-table tbody tr:last-child td { border-bottom: 0; }
+.history-table tbody tr:hover { background: #f6f8fa; }
+.history-table tbody tr.is-selected { background: #ddf4ff; }
+.history-table th:first-child, .history-table td:first-child { padding-left: 16px; }
+.history-table th:last-child, .history-table td:last-child { padding-right: 16px; }
+.history-table .history-check { width: 1%; padding-right: 4px; }
+.history-table .history-num { text-align: right; font-variant-numeric: tabular-nums; }
+.history-table .history-actions-col { text-align: right; }
+.history-nowrap { white-space: nowrap; }
+.history-muted { color: var(--muted); }
+.history-run { display: flex; flex-direction: column; gap: 2px; max-width: 340px; }
+.history-run-name { font-weight: 600; }
+.history-run-id { margin-left: 6px; font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* The source path is long: it alone shrinks to an ellipsis, so the target schema stays readable. */
+.history-run-route { display: flex; gap: 4px; min-width: 0; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.history-run-source { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.history-status { display: inline-flex; align-items: center; gap: 6px; padding: 1px 10px; font-size: 12px; font-weight: 600; line-height: 20px; white-space: nowrap; color: var(--muted); background: var(--panel); border: 1px solid var(--border); border-radius: 999px; }
+.history-status::before { content: ""; width: 6px; height: 6px; background: currentColor; border-radius: 50%; }
+.history-status.success { color: #1a7f37; background: #dafbe1; border-color: #4ac26b; }
+.history-status.completed_with_errors { color: #9a6700; background: #fff8c5; border-color: #d4a72c; }
+.history-status.failed { color: var(--danger); background: #ffebe9; border-color: #ff8182; }
+.history-status.running { color: var(--primary); background: #ddf4ff; border-color: #54aeff; }
+.history-status.running::before { animation: history-pulse 1.2s ease-in-out infinite; }
+@keyframes history-pulse { 50% { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) { .history-status.running::before { animation: none; } }
+.history-errors { font-weight: 600; color: var(--danger); }
+.history-warnings { display: block; font-size: 11px; color: #9a6700; white-space: nowrap; }
+.history-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.history-actions form { margin: 0; }
+.history-actions .history-delete { margin-left: 2px; padding-left: 8px; border-left: 1px solid var(--border-subtle); }
+.history-empty { display: flex; flex-direction: column; align-items: center; padding: 48px 16px; text-align: center; }
+.history-empty svg { width: 32px; height: 32px; fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.history-empty h3 { margin: 10px 0 4px; font-size: 15px; }
+.history-empty .hint { margin: 0 0 14px; font-size: 13px; }
+.history-danger { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; padding: 14px 16px; border-color: #ffcecb; }
+.history-danger h3 { margin: 0 0 2px; font-size: 14px; }
+.history-danger .hint { margin: 0; }
+.history-danger form { margin: 0; }

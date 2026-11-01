@@ -143,7 +143,9 @@ async function checkTrialBalance(pool, opts = {}) {
  * Net balance for each BS category = SUM(debit) - SUM(credit).
  * For Assets (normal debit balance): net = debit - credit
  * For Liabilities/Equity (normal credit balance): net = credit - debit
- * Identity: Assets = Liabilities + Equity
+ * Income, expense and COS postings not yet closed to retained earnings are
+ * the current result, which belongs to equity: credit - debit.
+ * Identity: Assets = Liabilities + Equity + current result
  */
 async function checkBalanceSheet(pool, opts = {}) {
 	const errors = [];
@@ -178,7 +180,6 @@ async function checkBalanceSheet(pool, opts = {}) {
 				JOIN gl_accounts ga ON ga.accnr = jl.accnr
 				JOIN gl_account_types gat ON gat.id = ga.type_id
 				${dateJoin}
-				WHERE gat.statement_section = 'BalanceSheet'
 				GROUP BY gat.id, gat.code, gat.statement_section
 			`;
 
@@ -187,12 +188,15 @@ async function checkBalanceSheet(pool, opts = {}) {
 			let totalAssets = 0;
 			let totalLiabilities = 0;
 			let totalEquity = 0;
+			let currentResult = 0;
 
 			for (const row of rows) {
 				const debit = Number(row.total_debit);
 				const credit = Number(row.total_credit);
 
-				if (row.code === "ASSET") {
+				if (row.statement_section === "IncomeStatement") {
+					currentResult += credit - debit;
+				} else if (row.code === "ASSET") {
 					// Assets have normal debit balance
 					totalAssets = debit - credit;
 				} else if (row.code === "LIABILITY") {
@@ -207,9 +211,10 @@ async function checkBalanceSheet(pool, opts = {}) {
 			details.assets = totalAssets;
 			details.liabilities = totalLiabilities;
 			details.equity = totalEquity;
-			details.liabilities_plus_equity = totalLiabilities + totalEquity;
+			details.current_result = currentResult;
+			details.liabilities_plus_equity = totalLiabilities + totalEquity + currentResult;
 
-			const diff = Math.abs(totalAssets - (totalLiabilities + totalEquity));
+			const diff = Math.abs(totalAssets - (totalLiabilities + totalEquity + currentResult));
 			details.difference = diff;
 
 			if (diff > TOLERANCE) {
@@ -217,8 +222,9 @@ async function checkBalanceSheet(pool, opts = {}) {
 					assets: totalAssets,
 					liabilities: totalLiabilities,
 					equity: totalEquity,
+					current_result: currentResult,
 					difference: diff,
-					message: `Balance Sheet does not balance: Assets=${totalAssets.toFixed(2)}, Liabilities+Equity=${(totalLiabilities + totalEquity).toFixed(2)}, diff=${diff.toFixed(2)}`
+					message: `Balance Sheet does not balance: Assets=${totalAssets.toFixed(2)}, Liabilities+Equity+Current result=${(totalLiabilities + totalEquity + currentResult).toFixed(2)}, diff=${diff.toFixed(2)}`
 				});
 			}
 		}

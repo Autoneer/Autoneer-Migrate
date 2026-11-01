@@ -1,0 +1,238 @@
+diff --git a/src/routes/stock-takes.js b/src/routes/stock-takes.js
+index 9e69a2a..6508a11 100644
+--- a/src/routes/stock-takes.js
++++ b/src/routes/stock-takes.js
+@@ -24,6 +24,7 @@ const logger = require('../lib/logger');
+ const { requireCanDoStock, requireCanRemoveStock } = require('../middleware/permissions.middleware');
+ const permissionsService = require('../services/security/permissions.service');
+ const { saveCount, StocktakeError } = require('../services/stocktake/stocktakeCount.service');
++const { stocktakeUnitCost, valueCountedLine } = require('../services/stocktake/stocktakeValuation');
+ const {
+ 	RebuildStocktakeError,
+ 	snapshotExpectedRebuildUnits,
+@@ -247,7 +248,7 @@ router.post('/api/sessions', requireCanDoStock, async (req, res) => {
+ 
+ 		// Build stock item query. REBUILD_LISTED masters are excluded: their
+ 		// quantity is the count of AVAILABLE rebuild units, not a countable bin.
+-		let stockSql = `SELECT stock_id, partnr, description, quantity, stocktype, cost_price, binnr
++		let stockSql = `SELECT stock_id, partnr, description, quantity, stocktype, cost_price_exvat, binnr
+ 						FROM \`${schema}\`.stock WHERE stocktake = 'YES'
+ 						AND COALESCE(tracking_mode, 'NORMAL') <> 'REBUILD_LISTED'
+ 						AND UPPER(TRIM(COALESCE(stocktype, ''))) NOT IN ('ASSET','TOOL')`;
+@@ -281,7 +282,7 @@ router.post('/api/sessions', requireCanDoStock, async (req, res) => {
+ 						it.description || '',
+ 						it.quantity != null ? it.quantity : 0,
+ 						it.stocktype || '',
+-						it.cost_price != null ? it.cost_price : 0,
++						stocktakeUnitCost(it), // ex-VAT, as the Inventory control is valued
+ 						0.00,   // newquantity
+ 						takedate,
+ 						'READY',
+@@ -379,7 +380,7 @@ router.post('/api/sessions/import', requireCanDoStock, (req, res) => {
+ 				const chunk = keys.slice(i, i + LOOKUP_CHUNK);
+ 				const placeholders = chunk.map(() => '?').join(',');
+ 				const chunkRows = await tenantQuery(db,
+-					`SELECT stock_id, partnr, description, quantity, stocktype, cost_price, binnr,
++					`SELECT stock_id, partnr, description, quantity, stocktype, cost_price_exvat, binnr,
+ 					        COALESCE(tracking_mode, 'NORMAL') AS tracking_mode
+ 					 FROM \`${schema}\`.stock
+ 					 WHERE UPPER(TRIM(partnr)) IN (${placeholders})
+@@ -920,13 +921,28 @@ router.post('/api/sessions/:takedate/finalise', requireCanDoStock, async (req, r
+ 				[takedate]
+ 			);
+ 			const allLines = await tx.query(
+-				`SELECT stocktakeid, stock_id, partnr, description,
+-				        quantity, newquantity, diffquantity, cost_price, costoverunder, status
+-				 FROM \`${schema}\`.stock_take WHERE takedate = ? FOR UPDATE`,
++				`SELECT st.stocktakeid, st.stock_id, st.partnr, st.description,
++				        st.quantity, st.newquantity, st.diffquantity, st.cost_price, st.costoverunder, st.status,
++				        s.cost_price_exvat
++				 FROM \`${schema}\`.stock_take st
++				 LEFT JOIN \`${schema}\`.stock s ON s.stock_id = st.stock_id
++				 WHERE takedate = ? FOR UPDATE`,
+ 				[takedate]
+ 			);
+ 			const countedLines = allLines.filter(l => String(l.status || '').trim().toUpperCase() === 'COUNTED');
+ 			const uncountedLines = allLines.filter(l => String(l.status || '').trim().toUpperCase() !== 'COUNTED');
++			// Each count is valued at its item's ex-VAT cost now, as the Inventory
++			// reconciliation values the stock it leaves (stocktakeValuation.js). This
++			// also corrects lines that captured the VAT-inclusive cost_price.
++			for (const line of countedLines) {
++				const valued = valueCountedLine(line.diffquantity, stocktakeUnitCost(line));
++				line.cost_price = valued.costPrice;
++				line.costoverunder = valued.costOverUnder;
++				await tx.query(
++					`UPDATE \`${schema}\`.stock_take SET cost_price = ?, costoverunder = ? WHERE stocktakeid = ?`,
++					[valued.costPrice, valued.costOverUnder, line.stocktakeid]
++				);
++			}
+ 			const takeid = lockedSession.takeid;
+ 			// 1. Update stock.quantity only for COUNTED lines. REBUILD_LISTED masters
+ 			// (in sessions created before they were excluded) are never overwritten.
+diff --git a/src/utils/stocktakeImportParser.js b/src/utils/stocktakeImportParser.js
+index 69715ba..8c63782 100644
+--- a/src/utils/stocktakeImportParser.js
++++ b/src/utils/stocktakeImportParser.js
+@@ -300,7 +300,8 @@ function classifyImportEntries(entries, stockRows, maxSkipped = 100) {
+ 		const sysQty = stock.quantity != null ? parseFloat(stock.quantity) : 0;
+ 		const counted = entry.sum;
+ 		const diff = counted - sysQty;
+-		const cost = stock.cost_price != null ? parseFloat(stock.cost_price) : 0;
++		// Ex-VAT, as every stock take is valued (services/stocktake/stocktakeValuation.js).
++		const cost = Number(stock.cost_price_exvat) || 0;
+ 		matchedLines.push({
+ 			stock_id: stock.stock_id,
+ 			partnr: stock.partnr || '',
+diff --git a/src/services/stocktake/stocktakeValuation.js b/src/services/stocktake/stocktakeValuation.js
+new file mode 100644
+index 0000000..0f534f2
+--- /dev/null
++++ b/src/services/stocktake/stocktakeValuation.js
+@@ -0,0 +1,37 @@
++'use strict';
++
++/**
++ * How a stock take values its quantities.
++ *
++ * Supplier invoices debit Inventory ex VAT, and the Inventory reconciliation
++ * (lib/finance/reconciliation.js) compares the Inventory control with
++ * quantity × cost_price_exvat. A count is therefore valued at that same ex-VAT
++ * cost. stock.cost_price is the VAT-inclusive purchase price and must never
++ * value a count: it overstated every stock-take journal by the VAT rate.
++ */
++
++function round2(value) {
++	return Math.round((Number(value) || 0) * 100) / 100;
++}
++
++/** The ex-VAT unit cost of a stock row; 0 when it has none. */
++function stocktakeUnitCost(stockRow) {
++	const cost = Number(stockRow && stockRow.cost_price_exvat);
++	return Number.isFinite(cost) ? cost : 0;
++}
++
++/**
++ * One counted line valued at an ex-VAT unit cost: the cost as stock_take.cost_price
++ * holds it (2 decimals) and the variance value posted to the GL.
++ */
++function valueCountedLine(diffQuantity, unitCost) {
++	return {
++		costPrice: round2(unitCost),
++		costOverUnder: round2((Number(diffQuantity) || 0) * (Number(unitCost) || 0))
++	};
++}
++
++module.exports = {
++	stocktakeUnitCost,
++	valueCountedLine
++};
+diff --git a/test/stocktakeValuation.test.js b/test/stocktakeValuation.test.js
+new file mode 100644
+index 0000000..d07d549
+--- /dev/null
++++ b/test/stocktakeValuation.test.js
+@@ -0,0 +1,104 @@
++'use strict';
++
++// Stock takes are valued at the ex-VAT cost and post to the Inventory control
++// that the Inventory reconciliation checks (services/stocktake/stocktakeValuation.js).
++
++const assert = require('assert');
++const Module = require('module');
++const express = require('express');
++const { stocktakeUnitCost, valueCountedLine } = require('../src/services/stocktake/stocktakeValuation');
++const { classifyImportEntries } = require('../src/utils/stocktakeImportParser');
++
++function testValuation() {
++	assert.strictEqual(stocktakeUnitCost({ cost_price: 115, cost_price_exvat: '100.123456' }), 100.123456);
++	assert.strictEqual(stocktakeUnitCost({ cost_price: 115 }), 0, 'the VAT-inclusive cost never values a count');
++	assert.strictEqual(stocktakeUnitCost(null), 0);
++	assert.deepStrictEqual(valueCountedLine('3', 100.123456), { costPrice: 100.12, costOverUnder: 300.37 });
++	assert.deepStrictEqual(valueCountedLine(-2, 99.13), { costPrice: 99.13, costOverUnder: -198.26 });
++}
++
++function testOpeningImportUsesExVatCost() {
++	const entries = new Map([['PART', { partnr: 'PART', rawPartnr: 'PART', sum: 5, validCount: 1, occurrences: 1 }]]);
++	const stockRows = [{ stock_id: 7, partnr: 'PART', description: 'Part', quantity: 2, stocktype: 'PARTS', cost_price: 115, cost_price_exvat: 100, binnr: 'A1', tracking_mode: 'NORMAL' }];
++	const { matchedLines } = classifyImportEntries(entries, stockRows);
++	assert.strictEqual(matchedLines[0].cost_price, 100);
++	assert.strictEqual(matchedLines[0].costoverunder, 300, '(5 − 2) × the ex-VAT cost');
++}
++
++// Drives the real finalise route with stubbed modules, as stockCatalogImport.test.js does.
++async function testFinalisePostsExVatToTheInventoryControl() {
++	const writes = [];
++	const tenantQuery = async (_db, sql) => {
++		if (/FROM `fixture_stock`\.stock_takes WHERE stocktakeday/.test(sql)) return [{ takeid: 7, set_type: 'COUNTED', source_type: 'MANUAL' }];
++		if (/invvariance FROM/.test(sql)) return [{ invvariance: 6550 }];
++		if (/FROM `fixture_stock`\.gl_periods/.test(sql)) return [{ id: 3 }];
++		throw new Error(`Unexpected read: ${sql}`);
++	};
++	const txQuery = async (sql, params) => {
++		writes.push({ sql, params });
++		if (/FOR UPDATE/.test(sql) && /stock_takes/.test(sql)) return [{ takeid: 7, set_type: 'COUNTED', source_type: 'MANUAL' }];
++		if (/FROM `fixture_stock`\.stock_take st/.test(sql)) {
++			return [
++				// Captured before the fix: VAT-inclusive cost 115 and a variance of 345.
++				{ stocktakeid: 1, stock_id: 10, partnr: 'A', description: 'Gain', quantity: 2, newquantity: 5, diffquantity: '3.00', cost_price: 115, costoverunder: 345, status: 'COUNTED', cost_price_exvat: '100.000000' },
++				{ stocktakeid: 2, stock_id: 11, partnr: 'B', description: 'Loss', quantity: 4, newquantity: 3, diffquantity: '-1.00', cost_price: 57.5, costoverunder: -57.5, status: 'COUNTED', cost_price_exvat: '50.000000' }
++			];
++		}
++		if (/INSERT INTO `fixture_stock`\.gl_journal_headers/.test(sql)) return { insertId: 99 };
++		return { affectedRows: 1 };
++	};
++	const middleware = (_req, _res, next) => next();
++	const stubs = {
++		'/src/database/database.js': { tenantQuery, companyTransaction: async () => ({ query: txQuery, commit: async () => {}, rollback: async () => {} }) },
++		'/src/middleware/companyDb.js': middleware,
++		'/src/middleware/permissions.middleware.js': { requireCanDoStock: middleware, requireCanRemoveStock: middleware },
++		'/src/utils/schemaHelper.js': { getSchema: () => 'fixture_stock' },
++		'/src/services/finalise/finalise.service.js': { getCompanyVatRate: async () => 0.15 },
++		'/src/services/stock/addNewPart.service.js': { getDefaultMarkupPercent: async () => 25 },
++		'/src/lib/finance/postingEngine.js': { resolveControlAccounts: async (_schema, keys) => { assert.deepStrictEqual(keys, ['INVENTORY']); return { INVENTORY: 3200 }; }, deleteGlJournalBySource: async () => {} },
++		'/src/services/stocktake/rebuildStocktake.service.js': { assertRebuildCountingComplete: async () => ({ present: 0, missing: 0, unexpected: 0 }), snapshotExpectedRebuildUnits: async () => 0 },
++		'/src/lib/logger.js': { error() {}, warn() {}, info() {} }
++	};
++	const originalLoad = Module._load;
++	const routePath = require.resolve('../src/routes/stock-takes');
++	let router;
++	try {
++		Module._load = function (request, parent, isMain) {
++			const filename = Module._resolveFilename(request, parent).replace(/\\/g, '/');
++			const key = Object.keys(stubs).find(suffix => filename.endsWith(suffix));
++			return key ? stubs[key] : originalLoad.call(this, request, parent, isMain);
++		};
++		delete require.cache[routePath];
++		router = require(routePath);
++	} finally { Module._load = originalLoad; }
++
++	const app = express();
++	app.use((req, _res, next) => { req.session = { company_data: 'fixture_stock', user_id: 5 }; next(); });
++	app.use(router);
++	const server = await new Promise(resolve => { const instance = app.listen(0, '127.0.0.1', () => resolve(instance)); });
++	try {
++		const response = await fetch(`http://127.0.0.1:${server.address().port}/api/sessions/2026-10-31/finalise`, { method: 'POST' });
++		const body = await response.json();
++		assert.strictEqual(response.status, 200, JSON.stringify(body));
++		assert.strictEqual(body.glPosted, true);
++	} finally { await new Promise(resolve => server.close(resolve)); }
++
++	const revalued = writes.filter(w => /UPDATE `fixture_stock`\.stock_take SET cost_price/.test(w.sql)).map(w => w.params);
++	assert.deepStrictEqual(revalued, [[100, 300, 1], [50, -50, 2]], 'counted lines are revalued at the ex-VAT cost');
++	const adjustments = writes.filter(w => /INSERT INTO `fixture_stock`\.adjust_stock/.test(w.sql)).map(w => [w.params[3], w.params[7], w.params[8]]);
++	assert.deepStrictEqual(adjustments, [[3, 100, 'GAIN'], [-1, 50, 'LOSS']]);
++	// The route writes the other side as a literal 0.00, so the SQL says which side the amount is on.
++	const lines = writes.filter(w => /INSERT INTO `fixture_stock`\.gl_journal_lines/.test(w.sql))
++		.map(w => [w.params[1], /VALUES \(\?, \?, \?, 0\.00/.test(w.sql) ? 'Dr' : 'Cr', w.params[2]]);
++	assert.deepStrictEqual(lines, [
++		[3200, 'Dr', 300], [6550, 'Cr', 300],
++		[6550, 'Dr', 50], [3200, 'Cr', 50]
++	], 'gain and loss post ex VAT against the Inventory control');
++}
++
++(async () => {
++	testValuation();
++	testOpeningImportUsesExVatCost();
++	await testFinalisePostsExVatToTheInventoryControl();
++	console.log('stocktakeValuation tests passed');
++})().catch(error => { console.error(error); process.exitCode = 1; });

@@ -9,4 +9,11 @@ router.get("/tools/gl", (req, res) => {
 	});
 });
 
+router.get("/tools/gl-backfill", (req, res) => {
+	res.render("gl_backfill", {
+		currentStep: "glBackfill",
+		title: "GL Backfill"
+	});
+});
+
 module.exports = router;

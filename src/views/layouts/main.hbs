@@ -14,6 +14,10 @@
 
 <body data-page="{{currentStep}}">
 	<div class="app">
+		<script>try { if (localStorage.getItem("sidebarCollapsed") === "1") document.currentScript.parentElement.classList.add("sidebar-collapsed"); } catch (e) {}</script>
+		<button type="button" class="sidebar-toggle" title="Collapse sidebar" aria-label="Collapse sidebar" aria-expanded="true">
+			<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M10 3 5 8l5 5"/></svg>
+		</button>
 		{{> sidebar currentStep=currentStep}}
 		<main class="content">
 			<div class="topbar">

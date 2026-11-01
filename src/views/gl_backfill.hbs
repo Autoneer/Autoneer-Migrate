@@ -1,0 +1,178 @@
+<div class="gl-tools-header card-controls-head">
+	<h1>GL Backfill</h1>
+	<div class="card-controls">
+		<label class="inline-label" title="A card you open or click into folds all the others"><input id="cards-one-only" class="toggle" type="checkbox" /><span>One card only</span></label>
+		<button id="cards-collapse-all" class="btn secondary" type="button">Collapse all</button>
+	</div>
+</div>
+
+<div class="gl-backfill-grid">
+	<section class="card gl-tool collapsible" tabindex="-1" aria-labelledby="gl-backfill-check-title">
+		<h3 id="gl-backfill-check-title"><span class="gl-tool-num" aria-hidden="true">1</span><span class="gl-card-check" role="img" aria-label="All checks done" title="All checks done" hidden></span> Tenant Check</h3>
+		<button type="button" class="card-collapse" title="Collapse" aria-labelledby="gl-backfill-check-title" aria-expanded="true"></button>
+		<div id="gl-backfill-scope" class="gl-backfill-scope" aria-live="polite">Checking the tenant...</div>
+		<div class="gl-tool-actions">
+			<button id="btn-gl-backfill-check" class="btn secondary" type="button">Check Again</button>
+		</div>
+	</section>
+
+	<section class="card gl-tool collapsible" tabindex="-1" aria-labelledby="gl-rfc-title">
+		<h3 id="gl-rfc-title"><span class="gl-tool-num" aria-hidden="true">2</span><span class="gl-card-check" role="img" aria-label="All checks done" title="All checks done" hidden></span> Legacy Supplier RFC Migration</h3>
+		<button type="button" class="card-collapse" title="Collapse" aria-labelledby="gl-rfc-title" aria-expanded="true"></button>
+		<p class="hint">Run before the backfill. Converts legacy supplier returns (RFC pairs) so their original invoices can be posted.</p>
+		<div class="gl-backfill-scope-cols">
+			<div class="gl-repair-form">
+				<label class="gl-repair-field">Pairs per run <input id="gl-rfc-limit" type="number" min="1" max="5000" step="1" value="500" /></label>
+				<div class="gl-backfill-toggles">
+					<label class="inline-label"><input id="gl-rfc-dry-run" class="toggle" type="checkbox" checked /><span>Dry run (no changes)</span></label>
+					<label class="inline-label"><input id="gl-rfc-rewrite" class="toggle" type="checkbox" checked /><span>Renumber matching RFC journals</span></label>
+					<label class="inline-label"><input id="gl-rfc-park" class="toggle" type="checkbox" /><span>Park the old <code>-RFC</code> invoices</span></label>
+				</div>
+			</div>
+			<div id="gl-rfc-scope" class="gl-backfill-scope" aria-live="polite">Checking the tenant...</div>
+		</div>
+		<div id="gl-rfc-result" class="gl-backfill-scope gl-repair-result" aria-live="polite"></div>
+		<div class="gl-tool-actions">
+			<button id="btn-gl-rfc" class="btn secondary" type="button">Start Dry Run</button>
+		</div>
+	</section>
+
+	<section class="card gl-tool collapsible" tabindex="-1" aria-labelledby="gl-general-title">
+		<h3 id="gl-general-title"><span class="gl-tool-num" aria-hidden="true">3</span><span class="gl-card-check" role="img" aria-label="All checks done" title="All checks done" hidden></span> General Invoice Accounts</h3>
+		<button type="button" class="card-collapse" title="Collapse" aria-labelledby="gl-general-title" aria-expanded="true"></button>
+		<p class="hint">Run before the backfill. Gives legacy GENERAL supplier invoices a GL account; without one they post to Cost of Sales.</p>
+		<div class="gl-backfill-scope-cols">
+			<div class="gl-repair-form">
+				<label class="gl-repair-field">GL account <select id="gl-general-accnr"><option value="">Choose an account</option></select></label>
+				<label class="gl-repair-field">Supplier <select id="gl-general-suppid"><option value="">All suppliers</option></select></label>
+				<label class="gl-repair-field">Description <input id="gl-general-description" type="text" maxlength="250" placeholder="Defaults to the invoice number" /></label>
+				<div class="gl-backfill-toggles">
+					<label class="inline-label"><input id="gl-general-dry-run" class="toggle" type="checkbox" checked /><span>Dry run (no changes)</span></label>
+				</div>
+			</div>
+			<div id="gl-general-scope" class="gl-backfill-scope" aria-live="polite">Checking the tenant...</div>
+		</div>
+		<div id="gl-general-result" class="gl-backfill-scope gl-repair-result" aria-live="polite"></div>
+		<div class="gl-tool-actions">
+			<button id="btn-gl-general" class="btn secondary" type="button">Start Dry Run</button>
+		</div>
+	</section>
+
+	<section class="card gl-tool collapsible" tabindex="-1" aria-labelledby="gl-backfill-run-title">
+		<h3 id="gl-backfill-run-title"><span class="gl-tool-num" aria-hidden="true">4</span><span class="gl-card-check" role="img" aria-label="All checks done" title="All checks done" hidden></span> Run Backfill</h3>
+		<button type="button" class="card-collapse" title="Collapse" aria-labelledby="gl-backfill-run-title" aria-expanded="true"></button>
+		<p class="hint">Dry run first, fix any failures, then post.</p>
+		<div class="gl-backfill-run-form">
+			<div class="gl-backfill-dates">
+				<label>From <input id="gl-backfill-from" type="date" /></label>
+				<label>To <input id="gl-backfill-to" type="date" /></label>
+			</div>
+			<fieldset class="gl-backfill-types">
+				<legend>Documents, posted in this order</legend>
+				<label class="inline-label"><input class="toggle" type="checkbox" name="gl-backfill-type" value="CREDITOR_INVOICE" checked /><span>Supplier invoices</span></label>
+				<label class="inline-label"><input class="toggle" type="checkbox" name="gl-backfill-type" value="REBUILD_STOCK" checked /><span>Stocked rebuilds</span></label>
+				<label class="inline-label"><input class="toggle" type="checkbox" name="gl-backfill-type" value="DEBTOR_INVOICE" checked /><span>Customer invoices</span></label>
+				<label class="inline-label"><input class="toggle" type="checkbox" name="gl-backfill-type" value="DEBTOR_PAYMENT" checked /><span>Customer payments</span></label>
+				<label class="inline-label"><input class="toggle" type="checkbox" name="gl-backfill-type" value="CREDITOR_PAYMENT" checked /><span>Supplier payments</span></label>
+			</fieldset>
+			<div>
+				<div class="gl-backfill-toggles">
+					<label class="inline-label">
+						<input id="gl-backfill-dry-run" class="toggle" type="checkbox" checked />
+						<span>Dry run (no journals posted)</span>
+					</label>
+					<label class="inline-label">
+						<input id="gl-backfill-clear" class="toggle" type="checkbox" disabled />
+						<span class="gl-backfill-danger">Delete existing journals in this range first</span>
+					</label>
+				</div>
+				<p class="gl-tool-note">Any run can add a VAT Input account and fix control account mappings.</p>
+			</div>
+		</div>
+		<div id="gl-backfill-result" class="gl-backfill-scope gl-repair-result" aria-live="polite" hidden>
+			<section class="gl-backfill-section">
+				<h4>Result</h4>
+				<div id="gl-backfill-run"></div>
+				<div class="gl-backfill-items-head">
+					<h4>Documents</h4>
+					<label>Show
+						<select id="gl-backfill-item-status">
+							<option value="FAILED">Failed</option>
+							<option value="SKIPPED">Skipped or would post</option>
+							<option value="EXISTS">Already posted</option>
+							<option value="POSTED">Posted</option>
+						</select>
+					</label>
+				</div>
+				<div id="gl-backfill-items" class="gl-backfill-table-wrap"></div>
+			</section>
+		</div>
+		<div class="gl-tool-actions">
+			<button id="btn-gl-backfill" class="btn secondary" type="button">Start Dry Run</button>
+		</div>
+	</section>
+
+	<section class="card gl-tool collapsible" tabindex="-1" aria-labelledby="gl-repair-title">
+		<h3 id="gl-repair-title"><span class="gl-tool-num" aria-hidden="true">5</span><span class="gl-card-check" role="img" aria-label="All checks done" title="All checks done" hidden></span> Post-Backfill Repair</h3>
+		<button type="button" class="card-collapse" title="Collapse" aria-labelledby="gl-repair-title" aria-expanded="true"></button>
+		<p class="hint">Run after the backfill. Fills missing supplier references and renumbers legacy RFC journals.</p>
+		<div class="gl-backfill-scope-cols">
+			<div class="gl-repair-form">
+				<label class="gl-repair-field">Journals to check <input id="gl-repair-limit" type="number" min="1" step="1" value="1000" /></label>
+				<div class="gl-backfill-toggles">
+					<label class="inline-label"><input id="gl-repair-dry-run" class="toggle" type="checkbox" checked /><span>Dry run for RFC renumbering</span></label>
+				</div>
+				<p class="gl-tool-note">Supplier references are always filled in (empty fields only).</p>
+			</div>
+			<div id="gl-repair-scope" class="gl-backfill-scope" aria-live="polite">Checking the tenant...</div>
+		</div>
+		<div id="gl-repair-result" class="gl-backfill-scope gl-repair-result" aria-live="polite"></div>
+		<div class="gl-tool-actions">
+			<button id="btn-gl-repair" class="btn secondary" type="button">Run Repair</button>
+		</div>
+	</section>
+
+	<section class="card gl-tool collapsible" tabindex="-1" aria-labelledby="gl-opening-title">
+		<h3 id="gl-opening-title"><span class="gl-tool-num" aria-hidden="true">6</span><span class="gl-card-check" role="img" aria-label="All checks done" title="All checks done" hidden></span> Opening Stock</h3>
+		<button type="button" class="card-collapse" title="Collapse" aria-labelledby="gl-opening-title" aria-expanded="true"></button>
+		<p class="hint">Run after the backfill and its repair. Brings the legacy stock quantities in as an opening stock take on the cut-over date, at ex-VAT cost: Inventory against Opening Stock. Placeholder and negative quantities become 0.</p>
+		<div class="gl-backfill-scope-cols">
+			<div class="gl-repair-form">
+				<label class="gl-repair-field">Cut-over date <input id="gl-opening-date" type="date" /></label>
+				<label class="gl-repair-field">Placeholder from quantity <input id="gl-opening-min-qty" type="number" min="1" step="1" value="900" /></label>
+				<p class="gl-tool-note">Tick or untick <strong>Set to 0</strong> in the lists below to choose which items count. The totals update.</p>
+			</div>
+			<div id="gl-opening-scope" class="gl-backfill-scope" aria-live="polite">Checking the tenant...</div>
+		</div>
+		<div id="gl-opening-details" class="gl-backfill-scope"></div>
+		<div id="gl-opening-result" class="gl-backfill-scope gl-repair-result" aria-live="polite"></div>
+		<div class="gl-tool-actions">
+			<button id="btn-gl-opening-csv" class="btn secondary" type="button" disabled>Download CSV</button>
+			<button id="btn-gl-opening-undo" class="btn danger" type="button" hidden>Undo Opening Stock</button>
+			<button id="btn-gl-opening-post" class="btn" type="button" disabled>Post Opening Stock</button>
+		</div>
+	</section>
+
+	<section class="card gl-tool collapsible" tabindex="-1" aria-labelledby="gl-history-title">
+		<h3 id="gl-history-title"><span class="gl-tool-num" aria-hidden="true">7</span> Clear Run History</h3>
+		<button type="button" class="card-collapse" title="Collapse" aria-labelledby="gl-history-title" aria-expanded="true"></button>
+		<p class="hint">Deletes the backfill run log. Journals are kept. Cannot be undone.</p>
+		<div class="gl-backfill-scope-cols">
+			<div class="gl-repair-form">
+				<div class="gl-backfill-toggles">
+					<label class="inline-label"><input id="gl-history-confirm" class="toggle" type="checkbox" /><span class="gl-backfill-danger">I understand</span></label>
+				</div>
+			</div>
+			<div id="gl-history-scope" class="gl-backfill-scope" aria-live="polite">Checking the tenant...</div>
+		</div>
+		<div id="gl-history-result" class="gl-backfill-scope gl-repair-result" aria-live="polite"></div>
+		<div class="gl-tool-actions">
+			<button id="btn-gl-history" class="btn danger" type="button" disabled>Clear Run History</button>
+		</div>
+	</section>
+</div>
+
+<script src="/public/js/tools/gl-backfill-common.js"></script>
+<script src="/public/js/tools/gl-backfill.js"></script>
+<script src="/public/js/tools/gl-backfill-repairs.js"></script>
+<script src="/public/js/tools/gl-backfill-opening-stock.js"></script>

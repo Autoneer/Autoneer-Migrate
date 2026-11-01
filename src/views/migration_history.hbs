@@ -1,78 +1,126 @@
-<link rel="stylesheet" href="/public/css/theme-github.css">
 <link rel="stylesheet" href="/public/css/wizard.css">
-<div class="gh-page">
-	<div class="gh-container">
-		<div class="gh-toolbar">
-			<h2>Migration History</h2>
-			<button class="gh-theme-toggle" type="button" data-theme-toggle>Toggle theme</button>
+<div class="history-page">
+	<div class="history-header card-controls-head">
+		<div>
+			<h1>Migration History</h1>
+			<p class="hint">Results, logs and plans of past wizard runs.</p>
 		</div>
-		{{#if error}}<div class="gh-banner gh-danger">{{error}}</div>{{/if}}
-		<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-			<form id="flushHistoryForm" method="post" action="/migration/history/flush"
-				data-confirm="Flush all migration history? This will permanently delete ALL migration runs, errors, plans and related data. This cannot be undone."
-				style="display:inline;">
-				<button class="gh-btn gh-danger gh-outline" type="submit">Flush History</button>
-			</form>
-			<span style="color:#666;font-size:0.9em;">Use with caution — permanently deletes all migration
-				history.</span>
-		</div>
+		<form class="history-filters" method="get" action="/migration/history">
+			<label>Status
+				<select name="status">
+					<option value="All">All statuses</option>
+					{{#each filters.statuses}}
+					<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+					{{/each}}
+				</select>
+			</label>
+			<label>Period
+				<select name="range">
+					{{#each filters.ranges}}
+					<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+					{{/each}}
+				</select>
+			</label>
+			<noscript><button class="btn" type="submit">Apply</button></noscript>
+		</form>
+	</div>
+
+	<section class="card history-card">
+		{{#if runs.length}}
+		{{!-- The row checkboxes join this form through their form attribute: forms cannot nest, and each row has its own forms. --}}
 		<form id="batchDeleteForm" method="post" action="/migration/history/delete"
-			data-confirm="Delete selected runs and all related records? This cannot be undone.">
-			<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-				<button class="gh-btn gh-danger" type="submit">Delete Selected</button>
-				<span style="color:#666;font-size:0.9em;">Select runs to delete using the checkboxes.</span>
-			</div>
-			<table class="gh-table">
+			data-confirm="Delete the selected runs and all related records? This cannot be undone."
+			data-confirm-title="Delete runs" data-confirm-action="Delete"></form>
+		<div class="history-toolbar">
+			<span id="history-count" class="history-count" data-total="{{runs.length}}" data-label="{{runCountLabel}}" aria-live="polite">{{runCountLabel}}</span>
+			<button id="history-delete-selected" class="btn danger" type="submit" form="batchDeleteForm" disabled>Delete selected</button>
+		</div>
+		<div class="history-table-wrap">
+			<table class="history-table">
 				<thead>
 					<tr>
-						<th style="width:26px"><input id="selectAll" type="checkbox" aria-label="Select all runs"></th>
+						<th class="history-check"><input id="selectAll" type="checkbox" aria-label="Select all runs"></th>
 						<th>Run</th>
-						<th>Started</th>
-						<th>Ended</th>
 						<th>Status</th>
-						<th>Errors</th>
-						<th>Actions</th>
+						<th>Started</th>
+						<th>Duration</th>
+						<th class="history-num">Errors</th>
+						<th class="history-actions-col">Actions</th>
 					</tr>
 				</thead>
 				<tbody>
 					{{#each runs}}
 					<tr>
-						<td><input class="rowSelect" type="checkbox" name="run_ids" value="{{run_id}}"
-								aria-label="Select run {{run_id}}"></td>
-						<td>{{run_label}} (#{{run_id}})</td>
-						<td>{{formatDate started_at}}</td>
-						<td>{{formatDate ended_at}}</td>
-						<td><span class="gh-badge gh-{{status}}">{{status}}</span></td>
-						<td>{{error_count}}</td>
+						<td class="history-check"><input class="rowSelect" type="checkbox" name="run_ids" value="{{run_id}}"
+								form="batchDeleteForm" aria-label="Select run #{{run_id}}"></td>
 						<td>
-							<div class="gh-actions" style="display:flex;gap:8px;align-items:center;">
-								<button class="gh-btn" type="button" style="cursor: pointer;" data-action="view-results"
-									data-run-id="{{run_id}}">View Results</button>
-								<button class="gh-btn" type="button" style="cursor: pointer;" data-action="view-log"
-									data-run-id="{{run_id}}">View log</button>
-								<form method="post" action="/migration/history/{{run_id}}/delete"
-									data-confirm="Delete run #{{run_id}} and all related records? This cannot be undone.">
-									<button class="gh-btn gh-btn-sm gh-danger" type="submit">Delete</button>
-								</form>
-								{{#if (eq status 'SUCCESS')}}
+							<div class="history-run">
+								<span class="history-run-name">{{#if run_label}}{{run_label}}{{else}}Untitled run{{/if}}<span class="history-run-id">#{{run_id}}</span></span>
+								{{#if target_schema_name}}
+								<span class="history-run-route" title="{{source_conn_name}} → {{target_schema_name}}">{{#if source_conn_name}}<span class="history-run-source">{{source_conn_name}}</span>→ {{/if}}{{target_schema_name}}</span>
+								{{/if}}
+							</div>
+						</td>
+						<td><span class="history-status {{status_key}}">{{status_label}}</span></td>
+						<td class="history-nowrap">{{formatDate started_at}}</td>
+						<td class="history-nowrap">
+							{{#if duration}}<span title="Ended {{formatDate ended_at}}">{{duration}}</span>
+							{{else if (eq status 'RUNNING')}}<span class="history-muted">In progress</span>
+							{{else}}<span class="history-muted">—</span>{{/if}}
+						</td>
+						<td class="history-num">
+							{{#if error_count}}<span class="history-errors">{{error_count}}</span>{{else}}<span class="history-muted">0</span>{{/if}}
+							{{#if warn_label}}<span class="history-warnings">{{warn_label}}</span>{{/if}}
+						</td>
+						<td>
+							<div class="history-actions">
+								<button class="btn" type="button" data-action="view-results" data-run-id="{{run_id}}">View results</button>
+								<button class="btn" type="button" data-action="view-log" data-run-id="{{run_id}}">View log</button>
 								{{#if plan_id}}
 								<form method="post" action="/migration/plans/{{plan_id}}/reuse">
-									<button class="gh-btn gh-btn-sm" type="submit">Reuse plan</button>
+									<button class="btn" type="submit" title="Open this run's plan in the wizard">{{#if (eq status 'SUCCESS')}}Reuse plan{{else}}Clone plan{{/if}}</button>
 								</form>
 								{{/if}}
-								{{else}}
-								<form method="post" action="/migration/plans/{{plan_id}}/reuse">
-									<button class="gh-btn gh-btn-sm gh-warning" type="submit">Clone plan</button>
+								<form class="history-delete" method="post" action="/migration/history/{{run_id}}/delete"
+									data-confirm="Delete run #{{run_id}} and all related records? This cannot be undone."
+									data-confirm-title="Delete run #{{run_id}}" data-confirm-action="Delete">
+									<button class="btn btn-icon" type="submit" title="Delete run #{{run_id}}" aria-label="Delete run #{{run_id}}">
+										<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M2.5 4h11M6 4V2.5h4V4M4 4l.7 9.5h6.6L12 4M6.75 6.5v4.5M9.25 6.5v4.5"/></svg>
+									</button>
 								</form>
-								{{/if}}
 							</div>
 						</td>
 					</tr>
 					{{/each}}
 				</tbody>
 			</table>
+		</div>
+		{{else}}
+		<div class="history-empty">
+			<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+			<h3>No runs found</h3>
+			{{#if filtered}}
+			<p class="hint">Nothing matches these filters.</p>
+			<a class="btn" href="/migration/history?range=all">Show all runs</a>
+			{{else}}
+			<p class="hint">Runs appear here once you start a migration in the wizard.</p>
+			<a class="btn" href="/wizard?new=1">Start a migration</a>
+			{{/if}}
+		</div>
+		{{/if}}
+	</section>
+
+	<section class="card history-danger">
+		<div>
+			<h3>Flush all history</h3>
+			<p class="hint">Permanently deletes every run, error, plan and mapping profile. Cannot be undone.</p>
+		</div>
+		<form id="flushHistoryForm" method="post" action="/migration/history/flush"
+			data-confirm="Flush all migration history? This will permanently delete ALL migration runs, errors, plans and related data. This cannot be undone."
+			data-confirm-title="Flush all history" data-confirm-action="Flush history">
+			<button class="btn danger" type="submit">Flush history</button>
 		</form>
-	</div>
+	</section>
 </div>
 
 {{> results_modal}}
@@ -84,42 +132,42 @@
 
 <script>
 	(function () {
-		const key = 'autoneer-migration-theme';
-		const current = 'light';
-		document.body.setAttribute('data-theme', current);
-		localStorage.setItem(key, current);
-		const content = document.querySelector('.content');
-		if (content) content.classList.add('gh-content-light');
-		const btn = document.querySelector('[data-theme-toggle]');
-		if (btn) {
-			btn.addEventListener('click', function () {
-				const next = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-				document.body.setAttribute('data-theme', next);
-				localStorage.setItem(key, next);
-				if (content) {
-					if (next === 'dark') {
-						content.classList.remove('gh-content-light');
-					} else {
-						content.classList.add('gh-content-light');
-					}
-				}
-			});
-		}
+		// Filters apply as soon as one changes
+		const filters = document.querySelector('.history-filters');
+		if (filters) filters.addEventListener('change', () => filters.submit());
 
-		// select-all checkbox for batch deletion
+		// Row selection for "Delete selected": the header checkbox, the selected count and the button follow the rows
 		const selectAll = document.getElementById('selectAll');
+		const rows = Array.from(document.querySelectorAll('.rowSelect'));
+		const deleteSelected = document.getElementById('history-delete-selected');
+		const count = document.getElementById('history-count');
+		const batchForm = document.getElementById('batchDeleteForm');
+		const syncSelection = () => {
+			const selected = rows.filter(r => r.checked).length;
+			rows.forEach(r => r.closest('tr').classList.toggle('is-selected', r.checked));
+			if (selectAll) {
+				selectAll.checked = rows.length > 0 && selected === rows.length;
+				selectAll.indeterminate = selected > 0 && selected < rows.length;
+			}
+			if (deleteSelected) {
+				deleteSelected.disabled = !selected;
+				deleteSelected.textContent = selected ? `Delete ${selected} selected` : 'Delete selected';
+			}
+			if (count) count.textContent = selected ? `${selected} of ${count.dataset.total} selected` : count.dataset.label;
+			if (batchForm) {
+				batchForm.dataset.confirm = `Delete ${selected === 1 ? 'the selected run' : `${selected} selected runs`} and all related records? This cannot be undone.`;
+			}
+		};
 		if (selectAll) {
-			selectAll.addEventListener('change', function () {
-				const rows = document.querySelectorAll('.rowSelect');
+			selectAll.addEventListener('change', () => {
 				rows.forEach(r => { r.checked = selectAll.checked; });
+				syncSelection();
 			});
-			// keep header checkbox in sync when user toggles individual rows
-			const rowCheckboxes = document.querySelectorAll('.rowSelect');
-			rowCheckboxes.forEach(cb => cb.addEventListener('change', function () {
-				const all = Array.from(document.querySelectorAll('.rowSelect'));
-				selectAll.checked = all.length > 0 && all.every(i => i.checked);
-			}));
 		}
+		rows.forEach(r => r.addEventListener('change', syncSelection));
+		// Back/forward navigation can restore ticked boxes
+		window.addEventListener('pageshow', syncSelection);
+		syncSelection();
 	})();
 </script>
 
@@ -135,10 +183,10 @@
 				try {
 					if (window.Modal && typeof Modal.confirm === 'function') {
 						const confirmed = await Modal.confirm({
-							title: 'Confirm',
+							title: form.getAttribute('data-confirm-title') || 'Confirm',
 							message: message,
 							type: 'warning',
-							confirmText: 'Continue',
+							confirmText: form.getAttribute('data-confirm-action') || 'Continue',
 							cancelText: 'Cancel'
 						});
 						if (confirmed) {

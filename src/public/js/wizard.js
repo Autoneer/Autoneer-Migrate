@@ -204,33 +204,16 @@ class MigrationWizard {
 
 	/**
 	 * Fold the app menu away during a wizard session (from Step 2 until the wizard is reset).
-	 * An arrow tab on the left edge reopens it; that choice holds until the session state changes.
+	 * The round button at the bottom of the sidebar (app.js, on every page) reopens it; leaving the session puts the menu back
+	 * the way the user last left it.
 	 */
 	updateSidebar() {
-		const app = document.querySelector('.app');
-		if (!app) return;
 		const active = this.currentStep > 1;
-		if (active !== this._sessionActive) {
-			this._sessionActive = active;
-			this._sidebarOpen = false;
-		}
-		let toggle = app.querySelector('.sidebar-toggle');
-		if (!toggle) {
-			toggle = document.createElement('button');
-			toggle.type = 'button';
-			toggle.className = 'sidebar-toggle';
-			toggle.addEventListener('click', () => {
-				this._sidebarOpen = !this._sidebarOpen;
-				this.updateSidebar();
-			});
-			app.prepend(toggle);
-		}
-		app.classList.toggle('wizard-session', active);
-		app.classList.toggle('sidebar-collapsed', active && !this._sidebarOpen);
-		toggle.textContent = this._sidebarOpen ? '‹' : '›';
-		toggle.title = this._sidebarOpen ? 'Hide menu' : 'Show menu';
-		toggle.setAttribute('aria-label', toggle.title);
-		toggle.setAttribute('aria-expanded', String(!active || this._sidebarOpen));
+		if (active === this._sessionActive) return;
+		const starting = this._sessionActive === undefined;
+		this._sessionActive = active;
+		if (active) window.setSidebarCollapsed?.(true, false);
+		else if (!starting) window.restoreSidebar?.();
 	}
 
 	hasFailureResults() {

@@ -1,0 +1,99 @@
+{
+	"pwaCommit": "964ba34f",
+	"files": [
+		{
+			"path": "database/database.js",
+			"mode": "migrate"
+		},
+		{
+			"path": "lib/logger.js",
+			"mode": "verbatim"
+		},
+		{
+			"path": "lib/finance/glBackfill.js",
+			"mode": "verbatim"
+		},
+		{
+			"path": "lib/finance/postingEngine.js",
+			"mode": "verbatim"
+		},
+		{
+			"path": "lib/finance/rebuildStockAccounting.js",
+			"mode": "verbatim"
+		},
+		{
+			"path": "lib/finance/stockGlResolver.js",
+			"mode": "verbatim"
+		},
+		{
+			"path": "lib/finance/supplierWipControl.js",
+			"mode": "verbatim"
+		},
+		{
+			"path": "lib/finance/workshopLabourCost.js",
+			"mode": "verbatim"
+		},
+		{
+			"path": "lib/finance/dateRange.js",
+			"mode": "verbatim"
+		},
+		{
+			"path": "lib/finance/quickQuoteMoney.js",
+			"mode": "verbatim"
+		},
+		{
+			"path": "utils/schemaHelper.js",
+			"mode": "verbatim"
+		},
+		{
+			"path": "utils/customerBalance.js",
+			"mode": "verbatim"
+		},
+		{
+			"path": "utils/supplierBalance.js",
+			"mode": "verbatim"
+		},
+		{
+			"path": "utils/printExcludedItems.js",
+			"mode": "verbatim"
+		},
+		{
+			"path": "utils/stockClassification.js",
+			"mode": "verbatim"
+		},
+		{
+			"path": "services/dealer/dealerDebtor.service.js",
+			"mode": "verbatim"
+		},
+		{
+			"path": "services/finalise/finalise.service.js",
+			"mode": "extract",
+			"declarations": [
+				"INCLUDED_LINE_SQL",
+				"COSTED_PART_LINE_SQL",
+				"costedLineSql",
+				"round2",
+				"toSqlDateOnly",
+				"SUPPLIER_WIP_SOURCES",
+				"INFERABLE_UNSCOPED_WIP_SOURCES",
+				"getJobWipDebitedTotal"
+			]
+		},
+		{
+			"path": "services/suppliers/supplierInvoices.service.js",
+			"mode": "extract",
+			"declarations": [
+				"normalizeJobNumber",
+				"resolveCreditorInvoiceLineAccount",
+				"resolveSupplierAssetControls"
+			]
+		},
+		{
+			"path": "services/suppliers/workshopAssetPurchases.service.js",
+			"mode": "extract",
+			"declarations": [
+				"JOB_LINK_MESSAGE"
+			]
+		}
+	]
+}
