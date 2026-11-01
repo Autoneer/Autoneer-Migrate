@@ -1,0 +1,43 @@
+{
+  "schema": "dm_service_centre",
+  "change": "spares_used.accasset 3300 -> 3001",
+  "undo": "UPDATE spares_used SET accasset = 3300 WHERE spares_id IN (...) AND accasset = 3001",
+  "rows": [
+    {
+      "spares_id": 134552,
+      "job_number": 24946,
+      "partnr": "LABOURLOST001",
+      "stock_id": 19446,
+      "siid": 6302,
+      "accasset": 3300,
+      "invoice_nr": null
+    },
+    {
+      "spares_id": 134557,
+      "job_number": 24942,
+      "partnr": "LABOURLOST001",
+      "stock_id": 19446,
+      "siid": 6302,
+      "accasset": 3300,
+      "invoice_nr": null
+    },
+    {
+      "spares_id": 134566,
+      "job_number": 24943,
+      "partnr": "LABOURLOST001",
+      "stock_id": 19446,
+      "siid": 6302,
+      "accasset": 3300,
+      "invoice_nr": null
+    },
+    {
+      "spares_id": 135114,
+      "job_number": 24993,
+      "partnr": "LABOURLOST001",
+      "stock_id": 19446,
+      "siid": 6302,
+      "accasset": 3300,
+      "invoice_nr": null
+    }
+  ]
+}
