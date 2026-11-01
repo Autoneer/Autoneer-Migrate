@@ -188,6 +188,25 @@ function getCreditorInvoiceVatToPost({ headerAmount, headerVat, lineExVat, lineV
 	return round2(lineVat);
 }
 
+// Legacy supplier invoice headers can sit under their lines: by a few cents where
+// the header's total, ex-VAT and VAT were rounded separately or each line rounded
+// its own VAT, and by more where legacy lines were entered twice or overstated.
+// The header total is what the supplier was owed (paid, owing and returned add up
+// to it) and its VAT is the tax invoice's, so both stand: the lines post as
+// recorded and their excess is credited to Cost of Sales.
+
+/**
+ * The VAT to post and the gap left for Cost of Sales on a supplier invoice with
+ * lines: positive when the header is above its lines, negative when below.
+ */
+function settleCreditorLineGap({ apTotal, vatToPost, headerVat, itemExVatTotal }) {
+	const vat = round2(vatToPost);
+	const gap = round2(apTotal - vat - itemExVatTotal);
+	if (gap >= -0.009) return { vat, gap };
+	const invoiceVat = round2(Math.abs(Number(headerVat) || 0));
+	return { vat: invoiceVat, gap: round2(apTotal - invoiceVat - itemExVatTotal) };
+}
+
 function getCreditorInvoiceLinePostingAmounts(line = {}) {
 	const vat = round2(Math.abs(Number(line.vat) || 0));
 	const storedIncVat = round2(Math.abs(Number(line.amount) || 0));
@@ -546,15 +565,15 @@ async function getRunStatus({ companyDb, schema, runId, itemStatuses, itemLimit 
 		}
 		return out;
 	});
-	const statusCountsRows = await tenantQuery(companyDb, `SELECT status, COUNT(*) AS cnt FROM ${schema}.gl_backfill_run_items WHERE run_id = ? GROUP BY status`, [runId]);
+	const countRows = await tenantQuery(companyDb, `SELECT doc_type, status, COUNT(*) AS cnt FROM ${schema}.gl_backfill_run_items WHERE run_id = ? GROUP BY doc_type, status`, [runId]);
 	const counts = { posted: 0, exists: 0, failed: 0, skipped: 0 };
-	for (const row of statusCountsRows || []) {
-		const key = String(row.status || '').toUpperCase();
+	const processedByType = {};
+	for (const row of countRows || []) {
+		const field = { POSTED: 'posted', EXISTS: 'exists', FAILED: 'failed', SKIPPED: 'skipped' }[String(row.status || '').toUpperCase()];
+		if (!field) continue;
 		const cnt = Number(row.cnt || 0);
-		if (key === 'POSTED') counts.posted = cnt;
-		if (key === 'EXISTS') counts.exists = cnt;
-		if (key === 'FAILED') counts.failed = cnt;
-		if (key === 'SKIPPED') counts.skipped = cnt;
+		counts[field] += cnt;
+		processedByType[row.doc_type] = (processedByType[row.doc_type] || 0) + cnt;
 	}
 	const processedDocs = counts.posted + counts.exists + counts.failed + counts.skipped;
 	let runSummary = {};
@@ -565,11 +584,17 @@ async function getRunStatus({ companyDb, schema, runId, itemStatuses, itemLimit 
 			runSummary = {};
 		}
 	}
+	// Each type's total is the run's own count; its progress is its items so far.
+	const byType = {};
+	for (const [type, entry] of Object.entries(runSummary.byType || {})) {
+		byType[type] = { total: Number(entry && entry.total) || 0, processed: processedByType[type] || 0 };
+	}
 	const summary = {
 		...runSummary,
 		...counts,
 		processedDocs: processedDocs,
-		totalDocs: Number(runSummary.totalDocs || 0) || 0
+		totalDocs: Number(runSummary.totalDocs || 0) || 0,
+		byType
 	};
 	return { run: run || null, items: enrichedItems || [], summary, itemFilter: statuses };
 }
@@ -1165,7 +1190,7 @@ async function backfillRebuildStockCapitalisations({
 
 async function runBackfillJob({ companyDb, schema, runId, fromDate, toDate, types, dryRun, staffId, targetedSourceIds = null }) {
 	// logger.info && logger.info('Starting GL backfill', { runId, fromDate, toDate, types, dryRun });
-	const summary = { posted: 0, exists: 0, failed: 0, skipped: 0, totalDocs: 0, processedDocs: 0 };
+	const summary = { posted: 0, exists: 0, failed: 0, skipped: 0, totalDocs: 0, processedDocs: 0, byType: {} };
 	const touchedCids = new Set();
 	const touchedSuppids = new Set();
 	let lastProgressUpdateAt = 0;
@@ -1179,6 +1204,11 @@ async function runBackfillJob({ companyDb, schema, runId, fromDate, toDate, type
 		} catch (e) {
 			logger.warn && logger.warn('Failed to update backfill run progress', { runId, err: e && e.message });
 		}
+	};
+	// Each selected type's share of the workload, so its progress shows on its own.
+	const countDocs = (type, n) => {
+		summary.totalDocs += n;
+		summary.byType[type].total += n;
 	};
 
 	try {
@@ -1341,6 +1371,7 @@ async function runBackfillJob({ companyDb, schema, runId, fromDate, toDate, type
 		// Calculate total workload up-front so UI can render real progress.
 		for (const t of typeOrder) {
 			if (!selected.has(t)) continue;
+			summary.byType[t] = { total: 0 };
 			// In targeted mode, count is just the number of specific IDs for this type
 			if (targetedSourceIds && Array.isArray(targetedSourceIds[t])) {
 				const targetIds = targetedSourceIds[t];
@@ -1356,7 +1387,7 @@ async function runBackfillJob({ companyDb, schema, runId, fromDate, toDate, type
 							   AND ${debtorInvoiceEligibilitySql}`,
 							numericIds
 						);
-						summary.totalDocs += Number(r && r.cnt ? r.cnt : 0);
+						countDocs(t, Number(r && r.cnt ? r.cnt : 0));
 					}
 					continue;
 				}
@@ -1365,13 +1396,13 @@ async function runBackfillJob({ companyDb, schema, runId, fromDate, toDate, type
 					if (numericIds.length > 0) {
 						const ph = numericIds.map(() => '?').join(',');
 						const [r] = await tenantQuery(companyDb, `SELECT COUNT(*) AS cnt FROM ${schema}.payments p WHERE p.payid IN (${ph}) AND ${DEBTOR_PAYMENT_BACKFILL_SQL}`, numericIds);
-						summary.totalDocs += Number(r && r.cnt ? r.cnt : 0);
+						countDocs(t, Number(r && r.cnt ? r.cnt : 0));
 					}
 					continue;
 				}
 				if (t === 'REBUILD_STOCK') {
 					const rebuildRows = await loadRebuildStockBackfillRows({ companyDb, schema, fromDate, toDate, targetIds });
-					summary.totalDocs += rebuildRows.length;
+					countDocs(t, rebuildRows.length);
 					continue;
 				}
 				if (t === 'CREDITOR_PAYMENT') {
@@ -1380,16 +1411,23 @@ async function runBackfillJob({ companyDb, schema, runId, fromDate, toDate, type
 					if (exists && numericIds.length > 0) {
 						const ph = numericIds.map(() => '?').join(',');
 						const [r] = await tenantQuery(companyDb, `SELECT COUNT(*) AS cnt FROM ${schema}.payments_suppliers p WHERE p.payid IN (${ph}) AND ${SUPPLIER_PAYMENT_BACKFILL_SQL}`, numericIds);
-						summary.totalDocs += Number(r && r.cnt ? r.cnt : 0);
+						countDocs(t, Number(r && r.cnt ? r.cnt : 0));
 					}
 					continue;
 				}
-				summary.totalDocs += targetIds.length;
+				countDocs(t, targetIds.length);
 				continue;
 			}
 			if (t === 'CREDITOR_INVOICE') {
-				const [r] = await tenantQuery(companyDb, `SELECT COUNT(*) AS cnt FROM ${schema}.invoices_supplier WHERE inv_date BETWEEN ? AND ?`, [fromDate, toDate]);
-				summary.totalDocs += Number(r && r.cnt ? r.cnt : 0);
+				// The headers the run selects below; each one ends as a run item.
+				const [r] = await tenantQuery(companyDb,
+					`SELECT COUNT(*) AS cnt FROM ${schema}.invoices_supplier si
+					 WHERE si.inv_date BETWEEN ? AND ?
+					   AND (UPPER(TRIM(COALESCE(si.status, ''))) IN ('DONE', 'POSTED', 'CREDIT') OR ${legacyRfcIdSql(schema, 'si')} IS NOT NULL)
+					   AND si.voided_at IS NULL`,
+					[fromDate, toDate]
+				);
+				countDocs(t, Number(r && r.cnt ? r.cnt : 0));
 				continue;
 			}
 			if (t === 'REBUILD_STOCK') {
@@ -1398,7 +1436,7 @@ async function runBackfillJob({ companyDb, schema, runId, fromDate, toDate, type
 					`SELECT COUNT(*) AS cnt FROM ${rebuildStockBackfillTablesSql(schema)} WHERE ${REBUILD_STOCK_BACKFILL_WHERE_SQL}`,
 					[fromDate, toDate]
 				);
-				summary.totalDocs += Number(r && r.cnt ? r.cnt : 0);
+				countDocs(t, Number(r && r.cnt ? r.cnt : 0));
 				continue;
 			}
 			if (t === 'DEBTOR_INVOICE') {
@@ -1410,19 +1448,19 @@ async function runBackfillJob({ companyDb, schema, runId, fromDate, toDate, type
 					   AND ${debtorInvoiceEligibilitySql}`,
 					[fromDate, toDate]
 				);
-				summary.totalDocs += Number(r && r.cnt ? r.cnt : 0);
+				countDocs(t, Number(r && r.cnt ? r.cnt : 0));
 				continue;
 			}
 			if (t === 'DEBTOR_PAYMENT') {
 				const [r] = await tenantQuery(companyDb, `SELECT COUNT(*) AS cnt FROM ${schema}.payments p WHERE p.paydate BETWEEN ? AND ? AND ${DEBTOR_PAYMENT_BACKFILL_SQL}`, [fromDate, toDate]);
-				summary.totalDocs += Number(r && r.cnt ? r.cnt : 0);
+				countDocs(t, Number(r && r.cnt ? r.cnt : 0));
 				continue;
 			}
 			if (t === 'CREDITOR_PAYMENT') {
 				const exists = await tableExists(companyDb, schema, 'payments_suppliers');
 				if (!exists) continue;
 				const [r] = await tenantQuery(companyDb, `SELECT COUNT(*) AS cnt FROM ${schema}.payments_suppliers p WHERE p.paydate BETWEEN ? AND ? AND ${SUPPLIER_PAYMENT_BACKFILL_SQL}`, [fromDate, toDate]);
-				summary.totalDocs += Number(r && r.cnt ? r.cnt : 0);
+				countDocs(t, Number(r && r.cnt ? r.cnt : 0));
 			}
 		}
 		await publishProgress(true);
@@ -1430,6 +1468,8 @@ async function runBackfillJob({ companyDb, schema, runId, fromDate, toDate, type
 		// For each type in order
 		for (const t of typeOrder) {
 			if (!selected.has(t)) continue;
+			summary.currentType = t;
+			await publishProgress(true);
 			// load docs for this type
 			if (t === 'CREDITOR_INVOICE') {
 				let rows;
@@ -1699,15 +1739,18 @@ async function runBackfillJob({ companyDb, schema, runId, fromDate, toDate, type
 						(sum, ln) => sum + getCreditorInvoiceLinePostingAmounts(ln).amountExVat,
 						0
 					));
-					const lineGap = Math.round((apTotal - Math.round(totalVat * 100) / 100 - itemExVatTotal) * 100) / 100;
-					if (!isHeaderFallback && lineGap < -0.009) {
-						throw new Error(`Supplier invoice header total ${apTotal.toFixed(2)} (VAT ${round2(Math.abs(Number(row.vat || 0))).toFixed(2)}) is less than its lines (${round2(totalAmount).toFixed(2)}). Correct the invoice header so it agrees with its lines, then rerun.`);
-					}
-					if (!isHeaderFallback && lineGap > 0.009) {
+					const settled = isHeaderFallback
+						? { vat: totalVat, gap: 0 }
+						: settleCreditorLineGap({ apTotal, vatToPost: totalVat, headerVat: row.vat, itemExVatTotal });
+					totalVat = settled.vat;
+					if (Math.abs(settled.gap) > 0.009) {
+						// A header above its lines debits the difference to Cost of Sales; a
+						// header below them credits it.
+						const cosDebit = (settled.gap > 0) !== isRfc;
 						candidateLines.unshift({
 							accnr: controls.COS,
-							debit: isRfc ? 0 : lineGap,
-							credit: isRfc ? lineGap : 0,
+							debit: cosDebit ? Math.abs(settled.gap) : 0,
+							credit: cosDebit ? 0 : Math.abs(settled.gap),
 							suppid,
 							invoice_nr: row.invoice_nr
 						});
@@ -1752,20 +1795,47 @@ async function runBackfillJob({ companyDb, schema, runId, fromDate, toDate, type
 					}
 					return journal;
 				};
-				// A journal source is keyed by supplier and invoice number. Two
-				// headers sharing that identity cannot be posted safely as one source.
-				// Build one failed run item rather than silently combining them.
+				// A journal source is keyed by supplier and invoice number, so headers
+				// sharing that identity post at most one journal. Legacy duplicates
+				// repeat a header over the lines they share: the header whose total
+				// matches those lines posts them and each other one is skipped as its
+				// duplicate. With no matching header, every one of them fails for review.
 				const groupedRows = new Map();
 				for (const r of rows) {
 					const key = `${r.suppid}::${String(r.invoice_nr || '')}`;
-					const g = groupedRows.get(key);
-					if (!g) {
-						groupedRows.set(key, { ...r, duplicateHeaderCount: 1 });
-					} else {
-						g.duplicateHeaderCount++;
+					if (!groupedRows.has(key)) groupedRows.set(key, []);
+					groupedRows.get(key).push(r);
+				}
+				const findMatchingHeader = async (headers) => {
+					if (headers.some((h) => String(h.purchasetype || '').trim().toUpperCase() === 'GENERAL')) return null;
+					const items = await tenantQuery(companyDb,
+						`SELECT amount, amountexvat, discount, vat, quantity FROM ${schema}.invoice_items WHERE suppid = ? AND invoice_nr = ?`,
+						[headers[0].suppid, headers[0].invoice_nr]
+					);
+					if (!items.length) return null;
+					const linesTotal = round2(items.reduce((sum, ln) => sum + getCreditorInvoiceLinePostingAmounts(ln).amountIncVat, 0));
+					return headers.slice().sort((a, b) => Number(a.id) - Number(b.id))
+						.find((h) => Math.abs(round2(Math.abs(Number(h.amount) || 0)) - linesTotal) <= 0.05) || null;
+				};
+				const docsToPost = [];
+				for (const headers of groupedRows.values()) {
+					const keeper = headers.length > 1 ? await findMatchingHeader(headers) : headers[0];
+					docsToPost.push({ ...(keeper || headers[0]), duplicateHeaderCount: keeper ? 1 : headers.length });
+					for (const h of headers.filter((x) => x !== (keeper || headers[0]))) {
+						const status = keeper ? 'SKIPPED' : 'FAILED';
+						await addRunItem({
+							companyDb, schema, runId, docType: 'CREDITOR_INVOICE', source: 'CREDITOR_INVOICE', sourceId: h.invoice_nr,
+							docDate: formatDateToSql(h.doc_date), status,
+							message: keeper
+								? `Duplicate of supplier invoice header ${keeper.id}, which has the same supplier and invoice number and posts their lines.`
+								: 'Multiple supplier invoice headers share one supplier and invoice number. Review the source records before posting a GL journal.'
+						});
+						summary[keeper ? 'skipped' : 'failed']++;
+						summary.processedDocs++;
+						await publishProgress();
 					}
 				}
-				await processDocs(Array.from(groupedRows.values()).map(r => ({ source: 'CREDITOR_INVOICE', source_id: r.invoice_nr, doc_date: r.doc_date, invoice_nr: r.invoice_nr, suppid: r.suppid, status: r.status, amount: r.amount, amountexvat: r.amountexvat, vat: r.vat, purchasetype: r.purchasetype, legacy_rfc_id: r.legacy_rfc_id || null, duplicateHeaderCount: r.duplicateHeaderCount })), 'CREDITOR_INVOICE', async (d) => buildFn(d));
+				await processDocs(docsToPost.map(r => ({ source: 'CREDITOR_INVOICE', source_id: r.invoice_nr, doc_date: r.doc_date, invoice_nr: r.invoice_nr, suppid: r.suppid, status: r.status, amount: r.amount, amountexvat: r.amountexvat, vat: r.vat, purchasetype: r.purchasetype, legacy_rfc_id: r.legacy_rfc_id || null, duplicateHeaderCount: r.duplicateHeaderCount })), 'CREDITOR_INVOICE', async (d) => buildFn(d));
 			}
 
 			if (t === 'REBUILD_STOCK') {
@@ -2768,6 +2838,7 @@ module.exports = {
 	buildDebtorInvoicePartCostLines,
 	getCreditorInvoiceLinePostingAmounts,
 	getCreditorInvoiceVatToPost,
+	settleCreditorLineGap,
 	isDebtorInvoiceBackfillStatus,
 	buildDebtorInvoiceBackfillEligibilitySql,
 	createRun,

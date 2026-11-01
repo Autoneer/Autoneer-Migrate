@@ -7,7 +7,7 @@
 		CREDITOR_PAYMENT: "Supplier payments"
 	};
 	const RUN_STATES = { RUNNING: "Running", DONE: "Done", FAILED: "Failed", CANCELLED: "Cancelled" };
-	const { escapeHtml, count, money, localDate, getJson, postJson, table, section, progressBar, statTiles, setCardDone, announceChange } = window.GlBackfill;
+	const { escapeHtml, count, money, localDate, getJson, postJson, table, section, statTiles, setCardDone, announceChange } = window.GlBackfill;
 
 	function accountText(accnr, name) {
 		return accnr ? `${accnr}${name ? ` ${escapeHtml(name)}` : ""}` : "-";
@@ -78,6 +78,46 @@
 		return parts.join("");
 	}
 
+	// Each redraw slides a bar from its last width in this run, and the shine keeps
+	// its phase, as on the migration scan.
+	const barWidths = {};
+	function qbar(key, label, value, max, { tone = "", moving = false } = {}) {
+		const to = max ? Math.min(100, value / max * 100) : 100;
+		const from = key in barWidths ? Math.min(barWidths[key], to) : 0;
+		barWidths[key] = to;
+		return `<div class="qbar${tone ? ` ${tone}` : ""}${moving ? "" : " still"}" role="progressbar" aria-label="${escapeHtml(label)}" ` +
+			`aria-valuemin="0" aria-valuemax="${max}" aria-valuenow="${value}">` +
+			`<span style="--from:${from.toFixed(2)}%;--to:${to.toFixed(2)}%;--shine-delay:-${Date.now() % 1800}ms"></span></div>`;
+	}
+
+	function barHead(title, detail, value, max) {
+		const percent = max ? Math.min(100, Math.floor(value / max * 100)) : 100;
+		return `<div class="gl-backfill-bar-head"><span><strong>${title}</strong> · ${detail}</span><strong>${percent}%</strong></div>`;
+	}
+
+	// The overall bar, then one per selected document type in posting order.
+	function renderBars(run, summary, running) {
+		const finished = run.status === "DONE";
+		const processed = Number(summary.processedDocs || 0);
+		const total = Number(summary.totalDocs || 0);
+		const overall = total ? [processed, total] : [finished ? 1 : 0, 1];
+		const parts = [`<div class="gl-backfill-overall">${barHead("Overall progress", `${count(processed)} of ${count(total)} documents`, ...overall)}` +
+			`${qbar(`${run.id}:overall`, "Overall progress", ...overall, { tone: "overall", moving: running && !finished })}</div>`];
+		const order = Object.keys(TYPES);
+		const current = order.indexOf(summary.currentType);
+		for (const type of order.filter((key) => summary.byType && summary.byType[key])) {
+			const { total: typeTotal, processed: typeProcessed } = summary.byType[type];
+			const index = order.indexOf(type);
+			const state = finished || (current >= 0 && index < current) ? "Done"
+				: index === current ? (running ? "Working" : "Stopped")
+					: (running ? "Waiting" : "Not started");
+			const bar = typeTotal ? [typeProcessed, typeTotal] : [state === "Done" ? 1 : 0, 1];
+			parts.push(barHead(TYPES[type], `${state} · ${count(typeProcessed)} of ${count(typeTotal)}`, ...bar) +
+				qbar(`${run.id}:${type}`, `${TYPES[type]} progress`, ...bar, { moving: running && state === "Working" }));
+		}
+		return `<div class="gl-backfill-bars">${parts.join("")}</div>`;
+	}
+
 	function renderRun(status) {
 		const run = status.run;
 		const summary = status.summary || {};
@@ -86,14 +126,13 @@
 		const state = status.stopped ? "Stopped"
 			: run.status === "DONE" && status.active ? "Updating customer and supplier balances"
 				: (RUN_STATES[run.status] || run.status);
-		const total = Number(summary.totalDocs || 0);
 		const stats = dryRun
 			? [["Would post or nothing to post", summary.skipped], ["Already posted", summary.exists], ["Failed", summary.failed]]
 			: [["Posted", summary.posted], ["Already posted", summary.exists], ["Nothing to post", summary.skipped], ["Failed", summary.failed]];
 		const parts = [
 			`<p><strong>Run #${run.id}${dryRun ? ", dry run" : ""}</strong>: ${escapeHtml(state)}. ` +
-			`${localDate(run.from_date)} to ${localDate(run.to_date)}, ${count(summary.processedDocs)} of ${count(total)} processed.</p>`,
-			total || running ? progressBar(summary.processedDocs, total) : progressBar(1, 1),
+			`${localDate(run.from_date)} to ${localDate(run.to_date)}.</p>`,
+			renderBars(run, summary, running),
 			statTiles(stats)
 		];
 		if (summary.lastError) parts.push(`<p class="gl-backfill-blocked">Run stopped: ${escapeHtml(summary.lastError)}</p>`);

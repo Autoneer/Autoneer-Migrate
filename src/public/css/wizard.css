@@ -1883,21 +1883,7 @@ table tr.selected {
 .quality-overall .quality-record-progress span strong { color: var(--wizard-text); }
 .quality-progress .quality-overall progress { height: 10px; margin: 6px 0 0; accent-color: #1a7f37; }
 
-/* Scan progress bars: rounded gradient fill that slides between updates, a soft moving shine, and a sliding segment when the size is unknown. */
-.qbar { position: relative; height: 8px; margin: 6px 0 10px; overflow: hidden; background: #e6ebf1; border-radius: 999px; }
-.qbar > span { position: absolute; top: 0; bottom: 0; left: 0; width: var(--to); overflow: hidden; border-radius: inherit; background: linear-gradient(90deg, #54aeff, #0969da); animation: qbar-fill 0.9s cubic-bezier(.22, .61, .36, 1) both; }
-.qbar > span::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.5) 50%, transparent 100%); transform: translateX(-100%); animation: qbar-shine 1.8s ease-in-out infinite; animation-delay: var(--shine-delay, 0s); }
-.qbar.overall { height: 10px; margin: 6px 0 0; }
-.qbar.overall > span { background: linear-gradient(90deg, #4ac26b, #1a7f37); }
-.qbar.indeterminate > span { width: 30%; left: -30%; animation: qbar-slide 1.4s ease-in-out infinite; }
-.qbar.indeterminate > span::after { display: none; }
-@keyframes qbar-fill { from { width: var(--from); } to { width: var(--to); } }
-@keyframes qbar-shine { to { transform: translateX(100%); } }
-@keyframes qbar-slide { from { left: -30%; } to { left: 100%; } }
-@media (prefers-reduced-motion: reduce) {
-	.qbar > span, .qbar > span::after { animation: none; }
-	.qbar.indeterminate > span { left: 0; width: 100%; opacity: 0.35; }
-}
+/* Scan progress bars (.qbar) are in styles.css, shared with the GL Backfill page. */
 
 /* Step 3: once a current full check is ready, the one-row dry run adds nothing and can contradict it, so hide it. */
 .plan-builder:has(#data-quality-results .quality-result.is-ready) #dry-run-card { display: none; }

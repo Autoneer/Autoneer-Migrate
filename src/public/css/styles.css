@@ -1082,6 +1082,27 @@ pre {
 .gl-backfill-danger { color: var(--danger); }
 .gl-backfill-progress { height: 8px; margin: 0 0 12px; overflow: hidden; background: var(--panel); border: 1px solid var(--border-subtle); border-radius: 4px; }
 .gl-backfill-progress span { display: block; height: 100%; background: var(--primary); }
+
+/* Progress bars shared by the migration scan and the GL Backfill run: rounded gradient fill that slides between updates, a soft moving shine, and a sliding segment when the size is unknown. */
+.qbar { position: relative; height: 8px; margin: 6px 0 10px; overflow: hidden; background: #e6ebf1; border-radius: 999px; }
+.qbar > span { position: absolute; top: 0; bottom: 0; left: 0; width: var(--to); overflow: hidden; border-radius: inherit; background: linear-gradient(90deg, #54aeff, #0969da); animation: qbar-fill 0.9s cubic-bezier(.22, .61, .36, 1) both; }
+.qbar > span::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.5) 50%, transparent 100%); transform: translateX(-100%); animation: qbar-shine 1.8s ease-in-out infinite; animation-delay: var(--shine-delay, 0s); }
+.qbar.overall { height: 10px; margin: 6px 0 0; }
+.qbar.overall > span { background: linear-gradient(90deg, #4ac26b, #1a7f37); }
+.qbar.indeterminate > span { width: 30%; left: -30%; animation: qbar-slide 1.4s ease-in-out infinite; }
+.qbar.indeterminate > span::after, .qbar.still > span::after { display: none; }
+@keyframes qbar-fill { from { width: var(--from); } to { width: var(--to); } }
+@keyframes qbar-shine { to { transform: translateX(100%); } }
+@keyframes qbar-slide { from { left: -30%; } to { left: 100%; } }
+@media (prefers-reduced-motion: reduce) {
+	.qbar > span, .qbar > span::after { animation: none; }
+	.qbar.indeterminate > span { left: 0; width: 100%; opacity: 0.35; }
+}
+/* GL Backfill run: an overall bar, then one bar per document type, laid out like the migration scan. */
+.gl-backfill-bars { margin: 0 0 12px; }
+.gl-backfill-overall { margin: 0 0 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border-subtle); }
+.gl-backfill-bar-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.gl-backfill-bar-head strong { color: var(--text); font-variant-numeric: tabular-nums; }
 .gl-backfill-stats { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 12px; }
 .gl-backfill-stat { min-width: 130px; padding: 8px 12px; background: var(--panel); border: 1px solid var(--border-subtle); border-radius: 6px; }
 .gl-backfill-stat strong { display: block; font-size: 18px; font-variant-numeric: tabular-nums; }
