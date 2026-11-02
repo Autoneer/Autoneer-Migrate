@@ -1,0 +1,32 @@
+Tenant glbf_test_general_invoices_20261102, legacy database AUTONEER.FDB.
+
+spares_used (mapping from import run 1):
+  To add:                 0 general-invoice lines on 0 invoices, cost 0,00, sales 0,00
+  Already in the tenant:  479
+  Id held by another line (left out): 0
+  Invoice not in the tenant (left out): 2
+    {"spares_id":45007,"invoice_nr":15888}
+    {"spares_id":45008,"invoice_nr":15888}
+  Replay check: 87 809 imported lines mapped again and compared, differences in 7 column(s):
+    sales_priceincvat: 128 line(s), e.g. [{"spares_id":49469,"mapped":"0","stored":"117.38"},{"spares_id":74569,"mapped":0,"stored":"138.00"},{"spares_id":76115,"mapped":0,"stored":"138.00"}]
+    vat: 124 line(s), e.g. [{"spares_id":75874,"mapped":96.71,"stored":"58.86"},{"spares_id":77992,"mapped":26.81,"stored":"26.80"},{"spares_id":78940,"mapped":119.25,"stored":"39.75"}]
+    status: 10 line(s), e.g. [{"spares_id":136399,"mapped":"ORDERED","stored":"RECEIVED"},{"spares_id":136477,"mapped":"ORDER","stored":"RECEIVED"},{"spares_id":136478,"mapped":"ORDER","stored":"RECEIVED"}]
+    accasset: 4 line(s), e.g. [{"spares_id":134552,"mapped":3300,"stored":3001},{"spares_id":134557,"mapped":3300,"stored":3001},{"spares_id":134566,"mapped":3300,"stored":3001}]
+    suppid: 2 line(s), e.g. [{"spares_id":136399,"mapped":0,"stored":5},{"spares_id":136519,"mapped":10,"stored":38}]
+    sales_price: 1 line(s), e.g. [{"spares_id":136486,"mapped":0,"stored":"1537.50"}]
+    invoice_nr: 1 line(s), e.g. [{"spares_id":136534,"mapped":null,"stored":26500}]
+
+work_done (mapping from import run 1):
+  To add:                 0 general-invoice lines on 0 invoices, labour 0,00
+  Already in the tenant:  11
+  Id held by another line (left out): 0
+  Invoice not in the tenant (left out): 0
+  Replay check: 1 111 imported lines mapped again and compared, all columns match.
+
+customer_invoice_lines and status (what AUTONEER-PWA shows and the GL backfill posts):
+  To add:                 0 lines on 0 general invoices (0 parts, 0 labour)
+  Already shown:          290 invoices
+  DONE to POSTED:         0 invoices
+  Lines not adding up to the header ex VAT (by R1 or more): 0; they show as legacy recorded them
+
+Dry run: nothing changed. Run again with --write to add the lines.

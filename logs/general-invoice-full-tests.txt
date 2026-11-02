@@ -1,0 +1,2188 @@
+TAP version 13
+# Subtest: stages use the canonical SQL in order, including all conversion overrides
+ok 1 - stages use the canonical SQL in order, including all conversion overrides
+  ---
+  duration_ms: 2.1626
+  type: 'test'
+  ...
+# Subtest: unsupported SQL fails validation before conversion can start
+ok 2 - unsupported SQL fails validation before conversion can start
+  ---
+  duration_ms: 1.0953
+  type: 'test'
+  ...
+# Subtest: reports the active field before the query finishes, then each completed field
+ok 3 - reports the active field before the query finishes, then each completed field
+  ---
+  duration_ms: 6.7626
+  type: 'test'
+  ...
+# Subtest: failed fields retain completed progress and leave later stages pending
+ok 4 - failed fields retain completed progress and leave later stages pending
+  ---
+  duration_ms: 2.5009
+  type: 'test'
+  ...
+# Subtest: streaming route delivers preparation, field updates, completion, and closes the pool
+ok 5 - streaming route delivers preparation, field updates, completion, and closes the pool
+  ---
+  duration_ms: 940.0657
+  type: 'test'
+  ...
+# Subtest: streaming route sends a terminal error with the failing field and closes the pool
+ok 6 - streaming route sends a terminal error with the failing field and closes the pool
+  ---
+  duration_ms: 7.0685
+  type: 'test'
+  ...
+# Subtest: JSON clients keep the stored procedure and original response shape
+ok 7 - JSON clients keep the stored procedure and original response shape
+  ---
+  duration_ms: 6.7948
+  type: 'test'
+  ...
+# Subtest: shows per-field and per-table progress, including the current stage
+ok 8 - shows per-field and per-table progress, including the current stage
+  ---
+  duration_ms: 5.4546
+  type: 'test'
+  ...
+# Subtest: reads split JSON messages and multiple messages in one chunk
+ok 9 - reads split JSON messages and multiple messages in one chunk
+  ---
+  duration_ms: 3.3574
+  type: 'test'
+  ...
+# Subtest: conversion stays busy and blocks duplicate requests and navigation while streaming
+ok 10 - conversion stays busy and blocks duplicate requests and navigation while streaming
+  ---
+  duration_ms: 4.2142
+  type: 'test'
+  ...
+# Subtest: server errors show the failing stage while preserving completed fields
+ok 11 - server errors show the failing stage while preserving completed fields
+  ---
+  duration_ms: 3.5578
+  type: 'test'
+  ...
+# Subtest: a disconnected stream cannot be mistaken for a successful conversion
+ok 12 - a disconnected stream cannot be mistaken for a successful conversion
+  ---
+  duration_ms: 4.8696
+  type: 'test'
+  ...
+# Subtest: JSON fallback completes all field indicators with an older server
+ok 13 - JSON fallback completes all field indicators with an older server
+  ---
+  duration_ms: 3.1172
+  type: 'test'
+  ...
+# Subtest: planJobs buckets the jobs and releases only settled ones on or before the cut-off
+ok 14 - planJobs buckets the jobs and releases only settled ones on or before the cut-off
+  ---
+  duration_ms: 3.1555
+  type: 'test'
+  ...
+# Subtest: planJobs releases only the selected buckets and completion years
+ok 15 - planJobs releases only the selected buckets and completion years
+  ---
+  duration_ms: 14.6536
+  type: 'test'
+  ...
+# Subtest: readOptions reads the buckets and years and rejects bad ones
+ok 16 - readOptions reads the buckets and years and rejects bad ones
+  ---
+  duration_ms: 4.6639
+  type: 'test'
+  ...
+# Subtest: summarizePlan gives the buckets, the year and month breakdowns and what the release leaves
+ok 17 - summarizePlan gives the buckets, the year and month breakdowns and what the release leaves
+  ---
+  duration_ms: 0.7906
+  type: 'test'
+  ...
+# Subtest: readOptions defaults the cut-off to 30 days back and rejects bad input
+ok 18 - readOptions defaults the cut-off to 30 days back and rejects bad input
+  ---
+  duration_ms: 1.1436
+  type: 'test'
+  ...
+# Subtest: auditRow mirrors the PWA release audit row, dated on the status date and marked as a clean-up
+ok 19 - auditRow mirrors the PWA release audit row, dated on the status date and marked as a clean-up
+  ---
+  duration_ms: 0.8155
+  type: 'test'
+  ...
+# Subtest: groupGlJobs splits the jobs carrying GL WIP by status and invoiced, biggest first
+ok 20 - groupGlJobs splits the jobs carrying GL WIP by status and invoiced, biggest first
+  ---
+  duration_ms: 0.8078
+  type: 'test'
+  ...
+# Subtest: selective technical-ID repair preserves referenced IDs, line values and original evidence
+ok 21 - selective technical-ID repair preserves referenced IDs, line values and original evidence
+  ---
+  duration_ms: 101.8028
+  type: 'test'
+  ...
+# Subtest: saved group exclusion cascades through dependent records but keeps existing destination parents usable
+ok 22 - saved group exclusion cascades through dependent records but keeps existing destination parents usable
+  ---
+  duration_ms: 44.6269
+  type: 'test'
+  ...
+# Subtest: all selected tables are scanned, including unfamiliar tables and bad rows beyond the first batch
+ok 23 - all selected tables are scanned, including unfamiliar tables and bad rows beyond the first batch
+  ---
+  duration_ms: 800.0956
+  type: 'test'
+  ...
+# Subtest: missing business identities are quarantined with the complete original row and no fabricated invoice number
+ok 24 - missing business identities are quarantined with the complete original row and no fabricated invoice number
+  ---
+  duration_ms: 67.8243
+  type: 'test'
+  ...
+# Subtest: blank stock with value requires review; empty stock is quarantined
+ok 25 - blank stock with value requires review; empty stock is quarantined
+  ---
+  duration_ms: 33.9279
+  type: 'test'
+  ...
+# Subtest: open-job parts and labour keep NULL invoice numbers while orphan jobs are blocked
+ok 26 - open-job parts and labour keep NULL invoice numbers while orphan jobs are blocked
+  ---
+  duration_ms: 44.521
+  type: 'test'
+  ...
+# Subtest: general-invoice parts and labour on job 0 migrate by their invoice number; lines with neither are still flagged
+ok 27 - general-invoice parts and labour on job 0 migrate by their invoice number; lines with neither are still flagged
+  ---
+  duration_ms: 64.1089
+  type: 'test'
+  ...
+# Subtest: a rejected parent blocks its descendants and referenced stock is not silently removed
+ok 28 - a rejected parent blocks its descendants and referenced stock is not silently removed
+  ---
+  duration_ms: 53.3337
+  type: 'test'
+  ...
+# Subtest: unselected parents are read from the target; scheduled target cleaning invalidates those parents
+ok 29 - unselected parents are read from the target; scheduled target cleaning invalidates those parents
+  ---
+  duration_ms: 52.1879
+  type: 'test'
+  ...
+# Subtest: stock rejected for another value is not labelled as missing its part number
+ok 30 - stock rejected for another value is not labelled as missing its part number
+  ---
+  duration_ms: 29.5852
+  type: 'test'
+  ...
+# Subtest: duplicates across batch boundaries block both records, including case-insensitive unique text keys
+ok 31 - duplicates across batch boundaries block both records, including case-insensitive unique text keys
+  ---
+  duration_ms: 74.9348
+  type: 'test'
+  ...
+# Subtest: identical copies with the same primary key are excluded while their child keeps its accepted parent
+ok 32 - identical copies with the same primary key are excluded while their child keeps its accepted parent
+  ---
+  duration_ms: 24.5463
+  type: 'test'
+  ...
+# Subtest: saved corrections are validated and reach accepted snapshots without modifying original records
+ok 33 - saved corrections are validated and reach accepted snapshots without modifying original records
+  ---
+  duration_ms: 19.246
+  type: 'test'
+  ...
+# Subtest: a correction that remains invalid retains original evidence and stays blocked
+ok 34 - a correction that remains invalid retains original evidence and stays blocked
+  ---
+  duration_ms: 18.3836
+  type: 'test'
+  ...
+# Subtest: explicit bulk exclusion quarantines unresolved rows and their dependants, preserving evidence
+ok 35 - explicit bulk exclusion quarantines unresolved rows and their dependants, preserving evidence
+  ---
+  duration_ms: 31.1182
+  type: 'test'
+  ...
+# Subtest: bulk exclusion cannot bypass invalid mapping definitions
+ok 36 - bulk exclusion cannot bypass invalid mapping definitions
+  ---
+  duration_ms: 12.8598
+  type: 'test'
+  ...
+# Subtest: target key collisions block before import; cleanBefore ignores target keys
+ok 37 - target key collisions block before import; cleanBefore ignores target keys
+  ---
+  duration_ms: 34.0826
+  type: 'test'
+  ...
+# Subtest: omitted columns and explicit mapping defaults match the import payload
+ok 38 - omitted columns and explicit mapping defaults match the import payload
+  ---
+  duration_ms: 31.6543
+  type: 'test'
+  ...
+# Subtest: invalid transform output, numeric overflow, precision loss, impossible dates and long text require review
+ok 39 - invalid transform output, numeric overflow, precision loss, impossible dates and long text require review
+  ---
+  duration_ms: 0.6629
+  type: 'test'
+  ...
+# Subtest: snapshot batching preserves dates and binary evidence and never returns quarantined rows
+ok 40 - snapshot batching preserves dates and binary evidence and never returns quarantined rows
+  ---
+  duration_ms: 20.7567
+  type: 'test'
+  ...
+# Subtest: date scopes include linked historical rows and preserve all master data
+ok 41 - date scopes include linked historical rows and preserve all master data
+  ---
+  duration_ms: 0.6582
+  type: 'test'
+  ...
+# Subtest: audit storage cannot traverse paths and is isolated by tenant and host
+ok 42 - audit storage cannot traverse paths and is isolated by tenant and host
+  ---
+  duration_ms: 0.5961
+  type: 'test'
+  ...
+# Subtest: generated values and CHECKs are evaluated in parameterized SELECT batches without target writes
+ok 43 - generated values and CHECKs are evaluated in parameterized SELECT batches without target writes
+  ---
+  duration_ms: 0.8834
+  type: 'test'
+  ...
+# Subtest: target cleaning is blocked if existing children would lose their parent, without excluding additional source rows
+ok 44 - target cleaning is blocked if existing children would lose their parent, without excluding additional source rows
+  ---
+  duration_ms: 15.5017
+  type: 'test'
+  ...
+# Subtest: a missing invoice identity with monetary value needs review
+ok 45 - a missing invoice identity with monetary value needs review
+  ---
+  duration_ms: 16.5966
+  type: 'test'
+  ...
+# Subtest: defaulting a failed numeric transform does not hide populated corrupt source data
+ok 46 - defaulting a failed numeric transform does not hide populated corrupt source data
+  ---
+  duration_ms: 19.1261
+  type: 'test'
+  ...
+# Subtest: repeated zero invoice identities and REDO copies are quarantined without blocking valid invoices
+ok 47 - repeated zero invoice identities and REDO copies are quarantined without blocking valid invoices
+  ---
+  duration_ms: 18.845
+  type: 'test'
+  ...
+# Subtest: existing invoice identities are retained for retry only when customer and job agree
+ok 48 - existing invoice identities are retained for retry only when customer and job agree
+  ---
+  duration_ms: 32.6285
+  type: 'test'
+  ...
+# Subtest: date filtering compares the local Firebird calendar date at midnight
+ok 49 - date filtering compares the local Firebird calendar date at midnight
+  ---
+  duration_ms: 0.1859
+  type: 'test'
+  ...
+# Subtest: a retry lookup needs a verified previous ID mapping, not a coincidentally matching target ID
+ok 50 - a retry lookup needs a verified previous ID mapping, not a coincidentally matching target ID
+  ---
+  duration_ms: 34.5989
+  type: 'test'
+  ...
+# Subtest: a declared foreign key blocks a child scheduled ahead of its new parent
+ok 51 - a declared foreign key blocks a child scheduled ahead of its new parent
+  ---
+  duration_ms: 20.5102
+  type: 'test'
+  ...
+# Subtest: an omitted generated primary key is allowed while explicit missing preserved keys are reviewed
+ok 52 - an omitted generated primary key is allowed while explicit missing preserved keys are reviewed
+  ---
+  duration_ms: 30.6942
+  type: 'test'
+  ...
+# Subtest: a missing snapshot produces a handled read failure
+ok 53 - a missing snapshot produces a handled read failure
+  ---
+  duration_ms: 1.0468
+  type: 'test'
+  ...
+# Subtest: group preview is read-only and confirmed decisions are scoped, saved and undoable
+ok 54 - group preview is read-only and confirmed decisions are scoped, saved and undoable
+  ---
+  duration_ms: 101.6243
+  type: 'test'
+  ...
+# Subtest: report and quarantine downloads are restricted to the selected target scope
+ok 55 - report and quarantine downloads are restricted to the selected target scope
+  ---
+  duration_ms: 17.9232
+  type: 'test'
+  ...
+# Subtest: preview stop is tenant scoped, idempotent, and waits for cleanup before reporting cancellation
+ok 56 - preview stop is tenant scoped, idempotent, and waits for cleanup before reporting cancellation
+  ---
+  duration_ms: 27.1633
+  type: 'test'
+  ...
+# Subtest: an interrupted preview is reported as failed instead of polling forever
+ok 57 - an interrupted preview is reported as failed instead of polling forever
+  ---
+  duration_ms: 12.5116
+  type: 'test'
+  ...
+# Subtest: single records can be left out or corrected from a repair group and return to that group
+ok 58 - single records can be left out or corrected from a repair group and return to that group
+  ---
+  duration_ms: 55.3057
+  type: 'test'
+  ...
+# Subtest: saving all suggested decisions skips groups without a safe suggestion unless asked
+ok 59 - saving all suggested decisions skips groups without a safe suggestion unless asked
+  ---
+  duration_ms: 32.4388
+  type: 'test'
+  ...
+# Subtest: real client sends scan start once, timer advances while awaiting it, and queued stop reaches server
+ok 60 - real client sends scan start once, timer advances while awaiting it, and queued stop reaches server
+  ---
+  duration_ms: 13.9182
+  type: 'test'
+  ...
+# Subtest: no-retry start failure performs one request and displays its actual error
+ok 61 - no-retry start failure performs one request and displays its actual error
+  ---
+  duration_ms: 6.0178
+  type: 'test'
+  ...
+# Subtest: real client polls the scan and replaces live table progress with completed results
+ok 62 - real client polls the scan and replaces live table progress with completed results
+  ---
+  duration_ms: 31.5744
+  type: 'test'
+  ...
+# Subtest: empty rejection cannot leave a frozen running panel
+ok 63 - empty rejection cannot leave a frozen running panel
+  ---
+  duration_ms: 6.3923
+  type: 'test'
+  ...
+# Subtest: a simultaneous start in another tab reconnects using the conflict response audit ID
+ok 64 - a simultaneous start in another tab reconnects using the conflict response audit ID
+  ---
+  duration_ms: 7.5678
+  type: 'test'
+  ...
+# Subtest: latest results survive new requests, stay plan and tenant scoped, and ignore incomplete scans
+ok 65 - latest results survive new requests, stay plan and tenant scoped, and ignore incomplete scans
+  ---
+  duration_ms: 40.0959
+  type: 'test'
+  ...
+# Subtest: legacy report recovery requires identical selection, config, mapping and source
+ok 66 - legacy report recovery requires identical selection, config, mapping and source
+  ---
+  duration_ms: 6.196
+  type: 'test'
+  ...
+# Subtest: REDO history groups include linked credit notes and shared corrections preview exact affected counts
+ok 67 - REDO history groups include linked credit notes and shared corrections preview exact affected counts
+  ---
+  duration_ms: 46.4872
+  type: 'test'
+  ...
+# Subtest: group corrections and exclusions are fingerprint-bound, tenant scoped, atomic and reversible
+ok 68 - group corrections and exclusions are fingerprint-bound, tenant scoped, atomic and reversible
+  ---
+  duration_ms: 36.3012
+  type: 'test'
+  ...
+# Subtest: selective ID repair never wraps append destinations or unknown reference shapes
+ok 69 - selective ID repair never wraps append destinations or unknown reference shapes
+  ---
+  duration_ms: 1.7803
+  type: 'test'
+  ...
+# Subtest: saved group exclusions are undone from their row and other saved decisions stay reachable
+ok 70 - saved group exclusions are undone from their row and other saved decisions stay reachable
+  ---
+  duration_ms: 1.3817
+  type: 'test'
+  ...
+# Subtest: reads generated SQL preserving literal quotes, backslashes and parentheses
+ok 71 - reads generated SQL preserving literal quotes, backslashes and parentheses
+  ---
+  duration_ms: 2.3003
+  type: 'test'
+  ...
+# Subtest: metadata replaces escaped generated SQL with SHOW CREATE SQL
+ok 72 - metadata replaces escaped generated SQL with SHOW CREATE SQL
+  ---
+  duration_ms: 1.2644
+  type: 'test'
+  ...
+# Subtest: SQL setup failures stop once instead of marking every row as bad data
+ok 73 - SQL setup failures stop once instead of marking every row as bad data
+  ---
+  duration_ms: 1.3681
+  type: 'test'
+  ...
+# Subtest: the suggested ID is above every ID in the scan and the destination
+ok 74 - the suggested ID is above every ID in the scan and the destination
+  ---
+  duration_ms: 27.3202
+  type: 'test'
+  ...
+# Subtest: IDs already used by the scan, the destination or another correction are refused
+ok 75 - IDs already used by the scan, the destination or another correction are refused
+  ---
+  duration_ms: 17.0875
+  type: 'test'
+  ...
+# Subtest: the group page pre-fills each invalid ID with its own free value
+ok 76 - the group page pre-fills each invalid ID with its own free value
+  ---
+  duration_ms: 35.412
+  type: 'test'
+  ...
+# Subtest: safe line IDs regenerate only for empty, unreferenced destinations and never for business keys or retries
+ok 77 - safe line IDs regenerate only for empty, unreferenced destinations and never for business keys or retries
+  ---
+  duration_ms: 3.331
+  type: 'test'
+  ...
+# Subtest: application-managed references protect IDs even without foreign keys
+ok 78 - application-managed references protect IDs even without foreign keys
+  ---
+  duration_ms: 0.7434
+  type: 'test'
+  ...
+# Subtest: corrections match unchanged original records, retain originals, are tenant scoped and can be undone
+ok 79 - corrections match unchanged original records, retain originals, are tenant scoped and can be undone
+  ---
+  duration_ms: 50.4302
+  type: 'test'
+  ...
+# Subtest: readable review escapes source data and offers correction fields instead of JSON
+ok 80 - readable review escapes source data and offers correction fields instead of JSON
+  ---
+  duration_ms: 18.8146
+  type: 'test'
+  ...
+# Subtest: records already in the destination link to their repair group instead of offering a key correction
+ok 81 - records already in the destination link to their repair group instead of offering a key correction
+  ---
+  duration_ms: 11.853
+  type: 'test'
+  ...
+# Subtest: service uses one consistent Firebird snapshot and scans selected tables only
+ok 82 - service uses one consistent Firebird snapshot and scans selected tables only
+  ---
+  duration_ms: 84.7707
+  type: 'test'
+  ...
+# Subtest: empty text defaults on nullable numeric fields become NULL in both the audited and execution mapping
+ok 83 - empty text defaults on nullable numeric fields become NULL in both the audited and execution mapping
+  ---
+  duration_ms: 36.5367
+  type: 'test'
+  ...
+# Subtest: reversed supplier payments never reach the accepted records
+ok 84 - reversed supplier payments never reach the accepted records
+  ---
+  duration_ms: 41.6456
+  type: 'test'
+  ...
+# Subtest: customer payment markers are left out and counted by reason
+ok 85 - customer payment markers are left out and counted by reason
+  ---
+  duration_ms: 51.3482
+  type: 'test'
+  ...
+# Subtest: cancelled audit persists its status and releases the source snapshot
+ok 86 - cancelled audit persists its status and releases the source snapshot
+  ---
+  duration_ms: 31.4734
+  type: 'test'
+  ...
+# Subtest: metadata read failures fail closed and leave an inspectable report
+ok 87 - metadata read failures fail closed and leave an inspectable report
+  ---
+  duration_ms: 34.4775
+  type: 'test'
+  ...
+# Subtest: wizard saves current selection before starting a full audit and polls until complete
+ok 88 - wizard saves current selection before starting a full audit and polls until complete
+  ---
+  duration_ms: 36.5356
+  type: 'test'
+  ...
+# Subtest: audit report escapes names and error messages from database content
+ok 89 - audit report escapes names and error messages from database content
+  ---
+  duration_ms: 3.2401
+  type: 'test'
+  ...
+# Subtest: failed plan save prevents an audit request
+ok 90 - failed plan save prevents an audit request
+  ---
+  duration_ms: 4.4248
+  type: 'test'
+  ...
+# Subtest: click immediately displays progress and prevents duplicate starts while saving
+ok 91 - click immediately displays progress and prevents duplicate starts while saving
+  ---
+  duration_ms: 3.3717
+  type: 'test'
+  ...
+# Subtest: thrown save errors appear beside the button and release the busy state
+ok 92 - thrown save errors appear beside the button and release the busy state
+  ---
+  duration_ms: 3.2035
+  type: 'test'
+  ...
+# Subtest: progress distinguishes table reading from relationship checks and completion
+ok 93 - progress distinguishes table reading from relationship checks and completion
+  ---
+  duration_ms: 4.5232
+  type: 'test'
+  ...
+# Subtest: active table panel resets its counts and ordinal on the next table and clears at completion
+ok 94 - active table panel resets its counts and ordinal on the next table and clears at completion
+  ---
+  duration_ms: 3.3072
+  type: 'test'
+  ...
+# Subtest: polling failures do not claim the server audit failed or that zero rows were checked
+ok 95 - polling failures do not claim the server audit failed or that zero rows were checked
+  ---
+  duration_ms: 3.523
+  type: 'test'
+  ...
+# Subtest: stop during plan save prevents the server scan from starting
+ok 96 - stop during plan save prevents the server scan from starting
+  ---
+  duration_ms: 4.2347
+  type: 'test'
+  ...
+# Subtest: stop queued during start is dispatched once and polling continues through stopping
+ok 97 - stop queued during start is dispatched once and polling continues through stopping
+  ---
+  duration_ms: 4.3198
+  type: 'test'
+  ...
+# Subtest: failed stop request leaves the scan running and permits retry
+ok 98 - failed stop request leaves the scan running and permits retry
+  ---
+  duration_ms: 3.3588
+  type: 'test'
+  ...
+# Subtest: returning to Step 3 reconnects without saving or starting and restores stop and elapsed time
+ok 99 - returning to Step 3 reconnects without saving or starting and restores stop and elapsed time
+  ---
+  duration_ms: 6.5422
+  type: 'test'
+  ...
+# Subtest: returning with no active scan leaves the page idle without starting work
+ok 100 - returning with no active scan leaves the page idle without starting work
+  ---
+  duration_ms: 3.3361
+  type: 'test'
+  ...
+# Subtest: blocked results list short next steps: missing parent tables, repair decisions, then rescan
+ok 101 - blocked results list short next steps: missing parent tables, repair decisions, then rescan
+  ---
+  duration_ms: 3.54
+  type: 'test'
+  ...
+# Subtest: returning to Step 3 restores completed server results without starting or saving another scan
+ok 102 - returning to Step 3 restores completed server results without starting or saving another scan
+  ---
+  duration_ms: 3.5358
+  type: 'test'
+  ...
+# Subtest: bulk exclusion needs an explicit choice, retains target data, and reruns the audit
+ok 103 - bulk exclusion needs an explicit choice, retains target data, and reruns the audit
+  ---
+  duration_ms: 3.4307
+  type: 'test'
+  ...
+# Subtest: overall progress combines stages and tables and says how much is left
+ok 104 - overall progress combines stages and tables and says how much is left
+  ---
+  duration_ms: 2.9369
+  type: 'test'
+  ...
+# Subtest: a current, ready full check is marked so the dry run can be hidden; stale or blocked results are not
+ok 105 - a current, ready full check is marked so the dry run can be hidden; stale or blocked results are not
+  ---
+  duration_ms: 3.2368
+  type: 'test'
+  ...
+# Subtest: the scan result folds to its status line and an out-of-date result does not say to continue
+ok 106 - the scan result folds to its status line and an out-of-date result does not say to continue
+  ---
+  duration_ms: 2.8724
+  type: 'test'
+  ...
+# Subtest: a missing sample invoice number stays an error and directs the user to the full audit
+ok 107 - a missing sample invoice number stays an error and directs the user to the full audit
+  ---
+  duration_ms: 1.6652
+  type: 'test'
+  ...
+# Subtest: a populated sample invoice number still passes the sample check
+ok 108 - a populated sample invoice number still passes the sample check
+  ---
+  duration_ms: 1.2023
+  type: 'test'
+  ...
+# Subtest: a bad first record with passing later samples is a warning, not a mapping error
+ok 109 - a bad first record with passing later samples is a warning, not a mapping error
+  ---
+  duration_ms: 3.5438
+  type: 'test'
+  ...
+# Subtest: when every sample fails the mapping error is reported
+ok 110 - when every sample fails the mapping error is reported
+  ---
+  duration_ms: 0.6676
+  type: 'test'
+  ...
+# Subtest: a passing first sample is used as before
+ok 111 - a passing first sample is used as before
+  ---
+  duration_ms: 0.6765
+  type: 'test'
+  ...
+# Subtest: the streamed dry run reports each table as it arrives and returns the final results
+ok 112 - the streamed dry run reports each table as it arrives and returns the final results
+  ---
+  duration_ms: 8.2457
+  type: 'test'
+  ...
+# Subtest: a dry run that fails part-way reports the server error
+ok 113 - a dry run that fails part-way reports the server error
+  ---
+  duration_ms: 5.2097
+  type: 'test'
+  ...
+# Subtest: the live dry run lists every table and fills in statuses in order
+ok 114 - the live dry run lists every table and fills in statuses in order
+  ---
+  duration_ms: 24.7663
+  type: 'test'
+  ...
+# Subtest: the finished dry run summarises failures with readable counts and duration
+ok 115 - the finished dry run summarises failures with readable counts and duration
+  ---
+  duration_ms: 2.7413
+  type: 'test'
+  ...
+# Subtest: fetchBatchWithDb emits the Firebird DB_KEY token without quoting it as a column
+ok 116 - fetchBatchWithDb emits the Firebird DB_KEY token without quoting it as a column
+  ---
+  duration_ms: 2.892
+  type: 'test'
+  ...
+# Subtest: fetchBatchWithDbWhere emits the Firebird DB_KEY token without quoting it as a column
+ok 117 - fetchBatchWithDbWhere emits the Firebird DB_KEY token without quoting it as a column
+  ---
+  duration_ms: 0.6733
+  type: 'test'
+  ...
+# Subtest: fetchBatch emits the Firebird DB_KEY token without quoting it as a column
+ok 118 - fetchBatch emits the Firebird DB_KEY token without quoting it as a column
+  ---
+  duration_ms: 0.6542
+  type: 'test'
+  ...
+# Subtest: fetchBatchWhere emits the Firebird DB_KEY token without quoting it as a column
+ok 119 - fetchBatchWhere emits the Firebird DB_KEY token without quoting it as a column
+  ---
+  duration_ms: 0.3911
+  type: 'test'
+  ...
+# Subtest: ordinary ordering identifiers remain quoted and SQL fragments cannot become expressions
+ok 120 - ordinary ordering identifiers remain quoted and SQL fragments cannot become expressions
+  ---
+  duration_ms: 0.6556
+  type: 'test'
+  ...
+# Subtest: general-invoice POS return keeps a negative quantity and positive unit price/cost
+ok 121 - general-invoice POS return keeps a negative quantity and positive unit price/cost
+  ---
+  duration_ms: 1.66
+  type: 'test'
+  ...
+# Subtest: zero-quantity legacy POS line retains its amount without division by zero
+ok 122 - zero-quantity legacy POS line retains its amount without division by zero
+  ---
+  duration_ms: 0.3801
+  type: 'test'
+  ...
+# Subtest: preview permits only scratch seed/run-log writes and rejects journals, DDL and tenant writes
+ok 123 - preview permits only scratch seed/run-log writes and rejects journals, DDL and tenant writes
+  ---
+  duration_ms: 2.1135
+  type: 'test'
+  ...
+# Subtest: preview permits the approved 6300/3400 sublet split without including it in Inventory
+ok 124 - preview permits the approved 6300/3400 sublet split without including it in Inventory
+  ---
+  duration_ms: 1.6359
+  type: 'test'
+  ...
+# Subtest: journal review catches omitted return cost even when the journal balances
+ok 125 - journal review catches omitted return cost even when the journal balances
+  ---
+  duration_ms: 0.5085
+  type: 'test'
+  ...
+# Subtest: journal comparison treats SQL decimal strings/null job as equal but detects changed amounts and references
+ok 126 - journal comparison treats SQL decimal strings/null job as equal but detects changed amounts and references
+  ---
+  duration_ms: 2.3905
+  type: 'test'
+  ...
+# Subtest: cross-schema preview references must agree on every built journal
+ok 127 - cross-schema preview references must agree on every built journal
+  ---
+  duration_ms: 4.5837
+  type: 'test'
+  ...
+# Subtest: validation comparison refuses a newly failing check or new errors in an existing failure
+ok 128 - validation comparison refuses a newly failing check or new errors in an existing failure
+  ---
+  duration_ms: 1.0316
+  type: 'test'
+  ...
+# Subtest: scratch copy permits legacy zero dates but retains strict data checks
+ok 129 - scratch copy permits legacy zero dates but retains strict data checks
+  ---
+  duration_ms: 2.4681
+  type: 'test'
+  ...
+# Subtest: resuming requires both the row count and full-row fingerprint to match
+ok 130 - resuming requires both the row count and full-row fingerprint to match
+  ---
+  duration_ms: 0.3113
+  type: 'test'
+  ...
+# Subtest: the VAT Input name check is the mirrored PWA rule
+ok 131 - the VAT Input name check is the mirrored PWA rule
+  ---
+  duration_ms: 6.9499
+  type: 'test'
+  ...
+# Subtest: control statuses follow the PWA rules
+ok 132 - control statuses follow the PWA rules
+  ---
+  duration_ms: 2.923
+  type: 'test'
+  ...
+# Subtest: a missing WIP account is recreated at its own number, like migration 269 made it
+ok 133 - a missing WIP account is recreated at its own number, like migration 269 made it
+  ---
+  duration_ms: 3.9042
+  type: 'test'
+  ...
+# Subtest: controls the tenant must choose offer only eligible accounts and never preselect one
+ok 134 - controls the tenant must choose offer only eligible accounts and never preselect one
+  ---
+  duration_ms: 1.218
+  type: 'test'
+  ...
+# Subtest: a new account is checked before anything is written
+ok 135 - a new account is checked before anything is written
+  ---
+  duration_ms: 2.6628
+  type: 'test'
+  ...
+# Subtest: an inactive account is reactivated rather than replaced
+ok 136 - an inactive account is reactivated rather than replaced
+  ---
+  duration_ms: 0.797
+  type: 'test'
+  ...
+# Subtest: query returns rows only and sends blank strings as NULL, as the PWA does
+ok 137 - query returns rows only and sends blank strings as NULL, as the PWA does
+  ---
+  duration_ms: 3.7877
+  type: 'test'
+  ...
+# Subtest: each call chain uses the pool it was bound to
+ok 138 - each call chain uses the pool it was bound to
+  ---
+  duration_ms: 8.2299
+  type: 'test'
+  ...
+# Subtest: runInCompanyTx commits, and retries after any error with a fresh connection
+ok 139 - runInCompanyTx commits, and retries after any error with a fresh connection
+  ---
+  duration_ms: 2.8093
+  type: 'test'
+  ...
+# Subtest: runInCompanyTx gives up after four attempts and rethrows
+ok 140 - runInCompanyTx gives up after four attempts and rethrows
+  ---
+  duration_ms: 23.7236
+  type: 'test'
+  ...
+# Subtest: general-invoice returns reverse signed sales and costs while preserving sublet mappings
+ok 141 - general-invoice returns reverse signed sales and costs while preserving sublet mappings
+  ---
+  duration_ms: 24.7023
+  type: 'test'
+  ...
+# Subtest: general-invoice parts read failures cannot fall back to an incomplete sales-only journal
+ok 142 - general-invoice parts read failures cannot fall back to an incomplete sales-only journal
+  ---
+  duration_ms: 2.8496
+  type: 'test'
+  ...
+# Subtest: a legacy general invoice posts its job-0 lines by invoice: Sales per line, Cost of Sales against Inventory, no WIP
+ok 143 - a legacy general invoice posts its job-0 lines by invoice: Sales per line, Cost of Sales against Inventory, no WIP
+  ---
+  duration_ms: 5.9295
+  type: 'test'
+  ...
+# Subtest: legacy settlements credit Accounts Receivable against their own account, Discounts or Bank
+ok 144 - legacy settlements credit Accounts Receivable against their own account, Discounts or Bank
+  ---
+  duration_ms: 18.9476
+  type: 'test'
+  ...
+# Subtest: customer payments skip only INVOICE, REVERSED and CUSTOMER CREDIT; supplier payments keep their rule
+ok 145 - customer payments skip only INVOICE, REVERSED and CUSTOMER CREDIT; supplier payments keep their rule
+  ---
+  duration_ms: 5.399
+  type: 'test'
+  ...
+# Subtest: Clear Previous finds the receipts the run posts again, settlements included
+ok 146 - Clear Previous finds the receipts the run posts again, settlements included
+  ---
+  duration_ms: 2.2659
+  type: 'test'
+  ...
+# Subtest: Clear Previous deletes what it found by id in batches of 500, reporting progress, and stops between batches
+ok 147 - Clear Previous deletes what it found by id in batches of 500, reporting progress, and stops between batches
+  ---
+  duration_ms: 3.9696
+  type: 'test'
+  ...
+# Subtest: GL backfill mirror matches the AUTONEER-PWA checkout
+ok 148 - GL backfill mirror matches the AUTONEER-PWA checkout
+  ---
+  duration_ms: 85.7763
+  type: 'test'
+  ...
+# Subtest: every require in the mirror resolves inside the mirror
+ok 149 - every require in the mirror resolves inside the mirror
+  ---
+  duration_ms: 69.6468
+  type: 'test'
+  ...
+# Subtest: every extracted declaration is present in its mirror file
+ok 150 - every extracted declaration is present in its mirror file
+  ---
+  duration_ms: 4.6022
+  type: 'test'
+  ...
+# Subtest: declaration extraction covers functions, arrays and multi-line constants
+ok 151 - declaration extraction covers functions, arrays and multi-line constants
+  ---
+  duration_ms: 1.0434
+  type: 'test'
+  ...
+# Subtest: the mirrored backfill loads without any AUTONEER-PWA module
+ok 152 - the mirrored backfill loads without any AUTONEER-PWA module
+  ---
+  duration_ms: 136.6529
+  type: 'test'
+  ...
+# Subtest: each kind of unpaired invoice is offered the fixes its data supports
+ok 153 - each kind of unpaired invoice is offered the fixes its data supports
+  ---
+  duration_ms: 37.8346
+  type: 'test'
+  ...
+# Subtest: a return is paired only when it is the only candidate and its new number is free
+ok 154 - a return is paired only when it is the only candidate and its new number is free
+  ---
+  duration_ms: 1.0918
+  type: 'test'
+  ...
+# Subtest: posting it as normal sets the amount owing to what is still unpaid
+ok 155 - posting it as normal sets the amount owing to what is still unpaid
+  ---
+  duration_ms: 0.6097
+  type: 'test'
+  ...
+# Subtest: the preview describes invoice 213776 and suggests pairing its return
+ok 156 - the preview describes invoice 213776 and suggests pairing its return
+  ---
+  duration_ms: 4.3669
+  type: 'test'
+  ...
+# Subtest: pairing renumbers the return's lines, then the return, scoped by supplier
+ok 157 - pairing renumbers the return's lines, then the return, scoped by supplier
+  ---
+  duration_ms: 1.9201
+  type: 'test'
+  ...
+# Subtest: posting and voiding change only an invoice still in RFC-ORIGINAL
+ok 158 - posting and voiding change only an invoice still in RFC-ORIGINAL
+  ---
+  duration_ms: 1.3968
+  type: 'test'
+  ...
+# Subtest: a fix that no longer fits, or a row that changed, is refused
+ok 159 - a fix that no longer fits, or a row that changed, is refused
+  ---
+  duration_ms: 2.5696
+  type: 'test'
+  ...
+# Subtest: run options follow the PWA route's rules
+ok 160 - run options follow the PWA route's rules
+  ---
+  duration_ms: 7.1128
+  type: 'test'
+  ...
+# Subtest: a run is recorded, then the job runs on its own pool and releases it
+ok 161 - a run is recorded, then the job runs on its own pool and releases it
+  ---
+  duration_ms: 10.2652
+  type: 'test'
+  ...
+# Subtest: a live run applies the PWA guards and clears the scope only when asked
+ok 162 - a live run applies the PWA guards and clears the scope only when asked
+  ---
+  duration_ms: 4.173
+  type: 'test'
+  ...
+# Subtest: a live backfill on or before a posted WIP write-off is refused until it is undone
+ok 163 - a live backfill on or before a posted WIP write-off is refused until it is undone
+  ---
+  duration_ms: 1.8552
+  type: 'test'
+  ...
+# Subtest: a stop during the delete ends the run as FAILED and posts nothing; Stop needs the running run
+ok 164 - a stop during the delete ends the run as FAILED and posts nothing; Stop needs the running run
+  ---
+  duration_ms: 2.6001
+  type: 'test'
+  ...
+# Subtest: Stop reaches the posting job, which checks it before each document
+ok 165 - Stop reaches the posting job, which checks it before each document
+  ---
+  duration_ms: 1.903
+  type: 'test'
+  ...
+# Subtest: schema names are checked before any SQL uses them
+ok 166 - schema names are checked before any SQL uses them
+  ---
+  duration_ms: 0.9769
+  type: 'test'
+  ...
+# Subtest: repair tasks need confirmation for live writes and check their input first
+ok 167 - repair tasks need confirmation for live writes and check their input first
+  ---
+  duration_ms: 1.9221
+  type: 'test'
+  ...
+# Subtest: only one backfill, repair or control fix runs per tenant at a time
+ok 168 - only one backfill, repair or control fix runs per tenant at a time
+  ---
+  duration_ms: 4.4528
+  type: 'test'
+  ...
+# Subtest: a header a cent under its lines keeps its total and VAT; the cent goes to Cost of Sales
+ok 169 - a header a cent under its lines keeps its total and VAT; the cent goes to Cost of Sales
+  ---
+  duration_ms: 2.4653
+  type: 'test'
+  ...
+# Subtest: per-line VAT rounding of a few cents posts the tax invoice's VAT
+ok 170 - per-line VAT rounding of a few cents posts the tax invoice's VAT
+  ---
+  duration_ms: 0.3444
+  type: 'test'
+  ...
+# Subtest: lines well over the header keep the header's total and VAT; the excess is credited to Cost of Sales
+ok 171 - lines well over the header keep the header's total and VAT; the excess is credited to Cost of Sales
+  ---
+  duration_ms: 0.4123
+  type: 'test'
+  ...
+# Subtest: a header above its lines is unchanged: the backfill VAT stands and the gap is debited
+ok 172 - a header above its lines is unchanged: the backfill VAT stands and the gap is debited
+  ---
+  duration_ms: 0.2339
+  type: 'test'
+  ...
+# Subtest: supplier invoices and returns whose lines exceed the header post balanced journals
+ok 173 - supplier invoices and returns whose lines exceed the header post balanced journals
+  ---
+  duration_ms: 17.2697
+  type: 'test'
+  ...
+# Subtest: a duplicated supplier invoice posts once, with the header that matches its lines
+ok 174 - a duplicated supplier invoice posts once, with the header that matches its lines
+  ---
+  duration_ms: 4.5402
+  type: 'test'
+  ...
+# Subtest: the time left follows the rate of the last two minutes, once there are 10 seconds to go on
+ok 175 - the time left follows the rate of the last two minutes, once there are 10 seconds to go on
+  ---
+  duration_ms: 7.3471
+  type: 'test'
+  ...
+# Subtest: the time left reads as minutes or hours and minutes, with the time it should finish
+ok 176 - the time left reads as minutes or hours and minutes, with the time it should finish
+  ---
+  duration_ms: 34.3401
+  type: 'test'
+  ...
+# Subtest: a run records each selected type's total and the type it is working on
+ok 177 - a run records each selected type's total and the type it is working on
+  ---
+  duration_ms: 11.9304
+  type: 'test'
+  ...
+# Subtest: the status reports each type's progress from its items
+ok 178 - the status reports each type's progress from its items
+  ---
+  duration_ms: 1.6223
+  type: 'test'
+  ...
+# Subtest: a run saved before per-type progress shows only the overall figures
+ok 179 - a run saved before per-type progress shows only the overall figures
+  ---
+  duration_ms: 0.5206
+  type: 'test'
+  ...
+# Subtest: the balance sheet identity counts the unclosed result as equity
+ok 180 - the balance sheet identity counts the unclosed result as equity
+  ---
+  duration_ms: 1.8039
+  type: 'test'
+  ...
+# Subtest: the balance sheet identity still fails a ledger that does not balance
+ok 181 - the balance sheet identity still fails a ledger that does not balance
+  ---
+  duration_ms: 0.3891
+  type: 'test'
+  ...
+# Subtest: MySQL STORED key permits general invoices and retains real-job uniqueness
+ok 182 - MySQL STORED key permits general invoices and retains real-job uniqueness # SKIP
+  ---
+  duration_ms: 1.3164
+  type: 'test'
+  ...
+# Subtest: MySQL VIRTUAL key permits general invoices and retains real-job uniqueness
+ok 183 - MySQL VIRTUAL key permits general invoices and retains real-job uniqueness # SKIP
+  ---
+  duration_ms: 0.2462
+  type: 'test'
+  ...
+# Subtest: repair wraps the existing rule and keeps its unique index, storage, type, and comment
+ok 184 - repair wraps the existing rule and keeps its unique index, storage, type, and comment
+  ---
+  duration_ms: 3.9925
+  type: 'test'
+  ...
+# Subtest: dry run identifies pending correction without altering the target
+ok 185 - dry run identifies pending correction without altering the target
+  ---
+  duration_ms: 0.423
+  type: 'test'
+  ...
+# Subtest: older targets without the generated column or key are left alone
+ok 186 - older targets without the generated column or key are left alone
+  ---
+  duration_ms: 0.3467
+  type: 'test'
+  ...
+# Subtest: unexpected columns and indexes fail before schema mutation
+ok 187 - unexpected columns and indexes fail before schema mutation
+  ---
+  duration_ms: 1.554
+  type: 'test'
+  ...
+# Subtest: ALTER failures propagate so invoice migration cannot proceed with the old key
+ok 188 - ALTER failures propagate so invoice migration cannot proceed with the old key
+  ---
+  duration_ms: 0.579
+  type: 'test'
+  ...
+# Subtest: legacy split invoice numbers also populate the modern split flag without changing invoice identity or historical status
+ok 189 - legacy split invoice numbers also populate the modern split flag without changing invoice identity or historical status
+  ---
+  duration_ms: 4.2419
+  type: 'test'
+  ...
+# Subtest: a blank default keeps uninvoiced line invoice numbers NULL instead of 0
+ok 190 - a blank default keeps uninvoiced line invoice numbers NULL instead of 0
+  ---
+  duration_ms: 0.5263
+  type: 'test'
+  ...
+# Subtest: invoice source policy excludes null, zero, and negative legacy invoice numbers
+ok 191 - invoice source policy excludes null, zero, and negative legacy invoice numbers
+  ---
+  duration_ms: 1.0256
+  type: 'test'
+  ...
+# Subtest: target invoice constraint collisions remain errors
+ok 192 - target invoice constraint collisions remain errors
+  ---
+  duration_ms: 0.3124
+  type: 'test'
+  ...
+# Subtest: new migration plans preserve invoice IDs and reject collisions
+ok 193 - new migration plans preserve invoice IDs and reject collisions
+  ---
+  duration_ms: 1.0557
+  type: 'test'
+  ...
+# Subtest: mapping defaults support both saved-profile and runtime property names
+ok 194 - mapping defaults support both saved-profile and runtime property names
+  ---
+  duration_ms: 0.2965
+  type: 'test'
+  ...
+# Subtest: invoice identity reconciliation catches missing and mis-owned target headers
+ok 195 - invoice identity reconciliation catches missing and mis-owned target headers
+  ---
+  duration_ms: 0.9895
+  type: 'test'
+  ...
+# Subtest: duplicate source invoice numbers keep the first nonzero job in either order
+ok 196 - duplicate source invoice numbers keep the first nonzero job in either order
+  ---
+  duration_ms: 0.8227
+  type: 'test'
+  ...
+# Subtest: unique job-zero invoices and one of repeated job-zero invoices are retained
+ok 197 - unique job-zero invoices and one of repeated job-zero invoices are retained
+  ---
+  duration_ms: 0.68
+  type: 'test'
+  ...
+# Subtest: duplicates without a job mapping keep one and invalid invoice numbers still fail
+ok 198 - duplicates without a job mapping keep one and invalid invoice numbers still fail
+  ---
+  duration_ms: 1.4298
+  type: 'test'
+  ...
+# Subtest: reversed supplier payments are left out by their status
+ok 199 - reversed supplier payments are left out by their status
+  ---
+  duration_ms: 2.008
+  type: 'test'
+  ...
+# Subtest: customer payments are left out by their payment method, each with its reason
+ok 200 - customer payments are left out by their payment method, each with its reason
+  ---
+  duration_ms: 0.3497
+  type: 'test'
+  ...
+# Subtest: settlements the invoice's paid amount counts are kept
+ok 201 - settlements the invoice's paid amount counts are kept
+  ---
+  duration_ms: 0.3917
+  type: 'test'
+  ...
+# Subtest: the rule reads the source column the mapping names, or the target's own name
+ok 202 - the rule reads the source column the mapping names, or the target's own name
+  ---
+  duration_ms: 0.3148
+  type: 'test'
+  ...
+# Subtest: other tables keep every row
+ok 203 - other tables keep every row
+  ---
+  duration_ms: 0.2804
+  type: 'test'
+  ...
+# Subtest: saving and loading an INVOICES snapshot creates a separate mapping and retains fields across reload and Next
+ok 204 - saving and loading an INVOICES snapshot creates a separate mapping and retains fields across reload and Next
+  ---
+  duration_ms: 29.7233
+  type: 'test'
+  ...
+# Subtest: Next recovers a stale browser mapping ID without losing the invoice configuration
+ok 205 - Next recovers a stale browser mapping ID without losing the invoice configuration
+  ---
+  duration_ms: 6.9699
+  type: 'test'
+  ...
+# Subtest: a server error blocks Next without creating a duplicate mapping
+ok 206 - a server error blocks Next without creating a duplicate mapping
+  ---
+  duration_ms: 5.288
+  type: 'test'
+  ...
+# Subtest: mapping reads and updates use the stored row ID instead of an embedded stale UUID
+ok 207 - mapping reads and updates use the stored row ID instead of an embedded stale UUID
+  ---
+  duration_ms: 5.8974
+  type: 'test'
+  ...
+# Subtest: MySQL upgrades legacy ID maps, preserves records, and supports repeat writes
+ok 208 - MySQL upgrades legacy ID maps, preserves records, and supports repeat writes # SKIP
+  ---
+  duration_ms: 1.5426
+  type: 'test'
+  ...
+# Subtest: proposed job-zero key accepts unrelated sales and split invoices while rejecting duplicate active real jobs
+ok 209 - proposed job-zero key accepts unrelated sales and split invoices while rejecting duplicate active real jobs # SKIP
+  ---
+  duration_ms: 0.2751
+  type: 'test'
+  ...
+# Subtest: legacy ID map is upgraded without deleting mappings or adding blocking legacy fields
+ok 210 - legacy ID map is upgraded without deleting mappings or adding blocking legacy fields
+  ---
+  duration_ms: 2.8472
+  type: 'test'
+  ...
+# Subtest: current ID map schema needs no mutation
+ok 211 - current ID map schema needs no mutation
+  ---
+  duration_ms: 0.6987
+  type: 'test'
+  ...
+# Subtest: ambiguous columns and duplicate mappings stop the upgrade before any mutation
+ok 212 - ambiguous columns and duplicate mappings stop the upgrade before any mutation
+  ---
+  duration_ms: 1.144
+  type: 'test'
+  ...
+# Subtest: preserved ID mappings use real sparse target IDs in source order
+ok 213 - preserved ID mappings use real sparse target IDs in source order
+  ---
+  duration_ms: 1.4866
+  type: 'test'
+  ...
+# migrationMarkers tests passed
+# Subtest: tests\\migrationMarkers.test.js
+ok 39 - tests\\migrationMarkers.test.js
+  ---
+  duration_ms: 206.9417
+  type: 'test'
+  ...
+# C:\\Projects\\Autoneer-Migrate\\tests\\models\\refactored-models.test.js:3
+# \\t\\t});
+# \\t\\t^
+# SyntaxError: Unexpected token '}'
+#     at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+#     at Module._compile (node:internal/modules/cjs/loader:1704:20)
+#     at Object..js (node:internal/modules/cjs/loader:1895:10)
+#     at Module.load (node:internal/modules/cjs/loader:1465:32)
+#     at Function._load (node:internal/modules/cjs/loader:1282:12)
+#     at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+#     at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+#     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:170:5)
+#     at node:internal/main/run_main_module:36:49
+# Node.js v22.15.0
+# Subtest: tests\\models\\refactored-models.test.js
+not ok 40 - tests\\models\\refactored-models.test.js
+  ---
+  duration_ms: 147.4772
+  type: 'test'
+  location: 'C:\\Projects\\Autoneer-Migrate\\tests\\models\\refactored-models.test.js:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: open part VAT plan matches the AUTONEER-PWA rule
+ok 216 - open part VAT plan matches the AUTONEER-PWA rule
+  ---
+  duration_ms: 62.59
+  type: 'test'
+  ...
+# Subtest: a missing tenant VAT rate fails the repair instead of guessing 15%
+ok 217 - a missing tenant VAT rate fails the repair instead of guessing 15%
+  ---
+  duration_ms: 1.5097
+  type: 'test'
+  ...
+# Subtest: verification warns about open lines without vat_rate and invoice_nr = 0 lines
+ok 218 - verification warns about open lines without vat_rate and invoice_nr = 0 lines
+  ---
+  duration_ms: 2.5639
+  type: 'test'
+  ...
+# Subtest: legacy quantities are counted, placeholders and negatives become 0, and stocked items are left alone
+ok 219 - legacy quantities are counted, placeholders and negatives become 0, and stocked items are left alone
+  ---
+  duration_ms: 3.3117
+  type: 'test'
+  ...
+# Subtest: the placeholder threshold defaults to 900 and ignores bad input
+ok 220 - the placeholder threshold defaults to 900 and ignores bad input
+  ---
+  duration_ms: 0.3207
+  type: 'test'
+  ...
+# Subtest: take lines move each counted item from 0 to its legacy quantity at ex-VAT cost
+ok 221 - take lines move each counted item from 0 to its legacy quantity at ex-VAT cost
+  ---
+  duration_ms: 0.4169
+  type: 'test'
+  ...
+# Subtest: the journal pairs each item, adds open-job stock and reverses the backfill's Inventory balance
+ok 222 - the journal pairs each item, adds open-job stock and reverses the backfill's Inventory balance
+  ---
+  duration_ms: 0.9542
+  type: 'test'
+  ...
+# Subtest: the stock import holds back the quantity, in either case, and never updates it
+ok 223 - the stock import holds back the quantity, in either case, and never updates it
+  ---
+  duration_ms: 0.3217
+  type: 'test'
+  ...
+# Subtest: the preview shows the journal, the placeholders and the open-job stock, and enables posting
+not ok 224 - the preview shows the journal, the placeholders and the open-job stock, and enables posting
+  ---
+  duration_ms: 15.07
+  type: 'test'
+  location: 'C:\\Projects\\Autoneer-Migrate\\tests\\openingStockUI.test.js:75:1'
+  failureType: 'unhandledRejection'
+  error: 'card.classList.add is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    setCardChecking (evalmachine.<anonymous>:146:28)
+    load (evalmachine.<anonymous>:225:3)
+    setup (evalmachine.<anonymous>:442:3)
+    evalmachine.<anonymous>:448:3
+    evalmachine.<anonymous>:450:3
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    setup (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:68:6)
+    TestContext.<anonymous> (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:76:33)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+  ...
+# Subtest: Collapse all folds every section, keeps them folded on reload, and then offers Expand all
+not ok 225 - Collapse all folds every section, keeps them folded on reload, and then offers Expand all
+  ---
+  duration_ms: 8.198
+  type: 'test'
+  location: 'C:\\Projects\\Autoneer-Migrate\\tests\\openingStockUI.test.js:98:1'
+  failureType: 'unhandledRejection'
+  error: 'card.classList.add is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    setCardChecking (evalmachine.<anonymous>:146:28)
+    load (evalmachine.<anonymous>:225:3)
+    setup (evalmachine.<anonymous>:442:3)
+    evalmachine.<anonymous>:448:3
+    evalmachine.<anonymous>:450:3
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    setup (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:68:6)
+    TestContext.<anonymous> (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:99:34)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+  ...
+# Subtest: typing a placeholder threshold reloads the preview with it, without leaving the field
+not ok 226 - typing a placeholder threshold reloads the preview with it, without leaving the field
+  ---
+  duration_ms: 5.7988
+  type: 'test'
+  location: 'C:\\Projects\\Autoneer-Migrate\\tests\\openingStockUI.test.js:119:1'
+  failureType: 'unhandledRejection'
+  error: 'card.classList.add is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    setCardChecking (evalmachine.<anonymous>:146:28)
+    load (evalmachine.<anonymous>:225:3)
+    setup (evalmachine.<anonymous>:442:3)
+    evalmachine.<anonymous>:448:3
+    evalmachine.<anonymous>:450:3
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    setup (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:68:6)
+    TestContext.<anonymous> (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:120:44)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+  ...
+# Subtest: ticking and unticking items sends them as kept or set to 0
+not ok 227 - ticking and unticking items sends them as kept or set to 0
+  ---
+  duration_ms: 8.0721
+  type: 'test'
+  location: 'C:\\Projects\\Autoneer-Migrate\\tests\\openingStockUI.test.js:129:1'
+  failureType: 'unhandledRejection'
+  error: 'card.classList.add is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    setCardChecking (evalmachine.<anonymous>:146:28)
+    load (evalmachine.<anonymous>:225:3)
+    setup (evalmachine.<anonymous>:442:3)
+    evalmachine.<anonymous>:448:3
+    evalmachine.<anonymous>:450:3
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    setup (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:68:6)
+    TestContext.<anonymous> (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:130:34)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+  ...
+# Subtest: each section folds to its title and stays folded when the preview reloads
+not ok 228 - each section folds to its title and stays folded when the preview reloads
+  ---
+  duration_ms: 6.852
+  type: 'test'
+  location: 'C:\\Projects\\Autoneer-Migrate\\tests\\openingStockUI.test.js:145:1'
+  failureType: 'unhandledRejection'
+  error: 'card.classList.add is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    setCardChecking (evalmachine.<anonymous>:146:28)
+    load (evalmachine.<anonymous>:225:3)
+    setup (evalmachine.<anonymous>:442:3)
+    evalmachine.<anonymous>:448:3
+    evalmachine.<anonymous>:450:3
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    setup (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:68:6)
+    TestContext.<anonymous> (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:146:34)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+  ...
+# Subtest: a tick refreshes the totals but keeps the tick lists in place; other changes redraw them
+not ok 229 - a tick refreshes the totals but keeps the tick lists in place; other changes redraw them
+  ---
+  duration_ms: 6.9455
+  type: 'test'
+  location: 'C:\\Projects\\Autoneer-Migrate\\tests\\openingStockUI.test.js:159:1'
+  failureType: 'unhandledRejection'
+  error: 'card.classList.add is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    setCardChecking (evalmachine.<anonymous>:146:28)
+    load (evalmachine.<anonymous>:225:3)
+    setup (evalmachine.<anonymous>:442:3)
+    evalmachine.<anonymous>:448:3
+    evalmachine.<anonymous>:450:3
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    setup (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:68:6)
+    TestContext.<anonymous> (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:160:34)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+  ...
+# Subtest: a slow preview that a newer one overtook is ignored
+not ok 230 - a slow preview that a newer one overtook is ignored
+  ---
+  duration_ms: 6.1945
+  type: 'test'
+  location: 'C:\\Projects\\Autoneer-Migrate\\tests\\openingStockUI.test.js:175:1'
+  failureType: 'unhandledRejection'
+  error: 'card.classList.add is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    setCardChecking (evalmachine.<anonymous>:146:28)
+    load (evalmachine.<anonymous>:225:3)
+    setup (evalmachine.<anonymous>:442:3)
+    evalmachine.<anonymous>:448:3
+    evalmachine.<anonymous>:450:3
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    setup (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:68:6)
+    TestContext.<anonymous> (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:178:34)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+  ...
+# Subtest: every counted item is listed, with raw values to sort by
+not ok 231 - every counted item is listed, with raw values to sort by
+  ---
+  duration_ms: 6.4264
+  type: 'test'
+  location: 'C:\\Projects\\Autoneer-Migrate\\tests\\openingStockUI.test.js:190:1'
+  failureType: 'unhandledRejection'
+  error: 'card.classList.add is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    setCardChecking (evalmachine.<anonymous>:146:28)
+    load (evalmachine.<anonymous>:225:3)
+    setup (evalmachine.<anonymous>:442:3)
+    evalmachine.<anonymous>:448:3
+    evalmachine.<anonymous>:450:3
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    setup (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:68:6)
+    TestContext.<anonymous> (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:192:23)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+  ...
+# Subtest: a column title sorts its list in place, and a second click reverses it
+not ok 232 - a column title sorts its list in place, and a second click reverses it
+  ---
+  duration_ms: 9.0119
+  type: 'test'
+  location: 'C:\\Projects\\Autoneer-Migrate\\tests\\openingStockUI.test.js:201:1'
+  failureType: 'unhandledRejection'
+  error: 'card.classList.add is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    setCardChecking (evalmachine.<anonymous>:146:28)
+    load (evalmachine.<anonymous>:225:3)
+    setup (evalmachine.<anonymous>:442:3)
+    evalmachine.<anonymous>:448:3
+    evalmachine.<anonymous>:450:3
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    setup (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:68:6)
+    TestContext.<anonymous> (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:202:24)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+  ...
+# Subtest: the post dialog shows the stock take, the journal and how Inventory gets there, and warns of a large clearing
+not ok 233 - the post dialog shows the stock take, the journal and how Inventory gets there, and warns of a large clearing
+  ---
+  duration_ms: 12.9343
+  type: 'test'
+  location: 'C:\\Projects\\Autoneer-Migrate\\tests\\openingStockUI.test.js:227:1'
+  failureType: 'unhandledRejection'
+  error: 'card.classList.add is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    setCardChecking (evalmachine.<anonymous>:146:28)
+    load (evalmachine.<anonymous>:225:3)
+    setup (evalmachine.<anonymous>:442:3)
+    evalmachine.<anonymous>:448:3
+    evalmachine.<anonymous>:450:3
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    setup (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:68:6)
+    open (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:229:34)
+    TestContext.<anonymous> (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:237:21)
+  ...
+# Subtest: a blocked preview cannot be posted, and a posted take offers undo
+not ok 234 - a blocked preview cannot be posted, and a posted take offers undo
+  ---
+  duration_ms: 5.4188
+  type: 'test'
+  location: 'C:\\Projects\\Autoneer-Migrate\\tests\\openingStockUI.test.js:252:1'
+  failureType: 'unhandledRejection'
+  error: 'card.classList.add is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    setCardChecking (evalmachine.<anonymous>:146:28)
+    load (evalmachine.<anonymous>:225:3)
+    setup (evalmachine.<anonymous>:442:3)
+    evalmachine.<anonymous>:448:3
+    evalmachine.<anonymous>:450:3
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    setup (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:68:6)
+    TestContext.<anonymous> (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:253:22)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+  ...
+# Subtest: posting shows the bouncing dots and each step under the form, keeps the inputs still, then shows the result
+not ok 235 - posting shows the bouncing dots and each step under the form, keeps the inputs still, then shows the result
+  ---
+  duration_ms: 5.955
+  type: 'test'
+  location: 'C:\\Projects\\Autoneer-Migrate\\tests\\openingStockUI.test.js:287:1'
+  failureType: 'unhandledRejection'
+  error: 'card.classList.add is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    setCardChecking (evalmachine.<anonymous>:146:28)
+    load (evalmachine.<anonymous>:225:3)
+    setup (evalmachine.<anonymous>:442:3)
+    evalmachine.<anonymous>:448:3
+    evalmachine.<anonymous>:450:3
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    setup (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:68:6)
+    TestContext.<anonymous> (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:288:43)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+  ...
+# Subtest: undo shows the bouncing dots and what it is undoing until it finishes
+not ok 236 - undo shows the bouncing dots and what it is undoing until it finishes
+  ---
+  duration_ms: 5.6041
+  type: 'test'
+  location: 'C:\\Projects\\Autoneer-Migrate\\tests\\openingStockUI.test.js:321:1'
+  failureType: 'unhandledRejection'
+  error: 'card.classList.add is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    setCardChecking (evalmachine.<anonymous>:146:28)
+    load (evalmachine.<anonymous>:225:3)
+    setup (evalmachine.<anonymous>:442:3)
+    evalmachine.<anonymous>:448:3
+    evalmachine.<anonymous>:450:3
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    setup (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:68:6)
+    TestContext.<anonymous> (C:\Projects\Autoneer-Migrate\tests\openingStockUI.test.js:322:43)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+  ...
+# Error: Test "posting shows the bouncing dots and each step under the form, keeps the inputs still, then shows the result" at tests\\openingStockUI.test.js:287:1 generated asynchronous activity after the test ended. This activity created the error "TypeError: Cannot read properties of null (reading 'schema')" and would have caused the test to fail, but instead triggered an unhandledRejection event.
+# Error: Test "undo shows the bouncing dots and what it is undoing until it finishes" at tests\\openingStockUI.test.js:321:1 generated asynchronous activity after the test ended. This activity created the error "TypeError: Cannot read properties of null (reading 'posted')" and would have caused the test to fail, but instead triggered an unhandledRejection event.
+# Error: Test "Collapse all folds every section, keeps them folded on reload, and then offers Expand all" at tests\\openingStockUI.test.js:98:1 generated asynchronous activity after the test ended. This activity created the error "TypeError: card.classList.add is not a function" and would have caused the test to fail, but instead triggered an unhandledRejection event.
+# Error: Test "typing a placeholder threshold reloads the preview with it, without leaving the field" at tests\\openingStockUI.test.js:119:1 generated asynchronous activity after the test ended. This activity created the error "TypeError: card.classList.add is not a function" and would have caused the test to fail, but instead triggered an unhandledRejection event.
+# Error: Test "ticking and unticking items sends them as kept or set to 0" at tests\\openingStockUI.test.js:129:1 generated asynchronous activity after the test ended. This activity created the error "TypeError: card.classList.add is not a function" and would have caused the test to fail, but instead triggered an unhandledRejection event.
+# Error: Test "a tick refreshes the totals but keeps the tick lists in place; other changes redraw them" at tests\\openingStockUI.test.js:159:1 generated asynchronous activity after the test ended. This activity created the error "TypeError: card.classList.add is not a function" and would have caused the test to fail, but instead triggered an unhandledRejection event.
+# Error: Test "a slow preview that a newer one overtook is ignored" at tests\\openingStockUI.test.js:175:1 generated asynchronous activity after the test ended. This activity created the error "TypeError: card.classList.add is not a function" and would have caused the test to fail, but instead triggered an unhandledRejection event.
+# Error: Test "a slow preview that a newer one overtook is ignored" at tests\\openingStockUI.test.js:175:1 generated asynchronous activity after the test ended. This activity created the error "TypeError: card.classList.add is not a function" and would have caused the test to fail, but instead triggered an unhandledRejection event.
+# Subtest: saved explicit order survives database JSON object key reordering
+ok 237 - saved explicit order survives database JSON object key reordering
+  ---
+  duration_ms: 7.8099
+  type: 'test'
+  ...
+# Subtest: array configurations retain explicit false flags and source aliases normalize in order
+ok 238 - array configurations retain explicit false flags and source aliases normalize in order
+  ---
+  duration_ms: 0.6693
+  type: 'test'
+  ...
+# Subtest: legacy plans remain compatible and removed order entries do not reappear
+ok 239 - legacy plans remain compatible and removed order entries do not reappear
+  ---
+  duration_ms: 2.3408
+  type: 'test'
+  ...
+# Subtest: invoice retry distinguishes matching headers, wrong owners, and missing invoices sharing real jobs
+ok 240 - invoice retry distinguishes matching headers, wrong owners, and missing invoices sharing real jobs
+  ---
+  duration_ms: 5.1359
+  type: 'test'
+  ...
+# Subtest: preserved composite keys match full identities and support case-insensitive column names
+ok 241 - preserved composite keys match full identities and support case-insensitive column names
+  ---
+  duration_ms: 0.7998
+  type: 'test'
+  ...
+# Subtest: re-keyed retry uses previous mappings and verifies that mapped target records still exist
+ok 242 - re-keyed retry uses previous mappings and verifies that mapped target records still exist
+  ---
+  duration_ms: 1.2235
+  type: 'test'
+  ...
+# Subtest: re-keyed records without old mappings can match configured natural keys
+ok 243 - re-keyed records without old mappings can match configured natural keys
+  ---
+  duration_ms: 2.5904
+  type: 'test'
+  ...
+# Subtest: retry ignores unidentified rows and propagates lookup failures instead of skipping blindly
+ok 244 - retry ignores unidentified rows and propagates lookup failures instead of skipping blindly
+  ---
+  duration_ms: 1.7272
+  type: 'test'
+  ...
+# Subtest: large retry batches page target lookups without changing row positions
+ok 245 - large retry batches page target lookups without changing row positions
+  ---
+  duration_ms: 11.5778
+  type: 'test'
+  ...
+# Subtest: MySQL retry leaves matching invoices untouched, inserts missing headers, and retains active-job uniqueness
+ok 246 - MySQL retry leaves matching invoices untouched, inserts missing headers, and retains active-job uniqueness # SKIP
+  ---
+  duration_ms: 1.4381
+  type: 'test'
+  ...
+# Subtest: saved partial run reports planned tables, row failures, duration and correct source invoice IDs
+ok 247 - saved partial run reports planned tables, row failures, duration and correct source invoice IDs
+  ---
+  duration_ms: 9.0731
+  type: 'test'
+  ...
+# Subtest: preflight failure still has actionable results with zero attempted tables
+ok 248 - preflight failure still has actionable results with zero attempted tables
+  ---
+  duration_ms: 1.5579
+  type: 'test'
+  ...
+# Subtest: distinct real job conflicts and primary key conflicts retain technical detail
+ok 249 - distinct real job conflicts and primary key conflicts retain technical detail
+  ---
+  duration_ms: 1.2081
+  type: 'test'
+  ...
+# Subtest: numeric strings do not concatenate and snapshots tolerate case differences
+ok 250 - numeric strings do not concatenate and snapshots tolerate case differences
+  ---
+  duration_ms: 0.5529
+  type: 'test'
+  ...
+# Subtest: processed rows include writes, skipped records and row failures
+ok 251 - processed rows include writes, skipped records and row failures
+  ---
+  duration_ms: 3.1132
+  type: 'test'
+  ...
+# Subtest: stored progress retains source totals, outcomes and finished duration
+ok 252 - stored progress retains source totals, outcomes and finished duration
+  ---
+  duration_ms: 0.4259
+  type: 'test'
+  ...
+# Subtest: validation keeps the table active after all rows are processed; run order and total are preserved
+ok 253 - validation keeps the table active after all rows are processed; run order and total are preserved
+  ---
+  duration_ms: 1.2886
+  type: 'test'
+  ...
+# Subtest: live log only adds one final result per table across repeated snapshots
+ok 254 - live log only adds one final result per table across repeated snapshots
+  ---
+  duration_ms: 34.0012
+  type: 'test'
+  ...
+# Subtest: table rows show execution order, all processed records, zero totals and validation status
+ok 255 - table rows show execution order, all processed records, zero totals and validation status
+  ---
+  duration_ms: 6.7509
+  type: 'test'
+  ...
+# Subtest: updates the execution progress bar, active table and completed count
+ok 256 - updates the execution progress bar, active table and completed count
+  ---
+  duration_ms: 4.1937
+  type: 'test'
+  ...
+# Subtest: slow polls cannot overlap and an old run response cannot overwrite a new run
+ok 257 - slow polls cannot overlap and an old run response cannot overwrite a new run
+  ---
+  duration_ms: 14.679
+  type: 'test'
+  ...
+# Subtest: execution shows full-audit progress before any table starts importing
+ok 258 - execution shows full-audit progress before any table starts importing
+  ---
+  duration_ms: 12.1317
+  type: 'test'
+  ...
+# Subtest: table rows show per-table audit progress until the audit finishes
+ok 259 - table rows show per-table audit progress until the audit finishes
+  ---
+  duration_ms: 3.5255
+  type: 'test'
+  ...
+# Subtest: table-result log view filters before limiting and keeps detailed logs available
+ok 260 - table-result log view filters before limiting and keeps detailed logs available
+  ---
+  duration_ms: 2.6606
+  type: 'test'
+  ...
+# Subtest: table-result view uses its own active buffer even before the first table finishes
+ok 261 - table-result view uses its own active buffer even before the first table finishes
+  ---
+  duration_ms: 0.2512
+  type: 'test'
+  ...
+# Subtest: saved progress includes unattempted tables and counts skipped rows as processed
+ok 262 - saved progress includes unattempted tables and counts skipped rows as processed
+  ---
+  duration_ms: 1.0381
+  type: 'test'
+  ...
+# Subtest: saved results use log selection only when the run timestamp matches
+ok 263 - saved results use log selection only when the run timestamp matches
+  ---
+  duration_ms: 1.1966
+  type: 'test'
+  ...
+# Subtest: detailed errors retain history-view compatibility without duplicating stored errors
+ok 264 - detailed errors retain history-view compatibility without duplicating stored errors
+  ---
+  duration_ms: 0.6798
+  type: 'test'
+  ...
+# [API] Retry requested for run test-recovery, tables: invoices, payments, customers
+# Subtest: retry starts failed and unattempted tables, keeps plan settings, and resolves saved profile
+ok 265 - retry starts failed and unattempted tables, keeps plan settings, and resolves saved profile
+  ---
+  duration_ms: 9.3072
+  type: 'test'
+  ...
+# Subtest: unmapped auto-increment primary keys satisfy NOT NULL validation
+ok 266 - unmapped auto-increment primary keys satisfy NOT NULL validation
+  ---
+  duration_ms: 1.5204
+  type: 'test'
+  ...
+# Subtest: unmapped non-generated NOT NULL columns still fail validation
+ok 267 - unmapped non-generated NOT NULL columns still fail validation
+  ---
+  duration_ms: 0.2242
+  type: 'test'
+  ...
+# Subtest: retry skips already migrated invoices and other primary keys, logs them, and preserves target data
+ok 268 - retry skips already migrated invoices and other primary keys, logs them, and preserves target data
+  ---
+  duration_ms: 504.0328
+  type: 'test'
+  ...
+# Subtest: normal start skips the reported existing invoices without a retry flag
+ok 269 - normal start skips the reported existing invoices without a retry flag
+  ---
+  duration_ms: 7.3105
+  type: 'test'
+  ...
+# Subtest: normal start checks invoice owners and still rejects a different active invoice for a real job
+ok 270 - normal start checks invoice owners and still rejects a different active invoice for a real job
+  ---
+  duration_ms: 6.2728
+  type: 'test'
+  ...
+# Subtest: retry of a completely imported invoice table counts every invoice as skipped
+ok 271 - retry of a completely imported invoice table counts every invoice as skipped
+  ---
+  duration_ms: 4.3807
+  type: 'test'
+  ...
+# Subtest: retry preserves identity conflicts as row errors and still inserts other invoices
+ok 272 - retry preserves identity conflicts as row errors and still inserts other invoices
+  ---
+  duration_ms: 3.1637
+  type: 'test'
+  ...
+# Subtest: retry row fallback keeps original error offsets after skipping existing headers
+ok 273 - retry row fallback keeps original error offsets after skipping existing headers
+  ---
+  duration_ms: 3.7319
+  type: 'test'
+  ...
+# Subtest: retry handles an invoice inserted after its existence check as skipped during row fallback
+ok 274 - retry handles an invoice inserted after its existence check as skipped during row fallback
+  ---
+  duration_ms: 4.0546
+  type: 'test'
+  ...
+# Subtest: retry rejects a different invoice sharing an existing active real job
+ok 275 - retry rejects a different invoice sharing an existing active real job
+  ---
+  duration_ms: 3.6835
+  type: 'test'
+  ...
+# Subtest: dry-run retry reports existing headers as skipped without writes or ID mappings
+ok 276 - dry-run retry reports existing headers as skipped without writes or ID mappings
+  ---
+  duration_ms: 3.666
+  type: 'test'
+  ...
+# Subtest: invoice key correction finishes before source cleanup, reads, or invoice inserts
+ok 277 - invoice key correction finishes before source cleanup, reads, or invoice inserts
+  ---
+  duration_ms: 4.414
+  type: 'test'
+  ...
+# Subtest: invoice key correction failure stops migration even with continue-on-error
+ok 278 - invoice key correction failure stops migration even with continue-on-error
+  ---
+  duration_ms: 2.6686
+  type: 'test'
+  ...
+# Subtest: all-table audit finishes before target writes and preserves legacy data
+ok 279 - all-table audit finishes before target writes and preserves legacy data
+  ---
+  duration_ms: 3.8944
+  type: 'test'
+  ...
+# Subtest: a blocked audit stops every selected table even with continue-on-error
+ok 280 - a blocked audit stops every selected table even with continue-on-error
+  ---
+  duration_ms: 2.7809
+  type: 'test'
+  ...
+# Subtest: audit read failure stops migration before schema changes or target writes
+ok 281 - audit read failure stops migration before schema changes or target writes
+  ---
+  duration_ms: 2.1453
+  type: 'test'
+  ...
+# Subtest: dry runs audit without source or target deletions
+ok 282 - dry runs audit without source or target deletions
+  ---
+  duration_ms: 2.7713
+  type: 'test'
+  ...
+# Subtest: runner inserts legacy split flags and maps preserved IDs even when insertId is zero
+ok 283 - runner inserts legacy split flags and maps preserved IDs even when insertId is zero
+  ---
+  duration_ms: 3.0327
+  type: 'test'
+  ...
+# Subtest: row fallback maps only successfully inserted preserved invoices
+ok 284 - row fallback maps only successfully inserted preserved invoices
+  ---
+  duration_ms: 2.7958
+  type: 'test'
+  ...
+# Subtest: next table waits for committed writes and invoice identity validation
+ok 285 - next table waits for committed writes and invoice identity validation
+  ---
+  duration_ms: 3.2337
+  type: 'test'
+  ...
+# Subtest: slow row errors advance processed counts inside a batch and prevent the next table by default
+ok 286 - slow row errors advance processed counts inside a batch and prevent the next table by default
+  ---
+  duration_ms: 3.2751
+  type: 'test'
+  ...
+# Subtest: continue-on-error advances only after the failed table finishes
+ok 287 - continue-on-error advances only after the failed table finishes
+  ---
+  duration_ms: 3.7553
+  type: 'test'
+  ...
+# Subtest: premature end of source data cannot be marked completed
+ok 288 - premature end of source data cannot be marked completed
+  ---
+  duration_ms: 2.8022
+  type: 'test'
+  ...
+# Subtest: source duplicate conflicts block import and dry-run rather than selecting an arbitrary invoice
+ok 289 - source duplicate conflicts block import and dry-run rather than selecting an arbitrary invoice
+  ---
+  duration_ms: 9.1717
+  type: 'test'
+  ...
+# Subtest: accepted date-filter snapshot is used without fetching excluded source rows
+ok 290 - accepted date-filter snapshot is used without fetching excluded source rows
+  ---
+  duration_ms: 4.7567
+  type: 'test'
+  ...
+# Subtest: a whole-line legacy cost becomes the cost of one unit
+ok 291 - a whole-line legacy cost becomes the cost of one unit
+  ---
+  duration_ms: 1.8727
+  type: 'test'
+  ...
+# Subtest: quantity 0 or 1, no cost, and costs already per unit are left as they are
+ok 292 - quantity 0 or 1, no cost, and costs already per unit are left as they are
+  ---
+  duration_ms: 0.3935
+  type: 'test'
+  ...
+# Subtest: the import stores spares_used costs per unit and leaves other tables alone
+ok 293 - the import stores spares_used costs per unit and leaves other tables alone
+  ---
+  duration_ms: 0.3771
+  type: 'test'
+  ...
+# Subtest: the repair converts only lines that still hold their legacy cost, so a second run finds nothing
+ok 294 - the repair converts only lines that still hold their legacy cost, so a second run finds nothing
+  ---
+  duration_ms: 2.0358
+  type: 'test'
+  ...
+# Subtest: console prints one result per table while preserving every detailed log event
+ok 295 - console prints one result per table while preserving every detailed log event
+  ---
+  duration_ms: 47.0841
+  type: 'test'
+  ...
+# Subtest: older failures and multiline precheck errors produce a compact single line
+ok 296 - older failures and multiline precheck errors produce a compact single line
+  ---
+  duration_ms: 4.1382
+  type: 'test'
+  ...
+# transactionalDateFilter.test.js passed
+# Subtest: tests\\transactionalDateFilter.test.js
+ok 55 - tests\\transactionalDateFilter.test.js
+  ---
+  duration_ms: 239.8105
+  type: 'test'
+  ...
+# C:\\Projects\\Autoneer-Migrate\\tests\\validators\\dryRunNullHandling.test.js:4
+# const result = await PlanValidator.dryRun(
+#                ^^^^^
+# SyntaxError: await is only valid in async functions and the top level bodies of modules
+#     at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+#     at Module._compile (node:internal/modules/cjs/loader:1704:20)
+#     at Object..js (node:internal/modules/cjs/loader:1895:10)
+#     at Module.load (node:internal/modules/cjs/loader:1465:32)
+#     at Function._load (node:internal/modules/cjs/loader:1282:12)
+#     at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+#     at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+#     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:170:5)
+#     at node:internal/main/run_main_module:36:49
+# Node.js v22.15.0
+# Subtest: tests\\validators\\dryRunNullHandling.test.js
+not ok 56 - tests\\validators\\dryRunNullHandling.test.js
+  ---
+  duration_ms: 108.3788
+  type: 'test'
+  location: 'C:\\Projects\\Autoneer-Migrate\\tests\\validators\\dryRunNullHandling.test.js:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: WIP that can never be invoiced is written off; unfinished jobs keep it only when recent, needed by the opening stock, or kept by hand
+ok 299 - WIP that can never be invoiced is written off; unfinished jobs keep it only when recent, needed by the opening stock, or kept by hand
+  ---
+  duration_ms: 1.7503
+  type: 'test'
+  ...
+# Subtest: the journal has a WIP line per job written off, tagged with the job, against the Opening Stock control
+ok 300 - the journal has a WIP line per job written off, tagged with the job, against the Opening Stock control
+  ---
+  duration_ms: 0.4581
+  type: 'test'
+  ...
+# Subtest: the preview shows the journal, the unfinished jobs to tick and the rest folded, and enables posting
+not ok 301 - the preview shows the journal, the unfinished jobs to tick and the rest folded, and enables posting
+  ---
+  duration_ms: 12.7846
+  type: 'test'
+  location: 'C:\\Projects\\Autoneer-Migrate\\tests\\wipWriteOffUI.test.js:72:1'
+  failureType: 'unhandledRejection'
+  error: 'card.classList.add is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    setCardChecking (evalmachine.<anonymous>:146:28)
+    load (evalmachine.<anonymous>:155:3)
+    setup (evalmachine.<anonymous>:334:3)
+    evalmachine.<anonymous>:340:3
+    evalmachine.<anonymous>:342:3
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    setup (C:\Projects\Autoneer-Migrate\tests\wipWriteOffUI.test.js:62:6)
+    TestContext.<anonymous> (C:\Projects\Autoneer-Migrate\tests\wipWriteOffUI.test.js:73:33)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+  ...
+# Subtest: a tick updates the totals without a reload and is sent only when it differs from the keep-from rule
+not ok 302 - a tick updates the totals without a reload and is sent only when it differs from the keep-from rule
+  ---
+  duration_ms: 9.1756
+  type: 'test'
+  location: 'C:\\Projects\\Autoneer-Migrate\\tests\\wipWriteOffUI.test.js:94:1'
+  failureType: 'unhandledRejection'
+  error: 'card.classList.add is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    setCardChecking (evalmachine.<anonymous>:146:28)
+    load (evalmachine.<anonymous>:155:3)
+    setup (evalmachine.<anonymous>:334:3)
+    evalmachine.<anonymous>:340:3
+    evalmachine.<anonymous>:342:3
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    setup (C:\Projects\Autoneer-Migrate\tests\wipWriteOffUI.test.js:62:6)
+    TestContext.<anonymous> (C:\Projects\Autoneer-Migrate\tests\wipWriteOffUI.test.js:95:53)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+  ...
+# Subtest: posting shows the bouncing dots, then the result and the posted write-off with Undo
+not ok 303 - posting shows the bouncing dots, then the result and the posted write-off with Undo
+  ---
+  duration_ms: 7.0791
+  type: 'test'
+  location: 'C:\\Projects\\Autoneer-Migrate\\tests\\wipWriteOffUI.test.js:120:1'
+  failureType: 'unhandledRejection'
+  error: 'card.classList.add is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    setCardChecking (evalmachine.<anonymous>:146:28)
+    load (evalmachine.<anonymous>:155:3)
+    setup (evalmachine.<anonymous>:334:3)
+    evalmachine.<anonymous>:340:3
+    evalmachine.<anonymous>:342:3
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    setup (C:\Projects\Autoneer-Migrate\tests\wipWriteOffUI.test.js:62:6)
+    TestContext.<anonymous> (C:\Projects\Autoneer-Migrate\tests\wipWriteOffUI.test.js:122:53)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+  ...
+# Subtest: a write-off with nothing left to write off cannot be posted
+not ok 304 - a write-off with nothing left to write off cannot be posted
+  ---
+  duration_ms: 6.2207
+  type: 'test'
+  location: 'C:\\Projects\\Autoneer-Migrate\\tests\\wipWriteOffUI.test.js:149:1'
+  failureType: 'unhandledRejection'
+  error: 'card.classList.add is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    setCardChecking (evalmachine.<anonymous>:146:28)
+    load (evalmachine.<anonymous>:155:3)
+    setup (evalmachine.<anonymous>:334:3)
+    evalmachine.<anonymous>:340:3
+    evalmachine.<anonymous>:342:3
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    setup (C:\Projects\Autoneer-Migrate\tests\wipWriteOffUI.test.js:62:6)
+    TestContext.<anonymous> (C:\Projects\Autoneer-Migrate\tests\wipWriteOffUI.test.js:150:34)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+  ...
+# Error: Test "posting shows the bouncing dots, then the result and the posted write-off with Undo" at tests\\wipWriteOffUI.test.js:120:1 generated asynchronous activity after the test ended. This activity created the error "TypeError: Cannot read properties of null (reading 'jobs')" and would have caused the test to fail, but instead triggered an unhandledRejection event.
+# Subtest: Next after failure branches to failure results without completing execution or conversion
+ok 305 - Next after failure branches to failure results without completing execution or conversion
+  ---
+  duration_ms: 42.6473
+  type: 'test'
+  ...
+# Subtest: conversion cannot be opened via stale completed steps, a direct link, or a stopped run
+ok 306 - conversion cannot be opened via stale completed steps, a direct link, or a stopped run
+  ---
+  duration_ms: 35.342
+  type: 'test'
+  ...
+# Subtest: successful run still proceeds to Step 5
+ok 307 - successful run still proceeds to Step 5
+  ---
+  duration_ms: 9.0086
+  type: 'test'
+  ...
+# Subtest: amending plan keeps mapping and plan but clears stale run across reloads
+ok 308 - amending plan keeps mapping and plan but clears stale run across reloads
+  ---
+  duration_ms: 9.5232
+  type: 'test'
+  ...
+# Subtest: results escape database error content and identify invoice numbers
+ok 309 - results escape database error content and identify invoice numbers
+  ---
+  duration_ms: 8.4216
+  type: 'test'
+  ...
+1..309
+# tests 309
+# suites 0
+# pass 285
+# fail 19
+# cancelled 0
+# skipped 5
+# todo 0
+# duration_ms 2358.2769

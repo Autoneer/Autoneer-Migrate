@@ -1,0 +1,239 @@
+{
+  "schema_name": "glbf_test_general_invoices_20261102",
+  "server_now": "2026-11-02 21:00:34",
+  "sources": [
+    {
+      "source": "CREDITOR_INVOICE",
+      "count": "25931",
+      "max_id": "98267"
+    },
+    {
+      "source": "CREDITOR_PAYMENT",
+      "count": "22067",
+      "max_id": "81604"
+    },
+    {
+      "source": "CREDITOR_RFC",
+      "count": "2203",
+      "max_id": "98268"
+    },
+    {
+      "source": "DEBTOR_INVOICE",
+      "count": "15571",
+      "max_id": "98263"
+    },
+    {
+      "source": "DEBTOR_INVOICE_CREDIT",
+      "count": "34",
+      "max_id": "59369"
+    },
+    {
+      "source": "DEBTOR_PAYMENT",
+      "count": "15781",
+      "max_id": "59537"
+    },
+    {
+      "source": "INVOICE_DISCOUNT",
+      "count": "32",
+      "max_id": "52957"
+    },
+    {
+      "source": "INVOICE_WRITE_OFF",
+      "count": "8",
+      "max_id": "55679"
+    },
+    {
+      "source": "STOCK_TAKE",
+      "count": "1",
+      "max_id": "98244"
+    },
+    {
+      "source": "WIP_WRITE_OFF",
+      "count": "1",
+      "max_id": "98245"
+    }
+  ],
+  "maxima": {
+    "header_id": "98268",
+    "line_id": "811095"
+  },
+  "hashes": {
+    "gl_journal_headers": {
+      "count": 81629,
+      "checksum": "de8356f86c62a5dce9a050157ed990eb329187ab0f42f3499c566a65e7258905"
+    },
+    "gl_journal_lines": {
+      "count": 486291,
+      "checksum": "709255697f82735653abec3ca9ac5e4a1d291bce7ea7e4b669182a9a4f229c3d"
+    },
+    "stock": {
+      "count": 17342,
+      "checksum": "201d55731dcf33f5cafccd4b920fe1e3a91520b18bf415662779031e41c4858c"
+    },
+    "stock_take": {
+      "count": 1763,
+      "checksum": "3dc343e27e12490099f9837e7efd2f8601c938ad0a34a0f2b398d7ae9632d1b1"
+    },
+    "stock_takes": {
+      "count": 1,
+      "checksum": "e21ff431756e9244a22cabfa4410ad6d1af930537c78dc9226bd68c0021fb9ab"
+    },
+    "customers": {
+      "count": 1636,
+      "checksum": "7889109ba01affd630bd46b5e2ce6661d9e6469d427f4a8e5f6c9f832fec101d"
+    },
+    "gl_account_types": {
+      "count": 6,
+      "checksum": "cc27d0ac9770918222f35b4ea44a88d74f1b3fd418aa36571424d0457456c915"
+    },
+    "gl_accounts": {
+      "count": 67,
+      "checksum": "c679ded965368d5db1820b9ea50cde3c0ec73c1d7c6715d22bed3e97129c6346"
+    },
+    "gl_control_accounts": {
+      "count": 32,
+      "checksum": "91c8be81324cf34dd9bad594835fec3db6e16c64f9de7cb6cb8cad1d04a12509"
+    },
+    "gl_periods": {
+      "count": 11,
+      "checksum": "d7a90a7141d578188f327ab2188dcc2fa94c09085322388824564336517c3119"
+    },
+    "tax_codes": {
+      "count": 4,
+      "checksum": "d889bca6e6eff0f9ac59785fbf7a301742d71bc984ebb4be8769c62ac584284d"
+    }
+  },
+  "balances": {
+    "cutover": {
+      "1000": "-43416094.16",
+      "1300": "-20392211.50",
+      "1400": "-3008377.38",
+      "3100": "-437638.20",
+      "3200": "2078130.98",
+      "3250": "104123.36",
+      "3400": "-276926.12",
+      "4900": "232324.80",
+      "5100": "-9918441.95",
+      "6050": "23779735.91",
+      "6300": "7533468.53"
+    },
+    "total": {
+      "1000": "-43427165.67",
+      "1300": "-20393561.50",
+      "1400": "-3008377.38",
+      "3100": "-423353.49",
+      "3200": "2078786.94",
+      "3250": "112453.49",
+      "3400": "-276926.12",
+      "4900": "232324.80",
+      "5100": "-9920305.15",
+      "6050": "23779735.91",
+      "6300": "7534365.95"
+    }
+  },
+  "validation": {
+    "gl": {
+      "allPassed": true,
+      "checks": [
+        {
+          "check": "E",
+          "name": "GL Account Types Canonical",
+          "passed": true,
+          "errors": [],
+          "count": 0
+        },
+        {
+          "check": "F",
+          "name": "All Accounts Typed",
+          "passed": true,
+          "errors": [],
+          "count": 0
+        },
+        {
+          "check": "A",
+          "name": "Account Type Mismatches",
+          "passed": true,
+          "errors": [],
+          "count": 0
+        },
+        {
+          "check": "B",
+          "name": "Posting Line Type Alignment",
+          "passed": true,
+          "errors": [],
+          "count": 0
+        },
+        {
+          "check": "C",
+          "name": "Orphan / Invalid Postings",
+          "passed": true,
+          "errors": [],
+          "count": 0
+        },
+        {
+          "check": "D",
+          "name": "COS Integrity",
+          "passed": true,
+          "errors": [],
+          "count": 0
+        }
+      ]
+    },
+    "gaap": {
+      "allPassed": true,
+      "checks": [
+        {
+          "check": "GAAP-1",
+          "name": "Trial Balance",
+          "passed": true,
+          "errors": [],
+          "details": {
+            "gl_journal_lines": {
+              "totalDebit": 254077946.05,
+              "totalCredit": 254077946.05,
+              "difference": 0
+            },
+            "legacy_journal": {
+              "totalDebit": 0,
+              "totalCredit": 0,
+              "difference": 0
+            }
+          }
+        },
+        {
+          "check": "GAAP-2",
+          "name": "Balance Sheet Identity (A = L + E)",
+          "passed": true,
+          "errors": [],
+          "details": {
+            "assets": 48956758.33000001,
+            "liabilities": 13345187.18,
+            "equity": -232324.7999999998,
+            "current_result": 35843895.949999996,
+            "liabilities_plus_equity": 48956758.33,
+            "difference": 1.4901161193847656e-8
+          }
+        },
+        {
+          "check": "GAAP-3",
+          "name": "Income Statement Purity",
+          "passed": true,
+          "errors": [],
+          "details": {
+            "balance_sheet_leaks": 0,
+            "income_statement_leaks": 0
+          }
+        },
+        {
+          "check": "GAAP-4",
+          "name": "COS Consistency",
+          "passed": true,
+          "errors": [],
+          "details": {
+            "cos_account_count": 11
+          }
+        }
+      ]
+    }
+  }
+}

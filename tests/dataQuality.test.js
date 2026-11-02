@@ -111,6 +111,24 @@ test('open-job parts and labour keep NULL invoice numbers while orphan jobs are 
 	assert.equal(result.evidence[0].reasons[0].code, 'MISSING_PARENT');
 });
 
+test('general-invoice parts and labour on job 0 migrate by their invoice number; lines with neither are still flagged', async t => {
+	const invoices = table('invoices', [integer('invoice_nr', { primary: true }), integer('job_number')], [{ invoice_nr: 26497, job_number: 0 }]);
+	const relations = [{ columns: ['job_number'], parent: 'job_information', parentColumns: ['job_number'], optionalZero: true }, { columns: ['invoice_nr'], parent: 'invoices', parentColumns: ['invoice_nr'], optionalZero: true }];
+	const parts = table('spares_used', [integer('spares_id', { primary: true }), integer('job_number'), integer('invoice_nr'), integer('quantity')], [
+		{ spares_id: 1, job_number: 0, invoice_nr: 26497, quantity: 1 }, { spares_id: 2, job_number: 0, invoice_nr: 0, quantity: 1 }, { spares_id: 3, job_number: 0, invoice_nr: 404, quantity: 1 }
+	], { relations });
+	const labour = table('work_done', [integer('wdid', { primary: true }), integer('job_number'), integer('invoice_nr')], [
+		{ wdid: 1, job_number: 0, invoice_nr: 26497 }, { wdid: 2, job_number: 0, invoice_nr: null }
+	], { relations });
+	const result = await audit(t, [table('job_information', [integer('job_number', { primary: true })], []), invoices, parts, labour]);
+	assert.deepEqual((await collect(readRecords(parts.acceptedFile))).map(row => row.spares_id), [1]);
+	assert.deepEqual((await collect(readRecords(labour.acceptedFile))).map(row => row.wdid), [1]);
+	const reasons = (name, id) => result.evidence.find(row => row.table === name && (row.source.spares_id ?? row.source.wdid) === id).reasons.map(reason => reason.code);
+	assert.ok(reasons('spares_used', 2).includes('MISSING_IDENTITY'));
+	assert.ok(reasons('spares_used', 3).includes('MISSING_PARENT'), 'the invoice number must still name a migrated invoice');
+	assert.ok(reasons('work_done', 2).includes('MISSING_IDENTITY'));
+});
+
 test('a rejected parent blocks its descendants and referenced stock is not silently removed', async t => {
 	const stock = table('stock', [integer('stock_id', { primary: true }), text('partnr')], [{ stock_id: 7, partnr: null }]);
 	const lines = table('custom_lines', [integer('id', { primary: true }), integer('stock_id')], [{ id: 8, stock_id: 7 }], { relations: [{ columns: ['stock_id'], parent: 'stock', parentColumns: ['stock_id'] }] });

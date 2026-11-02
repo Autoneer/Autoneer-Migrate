@@ -1,0 +1,2183 @@
+{
+  "checked": 87809,
+  "changedRows": 210,
+  "byColumn": {
+    "sales_priceincvat": 128,
+    "vat": 124,
+    "accasset": 4,
+    "status": 10,
+    "suppid": 2,
+    "sales_price": 1,
+    "invoice_nr": 1
+  },
+  "byEvidence": {
+    "import_vat_snapshot_and_rule": 250,
+    "saved_labourlost_repair": 4,
+    "post_import_difference": 16
+  },
+  "zeroJobDifferences": 0,
+  "generalIdOverlap": 0,
+  "vatSnapshotAt": "2026-11-01T07:35:46.172Z",
+  "differences": [
+    {
+      "spares_id": 49469,
+      "job_number": 14100,
+      "column": "sales_priceincvat",
+      "mapped": "0",
+      "stored": "117.38",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 74569,
+      "job_number": 17651,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 75874,
+      "job_number": 17790,
+      "column": "vat",
+      "mapped": 96.71,
+      "stored": "58.86",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 76115,
+      "job_number": 17821,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 77217,
+      "job_number": 17976,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 77991,
+      "job_number": 18069,
+      "column": "sales_priceincvat",
+      "mapped": 4611.6,
+      "stored": "4611.59",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 77992,
+      "job_number": 18069,
+      "column": "vat",
+      "mapped": 26.81,
+      "stored": "26.80",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 77992,
+      "job_number": 18069,
+      "column": "sales_priceincvat",
+      "mapped": 205.51,
+      "stored": "205.50",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 76862,
+      "job_number": 17927,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 78575,
+      "job_number": 18142,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 77667,
+      "job_number": 18033,
+      "column": "sales_priceincvat",
+      "mapped": 550.82,
+      "stored": "550.83",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 78938,
+      "job_number": 18191,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "81.43",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 78939,
+      "job_number": 18191,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "13.75",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 78940,
+      "job_number": 18191,
+      "column": "vat",
+      "mapped": 119.25,
+      "stored": "39.75",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 78940,
+      "job_number": 18191,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "304.74",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 79237,
+      "job_number": 18235,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 80073,
+      "job_number": 18363,
+      "column": "sales_priceincvat",
+      "mapped": 59.78,
+      "stored": "59.79",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 80431,
+      "job_number": 18385,
+      "column": "sales_priceincvat",
+      "mapped": 393.44,
+      "stored": "393.45",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 83293,
+      "job_number": 18748,
+      "column": "sales_priceincvat",
+      "mapped": 287.5,
+      "stored": "250.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 83990,
+      "job_number": 18841,
+      "column": "vat",
+      "mapped": 40.33,
+      "stored": "26.25",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 83991,
+      "job_number": 18841,
+      "column": "vat",
+      "mapped": 40.88,
+      "stored": "26.25",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 83992,
+      "job_number": 18841,
+      "column": "vat",
+      "mapped": 155.48,
+      "stored": "109.50",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 84907,
+      "job_number": 18938,
+      "column": "vat",
+      "mapped": 70.21,
+      "stored": "52.50",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 84913,
+      "job_number": 18938,
+      "column": "vat",
+      "mapped": 504.38,
+      "stored": "675.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 85116,
+      "job_number": 18958,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 87981,
+      "job_number": 19272,
+      "column": "vat",
+      "mapped": 37.2,
+      "stored": "31.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 87982,
+      "job_number": 19272,
+      "column": "sales_priceincvat",
+      "mapped": 1072,
+      "stored": "1072.01",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 88024,
+      "job_number": 19272,
+      "column": "vat",
+      "mapped": 56.99,
+      "stored": "45.06",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 88026,
+      "job_number": 19272,
+      "column": "vat",
+      "mapped": 48.27,
+      "stored": "39.77",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 88085,
+      "job_number": 19272,
+      "column": "vat",
+      "mapped": 270.98,
+      "stored": "122.28",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 88183,
+      "job_number": 15777,
+      "column": "vat",
+      "mapped": 18.32,
+      "stored": "18.31",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 88183,
+      "job_number": 15777,
+      "column": "sales_priceincvat",
+      "mapped": "0",
+      "stored": "140.41",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 88269,
+      "job_number": 19307,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 90213,
+      "job_number": 19491,
+      "column": "vat",
+      "mapped": 112.5,
+      "stored": "97.50",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 90524,
+      "job_number": 19568,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 91193,
+      "job_number": 19654,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 94871,
+      "job_number": 20027,
+      "column": "vat",
+      "mapped": 131.5,
+      "stored": "111.48",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 94873,
+      "job_number": 20027,
+      "column": "vat",
+      "mapped": 41.84,
+      "stored": "39.85",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 95493,
+      "job_number": 20094,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "14.56",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 95494,
+      "job_number": 20094,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "85.96",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 95495,
+      "job_number": 20094,
+      "column": "vat",
+      "mapped": 457.97,
+      "stored": "152.66",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 95495,
+      "job_number": 20094,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "1170.38",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 95496,
+      "job_number": 20094,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 95512,
+      "job_number": 20096,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 99098,
+      "job_number": 20256,
+      "column": "vat",
+      "mapped": 1424.35,
+      "stored": "71.74",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 99099,
+      "job_number": 20256,
+      "column": "vat",
+      "mapped": 21.27,
+      "stored": "14.18",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 96757,
+      "job_number": 20218,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 98201,
+      "job_number": 20176,
+      "column": "vat",
+      "mapped": "0",
+      "stored": "39.70",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 98201,
+      "job_number": 20176,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "304.38",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 98202,
+      "job_number": 20176,
+      "column": "vat",
+      "mapped": "0",
+      "stored": "34.02",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 98202,
+      "job_number": 20176,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "260.85",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 98203,
+      "job_number": 20176,
+      "column": "vat",
+      "mapped": "0",
+      "stored": "18.35",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 98203,
+      "job_number": 20176,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "140.65",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 99500,
+      "job_number": 20176,
+      "column": "vat",
+      "mapped": "0",
+      "stored": "92.94",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 99500,
+      "job_number": 20176,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "712.54",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 98824,
+      "job_number": 20256,
+      "column": "vat",
+      "mapped": 7.25,
+      "stored": "7.24",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 98824,
+      "job_number": 20256,
+      "column": "sales_priceincvat",
+      "mapped": 55.55,
+      "stored": "55.54",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 99465,
+      "job_number": 20256,
+      "column": "vat",
+      "mapped": 1193.4,
+      "stored": "795.60",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 98673,
+      "job_number": 20451,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 98764,
+      "job_number": 20256,
+      "column": "vat",
+      "mapped": 67.17,
+      "stored": "33.59",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 98765,
+      "job_number": 20256,
+      "column": "vat",
+      "mapped": 13.75,
+      "stored": "5.50",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 98766,
+      "job_number": 20256,
+      "column": "vat",
+      "mapped": 34.97,
+      "stored": "13.99",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 98767,
+      "job_number": 20256,
+      "column": "vat",
+      "mapped": 35.1,
+      "stored": "15.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 99049,
+      "job_number": 20256,
+      "column": "vat",
+      "mapped": 114.16,
+      "stored": "159.82",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 99049,
+      "job_number": 20256,
+      "column": "sales_priceincvat",
+      "mapped": 875.2,
+      "stored": "1225.28",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 99093,
+      "job_number": 20176,
+      "column": "vat",
+      "mapped": "0",
+      "stored": "109.64",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 99093,
+      "job_number": 20176,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "840.54",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 99094,
+      "job_number": 20176,
+      "column": "vat",
+      "mapped": "0",
+      "stored": "109.64",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 99094,
+      "job_number": 20176,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "840.54",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 102284,
+      "job_number": 20855,
+      "column": "sales_priceincvat",
+      "mapped": "0",
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 102409,
+      "job_number": 20867,
+      "column": "sales_priceincvat",
+      "mapped": "0",
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 102753,
+      "job_number": 20884,
+      "column": "vat",
+      "mapped": 32.51,
+      "stored": "32.50",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 102753,
+      "job_number": 20884,
+      "column": "sales_priceincvat",
+      "mapped": 249.21,
+      "stored": "249.20",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 101170,
+      "job_number": 20723,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 101493,
+      "job_number": 20759,
+      "column": "sales_priceincvat",
+      "mapped": "0",
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 101625,
+      "job_number": 20775,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 101874,
+      "job_number": 20802,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 101877,
+      "job_number": 20803,
+      "column": "sales_priceincvat",
+      "mapped": "0",
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 102131,
+      "job_number": 20837,
+      "column": "sales_priceincvat",
+      "mapped": "0",
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 102132,
+      "job_number": 20838,
+      "column": "sales_priceincvat",
+      "mapped": "0",
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 103716,
+      "job_number": 20989,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 104585,
+      "job_number": 21086,
+      "column": "sales_priceincvat",
+      "mapped": "0",
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 106491,
+      "job_number": 21296,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 106616,
+      "job_number": 21311,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 108504,
+      "job_number": 21518,
+      "column": "vat",
+      "mapped": 31.7,
+      "stored": "24.65",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 108504,
+      "job_number": 21518,
+      "column": "sales_priceincvat",
+      "mapped": 247.25,
+      "stored": "189.01",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 108537,
+      "job_number": 21518,
+      "column": "vat",
+      "mapped": 83.79,
+      "stored": "94.10",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 108537,
+      "job_number": 21518,
+      "column": "sales_priceincvat",
+      "mapped": 711.13,
+      "stored": "721.45",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 109211,
+      "job_number": 21600,
+      "column": "vat",
+      "mapped": 4014.02,
+      "stored": "45.65",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 107777,
+      "job_number": 20256,
+      "column": "vat",
+      "mapped": "0",
+      "stored": "73.50",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 107777,
+      "job_number": 20256,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "563.50",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 107966,
+      "job_number": 21460,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "568.68",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 107967,
+      "job_number": 21460,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "13.23",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 107968,
+      "job_number": 21460,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "79.35",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 107969,
+      "job_number": 21460,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "238.05",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 107970,
+      "job_number": 21460,
+      "column": "vat",
+      "mapped": 279.45,
+      "stored": "93.15",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 107970,
+      "job_number": 21460,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "714.15",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 107971,
+      "job_number": 21460,
+      "column": "vat",
+      "mapped": 8.69,
+      "stored": "8.68",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 107971,
+      "job_number": 21460,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "66.58",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 107972,
+      "job_number": 21460,
+      "column": "vat",
+      "mapped": 266.4,
+      "stored": "66.60",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 107972,
+      "job_number": 21460,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "510.60",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 107973,
+      "job_number": 21460,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "158.70",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 107974,
+      "job_number": 21460,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "204.99",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 107975,
+      "job_number": 21460,
+      "column": "vat",
+      "mapped": 93.1,
+      "stored": "31.03",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 107975,
+      "job_number": 21460,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "237.91",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 107976,
+      "job_number": 21460,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "276.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 107977,
+      "job_number": 21460,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 114895,
+      "job_number": 22264,
+      "column": "vat",
+      "mapped": 566.47,
+      "stored": "528.70",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 114895,
+      "job_number": 22264,
+      "column": "sales_priceincvat",
+      "mapped": 3184.79,
+      "stored": "4053.36",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 114896,
+      "job_number": 22264,
+      "column": "vat",
+      "mapped": 83.9,
+      "stored": "78.31",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 114896,
+      "job_number": 22264,
+      "column": "sales_priceincvat",
+      "mapped": 471.71,
+      "stored": "600.36",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 114428,
+      "job_number": 22160,
+      "column": "vat",
+      "mapped": 281.25,
+      "stored": "375.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 113716,
+      "job_number": 20256,
+      "column": "vat",
+      "mapped": 3.36,
+      "stored": "4.71",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 113716,
+      "job_number": 20256,
+      "column": "sales_priceincvat",
+      "mapped": 34.76,
+      "stored": "36.11",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 115845,
+      "job_number": 22366,
+      "column": "vat",
+      "mapped": 228,
+      "stored": "96.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 113991,
+      "job_number": 22158,
+      "column": "sales_priceincvat",
+      "mapped": 894.84,
+      "stored": "894.85",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 113993,
+      "job_number": 22159,
+      "column": "vat",
+      "mapped": 30.86,
+      "stored": "28.23",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 113994,
+      "job_number": 22159,
+      "column": "vat",
+      "mapped": 34.96,
+      "stored": "32.22",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 113995,
+      "job_number": 22159,
+      "column": "vat",
+      "mapped": 196.87,
+      "stored": "89.96",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 113995,
+      "job_number": 22159,
+      "column": "sales_priceincvat",
+      "mapped": 689.73,
+      "stored": "689.72",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 113996,
+      "job_number": 22159,
+      "column": "vat",
+      "mapped": 81.8,
+      "stored": "81.78",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 114029,
+      "job_number": 22158,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "186.79",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 117209,
+      "job_number": 19568,
+      "column": "vat",
+      "mapped": 27.41,
+      "stored": "21.32",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 117209,
+      "job_number": 19568,
+      "column": "sales_priceincvat",
+      "mapped": 169.54,
+      "stored": "163.45",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 117210,
+      "job_number": 19568,
+      "column": "vat",
+      "mapped": 34.22,
+      "stored": "31.94",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 117210,
+      "job_number": 19568,
+      "column": "sales_priceincvat",
+      "mapped": 247.15,
+      "stored": "244.87",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 117211,
+      "job_number": 19568,
+      "column": "vat",
+      "mapped": 27.19,
+      "stored": "25.38",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 117211,
+      "job_number": 19568,
+      "column": "sales_priceincvat",
+      "mapped": 196.38,
+      "stored": "194.57",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 117212,
+      "job_number": 19568,
+      "column": "vat",
+      "mapped": 192.83,
+      "stored": "149.98",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 117212,
+      "job_number": 19568,
+      "column": "sales_priceincvat",
+      "mapped": 1178.57,
+      "stored": "1149.82",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 117213,
+      "job_number": 19568,
+      "column": "vat",
+      "mapped": 76.73,
+      "stored": "71.61",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 117213,
+      "job_number": 19568,
+      "column": "sales_priceincvat",
+      "mapped": 554.13,
+      "stored": "549.01",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 117214,
+      "job_number": 19568,
+      "column": "vat",
+      "mapped": 54.65,
+      "stored": "51.01",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 117214,
+      "job_number": 19568,
+      "column": "sales_priceincvat",
+      "mapped": 91.08,
+      "stored": "391.05",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 117216,
+      "job_number": 19568,
+      "column": "vat",
+      "mapped": 36.41,
+      "stored": "33.98",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 117216,
+      "job_number": 19568,
+      "column": "sales_priceincvat",
+      "mapped": 262.93,
+      "stored": "260.50",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 117217,
+      "job_number": 19568,
+      "column": "vat",
+      "mapped": 76.5,
+      "stored": "71.40",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 117217,
+      "job_number": 19568,
+      "column": "sales_priceincvat",
+      "mapped": 552.5,
+      "stored": "547.40",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 117351,
+      "job_number": 19568,
+      "column": "vat",
+      "mapped": "0",
+      "stored": "261.04",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 117351,
+      "job_number": 19568,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "2001.30",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 117352,
+      "job_number": 19568,
+      "column": "vat",
+      "mapped": "0",
+      "stored": "223.11",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 117352,
+      "job_number": 19568,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "1710.51",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 117261,
+      "job_number": 19568,
+      "column": "vat",
+      "mapped": "0",
+      "stored": "43.11",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 117261,
+      "job_number": 19568,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "330.52",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 118931,
+      "job_number": 22264,
+      "column": "vat",
+      "mapped": 86.87,
+      "stored": "81.08",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 118931,
+      "job_number": 22264,
+      "column": "sales_priceincvat",
+      "mapped": 627.41,
+      "stored": "621.62",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 120549,
+      "job_number": 23036,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "69.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 120550,
+      "job_number": 23036,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "11.50",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 121153,
+      "job_number": 23139,
+      "column": "sales_priceincvat",
+      "mapped": "0",
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 123244,
+      "job_number": 23434,
+      "column": "vat",
+      "mapped": 21.46,
+      "stored": "22.50",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 124547,
+      "job_number": 23591,
+      "column": "sales_priceincvat",
+      "mapped": "0",
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 124559,
+      "job_number": 23596,
+      "column": "sales_priceincvat",
+      "mapped": "0",
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 124634,
+      "job_number": 23611,
+      "column": "vat",
+      "mapped": 97.29,
+      "stored": "90.81",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 124634,
+      "job_number": 23611,
+      "column": "sales_priceincvat",
+      "mapped": 400.33,
+      "stored": "696.18",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 124635,
+      "job_number": 23611,
+      "column": "vat",
+      "mapped": 116.49,
+      "stored": "68.67",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 124635,
+      "job_number": 23611,
+      "column": "sales_priceincvat",
+      "mapped": 322,
+      "stored": "526.47",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 124637,
+      "job_number": 23611,
+      "column": "vat",
+      "mapped": 14.2,
+      "stored": "13.25",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 124637,
+      "job_number": 23611,
+      "column": "sales_priceincvat",
+      "mapped": 102.55,
+      "stored": "101.60",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 124326,
+      "job_number": 22264,
+      "column": "vat",
+      "mapped": 237.56,
+      "stored": "133.03",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 124326,
+      "job_number": 22264,
+      "column": "sales_priceincvat",
+      "mapped": 1124.45,
+      "stored": "1019.92",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 126071,
+      "job_number": 23797,
+      "column": "vat",
+      "mapped": 8.69,
+      "stored": "8.68",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 126071,
+      "job_number": 23797,
+      "column": "sales_priceincvat",
+      "mapped": 66.59,
+      "stored": "66.58",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 127434,
+      "job_number": 24018,
+      "column": "sales_priceincvat",
+      "mapped": "0",
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 126529,
+      "job_number": 23873,
+      "column": "vat",
+      "mapped": 259.71,
+      "stored": "140.25",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 127470,
+      "job_number": 24025,
+      "column": "sales_priceincvat",
+      "mapped": "0",
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 127853,
+      "job_number": 23810,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "977.50",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 128282,
+      "job_number": 20176,
+      "column": "vat",
+      "mapped": "0",
+      "stored": "60.78",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 128282,
+      "job_number": 20176,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "465.97",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 127863,
+      "job_number": 24044,
+      "column": "vat",
+      "mapped": 218.78,
+      "stored": "0.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 127888,
+      "job_number": 24044,
+      "column": "vat",
+      "mapped": 311.14,
+      "stored": "302.10",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 127889,
+      "job_number": 24044,
+      "column": "vat",
+      "mapped": 118.31,
+      "stored": "237.62",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 127151,
+      "job_number": 23972,
+      "column": "vat",
+      "mapped": 1017.58,
+      "stored": "985.50",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 127981,
+      "job_number": 24044,
+      "column": "vat",
+      "mapped": 185.18,
+      "stored": "138.50",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 128014,
+      "job_number": 20176,
+      "column": "vat",
+      "mapped": "0",
+      "stored": "225.85",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 128014,
+      "job_number": 20176,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "1731.51",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 128464,
+      "job_number": 24156,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 129151,
+      "job_number": 24199,
+      "column": "vat",
+      "mapped": 109.39,
+      "stored": "48.13",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 132249,
+      "job_number": 24687,
+      "column": "sales_priceincvat",
+      "mapped": 319.44,
+      "stored": "319.45",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 130267,
+      "job_number": 24425,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 131316,
+      "job_number": 24564,
+      "column": "vat",
+      "mapped": 8.69,
+      "stored": "8.68",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 131316,
+      "job_number": 24564,
+      "column": "sales_priceincvat",
+      "mapped": 66.59,
+      "stored": "66.58",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 131322,
+      "job_number": 24565,
+      "column": "vat",
+      "mapped": 8.69,
+      "stored": "8.68",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 131322,
+      "job_number": 24565,
+      "column": "sales_priceincvat",
+      "mapped": 66.59,
+      "stored": "66.58",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 130515,
+      "job_number": 24458,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 132375,
+      "job_number": 20256,
+      "column": "vat",
+      "mapped": 0.65,
+      "stored": "0.91",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 132375,
+      "job_number": 20256,
+      "column": "sales_priceincvat",
+      "mapped": 6.74,
+      "stored": "7.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 130774,
+      "job_number": 24502,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 132434,
+      "job_number": 24714,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 132797,
+      "job_number": 24763,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 132860,
+      "job_number": 24763,
+      "column": "vat",
+      "mapped": 15.67,
+      "stored": "8.78",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 132860,
+      "job_number": 24763,
+      "column": "sales_priceincvat",
+      "mapped": 74.18,
+      "stored": "67.29",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 132885,
+      "job_number": 24763,
+      "column": "vat",
+      "mapped": 178.29,
+      "stored": "99.85",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 132885,
+      "job_number": 24763,
+      "column": "sales_priceincvat",
+      "mapped": 843.89,
+      "stored": "765.49",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 132886,
+      "job_number": 24763,
+      "column": "vat",
+      "mapped": 25.3,
+      "stored": "14.17",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 132886,
+      "job_number": 24763,
+      "column": "sales_priceincvat",
+      "mapped": 119.78,
+      "stored": "108.65",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 133137,
+      "job_number": 22366,
+      "column": "vat",
+      "mapped": 30.04,
+      "stored": "15.02",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 133173,
+      "job_number": 22366,
+      "column": "vat",
+      "mapped": 19.7,
+      "stored": "7.87",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 133182,
+      "job_number": 22366,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "101.20",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 133384,
+      "job_number": 24702,
+      "column": "vat",
+      "mapped": 81.74,
+      "stored": "32.69",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 132151,
+      "job_number": 20256,
+      "column": "vat",
+      "mapped": 205.5,
+      "stored": "115.08",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 132151,
+      "job_number": 20256,
+      "column": "sales_priceincvat",
+      "mapped": 630.2,
+      "stored": "882.28",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 132152,
+      "job_number": 20256,
+      "column": "vat",
+      "mapped": "0",
+      "stored": "116.91",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 132152,
+      "job_number": 20256,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "896.30",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 133867,
+      "job_number": 24866,
+      "column": "vat",
+      "mapped": 881.21,
+      "stored": "130.44",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 133867,
+      "job_number": 24866,
+      "column": "sales_priceincvat",
+      "mapped": 1000.01,
+      "stored": "1000.02",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 132207,
+      "job_number": 24677,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134838,
+      "job_number": 24942,
+      "column": "vat",
+      "mapped": 450,
+      "stored": "97.50",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134840,
+      "job_number": 24942,
+      "column": "vat",
+      "mapped": 38.78,
+      "stored": "15.51",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134504,
+      "job_number": 24942,
+      "column": "vat",
+      "mapped": 109.39,
+      "stored": "35.08",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134446,
+      "job_number": 24866,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "9633.60",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134546,
+      "job_number": 24942,
+      "column": "vat",
+      "mapped": 270.5,
+      "stored": "106.96",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134552,
+      "job_number": 24946,
+      "column": "accasset",
+      "mapped": 3300,
+      "stored": 3001,
+      "evidence": "saved_labourlost_repair"
+    },
+    {
+      "spares_id": 134555,
+      "job_number": 24943,
+      "column": "vat",
+      "mapped": 37.5,
+      "stored": "65.22",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134557,
+      "job_number": 24942,
+      "column": "accasset",
+      "mapped": 3300,
+      "stored": 3001,
+      "evidence": "saved_labourlost_repair"
+    },
+    {
+      "spares_id": 134983,
+      "job_number": 24914,
+      "column": "vat",
+      "mapped": 190.87,
+      "stored": "76.35",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134560,
+      "job_number": 24943,
+      "column": "vat",
+      "mapped": 32.61,
+      "stored": "19.57",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134566,
+      "job_number": 24943,
+      "column": "accasset",
+      "mapped": 3300,
+      "stored": 3001,
+      "evidence": "saved_labourlost_repair"
+    },
+    {
+      "spares_id": 135319,
+      "job_number": 25012,
+      "column": "sales_priceincvat",
+      "mapped": "0",
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134587,
+      "job_number": 24946,
+      "column": "vat",
+      "mapped": 23.22,
+      "stored": "8.54",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134588,
+      "job_number": 24946,
+      "column": "vat",
+      "mapped": 108.32,
+      "stored": "43.33",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134998,
+      "job_number": 24914,
+      "column": "vat",
+      "mapped": 218.78,
+      "stored": "70.16",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 135114,
+      "job_number": 24993,
+      "column": "accasset",
+      "mapped": 3300,
+      "stored": 3001,
+      "evidence": "saved_labourlost_repair"
+    },
+    {
+      "spares_id": 135006,
+      "job_number": 24914,
+      "column": "vat",
+      "mapped": 71.45,
+      "stored": "71.44",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 135006,
+      "job_number": 24914,
+      "column": "sales_priceincvat",
+      "mapped": 547.75,
+      "stored": "547.74",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 135333,
+      "job_number": 24943,
+      "column": "vat",
+      "mapped": 39.13,
+      "stored": "30.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134675,
+      "job_number": 24946,
+      "column": "vat",
+      "mapped": 129.64,
+      "stored": "51.86",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134679,
+      "job_number": 24942,
+      "column": "vat",
+      "mapped": 32,
+      "stored": "12.80",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134680,
+      "job_number": 24942,
+      "column": "vat",
+      "mapped": 14.6,
+      "stored": "8.42",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134681,
+      "job_number": 24942,
+      "column": "vat",
+      "mapped": 157.89,
+      "stored": "48.77",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 135539,
+      "job_number": 24970,
+      "column": "vat",
+      "mapped": 98.58,
+      "stored": "49.29",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134735,
+      "job_number": 24946,
+      "column": "vat",
+      "mapped": 174.45,
+      "stored": "87.23",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134736,
+      "job_number": 24946,
+      "column": "vat",
+      "mapped": 85.88,
+      "stored": "42.94",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134768,
+      "job_number": 24964,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134770,
+      "job_number": 24914,
+      "column": "vat",
+      "mapped": 83.91,
+      "stored": "44.72",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134771,
+      "job_number": 24914,
+      "column": "vat",
+      "mapped": 45,
+      "stored": "18.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134773,
+      "job_number": 24914,
+      "column": "vat",
+      "mapped": 23.92,
+      "stored": "13.29",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134776,
+      "job_number": 24914,
+      "column": "vat",
+      "mapped": 112.47,
+      "stored": "44.99",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 135374,
+      "job_number": 24914,
+      "column": "vat",
+      "mapped": 39.96,
+      "stored": "19.58",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 134806,
+      "job_number": 24914,
+      "column": "vat",
+      "mapped": 177.72,
+      "stored": "71.09",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 135148,
+      "job_number": 24914,
+      "column": "vat",
+      "mapped": 139.88,
+      "stored": "55.95",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 135379,
+      "job_number": 24974,
+      "column": "vat",
+      "mapped": 206.25,
+      "stored": "127.50",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 135178,
+      "job_number": 24943,
+      "column": "vat",
+      "mapped": 38.73,
+      "stored": "15.49",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 135237,
+      "job_number": 24943,
+      "column": "vat",
+      "mapped": 51.24,
+      "stored": "20.50",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 136328,
+      "job_number": 24943,
+      "column": "vat",
+      "mapped": 2923.16,
+      "stored": "52.50",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 136339,
+      "job_number": 25119,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "138.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 136353,
+      "job_number": 24943,
+      "column": "vat",
+      "mapped": 75,
+      "stored": "65.22",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 136399,
+      "job_number": 25128,
+      "column": "status",
+      "mapped": "ORDERED",
+      "stored": "RECEIVED",
+      "evidence": "post_import_difference"
+    },
+    {
+      "spares_id": 136399,
+      "job_number": 25128,
+      "column": "suppid",
+      "mapped": 0,
+      "stored": 5,
+      "evidence": "post_import_difference"
+    },
+    {
+      "spares_id": 136418,
+      "job_number": 25131,
+      "column": "sales_priceincvat",
+      "mapped": 184.04,
+      "stored": "184.05",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 136441,
+      "job_number": 25131,
+      "column": "sales_priceincvat",
+      "mapped": 1457.62,
+      "stored": "1457.61",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 136442,
+      "job_number": 25131,
+      "column": "sales_priceincvat",
+      "mapped": 573.2,
+      "stored": "573.21",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 136451,
+      "job_number": 25128,
+      "column": "vat",
+      "mapped": 28.6,
+      "stored": "16.65",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 136451,
+      "job_number": 25128,
+      "column": "sales_priceincvat",
+      "mapped": 127.69,
+      "stored": "127.68",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 136452,
+      "job_number": 25128,
+      "column": "vat",
+      "mapped": 65.23,
+      "stored": "40.00",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 136477,
+      "job_number": 25128,
+      "column": "status",
+      "mapped": "ORDER",
+      "stored": "RECEIVED",
+      "evidence": "post_import_difference"
+    },
+    {
+      "spares_id": 136478,
+      "job_number": 25128,
+      "column": "status",
+      "mapped": "ORDER",
+      "stored": "RECEIVED",
+      "evidence": "post_import_difference"
+    },
+    {
+      "spares_id": 136478,
+      "job_number": 25128,
+      "column": "sales_priceincvat",
+      "mapped": 3162.56,
+      "stored": "3162.57",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 136486,
+      "job_number": 25128,
+      "column": "vat",
+      "mapped": 0,
+      "stored": "230.63",
+      "evidence": "post_import_difference"
+    },
+    {
+      "spares_id": 136486,
+      "job_number": 25128,
+      "column": "status",
+      "mapped": "ORDER",
+      "stored": "RECEIVED",
+      "evidence": "post_import_difference"
+    },
+    {
+      "spares_id": 136486,
+      "job_number": 25128,
+      "column": "sales_price",
+      "mapped": 0,
+      "stored": "1537.50",
+      "evidence": "post_import_difference"
+    },
+    {
+      "spares_id": 136486,
+      "job_number": 25128,
+      "column": "sales_priceincvat",
+      "mapped": 0,
+      "stored": "1768.13",
+      "evidence": "post_import_difference"
+    },
+    {
+      "spares_id": 136499,
+      "job_number": 25128,
+      "column": "vat",
+      "mapped": 1316.25,
+      "stored": "458.33",
+      "evidence": "import_vat_snapshot_and_rule"
+    },
+    {
+      "spares_id": 136511,
+      "job_number": 25128,
+      "column": "status",
+      "mapped": "ORDER",
+      "stored": "ORDERED",
+      "evidence": "post_import_difference"
+    },
+    {
+      "spares_id": 136517,
+      "job_number": 25136,
+      "column": "status",
+      "mapped": "QUOTE",
+      "stored": "RECEIVED",
+      "evidence": "post_import_difference"
+    },
+    {
+      "spares_id": 136518,
+      "job_number": 25136,
+      "column": "status",
+      "mapped": "QUOTE",
+      "stored": "RECEIVED",
+      "evidence": "post_import_difference"
+    },
+    {
+      "spares_id": 136519,
+      "job_number": 25136,
+      "column": "status",
+      "mapped": "QUOTE",
+      "stored": "RECEIVED",
+      "evidence": "post_import_difference"
+    },
+    {
+      "spares_id": 136519,
+      "job_number": 25136,
+      "column": "suppid",
+      "mapped": 10,
+      "stored": 38,
+      "evidence": "post_import_difference"
+    },
+    {
+      "spares_id": 136520,
+      "job_number": 25128,
+      "column": "status",
+      "mapped": "ORDER",
+      "stored": "ORDERED",
+      "evidence": "post_import_difference"
+    },
+    {
+      "spares_id": 136521,
+      "job_number": 25136,
+      "column": "status",
+      "mapped": "QUOTE",
+      "stored": "RECEIVED",
+      "evidence": "post_import_difference"
+    },
+    {
+      "spares_id": 136534,
+      "job_number": 25138,
+      "column": "invoice_nr",
+      "mapped": null,
+      "stored": 26500,
+      "evidence": "post_import_difference"
+    }
+  ]
+}

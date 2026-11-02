@@ -1,0 +1,2737 @@
+{
+ "schema": "glbf_test_general_invoices_20261102",
+ "database": "AUTONEER.FDB",
+ "at": "2026-11-02T18:22:50.569Z",
+ "added": {
+  "spares_used": [
+   3209,
+   7343,
+   7344,
+   6487,
+   6488,
+   6708,
+   6928,
+   6929,
+   8394,
+   8949,
+   12028,
+   9831,
+   10245,
+   10228,
+   10503,
+   11009,
+   11017,
+   11453,
+   11893,
+   11894,
+   11896,
+   11897,
+   11982,
+   11673,
+   11674,
+   11675,
+   12603,
+   12605,
+   14412,
+   22660,
+   13116,
+   14522,
+   13462,
+   13463,
+   13464,
+   13465,
+   13559,
+   13560,
+   13680,
+   13681,
+   14259,
+   14526,
+   14527,
+   14528,
+   14620,
+   14744,
+   14871,
+   14873,
+   14874,
+   14875,
+   14876,
+   14877,
+   14878,
+   14883,
+   14884,
+   14885,
+   17156,
+   15786,
+   16277,
+   16247,
+   17067,
+   17911,
+   18109,
+   18110,
+   18605,
+   18606,
+   18870,
+   18669,
+   18527,
+   18670,
+   18687,
+   18689,
+   18871,
+   18690,
+   19156,
+   19557,
+   19558,
+   19545,
+   20778,
+   21083,
+   21084,
+   20825,
+   25133,
+   25134,
+   23798,
+   24245,
+   24000,
+   24317,
+   24584,
+   24585,
+   24538,
+   24539,
+   25138,
+   25465,
+   25934,
+   25935,
+   36951,
+   26408,
+   26409,
+   27097,
+   27579,
+   27599,
+   28183,
+   28184,
+   28534,
+   28511,
+   28512,
+   29138,
+   29103,
+   29804,
+   29805,
+   29853,
+   30852,
+   30853,
+   31296,
+   31771,
+   31772,
+   31952,
+   32575,
+   34859,
+   36911,
+   35242,
+   36438,
+   36933,
+   36934,
+   37024,
+   37705,
+   40530,
+   38700,
+   39117,
+   39069,
+   38876,
+   38877,
+   39988,
+   39369,
+   40250,
+   40274,
+   39590,
+   39591,
+   41215,
+   41800,
+   42142,
+   44590,
+   44729,
+   46364,
+   46365,
+   49547,
+   50855,
+   50856,
+   50925,
+   51326,
+   51327,
+   52365,
+   53641,
+   53642,
+   53643,
+   54394,
+   54605,
+   55174,
+   60676,
+   60638,
+   63811,
+   63886,
+   64748,
+   65178,
+   65950,
+   65951,
+   70405,
+   70406,
+   67277,
+   67730,
+   67731,
+   67754,
+   67755,
+   67757,
+   67876,
+   68389,
+   68390,
+   69334,
+   69335,
+   70181,
+   71512,
+   74204,
+   74924,
+   74407,
+   74408,
+   74409,
+   74562,
+   75699,
+   75700,
+   75701,
+   76417,
+   76418,
+   75472,
+   77103,
+   77104,
+   77105,
+   77106,
+   77107,
+   77108,
+   77109,
+   77343,
+   78036,
+   76666,
+   77084,
+   78351,
+   78352,
+   79238,
+   80644,
+   79718,
+   80689,
+   80745,
+   80746,
+   82024,
+   81889,
+   81770,
+   82016,
+   83046,
+   84816,
+   87706,
+   87707,
+   88746,
+   88544,
+   89452,
+   90289,
+   90290,
+   96276,
+   96277,
+   97641,
+   99837,
+   99838,
+   99839,
+   98992,
+   99045,
+   99921,
+   99922,
+   99734,
+   100177,
+   104079,
+   104080,
+   103121,
+   103122,
+   103718,
+   109404,
+   106284,
+   106285,
+   107198,
+   107199,
+   109409,
+   109410,
+   109411,
+   109412,
+   109413,
+   109414,
+   109415,
+   109416,
+   109417,
+   108216,
+   109418,
+   109419,
+   109420,
+   109421,
+   109422,
+   109423,
+   109424,
+   109425,
+   109426,
+   109506,
+   109839,
+   109927,
+   109928,
+   109929,
+   110587,
+   110588,
+   110589,
+   110590,
+   110591,
+   110541,
+   110878,
+   111506,
+   111507,
+   112089,
+   112090,
+   112092,
+   112093,
+   112095,
+   112096,
+   112098,
+   112099,
+   111945,
+   111946,
+   112932,
+   112390,
+   112391,
+   114295,
+   114296,
+   113085,
+   112514,
+   112515,
+   112582,
+   112583,
+   112588,
+   112589,
+   112591,
+   112595,
+   112596,
+   112597,
+   112598,
+   112599,
+   112612,
+   112613,
+   112614,
+   112616,
+   112617,
+   112618,
+   112619,
+   114482,
+   114483,
+   114502,
+   114503,
+   112620,
+   112621,
+   112622,
+   112623,
+   112666,
+   113655,
+   113657,
+   113658,
+   116382,
+   116542,
+   116543,
+   116619,
+   117997,
+   118380,
+   118381,
+   118382,
+   118383,
+   118384,
+   118660,
+   119320,
+   119577,
+   119813,
+   120901,
+   124065,
+   124066,
+   121794,
+   121795,
+   121108,
+   122533,
+   122535,
+   122560,
+   122980,
+   122716,
+   122717,
+   122718,
+   123191,
+   123192,
+   123952,
+   123972,
+   123906,
+   123907,
+   123951,
+   124853,
+   124854,
+   124855,
+   124856,
+   124857,
+   124858,
+   124429,
+   125076,
+   125077,
+   125078,
+   125079,
+   125027,
+   125028,
+   126280,
+   126281,
+   130938,
+   132465,
+   128874,
+   128875,
+   128946,
+   128947,
+   129660,
+   129490,
+   129491,
+   130990,
+   130991,
+   131051,
+   131083,
+   131262,
+   131415,
+   131416,
+   131181,
+   131271,
+   131191,
+   130260,
+   131289,
+   131290,
+   131375,
+   131376,
+   131378,
+   130590,
+   130591,
+   130606,
+   130607,
+   130673,
+   130674,
+   131524,
+   131525,
+   131526,
+   131527,
+   131528,
+   132515,
+   132483,
+   132497,
+   131618,
+   131619,
+   131620,
+   131621,
+   131625,
+   131626,
+   131627,
+   131628,
+   131699,
+   132829,
+   132830,
+   131783,
+   131784,
+   131785,
+   133085,
+   131790,
+   131801,
+   133155,
+   132927,
+   132928,
+   133199,
+   133629,
+   133630,
+   132115,
+   132116,
+   132117,
+   132118,
+   132119,
+   132120,
+   132121,
+   132223,
+   133957,
+   134220,
+   133826,
+   134478,
+   134506,
+   134321,
+   134974,
+   134975,
+   134976,
+   135035,
+   135036,
+   134684,
+   134685,
+   134686,
+   135056,
+   134730,
+   135154,
+   134824,
+   134825,
+   135645,
+   136009,
+   136010,
+   136031,
+   136037,
+   136133,
+   136411,
+   136527,
+   136528,
+   136530,
+   136531,
+   136532,
+   136533
+  ],
+  "work_done": [
+   3361,
+   3739,
+   32164,
+   32165,
+   32166,
+   32167,
+   32168,
+   32169,
+   32170,
+   32171,
+   32172
+  ]
+ },
+ "documents": {
+  "customer_invoice_lines": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19,
+   20,
+   21,
+   22,
+   23,
+   24,
+   25,
+   26,
+   27,
+   28,
+   29,
+   30,
+   31,
+   32,
+   33,
+   34,
+   35,
+   36,
+   37,
+   38,
+   39,
+   40,
+   41,
+   42,
+   43,
+   44,
+   45,
+   46,
+   47,
+   48,
+   49,
+   50,
+   51,
+   52,
+   53,
+   54,
+   55,
+   56,
+   57,
+   58,
+   59,
+   60,
+   61,
+   62,
+   63,
+   64,
+   65,
+   66,
+   67,
+   68,
+   69,
+   70,
+   71,
+   72,
+   73,
+   74,
+   75,
+   76,
+   77,
+   78,
+   79,
+   80,
+   81,
+   82,
+   83,
+   84,
+   85,
+   86,
+   87,
+   88,
+   89,
+   90,
+   91,
+   92,
+   93,
+   94,
+   95,
+   96,
+   97,
+   98,
+   99,
+   100,
+   101,
+   102,
+   103,
+   104,
+   105,
+   106,
+   107,
+   108,
+   109,
+   110,
+   111,
+   112,
+   113,
+   114,
+   115,
+   116,
+   117,
+   118,
+   119,
+   120,
+   121,
+   122,
+   123,
+   124,
+   125,
+   126,
+   127,
+   128,
+   129,
+   130,
+   131,
+   132,
+   133,
+   134,
+   135,
+   136,
+   137,
+   138,
+   139,
+   140,
+   141,
+   142,
+   143,
+   144,
+   145,
+   146,
+   147,
+   148,
+   149,
+   150,
+   151,
+   152,
+   153,
+   154,
+   155,
+   156,
+   157,
+   158,
+   159,
+   160,
+   161,
+   162,
+   163,
+   164,
+   165,
+   166,
+   167,
+   168,
+   169,
+   170,
+   171,
+   172,
+   173,
+   174,
+   175,
+   176,
+   177,
+   178,
+   179,
+   180,
+   181,
+   182,
+   183,
+   184,
+   185,
+   186,
+   187,
+   188,
+   189,
+   190,
+   191,
+   192,
+   193,
+   194,
+   195,
+   196,
+   197,
+   198,
+   199,
+   200,
+   201,
+   202,
+   203,
+   204,
+   205,
+   206,
+   207,
+   208,
+   209,
+   210,
+   211,
+   212,
+   213,
+   214,
+   215,
+   216,
+   217,
+   218,
+   219,
+   220,
+   221,
+   222,
+   223,
+   224,
+   225,
+   226,
+   227,
+   228,
+   229,
+   230,
+   231,
+   232,
+   233,
+   234,
+   235,
+   236,
+   237,
+   238,
+   239,
+   240,
+   241,
+   242,
+   243,
+   244,
+   245,
+   246,
+   247,
+   248,
+   249,
+   250,
+   251,
+   252,
+   253,
+   254,
+   255,
+   256,
+   257,
+   258,
+   259,
+   260,
+   261,
+   262,
+   263,
+   264,
+   265,
+   266,
+   267,
+   268,
+   269,
+   270,
+   271,
+   272,
+   273,
+   274,
+   275,
+   276,
+   277,
+   278,
+   279,
+   280,
+   281,
+   282,
+   283,
+   284,
+   285,
+   286,
+   287,
+   288,
+   289,
+   290,
+   291,
+   292,
+   293,
+   294,
+   295,
+   296,
+   297,
+   298,
+   299,
+   300,
+   301,
+   302,
+   303,
+   304,
+   305,
+   306,
+   307,
+   308,
+   309,
+   310,
+   311,
+   312,
+   313,
+   314,
+   315,
+   316,
+   317,
+   318,
+   319,
+   320,
+   321,
+   322,
+   323,
+   324,
+   325,
+   326,
+   327,
+   328,
+   329,
+   330,
+   331,
+   332,
+   333,
+   334,
+   335,
+   336,
+   337,
+   338,
+   339,
+   340,
+   341,
+   342,
+   343,
+   344,
+   345,
+   346,
+   347,
+   348,
+   349,
+   350,
+   351,
+   352,
+   353,
+   354,
+   355,
+   356,
+   357,
+   358,
+   359,
+   360,
+   361,
+   362,
+   363,
+   364,
+   365,
+   366,
+   367,
+   368,
+   369,
+   370,
+   371,
+   372,
+   373,
+   374,
+   375,
+   376,
+   377,
+   378,
+   379,
+   380,
+   381,
+   382,
+   383,
+   384,
+   385,
+   386,
+   387,
+   388,
+   389,
+   390,
+   391,
+   392,
+   393,
+   394,
+   395,
+   396,
+   397,
+   398,
+   399,
+   400,
+   401,
+   402,
+   403,
+   404,
+   405,
+   406,
+   407,
+   408,
+   409,
+   410,
+   411,
+   412,
+   413,
+   414,
+   415,
+   416,
+   417,
+   418,
+   419,
+   420,
+   421,
+   422,
+   423,
+   424,
+   425,
+   426,
+   427,
+   428,
+   429,
+   430,
+   431,
+   432,
+   433,
+   434,
+   435,
+   436,
+   437,
+   438,
+   439,
+   440,
+   441,
+   442,
+   443,
+   444,
+   445,
+   446,
+   447,
+   448,
+   449,
+   450,
+   451,
+   452,
+   453,
+   454,
+   455,
+   456,
+   457,
+   458,
+   459,
+   460,
+   461,
+   462,
+   463,
+   464,
+   465,
+   466,
+   467,
+   468,
+   469,
+   470,
+   471,
+   472,
+   473,
+   474,
+   475,
+   476,
+   477,
+   478,
+   479,
+   480,
+   481,
+   482,
+   483,
+   484,
+   485,
+   486,
+   487,
+   488,
+   489,
+   490
+  ],
+  "statuses": [
+   {
+    "invoice_nr": 10069,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2016-08-15T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 10458,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2016-11-23T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 10497,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2016-11-30T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 10514,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2016-12-07T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 10602,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-01-02T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 10724,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-02-12T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 10802,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-03-02T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 10923,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-04-10T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 10989,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-04-25T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 10991,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-05-01T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11017,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-05-08T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11109,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-05-23T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11111,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-05-24T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11153,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-06-01T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11185,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-06-13T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11227,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-06-20T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11234,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-06-26T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11260,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-06-28T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11342,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-07-24T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11343,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-07-24T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11391,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-08-07T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11459,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-08-24T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11495,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-09-05T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11588,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-09-28T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11602,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-10-05T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11618,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-10-05T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11619,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-10-05T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11634,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-10-12T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11639,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-10-17T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11661,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-09-06T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11662,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-09-19T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11772,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-11-20T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11856,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-12-12T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11860,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2017-12-14T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11985,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-01-30T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 11997,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-02-04T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 12112,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-02-26T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 12121,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-03-06T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 12184,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-03-25T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 12202,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-03-28T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 12203,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-03-28T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 12206,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-04-03T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 12207,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-04-03T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 12221,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-04-08T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 12271,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-04-17T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 12327,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-04-29T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 12329,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-05-01T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 12478,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-05-31T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 12486,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-05-06T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 12518,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-05-24T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 12749,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-08-06T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 12900,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-09-13T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 12911,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-09-17T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 12972,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-09-30T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 12975,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-10-01T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 13008,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-10-08T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 13012,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-10-09T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 13048,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-10-15T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 13101,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-10-23T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 13110,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-10-23T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 13158,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-11-04T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 13203,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-11-13T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 13283,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-12-02T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 13384,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2018-12-30T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 13442,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2019-01-24T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 13456,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2019-01-30T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 13507,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2019-02-11T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 13550,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2019-02-21T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 13564,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2019-02-24T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 13653,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2019-03-12T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 13661,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2019-03-14T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 13777,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2019-04-09T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 13778,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2019-04-09T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 13908,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2019-05-20T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 13958,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2019-05-28T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 14024,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2019-06-13T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 14043,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2019-06-18T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 14173,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2019-07-11T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 14459,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2019-09-15T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 14513,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2019-09-29T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 14675,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2019-10-29T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 14752,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2019-11-13T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 14759,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2019-11-13T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 14760,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2019-11-13T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 14770,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2019-11-14T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 14783,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2019-11-17T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 14883,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2019-12-09T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 15028,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2020-01-21T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 15069,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2020-01-27T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 15098,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2020-02-04T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 15110,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2020-02-11T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 15142,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2020-02-17T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 15206,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2020-03-02T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 15226,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2020-02-04T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 15243,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2020-03-09T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 15246,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2020-03-10T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 15279,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2020-03-16T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 15402,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2020-05-14T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 15468,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2020-06-17T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 15527,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2020-07-06T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 15828,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2020-09-20T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 15843,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2020-09-24T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 16090,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2020-11-25T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 16486,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2021-04-18T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 16636,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2021-06-03T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 16639,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2021-06-06T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 16698,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2021-06-29T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 16829,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2021-08-19T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 16984,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2021-10-04T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 17061,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2021-10-19T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 17068,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2021-10-20T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 17108,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2021-10-28T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 17179,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2021-11-22T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 17824,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2022-06-16T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 17830,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2022-06-19T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 18022,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2022-08-15T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 18196,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2022-09-29T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 18203,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2022-10-03T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 18322,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2022-10-30T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 18356,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2022-11-10T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 18477,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2022-12-14T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 18609,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2023-02-06T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 18702,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2023-03-09T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 18714,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2023-03-14T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 18833,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2023-05-07T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 18855,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2023-05-11T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 18933,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2023-06-12T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 18995,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2023-06-29T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 19189,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2023-09-17T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 19205,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2023-09-21T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 19221,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2023-09-26T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 19290,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2023-10-18T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 19312,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2023-10-30T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 19437,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2023-11-30T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 19458,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2023-12-07T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 19466,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2023-12-11T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 19524,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2024-01-08T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 19560,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2024-01-16T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 19635,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2024-02-12T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 19640,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2024-02-13T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 19665,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2024-02-21T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 19768,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2023-03-07T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 19837,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2024-03-24T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 19961,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2024-04-15T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 19971,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2024-04-15T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 19976,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2024-04-16T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 20106,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2024-05-08T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 20120,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2024-05-12T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 20143,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2024-05-15T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 20145,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2024-05-16T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 20257,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2024-06-09T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 20466,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2024-07-10T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 20761,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2024-08-11T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 20843,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2024-08-21T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 20869,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2024-08-25T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 20963,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2024-09-05T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 21063,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2024-09-19T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 21663,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-01-14T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 21816,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-02-05T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 21978,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-02-21T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 22010,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-02-27T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 22049,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-03-09T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 22065,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-03-11T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 22073,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-03-11T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 22094,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-03-16T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 22401,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-04-15T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 22456,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-04-24T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 22492,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-05-01T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 22719,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-05-28T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 22824,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-06-08T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 22925,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-06-19T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23066,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-06-10T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23067,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-06-01T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23068,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-06-17T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23069,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-06-12T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23071,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-06-22T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23072,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-06-08T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23076,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-07-02T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23080,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-07-03T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23117,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-07-08T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23127,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-07-09T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23194,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-07-16T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23209,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-07-17T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23239,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-07-22T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23315,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-07-30T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23370,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-07-21T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23371,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-07-20T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23388,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-08-06T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23421,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-08-11T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23438,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-07-06T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23443,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-07-06T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23444,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-07-07T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23445,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-07-10T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23446,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-07-13T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23447,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-07-27T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23450,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-08-13T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23451,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-07-15T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23452,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-07-29T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23462,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-08-14T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23506,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-08-20T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23568,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-08-27T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23569,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-08-27T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23640,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-09-07T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23658,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-09-08T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23854,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-09-30T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23875,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-10-02T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 23880,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-10-05T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 24064,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-10-20T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 24110,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-10-27T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 24147,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-10-30T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 24159,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-11-03T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 24250,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-11-12T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 24298,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-11-17T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 24322,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-11-18T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 24477,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-12-01T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 24506,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-12-03T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 24597,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2025-12-14T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 24701,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-01-04T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 24704,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-01-04T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 24735,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-01-06T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 24771,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-01-11T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 24793,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-01-13T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 24878,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-01-21T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 24884,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-01-22T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 24885,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-01-22T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 24891,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-01-22T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 24897,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-01-25T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 24948,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-01-28T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 24994,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-02-08T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25014,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-02-10T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25186,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-03-02T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25534,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-03-26T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25549,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-03-26T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25615,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-03-31T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25652,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-04-01T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25751,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-04-13T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25789,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-04-16T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25790,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-04-16T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25797,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-04-19T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25839,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-04-27T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25848,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-04-29T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25856,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-05-04T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25863,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-05-05T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25871,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-05-07T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25873,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-05-07T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25883,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-05-12T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25885,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-05-13T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25889,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-05-14T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25896,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-05-17T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25903,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-05-18T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25915,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-05-19T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25916,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-05-19T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25926,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-05-21T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25930,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-05-21T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25935,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-05-21T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25942,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-05-25T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25948,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-05-26T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25951,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-05-26T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25953,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-05-27T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 25991,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-06-08T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26017,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-06-14T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26051,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-06-24T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26057,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-06-25T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26063,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-06-28T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26072,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-06-28T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26102,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-07-12T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26110,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-07-14T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26139,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-07-20T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26163,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-07-22T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26215,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-08-04T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26236,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-08-10T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26247,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-08-13T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26275,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-08-20T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26285,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-08-24T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26302,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-08-27T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26306,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-08-30T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26314,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-09-03T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26316,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-09-06T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26322,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-09-08T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26346,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-09-15T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26349,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-09-15T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26356,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-09-20T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26407,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-10-05T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26443,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-10-14T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26445,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-10-14T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26448,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-10-15T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26452,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-10-15T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26459,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-10-18T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26485,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-10-26T22:00:00.000Z"
+   },
+   {
+    "invoice_nr": 26497,
+    "status": "DONE",
+    "posted_at": null,
+    "invoice_date": "2026-10-29T22:00:00.000Z"
+   }
+  ]
+ }
+}

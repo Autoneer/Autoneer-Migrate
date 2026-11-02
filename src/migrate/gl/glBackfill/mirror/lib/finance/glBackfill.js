@@ -160,11 +160,20 @@ function getBalancedDebtorInvoiceTotals({ ex, inc, vat } = {}) {
  * @param {{parts: Array<{cost:number}>, wipBalance: number, wipAccnr: number|null,
  *          refs: object, resolveAccounts: (part: object) => Promise<{cosAccnr:number, assetAccnr:number}>}} opts
  */
-async function buildDebtorInvoicePartCostLines({ parts, wipBalance, wipAccnr, refs, resolveAccounts }) {
+async function buildDebtorInvoicePartCostLines({ parts, wipBalance, wipAccnr, refs, resolveAccounts, allowSignedCost = false }) {
 	let wipRemaining = wipAccnr ? round2(wipBalance) : 0;
 	const lines = [];
 	for (const part of parts || []) {
 		const cost = round2(part.cost);
+		// General-invoice returns carry signed quantities/costs. Reverse their
+		// own COS/asset pair, without introducing a shared job-0 WIP balance.
+		if (allowSignedCost && cost < -0.009) {
+			if (wipAccnr) throw new Error('Signed general-invoice costs cannot relieve WIP');
+			const { cosAccnr, assetAccnr } = await resolveAccounts(part);
+			lines.push({ accnr: cosAccnr, credit: Math.abs(cost), ...refs });
+			lines.push({ accnr: assetAccnr, debit: Math.abs(cost), ...refs });
+			continue;
+		}
 		if (cost <= 0.009) continue;
 		const wipPortion = round2(Math.min(cost, Math.max(wipRemaining, 0)));
 		const assetPortion = round2(cost - wipPortion);
@@ -1962,138 +1971,146 @@ async function runBackfillJob({ companyDb, schema, runId, fromDate, toDate, type
 					// Per-line revenue reconstruction from job detail tables.
 					// Parts relieve inventory; labour uses its explicitly configured
 					// cost source/control offset, matching live finalisation.
-					if (row.job_number) {
-						try {
-							// Finalise leaves excluded lines unstamped, so costed excluded
-							// lines are reached by job. A credit note never takes them.
-							const partScopeSql = isCreditNote
-								? 'invoice_nr = ?'
-								: '(invoice_nr = ? OR (invoice_nr IS NULL AND COALESCE(is_excluded_from_quote, 0) = 1))';
-							const partSaleSql = 'CAST(COALESCE(sales_price, 0) AS DECIMAL(18,2)) - CAST(COALESCE(discountamount, 0) AS DECIMAL(18,2))';
-							const partCostSql = 'CAST(cost_price AS DECIMAL(18,6)) * CAST(COALESCE(quantity, 1) AS DECIMAL(18,6))';
-							const partsSql = (accountColumns) => `SELECT stock_id, partnr, ${accountColumns} status,
-								        CASE WHEN invoice_nr IS NULL THEN 0 ELSE ROUND(${partSaleSql}, 2) END AS item_sale,
-								        CASE WHEN ${costedLineSql(excludedLinesCosted, 'PARTS')} THEN ROUND(${partCostSql}, 2) ELSE 0 END AS item_cost
-								 FROM ${schema}.spares_used
-								 WHERE job_number = ?
-								   AND ${partScopeSql}
-								   AND UPPER(COALESCE(status, '')) <> 'AWAITING_QUOTE'
-								   AND (
-								        (invoice_nr IS NOT NULL AND (${partSaleSql}) > 0.009)
-								        OR (
-										(status IS NULL OR UPPER(status) NOT IN ('AWAITING_QUOTE','ORDER','ORDERED'))
-								        	AND ${partCostSql} > 0.009
-								        )
-								   )`;
-							let partsRows = await tenantQuery(companyDb, partsSql('acc, siid, accasset,'), [row.job_number, row.invoice_nr]).catch(() => null);
-							if (!Array.isArray(partsRows)) {
-								partsRows = await tenantQuery(companyDb, partsSql(''), [row.job_number, row.invoice_nr]).catch(() => []);
+					// A legacy general invoice keeps its parts and labour on job 0,
+					// stamped with the invoice number: they are read by invoice alone
+					// and relieve no WIP, since job 0 is shared by every such sale.
+					const generalInvoice = !Number(row.job_number);
+					try {
+						// Finalise leaves excluded lines unstamped, so costed excluded
+						// lines are reached by job. A credit note never takes them.
+						const partScopeSql = isCreditNote || generalInvoice
+							? 'invoice_nr = ?'
+							: '(invoice_nr = ? OR (invoice_nr IS NULL AND COALESCE(is_excluded_from_quote, 0) = 1))';
+						const partSaleSql = 'CAST(COALESCE(sales_price, 0) AS DECIMAL(18,2)) - CAST(COALESCE(discountamount, 0) AS DECIMAL(18,2))';
+						const partCostSql = 'CAST(cost_price AS DECIMAL(18,6)) * CAST(COALESCE(quantity, 1) AS DECIMAL(18,6))';
+						const partSalePresentSql = generalInvoice ? `ABS(${partSaleSql}) > 0.009` : `(${partSaleSql}) > 0.009`;
+						const partCostPresentSql = generalInvoice ? `ABS(${partCostSql}) > 0.009` : `${partCostSql} > 0.009`;
+						const partsSql = (accountColumns) => `SELECT stock_id, partnr, ${accountColumns} status,
+							        CASE WHEN invoice_nr IS NULL THEN 0 ELSE ROUND(${partSaleSql}, 2) END AS item_sale,
+							        CASE WHEN ${costedLineSql(excludedLinesCosted, 'PARTS')} THEN ROUND(${partCostSql}, 2) ELSE 0 END AS item_cost
+							 FROM ${schema}.spares_used
+							 WHERE job_number = ?
+							   AND ${partScopeSql}
+							   AND UPPER(COALESCE(status, '')) <> 'AWAITING_QUOTE'
+							   AND (
+							        (invoice_nr IS NOT NULL AND ${partSalePresentSql})
+							        OR (
+									(status IS NULL OR UPPER(status) NOT IN ('AWAITING_QUOTE','ORDER','ORDERED'))
+									AND ${partCostPresentSql}
+							        )
+							   )`;
+						let partsRows = await tenantQuery(companyDb, partsSql('acc, siid, accasset,'), [row.job_number, row.invoice_nr]).catch(err => {
+							if (generalInvoice) throw err;
+							return null;
+						});
+						if (!Array.isArray(partsRows)) {
+							partsRows = await tenantQuery(companyDb, partsSql(''), [row.job_number, row.invoice_nr]).catch(() => []);
+						}
+						// Validate acc/siid/accasset values from spares_used against gl_accounts (legacy data may contain stale accnrs)
+						const partsRawAccnrs = (partsRows || []).flatMap(p => [p.acc, p.siid, p.accasset]).filter(Boolean).map(Number);
+						const validPartsAccnrs = await resolveValidAccnrs(companyDb, schema, partsRawAccnrs);
+						const lineRefs = { job_number: row.job_number, cid: row.cid, invoice_nr: row.invoice_nr };
+						let mappedRevenueTotal = 0;
+						const costedParts = [];
+						for (const part of partsRows || []) {
+							const sale = round2(part.item_sale);
+							const cost = round2(part.item_cost);
+							const isOrdered = ['AWAITING_QUOTE', 'ORDER', 'ORDERED'].includes(String(part.status || '').toUpperCase());
+							const partAccRevenue = (part.acc && validPartsAccnrs.has(Number(part.acc))) ? Number(part.acc) : null;
+							if (sale > 0.009) {
+								lines.push({ accnr: partAccRevenue || controls.SALES, credit: sale, ...lineRefs });
+								mappedRevenueTotal += sale;
+							} else if (generalInvoice && sale < -0.009) {
+								lines.push({ accnr: partAccRevenue || controls.SALES, debit: Math.abs(sale), ...lineRefs });
+								mappedRevenueTotal += sale;
 							}
-							// Validate acc/siid/accasset values from spares_used against gl_accounts (legacy data may contain stale accnrs)
-							const partsRawAccnrs = (partsRows || []).flatMap(p => [p.acc, p.siid, p.accasset]).filter(Boolean).map(Number);
-							const validPartsAccnrs = await resolveValidAccnrs(companyDb, schema, partsRawAccnrs);
-							const lineRefs = { job_number: row.job_number, cid: row.cid, invoice_nr: row.invoice_nr };
-							let mappedRevenueTotal = 0;
-							const costedParts = [];
-							for (const part of partsRows || []) {
-								const sale = round2(part.item_sale);
-								const cost = round2(part.item_cost);
-								const isOrdered = ['AWAITING_QUOTE', 'ORDER', 'ORDERED'].includes(String(part.status || '').toUpperCase());
-								const partAccRevenue = (part.acc && validPartsAccnrs.has(Number(part.acc))) ? Number(part.acc) : null;
-								if (sale > 0.009) {
-									lines.push({ accnr: partAccRevenue || controls.SALES, credit: sale, ...lineRefs });
-									mappedRevenueTotal += sale;
+							if (isOrdered || (generalInvoice ? Math.abs(cost) <= 0.009 : cost <= 0.009)) continue;
+							costedParts.push({ ...part, cost });
+						}
+						// Supplier WIP is relieved by the original invoice, never by its credit note.
+						const { wipAccnr, total: wipBalance } = isCreditNote || generalInvoice
+							? { wipAccnr: null, total: 0 }
+							: await getJobWipDebitedTotal((sql, params) => tenantQuery(companyDb, sql, params), schema, row.job_number);
+						lines.push(...await buildDebtorInvoicePartCostLines({
+							parts: costedParts,
+							allowSignedCost: generalInvoice,
+							wipBalance,
+							wipAccnr,
+							refs: lineRefs,
+							// Prefer siid/accasset captured at transaction time; fall back to resolveStockGlAccounts
+							resolveAccounts: async (part) => {
+								const partAccCos = (part.siid && validPartsAccnrs.has(Number(part.siid))) ? Number(part.siid) : null;
+								const partAccAsset = (part.accasset && validPartsAccnrs.has(Number(part.accasset))) ? Number(part.accasset) : null;
+								if (partAccCos && partAccAsset) return { cosAccnr: partAccCos, assetAccnr: partAccAsset };
+								try {
+									const itemAccounts = await resolveStockGlAccounts({
+										schema,
+										stockId: part.stock_id || null,
+										partnr: part.partnr || null,
+										txnType: 'PARTS'
+									});
+									return { cosAccnr: partAccCos || itemAccounts.cosAccnr, assetAccnr: partAccAsset || itemAccounts.assetAccnr };
+								} catch (_resolveErr) {
+									return { cosAccnr: partAccCos || controls.COS, assetAccnr: partAccAsset || controls.INVENTORY };
 								}
-								if (isOrdered || cost <= 0.009) continue;
-								costedParts.push({ ...part, cost });
 							}
-							// Supplier WIP is relieved by the original invoice, never by its credit note.
-							const { wipAccnr, total: wipBalance } = isCreditNote
-								? { wipAccnr: null, total: 0 }
-								: await getJobWipDebitedTotal((sql, params) => tenantQuery(companyDb, sql, params), schema, row.job_number);
-							lines.push(...await buildDebtorInvoicePartCostLines({
-								parts: costedParts,
-								wipBalance,
-								wipAccnr,
-								refs: lineRefs,
-								// Prefer siid/accasset captured at transaction time; fall back to resolveStockGlAccounts
-								resolveAccounts: async (part) => {
-									const partAccCos = (part.siid && validPartsAccnrs.has(Number(part.siid))) ? Number(part.siid) : null;
-									const partAccAsset = (part.accasset && validPartsAccnrs.has(Number(part.accasset))) ? Number(part.accasset) : null;
-									if (partAccCos && partAccAsset) return { cosAccnr: partAccCos, assetAccnr: partAccAsset };
-									try {
-										const itemAccounts = await resolveStockGlAccounts({
-											schema,
-											stockId: part.stock_id || null,
-											partnr: part.partnr || null,
-											txnType: 'PARTS'
-										});
-										return { cosAccnr: partAccCos || itemAccounts.cosAccnr, assetAccnr: partAccAsset || itemAccounts.assetAccnr };
-									} catch (_resolveErr) {
-										return { cosAccnr: partAccCos || controls.COS, assetAccnr: partAccAsset || controls.INVENTORY };
-									}
-								}
-							}));
+						}));
 
-							const workRows = await tenantQuery(companyDb,
-								`SELECT acc, siid,
-								        ROUND(CAST(COALESCE(workprice, 0) AS DECIMAL(18,2)) - CAST(COALESCE(discountamount, 0) AS DECIMAL(18,2)), 2) AS work_sale,
-								        ROUND(CAST(COALESCE(workcost, 0) AS DECIMAL(18,2)), 2) AS work_cost
-								 FROM ${schema}.work_done
-								 WHERE job_number = ?
-								   AND invoice_nr = ?
-								   AND (
-								        CAST(COALESCE(workprice, 0) AS DECIMAL(18,2)) - CAST(COALESCE(discountamount, 0) AS DECIMAL(18,2)) > 0.009
-								        OR CAST(COALESCE(workcost, 0) AS DECIMAL(18,2)) > 0.009
-								   )`,
-								[row.job_number, row.invoice_nr]
-							).catch(() => []);
-							const workRawAccnrs = (workRows || []).flatMap(w => [w.acc, w.siid]).filter(Boolean).map(Number);
-							const validWorkAccnrs = await resolveValidAccnrs(companyDb, schema, workRawAccnrs);
-							for (const work of workRows || []) {
-								const sale = Math.round((Number(work.work_sale) || 0) * 100) / 100;
-								const workAccRevenue = (work.acc && validWorkAccnrs.has(Number(work.acc))) ? Number(work.acc) : null;
-								if (sale > 0.009) {
-									lines.push(
-										{ accnr: workAccRevenue || controls.SALES, credit: sale, job_number: row.job_number, cid: row.cid, invoice_nr: row.invoice_nr }
-									);
-									mappedRevenueTotal += sale;
-								}
-							}
-
-							const residualRevenue = round2(revenueTotal - mappedRevenueTotal);
-							if (Math.abs(residualRevenue) > 0.009) {
-								lines.push({
-									accnr: controls.SALES,
-									debit: residualRevenue < 0 ? Math.abs(residualRevenue) : 0,
-									credit: residualRevenue > 0 ? residualRevenue : 0,
-									job_number: row.job_number,
-									cid: row.cid,
-									invoice_nr: row.invoice_nr
-								});
-							}
-						} catch (_cosErr) {
-							// Non-fatal: fall back to generic sales if spares_used query fails.
-							if (Math.abs(revenueTotal) > 0.009) {
-								lines.push({
-									accnr: controls.SALES,
-									debit: revenueTotal < 0 ? Math.abs(revenueTotal) : 0,
-									credit: revenueTotal > 0 ? revenueTotal : 0,
-									job_number: row.job_number,
-									cid: row.cid,
-									invoice_nr: row.invoice_nr
-								});
+						const workRows = await tenantQuery(companyDb,
+							`SELECT acc, siid,
+							        ROUND(CAST(COALESCE(workprice, 0) AS DECIMAL(18,2)) - CAST(COALESCE(discountamount, 0) AS DECIMAL(18,2)), 2) AS work_sale,
+							        ROUND(CAST(COALESCE(workcost, 0) AS DECIMAL(18,2)), 2) AS work_cost
+							 FROM ${schema}.work_done
+							 WHERE job_number = ?
+							   AND invoice_nr = ?
+							   AND (
+							        CAST(COALESCE(workprice, 0) AS DECIMAL(18,2)) - CAST(COALESCE(discountamount, 0) AS DECIMAL(18,2)) > 0.009
+							        OR CAST(COALESCE(workcost, 0) AS DECIMAL(18,2)) > 0.009
+							   )`,
+							[row.job_number, row.invoice_nr]
+						).catch(err => {
+							if (generalInvoice) throw err;
+							return [];
+						});
+						const workRawAccnrs = (workRows || []).flatMap(w => [w.acc, w.siid]).filter(Boolean).map(Number);
+						const validWorkAccnrs = await resolveValidAccnrs(companyDb, schema, workRawAccnrs);
+						for (const work of workRows || []) {
+							const sale = Math.round((Number(work.work_sale) || 0) * 100) / 100;
+							const workAccRevenue = (work.acc && validWorkAccnrs.has(Number(work.acc))) ? Number(work.acc) : null;
+							if (sale > 0.009) {
+								lines.push(
+									{ accnr: workAccRevenue || controls.SALES, credit: sale, job_number: row.job_number, cid: row.cid, invoice_nr: row.invoice_nr }
+								);
+								mappedRevenueTotal += sale;
 							}
 						}
-					} else if (Math.abs(revenueTotal) > 0.009) {
-						lines.push({
-							accnr: controls.SALES,
-							debit: revenueTotal < 0 ? Math.abs(revenueTotal) : 0,
-							credit: revenueTotal > 0 ? revenueTotal : 0,
-							job_number: row.job_number,
-							cid: row.cid,
-							invoice_nr: row.invoice_nr
-						});
+
+						const residualRevenue = round2(revenueTotal - mappedRevenueTotal);
+						if (Math.abs(residualRevenue) > 0.009) {
+							lines.push({
+								accnr: controls.SALES,
+								debit: residualRevenue < 0 ? Math.abs(residualRevenue) : 0,
+								credit: residualRevenue > 0 ? residualRevenue : 0,
+								job_number: row.job_number,
+								cid: row.cid,
+								invoice_nr: row.invoice_nr
+							});
+						}
+					} catch (_cosErr) {
+						// A general invoice must never silently lose its line-level
+						// sales/costs and report a successful lump-sum sales journal.
+						if (generalInvoice) throw _cosErr;
+						// Non-fatal: fall back to generic sales if spares_used query fails.
+						if (Math.abs(revenueTotal) > 0.009) {
+							lines.push({
+								accnr: controls.SALES,
+								debit: revenueTotal < 0 ? Math.abs(revenueTotal) : 0,
+								credit: revenueTotal > 0 ? revenueTotal : 0,
+								job_number: row.job_number,
+								cid: row.cid,
+								invoice_nr: row.invoice_nr
+							});
+						}
 					}
 
 					// Outside the legacy revenue fallback catch: missing labour setup
@@ -2133,7 +2150,9 @@ async function runBackfillJob({ companyDb, schema, runId, fromDate, toDate, type
 						source: isCreditNote ? 'DEBTOR_INVOICE_CREDIT' : 'DEBTOR_INVOICE',
 						sourceId: row.invoice_nr,
 						trxdate: row.doc_date,
-						description: `${isCreditNote ? 'Credit note' : 'Invoice'} ${row.invoice_nr} job ${row.job_number}`,
+						description: generalInvoice && !isCreditNote
+							? `General Invoice ${row.invoice_nr}`
+							: `${isCreditNote ? 'Credit note' : 'Invoice'} ${row.invoice_nr} job ${row.job_number}`,
 						lines,
 						extraRefs: { cid: row.cid, job_number: row.job_number }
 					};

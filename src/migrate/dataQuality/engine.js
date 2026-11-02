@@ -3,7 +3,7 @@ const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { ORIGINAL_SOURCE, fingerprint } = require('./corrections');
 const { writeRecord, readRecords, jsonEvidence } = require('./store');
-const { REQUIRED_IDENTITIES, isMissing, invalidIdentity } = require('./rules');
+const { REQUIRED_IDENTITIES, IDENTITY_ALTERNATIVES, isMissing, invalidIdentity } = require('./rules');
 const { transforms, applyTransform } = require('../mappers');
 const { mapRow } = require('../rowMapping');
 const { applyInvoiceSplitPolicy, buildInvoiceSplitPolicy } = require('../invoiceMigrationSafety');
@@ -105,6 +105,8 @@ function validateRow(table, source, mapped) {
 	const identities = REQUIRED_IDENTITIES[table.name] || {};
 	for (const [column, type] of Object.entries(identities)) {
 		const sourceColumn = Object.entries(table.mapping).find(([, rule]) => !rule.omit && lower(rule.target ?? rule.targetColumn) === column)?.[0];
+		const alternative = IDENTITY_ALTERNATIVES[table.name]?.[column];
+		if (alternative && !invalidIdentity(mapped[alternative], 'positive')) continue;
 		// A default must never manufacture a missing business identity.
 		if (invalidIdentity(source[lower(sourceColumn)], type) || invalidIdentity(mapped[column], type)) {
 			const hasValue = ['quantity', 'qty', 'cost_price', 'costprice', 'cost_price_exvat', 'salesprice', 'salespriceincvat', 'onorderqty', 'amount', 'amountexvat', 'total', 'paid', 'payable', 'inv_totalexlvat', 'inv_totalinclvat', 'inv_totalvat', 'invoice_total'].some(name => !isMissing(mapped[name] ?? source[name]) && Number(mapped[name] ?? source[name]) !== 0);

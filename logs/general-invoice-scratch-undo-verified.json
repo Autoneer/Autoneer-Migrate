@@ -1,0 +1,149 @@
+{
+  "mode": "READ_ONLY_UNDO_VERIFICATION",
+  "schema": "glbf_test_general_invoices_20261102",
+  "tables": [
+    {
+      "table": "migration_run_mappings",
+      "count": 23,
+      "match": true
+    },
+    {
+      "table": "accounts",
+      "count": 62,
+      "match": true
+    },
+    {
+      "table": "spares_used",
+      "count": 87843,
+      "match": true
+    },
+    {
+      "table": "work_done",
+      "count": 23428,
+      "match": true
+    },
+    {
+      "table": "invoices",
+      "count": 16264,
+      "match": true
+    },
+    {
+      "table": "customer_invoice_lines",
+      "count": 0,
+      "match": true
+    },
+    {
+      "table": "job_information",
+      "count": 17035,
+      "match": true
+    },
+    {
+      "table": "stock",
+      "count": 17342,
+      "match": true
+    },
+    {
+      "table": "gl_account_types",
+      "count": 6,
+      "match": true
+    },
+    {
+      "table": "gl_accounts",
+      "count": 67,
+      "match": true
+    },
+    {
+      "table": "gl_control_accounts",
+      "count": 32,
+      "match": true
+    },
+    {
+      "table": "gl_periods",
+      "count": 11,
+      "match": true
+    },
+    {
+      "table": "tax_codes",
+      "count": 4,
+      "match": true
+    },
+    {
+      "table": "gl_journal_headers",
+      "count": 81629,
+      "match": true
+    },
+    {
+      "table": "gl_journal_lines",
+      "count": 486291,
+      "match": true
+    },
+    {
+      "table": "gl_backfill_runs",
+      "count": 1,
+      "match": true
+    },
+    {
+      "table": "gl_backfill_run_items",
+      "count": 15637,
+      "match": true
+    },
+    {
+      "table": "company_prefferences",
+      "count": 1,
+      "match": true
+    },
+    {
+      "table": "customers",
+      "count": 1636,
+      "match": true
+    },
+    {
+      "table": "invoice_adjustments",
+      "count": 0,
+      "match": true
+    },
+    {
+      "table": "manual_journal_headers",
+      "count": 0,
+      "match": true
+    },
+    {
+      "table": "manual_journal_lines",
+      "count": 0,
+      "match": true
+    },
+    {
+      "table": "stock_takes",
+      "count": 1,
+      "match": true
+    },
+    {
+      "table": "stock_take",
+      "count": 1763,
+      "match": true
+    },
+    {
+      "table": "customer_credits",
+      "count": 0,
+      "match": true
+    },
+    {
+      "table": "dealer_accounting_postings",
+      "count": 0,
+      "match": true
+    },
+    {
+      "table": "banks",
+      "count": 1,
+      "match": true
+    }
+  ],
+  "totalRows": 749077,
+  "state": {
+    "parts": "0",
+    "labour": "0",
+    "pos": "0",
+    "done": "307",
+    "posted": "0"
+  }
+}

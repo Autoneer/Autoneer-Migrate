@@ -1,0 +1,38 @@
+Tenant glbf_test_general_invoices_20261102, legacy database AUTONEER.FDB.
+
+spares_used (mapping from import run 1):
+  To add:                 479 general-invoice lines on 285 invoices, cost 627 491,36, sales 738 321,15
+  Already in the tenant:  0
+  Id held by another line (left out): 0
+  Invoice not in the tenant (left out): 2
+    {"spares_id":45007,"invoice_nr":15888}
+    {"spares_id":45008,"invoice_nr":15888}
+  Replay check: 87 809 imported lines mapped again and compared, differences in 7 column(s):
+    sales_priceincvat: 128 line(s), e.g. [{"spares_id":49469,"mapped":"0","stored":"117.38"},{"spares_id":74569,"mapped":0,"stored":"138.00"},{"spares_id":76115,"mapped":0,"stored":"138.00"}]
+    vat: 124 line(s), e.g. [{"spares_id":75874,"mapped":96.71,"stored":"58.86"},{"spares_id":77992,"mapped":26.81,"stored":"26.80"},{"spares_id":78940,"mapped":119.25,"stored":"39.75"}]
+    status: 10 line(s), e.g. [{"spares_id":136399,"mapped":"ORDERED","stored":"RECEIVED"},{"spares_id":136477,"mapped":"ORDER","stored":"RECEIVED"},{"spares_id":136478,"mapped":"ORDER","stored":"RECEIVED"}]
+    accasset: 4 line(s), e.g. [{"spares_id":134552,"mapped":3300,"stored":3001},{"spares_id":134557,"mapped":3300,"stored":3001},{"spares_id":134566,"mapped":3300,"stored":3001}]
+    suppid: 2 line(s), e.g. [{"spares_id":136399,"mapped":0,"stored":5},{"spares_id":136519,"mapped":10,"stored":38}]
+    sales_price: 1 line(s), e.g. [{"spares_id":136486,"mapped":0,"stored":"1537.50"}]
+    invoice_nr: 1 line(s), e.g. [{"spares_id":136534,"mapped":null,"stored":26500}]
+
+work_done (mapping from import run 1):
+  To add:                 11 general-invoice lines on 10 invoices, labour 8 124,90
+    of which 9 get a new wdid: legacy repeats it on other lines
+  Already in the tenant:  0
+  Id held by another line (left out): 0
+  Invoice not in the tenant (left out): 0
+  Replay check: 1 111 imported lines mapped again and compared, all columns match.
+
+customer_invoice_lines and status (what AUTONEER-PWA shows and the GL backfill posts):
+  To add:                 490 lines on 290 general invoices (479 parts, 11 labour)
+  Already shown:          0 invoices
+  DONE to POSTED:         290 invoices
+  Lines not adding up to the header ex VAT (by R1 or more): 19; they show as legacy recorded them
+    {"invoice_nr":11017,"header_exvat":1337.74,"lines_exvat":926.64}
+    {"invoice_nr":11227,"header_exvat":767.03,"lines_exvat":659.83}
+    {"invoice_nr":11619,"header_exvat":368.55,"lines_exvat":286.38}
+    {"invoice_nr":11661,"header_exvat":565.27,"lines_exvat":556.95}
+    {"invoice_nr":11662,"header_exvat":487.54,"lines_exvat":365.09}
+
+Dry run: nothing changed. Run again with --write to add the lines.

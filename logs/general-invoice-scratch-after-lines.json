@@ -1,0 +1,181 @@
+{
+  "counts": [
+    {
+      "parts": 479,
+      "labour": 11,
+      "pos": 490,
+      "pos_invoices": 290
+    }
+  ],
+  "statuses": [
+    {
+      "status": "POSTED",
+      "n": 290
+    },
+    {
+      "status": "DONE",
+      "n": 17
+    },
+    {
+      "status": "DELETED",
+      "n": 3
+    }
+  ],
+  "badDates": [
+    {
+      "n": 0
+    }
+  ],
+  "excluded": [
+    {
+      "parts": 0,
+      "labour": 0
+    }
+  ],
+  "orphanLines": [
+    {
+      "n": 0
+    }
+  ],
+  "totals": [
+    {
+      "parts_cost": "627491.36",
+      "parts_sales": "738321.15"
+    }
+  ],
+  "balances": [
+    {
+      "accnr": 3200,
+      "balance": "2078130.98"
+    },
+    {
+      "accnr": 3250,
+      "balance": "104123.36"
+    },
+    {
+      "accnr": 4900,
+      "balance": "232324.80"
+    }
+  ],
+  "sourceState": [
+    {
+      "parts": 0,
+      "pos": 0,
+      "posted": 0
+    }
+  ],
+  "example": [
+    {
+      "spares_id": 136527,
+      "invoice_nr": 26497,
+      "quantity": "1.00",
+      "cost_price": "3319.140000"
+    },
+    {
+      "spares_id": 136528,
+      "invoice_nr": 26497,
+      "quantity": "1.00",
+      "cost_price": "1530.440000"
+    },
+    {
+      "spares_id": 136530,
+      "invoice_nr": 26497,
+      "quantity": "1.00",
+      "cost_price": "217.400000"
+    },
+    {
+      "spares_id": 136531,
+      "invoice_nr": 26497,
+      "quantity": "1.00",
+      "cost_price": "2130.440000"
+    },
+    {
+      "spares_id": 136532,
+      "invoice_nr": 26497,
+      "quantity": "1.00",
+      "cost_price": "1304.550000"
+    },
+    {
+      "spares_id": 136533,
+      "invoice_nr": 26497,
+      "quantity": "1.00",
+      "cost_price": "434.790000"
+    }
+  ],
+  "existingRows": [
+    {
+      "table": "spares_used",
+      "changed_or_missing": 0,
+      "source_count": 87843,
+      "scratch_count": 88322
+    },
+    {
+      "table": "work_done",
+      "changed_or_missing": 0,
+      "source_count": 23428,
+      "scratch_count": 23439
+    },
+    {
+      "table": "stock",
+      "changed_or_missing": 0,
+      "source_count": 17342,
+      "scratch_count": 17342
+    },
+    {
+      "table": "gl_journal_headers",
+      "changed_or_missing": 0,
+      "source_count": 81629,
+      "scratch_count": 81629
+    },
+    {
+      "table": "gl_journal_lines",
+      "changed_or_missing": 0,
+      "source_count": 486291,
+      "scratch_count": 486291
+    },
+    {
+      "table": "gl_backfill_runs",
+      "changed_or_missing": 0,
+      "source_count": 1,
+      "scratch_count": 1
+    },
+    {
+      "table": "gl_backfill_run_items",
+      "changed_or_missing": 0,
+      "source_count": 15637,
+      "scratch_count": 15637
+    },
+    {
+      "table": "stock_takes",
+      "changed_or_missing": 0,
+      "source_count": 1,
+      "scratch_count": 1
+    },
+    {
+      "table": "stock_take",
+      "changed_or_missing": 0,
+      "source_count": 1763,
+      "scratch_count": 1763
+    },
+    {
+      "table": "invoices",
+      "changed_or_missing": 0,
+      "source_count": 16264,
+      "scratch_count": 16264
+    }
+  ],
+  "nonTargetInvoiceChanges": [
+    {
+      "n": 0
+    }
+  ],
+  "backup": {
+    "parts": 479,
+    "labour": 11,
+    "pos": 490,
+    "statuses": 290,
+    "spares_used_found": 479,
+    "work_done_found": 11,
+    "customer_invoice_lines_found": 490
+  }
+}

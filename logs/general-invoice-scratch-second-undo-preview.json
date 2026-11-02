@@ -1,0 +1,79 @@
+{
+  "verifiedPreview": {
+    "journals": 290,
+    "issues": 0,
+    "wipLines": 0,
+    "inventoryCorrection": "624924.36",
+    "subletCost": "2567.00"
+  },
+  "undoPreview": {
+    "backup": "logs/general-invoice-lines-glbf_test_general_invoices_20261102-2026-11-02T18-31-21-848Z.json",
+    "remove": {
+      "spares_used": 479,
+      "work_done": 11,
+      "customer_invoice_lines": 490
+    },
+    "restoreInvoices": {
+      "count": 290,
+      "status": "DONE",
+      "posted_at": null
+    }
+  },
+  "retainedGlState": {
+    "headers": 81629,
+    "line_count": 486291,
+    "runs": 1,
+    "run_items": 15637
+  },
+  "posReturnsToRebuild": [
+    {
+      "invoice_nr": 12329,
+      "qty": "1.00",
+      "unit_price_exvat": "-4175.54",
+      "cost_exvat": "3630.90",
+      "total_exvat": "-4175.54"
+    },
+    {
+      "invoice_nr": 13777,
+      "qty": "1.00",
+      "unit_price_exvat": "-509.70",
+      "cost_exvat": "424.75",
+      "total_exvat": "-509.70"
+    },
+    {
+      "invoice_nr": 26314,
+      "qty": "1.00",
+      "unit_price_exvat": "-315.55",
+      "cost_exvat": "284.00",
+      "total_exvat": "-315.55"
+    },
+    {
+      "invoice_nr": 26314,
+      "qty": "1.00",
+      "unit_price_exvat": "-265.66",
+      "cost_exvat": "239.10",
+      "total_exvat": "-265.66"
+    },
+    {
+      "invoice_nr": 26314,
+      "qty": "1.00",
+      "unit_price_exvat": "-80.09",
+      "cost_exvat": "72.08",
+      "total_exvat": "-80.09"
+    }
+  ],
+  "balances": [
+    {
+      "accnr": 3200,
+      "balance": "2078130.98"
+    },
+    {
+      "accnr": 3250,
+      "balance": "104123.36"
+    },
+    {
+      "accnr": 4900,
+      "balance": "232324.80"
+    }
+  ]
+}

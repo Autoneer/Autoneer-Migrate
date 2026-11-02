@@ -1,0 +1,21 @@
+{
+  "schema": "glbf_test_general_invoices_20261102",
+  "backup": "logs/general-invoice-lines-glbf_test_general_invoices_20261102-2026-11-02T18-22-50-569Z.json",
+  "mode": "READ_ONLY_UNDO_PREVIEW",
+  "remove": {
+    "spares_used": 479,
+    "work_done": 11,
+    "customer_invoice_lines": 490
+  },
+  "restore": {
+    "invoices": 290,
+    "status": "DONE",
+    "posted_at": null
+  },
+  "invoiceJournals": 0,
+  "stockQuantityChanges": 0,
+  "glCounts": {
+    "header_count": 81629,
+    "line_count": 486291
+  }
+}

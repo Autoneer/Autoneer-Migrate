@@ -1040,9 +1040,10 @@ async function runMigrationInternal({
 					step.dedupeKeys = ["spares_id"];
 					logRun({ level: "info", phase: "plan_migrate", table: "spares_used", keyStrategy, message: "Set dedupe keys to primary key: spares_id" });
 				} else if (keyStrategy === "rekey" && step.dedupeKeys && step.dedupeKeys.includes("spares_id")) {
-					// For rekey mode, use natural composite key (job_number + lnr is unique per job)
-					step.dedupeKeys = ["job_number", "lnr"];
-					logRun({ level: "info", phase: "plan_migrate", table: "spares_used", keyStrategy, message: "Set dedupe keys to natural composite: job_number, lnr" });
+					// Lines have no natural key: legacy LNR only holds 0-2, and general-invoice
+					// lines all share job 0, so any composite would collapse distinct lines.
+					step.dedupeKeys = [];
+					logRun({ level: "info", phase: "plan_migrate", table: "spares_used", keyStrategy, message: "Cleared dedupe keys: job part lines have no natural key" });
 				}
 			}
 		}

@@ -11,6 +11,12 @@ const REQUIRED_IDENTITIES = {
 	invoice_items: { invoice_nr: 'text' },
 	payments_suppliers: { invoice_nr: 'text' }
 };
+// A general invoice sells parts and labour without a job: its lines carry job 0
+// and are identified by their invoice number instead.
+const IDENTITY_ALTERNATIVES = {
+	spares_used: { job_number: 'invoice_nr' },
+	work_done: { job_number: 'invoice_nr' }
+};
 
 const RELATIONSHIPS = [];
 function add(tables, columns, parent, parentColumns, optionalZero = false) {
@@ -29,4 +35,4 @@ function invalidIdentity(value, type) {
 	return isMissing(value) || (type === 'positive' && (!/^\d+$/.test(String(value)) || BigInt(String(value)) <= 0n));
 }
 
-module.exports = { REQUIRED_IDENTITIES, RELATIONSHIPS, isMissing, invalidIdentity };
+module.exports = { REQUIRED_IDENTITIES, IDENTITY_ALTERNATIVES, RELATIONSHIPS, isMissing, invalidIdentity };
