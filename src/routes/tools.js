@@ -16,4 +16,11 @@ router.get("/tools/gl-backfill", (req, res) => {
 	});
 });
 
+router.get("/tools/cleanup", (req, res) => {
+	res.render("cleanup", {
+		currentStep: "cleanup",
+		title: "Clean Up"
+	});
+});
+
 module.exports = router;

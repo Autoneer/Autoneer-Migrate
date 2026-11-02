@@ -2,23 +2,23 @@
 	<h1>GL Backfill</h1>
 	<div class="card-controls">
 		<label class="inline-label" title="A card you open or click into folds all the others"><input id="cards-one-only" class="toggle" type="checkbox" /><span>One card only</span></label>
-		<button id="cards-collapse-all" class="btn secondary" type="button">Collapse all</button>
+		<button id="cards-collapse-all" class="btn secondary" type="button">Expand all</button>
 	</div>
 </div>
 
 <div class="gl-backfill-grid">
-	<section class="card gl-tool collapsible" tabindex="-1" aria-labelledby="gl-backfill-check-title">
-		<h3 id="gl-backfill-check-title"><span class="gl-tool-num" aria-hidden="true">1</span><span class="gl-card-check" role="img" aria-label="All checks done" title="All checks done" hidden></span> Tenant Check</h3>
-		<button type="button" class="card-collapse" title="Collapse" aria-labelledby="gl-backfill-check-title" aria-expanded="true"></button>
+	<section class="card gl-tool collapsible is-collapsed is-checking" tabindex="-1" aria-labelledby="gl-backfill-check-title">
+		<h3 id="gl-backfill-check-title"><span class="gl-tool-num" aria-hidden="true">1</span><span class="gl-card-check" role="img" aria-label="All checks done" title="All checks done" hidden></span><span class="gl-card-checking" role="img" aria-label="Checking" title="Checking"></span> Tenant Check</h3>
+		<button type="button" class="card-collapse" title="Expand" aria-labelledby="gl-backfill-check-title" aria-expanded="false"></button>
 		<div id="gl-backfill-scope" class="gl-backfill-scope" aria-live="polite">Checking the tenant...</div>
 		<div class="gl-tool-actions">
 			<button id="btn-gl-backfill-check" class="btn secondary" type="button">Check Again</button>
 		</div>
 	</section>
 
-	<section class="card gl-tool collapsible" tabindex="-1" aria-labelledby="gl-rfc-title">
-		<h3 id="gl-rfc-title"><span class="gl-tool-num" aria-hidden="true">2</span><span class="gl-card-check" role="img" aria-label="All checks done" title="All checks done" hidden></span> Legacy Supplier RFC Migration</h3>
-		<button type="button" class="card-collapse" title="Collapse" aria-labelledby="gl-rfc-title" aria-expanded="true"></button>
+	<section class="card gl-tool collapsible is-collapsed is-checking" tabindex="-1" aria-labelledby="gl-rfc-title">
+		<h3 id="gl-rfc-title"><span class="gl-tool-num" aria-hidden="true">2</span><span class="gl-card-check" role="img" aria-label="All checks done" title="All checks done" hidden></span><span class="gl-card-checking" role="img" aria-label="Checking" title="Checking"></span> Legacy Supplier RFC Migration</h3>
+		<button type="button" class="card-collapse" title="Expand" aria-labelledby="gl-rfc-title" aria-expanded="false"></button>
 		<p class="hint">Run before the backfill. Converts legacy supplier returns (RFC pairs) so their original invoices can be posted.</p>
 		<div class="gl-backfill-scope-cols">
 			<div class="gl-repair-form">
@@ -37,9 +37,9 @@
 		</div>
 	</section>
 
-	<section class="card gl-tool collapsible" tabindex="-1" aria-labelledby="gl-general-title">
-		<h3 id="gl-general-title"><span class="gl-tool-num" aria-hidden="true">3</span><span class="gl-card-check" role="img" aria-label="All checks done" title="All checks done" hidden></span> General Invoice Accounts</h3>
-		<button type="button" class="card-collapse" title="Collapse" aria-labelledby="gl-general-title" aria-expanded="true"></button>
+	<section class="card gl-tool collapsible is-collapsed is-checking" tabindex="-1" aria-labelledby="gl-general-title">
+		<h3 id="gl-general-title"><span class="gl-tool-num" aria-hidden="true">3</span><span class="gl-card-check" role="img" aria-label="All checks done" title="All checks done" hidden></span><span class="gl-card-checking" role="img" aria-label="Checking" title="Checking"></span> General Invoice Accounts</h3>
+		<button type="button" class="card-collapse" title="Expand" aria-labelledby="gl-general-title" aria-expanded="false"></button>
 		<p class="hint">Run before the backfill. Gives legacy GENERAL supplier invoices a GL account; without one they post to Cost of Sales.</p>
 		<div class="gl-backfill-scope-cols">
 			<div class="gl-repair-form">
@@ -58,9 +58,9 @@
 		</div>
 	</section>
 
-	<section class="card gl-tool collapsible" tabindex="-1" aria-labelledby="gl-backfill-run-title">
-		<h3 id="gl-backfill-run-title"><span class="gl-tool-num" aria-hidden="true">4</span><span class="gl-card-check" role="img" aria-label="All checks done" title="All checks done" hidden></span> Run Backfill</h3>
-		<button type="button" class="card-collapse" title="Collapse" aria-labelledby="gl-backfill-run-title" aria-expanded="true"></button>
+	<section class="card gl-tool collapsible is-collapsed is-checking" tabindex="-1" aria-labelledby="gl-backfill-run-title">
+		<h3 id="gl-backfill-run-title"><span class="gl-tool-num" aria-hidden="true">4</span><span class="gl-card-check" role="img" aria-label="All checks done" title="All checks done" hidden></span><span class="gl-card-checking" role="img" aria-label="Checking" title="Checking"></span> Run Backfill</h3>
+		<button type="button" class="card-collapse" title="Expand" aria-labelledby="gl-backfill-run-title" aria-expanded="false"></button>
 		<p class="hint">Dry run first, fix any failures, then post.</p>
 		<div class="gl-backfill-run-form">
 			<div class="gl-backfill-dates">
@@ -113,9 +113,9 @@
 		</div>
 	</section>
 
-	<section class="card gl-tool collapsible" tabindex="-1" aria-labelledby="gl-repair-title">
-		<h3 id="gl-repair-title"><span class="gl-tool-num" aria-hidden="true">5</span><span class="gl-card-check" role="img" aria-label="All checks done" title="All checks done" hidden></span> Post-Backfill Repair</h3>
-		<button type="button" class="card-collapse" title="Collapse" aria-labelledby="gl-repair-title" aria-expanded="true"></button>
+	<section class="card gl-tool collapsible is-collapsed is-checking" tabindex="-1" aria-labelledby="gl-repair-title">
+		<h3 id="gl-repair-title"><span class="gl-tool-num" aria-hidden="true">5</span><span class="gl-card-check" role="img" aria-label="All checks done" title="All checks done" hidden></span><span class="gl-card-checking" role="img" aria-label="Checking" title="Checking"></span> Post-Backfill Repair</h3>
+		<button type="button" class="card-collapse" title="Expand" aria-labelledby="gl-repair-title" aria-expanded="false"></button>
 		<p class="hint">Run after the backfill. Fills missing supplier references and renumbers legacy RFC journals.</p>
 		<div class="gl-backfill-scope-cols">
 			<div class="gl-repair-form">
@@ -133,9 +133,9 @@
 		</div>
 	</section>
 
-	<section class="card gl-tool collapsible" tabindex="-1" aria-labelledby="gl-opening-title">
-		<h3 id="gl-opening-title"><span class="gl-tool-num" aria-hidden="true">6</span><span class="gl-card-check" role="img" aria-label="All checks done" title="All checks done" hidden></span> Opening Stock</h3>
-		<button type="button" class="card-collapse" title="Collapse" aria-labelledby="gl-opening-title" aria-expanded="true"></button>
+	<section class="card gl-tool collapsible is-collapsed is-checking" tabindex="-1" aria-labelledby="gl-opening-title">
+		<h3 id="gl-opening-title"><span class="gl-tool-num" aria-hidden="true">6</span><span class="gl-card-check" role="img" aria-label="All checks done" title="All checks done" hidden></span><span class="gl-card-checking" role="img" aria-label="Checking" title="Checking"></span> Opening Stock</h3>
+		<button type="button" class="card-collapse" title="Expand" aria-labelledby="gl-opening-title" aria-expanded="false"></button>
 		<p class="hint">Run after the backfill and its repair. Brings the legacy stock quantities in as an opening stock take on the cut-over date, at ex-VAT cost: Inventory against Opening Stock. Placeholder and negative quantities become 0.</p>
 		<div class="gl-backfill-scope-cols">
 			<div class="gl-repair-form">
@@ -157,9 +157,9 @@
 		</div>
 	</section>
 
-	<section class="card gl-tool collapsible" tabindex="-1" aria-labelledby="gl-wip-title">
-		<h3 id="gl-wip-title"><span class="gl-tool-num" aria-hidden="true">7</span><span class="gl-card-check" role="img" aria-label="All checks done" title="All checks done" hidden></span> WIP Write-off</h3>
-		<button type="button" class="card-collapse" title="Collapse" aria-labelledby="gl-wip-title" aria-expanded="true"></button>
+	<section class="card gl-tool collapsible is-collapsed is-checking" tabindex="-1" aria-labelledby="gl-wip-title">
+		<h3 id="gl-wip-title"><span class="gl-tool-num" aria-hidden="true">7</span><span class="gl-card-check" role="img" aria-label="All checks done" title="All checks done" hidden></span><span class="gl-card-checking" role="img" aria-label="Checking" title="Checking"></span> WIP Write-off</h3>
+		<button type="button" class="card-collapse" title="Expand" aria-labelledby="gl-wip-title" aria-expanded="false"></button>
 		<p class="hint">Run after the backfill. The backfill leaves supplier cost in Work In Progress for jobs that will never be invoiced. This writes it off on the cut-over date, one line per job, against Opening Stock, and keeps the WIP of jobs that can still be invoiced.</p>
 		<div class="gl-backfill-scope-cols">
 			<div class="gl-repair-form">
@@ -181,9 +181,9 @@
 		</div>
 	</section>
 
-	<section class="card gl-tool collapsible" tabindex="-1" aria-labelledby="gl-history-title">
+	<section class="card gl-tool collapsible is-collapsed" tabindex="-1" aria-labelledby="gl-history-title">
 		<h3 id="gl-history-title"><span class="gl-tool-num" aria-hidden="true">8</span> Clear Run History</h3>
-		<button type="button" class="card-collapse" title="Collapse" aria-labelledby="gl-history-title" aria-expanded="true"></button>
+		<button type="button" class="card-collapse" title="Expand" aria-labelledby="gl-history-title" aria-expanded="false"></button>
 		<p class="hint">Deletes the backfill run log. Journals are kept. Cannot be undone.</p>
 		<div class="gl-backfill-scope-cols">
 			<div class="gl-repair-form">

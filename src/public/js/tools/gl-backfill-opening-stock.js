@@ -1,7 +1,7 @@
 // The GL Backfill page's Opening Stock card: previews and posts the migration
 // opening stock take (src/migrate/gl/glBackfill/openingStock.js), or undoes it.
 (function () {
-	const { escapeHtml, count, money, postJson, streamPost, table, section, statTiles, confirmList, alertError, setCardDone, announceChange, workingLine } = window.GlBackfill;
+	const { escapeHtml, count, money, postJson, streamPost, table, section, statTiles, confirmList, alertError, setCardDone, setCardChecking, announceChange, workingLine } = window.GlBackfill;
 	const el = (id) => document.getElementById(id);
 	// Post sits at the top of the card as well as the bottom.
 	const POST_BUTTONS = ["btn-gl-opening-post", "btn-gl-opening-post-top"];
@@ -222,6 +222,7 @@
 	async function load({ keepLists = false } = {}) {
 		const request = ++latest;
 		loading++;
+		setCardChecking(el("gl-opening-scope"));
 		sync();
 		try {
 			const response = await postJson("/api/tools/gl-backfill/opening-stock/preview", payload());

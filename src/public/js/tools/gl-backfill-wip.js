@@ -1,7 +1,7 @@
 // The GL Backfill page's WIP Write-off card: previews and posts the cut-over
 // write-off of the WIP the backfill leaves (src/migrate/gl/glBackfill/wipWriteOff.js), or undoes it.
 (function () {
-	const { escapeHtml, count, money, postJson, table, section, statTiles, confirmList, alertError, setCardDone, announceChange, workingLine } = window.GlBackfill;
+	const { escapeHtml, count, money, postJson, table, section, statTiles, confirmList, alertError, setCardDone, setCardChecking, announceChange, workingLine } = window.GlBackfill;
 	const el = (id) => document.getElementById(id);
 	// Post sits at the top of the card as well as the bottom.
 	const POST_BUTTONS = ["btn-gl-wip-post", "btn-gl-wip-post-top"];
@@ -152,6 +152,7 @@
 	async function load() {
 		const request = ++latest;
 		loading++;
+		setCardChecking(el("gl-wip-scope"));
 		sync();
 		try {
 			const response = await postJson("/api/tools/gl-backfill/wip-write-off/preview", payload());

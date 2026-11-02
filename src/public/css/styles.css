@@ -1073,21 +1073,26 @@ th[aria-sort="descending"] > .gl-sort::after { content: " \25BC"; font-size: 9px
 .gl-card-check::before { content: ""; width: 5px; height: 10px; margin-top: -2px; border-right: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(45deg); }
 .gl-card-check[hidden] { display: none; }
 .card.is-done .gl-tool-num { color: #1a7f37; border-color: #1a7f37; }
-/* GL Backfill: each card's action sits bottom right as a solid button. */
-[data-page="glBackfill"] .gl-tool-actions { display: flex; justify-content: flex-end; gap: 8px; }
-[data-page="glBackfill"] .gl-tool-actions .btn { padding: 8px 18px; font-weight: 600; color: #fff; background: var(--primary); border-color: var(--primary); box-shadow: 0 1px 2px rgba(31, 35, 40, 0.15); transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease; }
-[data-page="glBackfill"] .gl-tool-actions .btn:hover:not(:disabled) { background: #0550ae; border-color: #0550ae; box-shadow: 0 2px 6px rgba(9, 105, 218, 0.35); }
-[data-page="glBackfill"] .gl-tool-actions .btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.3); }
-[data-page="glBackfill"] .gl-tool-actions .btn:disabled { cursor: not-allowed; opacity: 0.5; box-shadow: none; }
-[data-page="glBackfill"] .gl-tool-actions .btn.danger { background: var(--danger); border-color: var(--danger); }
-[data-page="glBackfill"] .gl-tool-actions .btn.danger:hover:not(:disabled) { background: #a40e26; border-color: #a40e26; box-shadow: 0 2px 6px rgba(207, 34, 46, 0.35); }
+/* While a card works out its check, a small spinner takes the check's place. */
+.gl-card-checking { display: none; flex: 0 0 auto; width: 16px; height: 16px; border: 2px solid var(--border-subtle); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.9s linear infinite; }
+.card.is-checking .gl-card-checking { display: inline-block; }
+.card.is-checking .gl-card-check { display: none; }
+@media (prefers-reduced-motion: reduce) { .gl-card-checking { animation-duration: 2.5s; } }
+/* GL Backfill and Clean Up: each card's action sits bottom right as a solid button. */
+:is([data-page="glBackfill"], [data-page="cleanup"]) .gl-tool-actions { display: flex; justify-content: flex-end; gap: 8px; }
+:is([data-page="glBackfill"], [data-page="cleanup"]) .gl-tool-actions .btn { padding: 8px 18px; font-weight: 600; color: #fff; background: var(--primary); border-color: var(--primary); box-shadow: 0 1px 2px rgba(31, 35, 40, 0.15); transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease; }
+:is([data-page="glBackfill"], [data-page="cleanup"]) .gl-tool-actions .btn:hover:not(:disabled) { background: #0550ae; border-color: #0550ae; box-shadow: 0 2px 6px rgba(9, 105, 218, 0.35); }
+:is([data-page="glBackfill"], [data-page="cleanup"]) .gl-tool-actions .btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.3); }
+:is([data-page="glBackfill"], [data-page="cleanup"]) .gl-tool-actions .btn:disabled { cursor: not-allowed; opacity: 0.5; box-shadow: none; }
+:is([data-page="glBackfill"], [data-page="cleanup"]) .gl-tool-actions .btn.danger { background: var(--danger); border-color: var(--danger); }
+:is([data-page="glBackfill"], [data-page="cleanup"]) .gl-tool-actions .btn.danger:hover:not(:disabled) { background: #a40e26; border-color: #a40e26; box-shadow: 0 2px 6px rgba(207, 34, 46, 0.35); }
 .gl-backfill-run-form .gl-backfill-dates { flex-direction: column; margin: 0; }
 .gl-backfill-run-form .gl-backfill-dates label { display: grid; grid-template-columns: 40px auto; justify-content: start; }
 .gl-backfill-grid .card { margin-bottom: 0; }
 /* GL Backfill cards: a light drop shadow, and a primary border while the card or anything in it has focus (a click focuses the card: tabindex="-1"). */
-[data-page="glBackfill"] .card { box-shadow: 0 3px 8px rgba(31, 35, 40, 0.12), 0 1px 3px rgba(31, 35, 40, 0.1); transition: border-color .15s ease; }
-[data-page="glBackfill"] .card:focus { outline: none; }
-[data-page="glBackfill"] .card:focus-within { border-color: var(--primary); }
+:is([data-page="glBackfill"], [data-page="cleanup"]) .card { box-shadow: 0 3px 8px rgba(31, 35, 40, 0.12), 0 1px 3px rgba(31, 35, 40, 0.1); transition: border-color .15s ease; }
+:is([data-page="glBackfill"], [data-page="cleanup"]) .card:focus { outline: none; }
+:is([data-page="glBackfill"], [data-page="cleanup"]) .card:focus-within { border-color: var(--primary); }
 .gl-tool.collapsible { --card-pad-y: 18px; --card-pad-x: 20px; }
 .gl-backfill-scope { font-size: 12px; line-height: 1.5; }
 .gl-backfill-scope h4 { margin: 14px 0 6px; font-size: 13px; }
@@ -1153,20 +1158,20 @@ th[aria-sort="descending"] > .gl-sort::after { content: " \25BC"; font-size: 9px
 .gl-control-fix-preview { margin-top: 12px; padding: 10px 12px; background: var(--panel); border: 1px solid var(--border-subtle); border-radius: 6px; }
 .gl-control-fix-preview ul { margin: 6px 0 0; padding-left: 18px; }
 /* GL Backfill: confirm dialogs in the page's own style (modal.js builds them on <body>; modal.css loads later, hence body[...]). */
-body[data-page="glBackfill"] .modal-dialog { max-width: 600px; border-radius: 10px; box-shadow: 0 12px 32px rgba(31, 35, 40, 0.25); }
-body[data-page="glBackfill"] .modal-dialog .modal-header { padding: 16px 20px; background: var(--bg); border-bottom: 1px solid var(--border-subtle); }
-body[data-page="glBackfill"] .modal-dialog .modal-header h2 { font-size: 17px; font-weight: 600; color: var(--text); }
-body[data-page="glBackfill"] .modal-warning .modal-header h2 { color: var(--danger); }
-body[data-page="glBackfill"] .modal-dialog .modal-body { padding: 16px 20px; }
-body[data-page="glBackfill"] .modal-dialog .modal-footer { padding: 12px 20px; border-top: 1px solid var(--border-subtle); }
-body[data-page="glBackfill"] .modal-dialog .modal-footer .btn { padding: 8px 18px; font-size: 13px; font-weight: 600; border: 1px solid transparent; border-radius: 6px; box-shadow: none; transform: none; }
-body[data-page="glBackfill"] .modal-dialog .modal-footer .btn-secondary { color: var(--text); background: var(--bg); border-color: var(--border); }
-body[data-page="glBackfill"] .modal-dialog .modal-footer .btn-secondary:hover { background: var(--panel); }
-body[data-page="glBackfill"] .modal-dialog .modal-footer .btn-primary { color: #fff; background: var(--primary); border-color: var(--primary); }
-body[data-page="glBackfill"] .modal-dialog .modal-footer .btn-primary:hover { background: #0550ae; border-color: #0550ae; }
-body[data-page="glBackfill"] .modal-dialog .modal-footer .btn-danger { color: #fff; background: var(--danger); border-color: var(--danger); }
-body[data-page="glBackfill"] .modal-dialog .modal-footer .btn-danger:hover { background: #a40e26; border-color: #a40e26; }
-body[data-page="glBackfill"] .modal-dialog.modal-xl { max-width: 980px; }
+body:is([data-page="glBackfill"], [data-page="cleanup"]) .modal-dialog { max-width: 600px; border-radius: 10px; box-shadow: 0 12px 32px rgba(31, 35, 40, 0.25); }
+body:is([data-page="glBackfill"], [data-page="cleanup"]) .modal-dialog .modal-header { padding: 16px 20px; background: var(--bg); border-bottom: 1px solid var(--border-subtle); }
+body:is([data-page="glBackfill"], [data-page="cleanup"]) .modal-dialog .modal-header h2 { font-size: 17px; font-weight: 600; color: var(--text); }
+body:is([data-page="glBackfill"], [data-page="cleanup"]) .modal-warning .modal-header h2 { color: var(--danger); }
+body:is([data-page="glBackfill"], [data-page="cleanup"]) .modal-dialog .modal-body { padding: 16px 20px; }
+body:is([data-page="glBackfill"], [data-page="cleanup"]) .modal-dialog .modal-footer { padding: 12px 20px; border-top: 1px solid var(--border-subtle); }
+body:is([data-page="glBackfill"], [data-page="cleanup"]) .modal-dialog .modal-footer .btn { padding: 8px 18px; font-size: 13px; font-weight: 600; border: 1px solid transparent; border-radius: 6px; box-shadow: none; transform: none; }
+body:is([data-page="glBackfill"], [data-page="cleanup"]) .modal-dialog .modal-footer .btn-secondary { color: var(--text); background: var(--bg); border-color: var(--border); }
+body:is([data-page="glBackfill"], [data-page="cleanup"]) .modal-dialog .modal-footer .btn-secondary:hover { background: var(--panel); }
+body:is([data-page="glBackfill"], [data-page="cleanup"]) .modal-dialog .modal-footer .btn-primary { color: #fff; background: var(--primary); border-color: var(--primary); }
+body:is([data-page="glBackfill"], [data-page="cleanup"]) .modal-dialog .modal-footer .btn-primary:hover { background: #0550ae; border-color: #0550ae; }
+body:is([data-page="glBackfill"], [data-page="cleanup"]) .modal-dialog .modal-footer .btn-danger { color: #fff; background: var(--danger); border-color: var(--danger); }
+body:is([data-page="glBackfill"], [data-page="cleanup"]) .modal-dialog .modal-footer .btn-danger:hover { background: #a40e26; border-color: #a40e26; }
+body:is([data-page="glBackfill"], [data-page="cleanup"]) .modal-dialog.modal-xl { max-width: 980px; }
 /* A wide confirm: intro and warning across the top, then the summary blocks and the list two to a row. */
 .gl-confirm-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 12px 16px; }
 .gl-control-fix.gl-confirm-grid > p { grid-column: 1 / -1; margin: 0; }
@@ -1285,3 +1290,32 @@ input[type="checkbox"].toggle:disabled + * { opacity: 0.6; }
 .history-danger h3 { margin: 0 0 2px; font-size: 14px; }
 .history-danger .hint { margin: 0; }
 .history-danger form { margin: 0; }
+/* Clean Up: the release form. The scope (buckets and completion years) sits under the cut-off as two tidy groups. */
+:is([data-page="cleanup"]) .gl-repair-form { gap: 12px; }
+:is([data-page="cleanup"]) .gl-repair-field { grid-template-columns: 150px 170px; }
+.cleanup-scope { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.cleanup-scope legend, .cleanup-scope-head { display: flex; align-items: baseline; justify-content: space-between; width: 100%; margin-bottom: 2px; padding: 0; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .02em; }
+.cleanup-legend-links { display: flex; gap: 12px; }
+.cleanup-card { padding: 10px 12px 12px; background: var(--panel); border: 1px solid var(--border-subtle); border-radius: 8px; }
+.cleanup-card .cleanup-scope-head { margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid var(--border-subtle); }
+.cleanup-card .cleanup-years .inline-label input { background: #fff; }
+.cleanup-scope + .cleanup-scope { margin-top: 4px; }
+.cleanup-apply { display: flex; align-items: center; gap: 12px; padding-top: 4px; }
+.cleanup-apply .btn.secondary { padding: 6px 12px; font-size: 13px; }
+.cleanup-apply .btn:disabled { cursor: not-allowed; opacity: 0.5; box-shadow: none; }
+.cleanup-apply .cleanup-release { margin-left: auto; padding: 8px 18px; font-size: 13px; font-weight: 600; color: #fff; background: var(--primary); border-color: var(--primary); box-shadow: 0 1px 2px rgba(31, 35, 40, 0.15); }
+.cleanup-apply .cleanup-release:hover:not(:disabled) { background: #0550ae; border-color: #0550ae; }
+.cleanup-pending { font-size: 12px; color: #6f4b00; }
+.cleanup-side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.cleanup-side .gl-tool-note { margin: 0; }
+/* Clean Up: the batch figures sit clear of the form, under a faint rule. */
+#cleanup-wip-details { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border-subtle); }
+#cleanup-wip-details:empty { display: none; }
+.cleanup-scope-list { display: flex; flex-wrap: wrap; gap: 6px 24px; }
+.cleanup-scope-list .inline-label { margin: 0; font-size: 13px; color: var(--text); }
+.cleanup-scope-list .inline-label small { font-size: 11px; color: var(--muted); }
+.cleanup-years { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 6px 12px; }
+.cleanup-years .inline-label { gap: 6px; white-space: nowrap; }
+.cleanup-years .inline-label input { flex: 0 0 auto; }
+.cleanup-link { padding: 0; font: inherit; font-size: 11px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--primary); background: none; border: 0; cursor: pointer; }
+.cleanup-link:hover { text-decoration: underline; }

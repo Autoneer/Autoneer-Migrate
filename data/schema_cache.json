@@ -13570,7 +13570,7 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-11-01T09:20:26.112Z"
+    "lastUpdated": "2026-11-02T06:49:52.499Z"
   },
   "mysql": {
     "tables": {
@@ -44823,6 +44823,183 @@
             "nullable": true,
             "defaultValue": null,
             "length": 65535,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          }
+        },
+        "primaryKey": [
+          "ID"
+        ],
+        "uniqueIndexes": []
+      },
+      "MIGRATE_JOB_RELEASES": {
+        "name": "MIGRATE_JOB_RELEASES",
+        "columns": {
+          "ID": {
+            "name": "ID",
+            "type": "BIGINT",
+            "columnType": "bigint",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 19,
+            "scale": 0,
+            "isPrimaryKey": true,
+            "isUnique": false
+          },
+          "BATCH_ID": {
+            "name": "BATCH_ID",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "JOB_NUMBER": {
+            "name": "JOB_NUMBER",
+            "type": "INT",
+            "columnType": "int",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": 10,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "OLD_STATUS": {
+            "name": "OLD_STATUS",
+            "type": "VARCHAR",
+            "columnType": "varchar(50)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 50,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "OLD_WIPSTATUS": {
+            "name": "OLD_WIPSTATUS",
+            "type": "VARCHAR",
+            "columnType": "varchar(50)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 50,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "OLD_LOCATION": {
+            "name": "OLD_LOCATION",
+            "type": "VARCHAR",
+            "columnType": "varchar(100)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 100,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "COMPLETED_ON": {
+            "name": "COMPLETED_ON",
+            "type": "DATE",
+            "columnType": "date",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "INVOICE_TOTAL": {
+            "name": "INVOICE_TOTAL",
+            "type": "DECIMAL",
+            "columnType": "decimal(18,2)",
+            "nullable": false,
+            "defaultValue": "0.00",
+            "length": null,
+            "precision": 18,
+            "scale": 2,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "CUTOFF_DATE": {
+            "name": "CUTOFF_DATE",
+            "type": "DATE",
+            "columnType": "date",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "RELEASED_AT": {
+            "name": "RELEASED_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": false,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "UNDONE_AT": {
+            "name": "UNDONE_AT",
+            "type": "DATETIME",
+            "columnType": "datetime",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "UNDO_RESULT": {
+            "name": "UNDO_RESULT",
+            "type": "VARCHAR",
+            "columnType": "varchar(20)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 20,
+            "precision": null,
+            "scale": null,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "AUDIT_ID": {
+            "name": "AUDIT_ID",
+            "type": "BIGINT",
+            "columnType": "bigint",
+            "nullable": true,
+            "defaultValue": null,
+            "length": null,
+            "precision": 19,
+            "scale": 0,
+            "isPrimaryKey": false,
+            "isUnique": false
+          },
+          "SCOPE_NOTE": {
+            "name": "SCOPE_NOTE",
+            "type": "VARCHAR",
+            "columnType": "varchar(255)",
+            "nullable": true,
+            "defaultValue": null,
+            "length": 255,
             "precision": null,
             "scale": null,
             "isPrimaryKey": false,
@@ -78093,6 +78270,6 @@
         "uniqueIndexes": []
       }
     },
-    "lastUpdated": "2026-11-01T09:20:26.174Z"
+    "lastUpdated": "2026-11-02T06:49:52.590Z"
   }
 }

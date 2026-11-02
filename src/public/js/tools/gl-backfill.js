@@ -7,7 +7,7 @@
 		CREDITOR_PAYMENT: "Supplier payments"
 	};
 	const RUN_STATES = { RUNNING: "Running", DONE: "Done", FAILED: "Failed", CANCELLED: "Cancelled" };
-	const { escapeHtml, count, money, localDate, getJson, postJson, table, section, statTiles, setCardDone, announceChange, timeLeft, formatTimeLeft, workingLine } = window.GlBackfill;
+	const { escapeHtml, count, money, localDate, getJson, postJson, table, section, statTiles, setCardDone, setCardChecking, announceChange, timeLeft, formatTimeLeft, workingLine } = window.GlBackfill;
 
 	// " · about 12 min left, done around 14:35" while a stage works; null rate means too early to tell.
 	function etaText(key, done, total) {
@@ -335,6 +335,8 @@
 		let following = false;
 		let lastScope = null;
 		let lastStatus = null;
+		// True while the first look at a run is on its way, so card 4 cannot tell yet.
+		let checkingRun = false;
 
 		// Green checks. Card 1: usable schema, every control mapped, no closed period.
 		// Card 4: the latest run posted the tenant's whole date range without a failure.
@@ -345,6 +347,7 @@
 			setCardDone(button, Boolean(sc && sc.ready && sc.from && s && !s.active && !s.stopped &&
 				Number(s.run.dry_run) === 0 && s.run.status === "DONE" && Number(s.summary.failed) === 0 &&
 				localDate(s.run.from_date) <= sc.from && localDate(s.run.to_date) >= sc.to));
+			if (checkingRun) setCardChecking(button);
 		};
 
 		// Card 4 shows its Result box only once there is a run to show.
@@ -366,6 +369,8 @@
 
 		async function loadScope(notice) {
 			checkBtn.disabled = true;
+			setCardChecking(scopeEl);
+			setCardChecking(button);
 			try {
 				const scope = await getJson("/api/tools/gl-backfill/scope");
 				scopeEl.innerHTML = renderScope(scope, notice);
@@ -394,11 +399,13 @@
 		// Shows a run and, while it is still working, keeps refreshing it.
 		async function showRun(id) {
 			runId = id;
+			if (!lastStatus || Number(lastStatus.run.id) !== Number(id)) checkingRun = true;
 			try {
 				const filter = filterEl.value;
 				const status = await getJson(`/api/tools/gl-backfill/status/${id}?itemStatus=${filter}&itemLimit=500`);
 				if (runId !== id) return;
 				lastStatus = status;
+				checkingRun = false;
 				updateDone();
 				setRun(renderRun(status));
 				itemsEl.innerHTML = renderItems(status.items, filter);
@@ -412,6 +419,10 @@
 					announceChange("posted");
 				}
 			} catch (err) {
+				if (runId === id && checkingRun) {
+					checkingRun = false;
+					updateDone();
+				}
 				setRun(`<p class="gl-backfill-blocked">Could not read run #${id}: ${escapeHtml(err.message)}${following ? " Retrying..." : ""}</p>`);
 				if (following) setTimeout(() => showRun(id), 2000);
 			}

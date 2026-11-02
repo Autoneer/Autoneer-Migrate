@@ -86,6 +86,12 @@ function runKey(config, schema) {
 	return `${config.host}:${config.port || 3306}/${schema}`;
 }
 
+// Whether a backfill run or a task is at work on the tenant.
+function isBusy(config, schema) {
+	const key = runKey(config, schema);
+	return activeRuns.has(key) || activeTasks.has(key);
+}
+
 // One writer per tenant: a backfill run, a repair task or a control account fix.
 function assertIdle(config, schema) {
 	const key = runKey(config, schema);
@@ -536,6 +542,9 @@ async function clearRunHistory(config, schema, input = {}) {
 
 module.exports = {
 	TYPES,
+	withSchema,
+	runTask,
+	isBusy,
 	readScope,
 	readRunOptions,
 	startRun,

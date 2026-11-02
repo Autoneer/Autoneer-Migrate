@@ -130,13 +130,20 @@ window.GlBackfill = (function () {
 		return Promise.resolve();
 	}
 
-	// Shows or hides the green check on the card holding `inner`.
+	// Shows or hides the green check on the card holding `inner`, which also ends its checking spinner.
 	function setCardDone(inner, done) {
 		const card = inner && inner.closest(".card");
 		if (!card) return;
+		card.classList.remove("is-checking");
 		card.classList.toggle("is-done", Boolean(done));
 		const check = card.querySelector(".gl-card-check");
 		if (check) check.hidden = !done;
+	}
+
+	// Shows the spinner in the header of the card holding `inner` until setCardDone settles it.
+	function setCardChecking(inner) {
+		const card = inner && inner.closest(".card");
+		if (card) card.classList.add("is-checking");
 	}
 
 	// Recent progress readings by key, for the time left at the recent rate.
@@ -175,6 +182,6 @@ window.GlBackfill = (function () {
 
 	return {
 		escapeHtml, count, money, localDate, getJson, postJson, streamPost, table, section,
-		progressBar, statTiles, confirmList, alertError, setCardDone, announceChange, timeLeft, formatTimeLeft, workingLine
+		progressBar, statTiles, confirmList, alertError, setCardDone, setCardChecking, announceChange, timeLeft, formatTimeLeft, workingLine
 	};
 })();

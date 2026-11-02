@@ -1,0 +1,50 @@
+<div class="gl-tools-header card-controls-head">
+	<h1>Clean Up</h1>
+	<div class="card-controls">
+		<label class="inline-label" title="A card you open or click into folds all the others"><input id="cards-one-only" class="toggle" type="checkbox" /><span>One card only</span></label>
+		<button id="cards-collapse-all" class="btn secondary" type="button">Collapse all</button>
+	</div>
+</div>
+
+<div class="gl-backfill-grid">
+	<section class="card gl-tool collapsible is-checking" tabindex="-1" aria-labelledby="cleanup-wip-title">
+		<h3 id="cleanup-wip-title"><span class="gl-tool-num" aria-hidden="true">1</span><span class="gl-card-check" role="img" aria-label="Nothing left to release" title="Nothing left to release" hidden></span><span class="gl-card-checking" role="img" aria-label="Checking" title="Checking"></span> WIP Cleanup</h3>
+		<button type="button" class="card-collapse" title="Collapse" aria-labelledby="cleanup-wip-title" aria-expanded="true"></button>
+		<p class="hint">Settled jobs that never moved to RELEASED sit on the Pulse card as Ready for Collection and keep their vehicles off Service Due. This releases them as the Release Vehicle action does (status, WIP status and location; job dates unchanged), with a <code>JOB / RELEASED</code> timeline row dated on the job's status date and marked as a migration clean-up. Jobs with a balance owing stay.</p>
+		<div class="gl-backfill-scope-cols">
+			<div class="gl-repair-form">
+				<label class="gl-repair-field">Completed on or before <input id="cleanup-wip-cutoff" type="date" /></label>
+				<fieldset class="cleanup-scope">
+					<legend>Buckets</legend>
+					<div class="cleanup-scope-list">
+						<label class="inline-label"><input class="toggle" type="checkbox" name="cleanup-wip-bucket" value="SETTLED" checked /><span>Amount &gt; 0, settled</span></label>
+						<label class="inline-label"><input class="toggle" type="checkbox" name="cleanup-wip-bucket" value="ZERO" checked /><span>Amount = 0</span></label>
+					</div>
+				</fieldset>
+				<div class="cleanup-scope cleanup-card" role="group" aria-labelledby="cleanup-wip-years-title">
+					<div class="cleanup-scope-head"><span id="cleanup-wip-years-title">Completion years</span><span class="cleanup-legend-links"><button type="button" class="cleanup-link" id="btn-cleanup-wip-years-all">Select all</button><button type="button" class="cleanup-link" id="btn-cleanup-wip-years-none">Clear</button></span></div>
+					<div id="cleanup-wip-years" class="cleanup-scope-list cleanup-years">Checking the tenant...</div>
+				</div>
+				<div class="cleanup-apply">
+					<button id="btn-cleanup-wip-apply" class="btn secondary" type="button" disabled>Apply Selection</button>
+					<span id="cleanup-wip-pending" class="cleanup-pending" hidden>Changed. Apply to update the preview.</span>
+					<button id="btn-cleanup-wip-release-top" class="btn cleanup-release" type="button" disabled>Release Completed Jobs</button>
+				</div>
+			</div>
+			<div class="cleanup-side">
+				<div id="cleanup-wip-scope" class="gl-backfill-scope" aria-live="polite">Checking the tenant...</div>
+				<p class="gl-tool-note">Release in batches: pick a bucket and the years to do now, apply, check the preview, then release. Every batch is logged in <code>migrate_job_releases</code>. <strong>Undo</strong> puts the last batch back unless the workshop has moved a job since.</p>
+			</div>
+		</div>
+		<div id="cleanup-wip-details" class="gl-backfill-scope"></div>
+		<div id="cleanup-wip-result" class="gl-backfill-scope gl-repair-result" aria-live="polite"></div>
+		<div class="gl-tool-actions">
+			<button id="btn-cleanup-wip-csv" class="btn secondary" type="button" disabled>Download CSV</button>
+			<button id="btn-cleanup-wip-undo" class="btn danger" type="button" hidden>Undo Last Release</button>
+			<button id="btn-cleanup-wip-release" class="btn" type="button" disabled>Release Completed Jobs</button>
+		</div>
+	</section>
+</div>
+
+<script src="/public/js/tools/gl-backfill-common.js"></script>
+<script src="/public/js/tools/cleanup-wip.js"></script>

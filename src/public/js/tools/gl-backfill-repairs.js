@@ -1,7 +1,7 @@
 // The GL Backfill page's repair tools: legacy RFC migration, general invoice
 // accounts, the post-backfill repair and clearing the run history.
 (function () {
-	const { escapeHtml, count, money, getJson, postJson, streamPost, table, section, progressBar, statTiles, confirmList, alertError, setCardDone, announceChange } = window.GlBackfill;
+	const { escapeHtml, count, money, getJson, postJson, streamPost, table, section, progressBar, statTiles, confirmList, alertError, setCardDone, setCardChecking, announceChange } = window.GlBackfill;
 	const el = (id) => document.getElementById(id);
 	let scope = null;
 	let running = false;
@@ -61,6 +61,7 @@
 	}
 
 	async function loadScope() {
+		for (const id of ["gl-rfc-scope", "gl-general-scope", "gl-repair-scope"]) setCardChecking(el(id));
 		try {
 			scope = await getJson("/api/tools/gl-backfill/repairs");
 			el("gl-rfc-scope").innerHTML = renderRfcScope(scope.rfc);

@@ -17,6 +17,10 @@
 			<svg class="step-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m12 2 9 5-9 5-9-5zM3 12l9 5 9-5M3 17l9 5 9-5"/></svg>
 			<span class="step-label">GL Backfill</span>
 		</a>
+		<a class="step {{#if (eq currentStep 'cleanup')}}active{{/if}}" href="/tools/cleanup" data-tooltip="Clean Up">
+			<svg class="step-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m20 4-8.5 8.5M11.5 12.5 9 10l-5 5 5 5 5-5zM4 15l5 5"/></svg>
+			<span class="step-label">Clean Up</span>
+		</a>
 		<a class="step {{#if (eq currentStep 'migration')}}active{{/if}}" href="/migration/history" data-tooltip="Migration History">
 			<svg class="step-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
 			<span class="step-label">Migration History</span>
